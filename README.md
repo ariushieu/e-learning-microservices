@@ -17,7 +17,7 @@ Hệ thống website học trực tuyến (E-Learning) được xây dựng theo
 
 ```
                         ┌──────────────────┐
-     Client (Web/App) ──►    API Gateway   │
+     Client (Web/App) ──►    API Gateway   │  :8080
                         └────────┬─────────┘
                                  │
       ┌──────────┬───────────────┼───────────────┬──────────────┐
@@ -25,6 +25,7 @@ Hệ thống website học trực tuyến (E-Learning) được xây dựng theo
 ┌──────────┐ ┌──────────┐ ┌─────────────┐ ┌──────────┐ ┌──────────────┐
 │  Auth    │ │  Course  │ │ Enrollment  │ │  Quiz    │ │ Notification │
 │ Service  │ │ Service  │ │  Service    │ │ Service  │ │   Service    │
+│  :8081   │ │  :8082   │ │   :8083     │ │  :8084   │ │    :8085     │
 └──────────┘ └──────────┘ └─────────────┘ └──────────┘ └──────────────┘
       │          │               │               │              │
       └──────────┴───────────────┴───────────────┴──────────────┘
@@ -39,34 +40,46 @@ Mọi request từ client đi qua **API Gateway** trước khi được điều 
 
 ## Danh sách services
 
-| Service                | Vai trò                                                                 | Port           |
-|------------------------|-------------------------------------------------------------------------|----------------|
-| `api-gateway`          | Cổng vào duy nhất, định tuyến request, xác thực token, rate limiting    | 8080           |
-| `auth-service`         | Đăng ký, đăng nhập, quản lý người dùng, phân quyền (JWT)                | 8081           |
-| `course-service`       | Quản lý khóa học, chương, bài học, tài liệu                             | 8082           |
-| `enrollment-service`   | Đăng ký khóa học, theo dõi tiến độ học tập                              | 8083           |
-| `quiz-service`         | Quản lý bài kiểm tra, câu hỏi, chấm điểm                                | 8084           |
-| `notification-service` | Gửi thông báo (email / in-app) khi có sự kiện: ghi danh, hoàn thành...  | 8085           |
-| `shared-common`        | Thư viện dùng chung: DTO, exception handler, tiện ích                   | -              |
+| Service                | Vai trò                                                                 | Port |
+|------------------------|-------------------------------------------------------------------------|------|
+| `api-gateway`          | Cổng vào duy nhất, định tuyến request, xác thực token, rate limiting    | 8080 |
+| `auth-service`         | Đăng ký, đăng nhập, quản lý người dùng, phân quyền (JWT)                | 8081 |
+| `course-service`       | Quản lý khóa học, chương, bài học, tài liệu                             | 8082 |
+| `enrollment-service`   | Đăng ký khóa học, theo dõi tiến độ học tập                              | 8083 |
+| `quiz-service`         | Quản lý bài kiểm tra, câu hỏi, chấm điểm                                | 8084 |
+| `notification-service` | Gửi thông báo (email / in-app) khi có sự kiện: ghi danh, hoàn thành...  | 8085 |
+| `shared-common`        | Thư viện dùng chung: DTO, exception handler, tiện ích (không chạy độc lập) | -  |
+
+Mỗi service có endpoint kiểm tra sức khỏe tại `/actuator/health`.
 
 ## Công nghệ sử dụng
 
-- **Ngôn ngữ:** Java 17
-- **Framework:** Spring Boot 4.1.1
-- **Build tool:** Maven (Maven Wrapper đi kèm trong từng service)
-- **Dự kiến bổ sung:** Spring Cloud Gateway, Spring Security + JWT, Spring Data JPA, PostgreSQL/MySQL, Docker Compose, RabbitMQ/Kafka cho giao tiếp bất đồng bộ
+| Thành phần        | Công nghệ                                              |
+|-------------------|--------------------------------------------------------|
+| Ngôn ngữ          | Java 17                                                |
+| Framework         | Spring Boot 4.1.1                                      |
+| API Gateway       | Spring Cloud Gateway (Spring Cloud 2025.1.3 - Oakwood) |
+| REST API          | Spring Web MVC, Bean Validation                        |
+| Giám sát          | Spring Boot Actuator                                   |
+| Tiện ích          | Lombok                                                 |
+| Build             | Maven multi-module (parent POM ở thư mục gốc)         |
+
+**Dự kiến bổ sung:** Spring Security + JWT, Spring Data JPA, PostgreSQL/MySQL, Docker Compose, RabbitMQ/Kafka cho giao tiếp bất đồng bộ, Swagger/OpenAPI.
 
 ## Cấu trúc thư mục
 
 ```
 e-learning-microservices/
-├── api-gateway/            # Spring Cloud Gateway
+├── pom.xml                 # Parent POM: khai báo module, quản lý version chung
+├── mvnw / mvnw.cmd         # Maven Wrapper
+├── .mvn/
+├── shared-common/          # Thư viện dùng chung (JAR thường, không có main)
+├── api-gateway/            # Spring Cloud Gateway (WebFlux)
 ├── auth-service/           # Xác thực & người dùng
 ├── course-service/         # Khóa học
 ├── enrollment-service/     # Ghi danh & tiến độ
 ├── quiz-service/           # Bài kiểm tra
 ├── notification-service/   # Thông báo
-├── shared-common/          # Mã nguồn dùng chung
 ├── .gitignore
 └── README.md
 ```
@@ -75,8 +88,7 @@ Mỗi service có cấu trúc chuẩn Spring Boot:
 
 ```
 <service>/
-├── pom.xml
-├── mvnw / mvnw.cmd
+├── pom.xml                 # Kế thừa parent POM ở thư mục gốc
 └── src/
     ├── main/
     │   ├── java/com/hunre/<service>/
@@ -84,51 +96,79 @@ Mỗi service có cấu trúc chuẩn Spring Boot:
     └── test/
 ```
 
+> **Lưu ý:** `api-gateway` chạy trên nền WebFlux (reactive). Không thêm `spring-boot-starter-webmvc`
+> hoặc `shared-common` vào module này, vì sẽ kéo Tomcat vào và làm gateway khởi động sai chế độ.
+
 ## Yêu cầu môi trường
 
-- JDK 17 trở lên
+- JDK 17 trở lên (đã kiểm thử build với JDK 26)
 - Git
-- (Tùy chọn) IntelliJ IDEA / VS Code
+- IntelliJ IDEA (khuyến nghị) hoặc VS Code
 - (Sau này) Docker & Docker Compose
+
+Không cần cài Maven, dự án dùng Maven Wrapper (`mvnw`).
 
 ## Hướng dẫn chạy
 
-Clone repository:
+### Clone repository
 
 ```bash
 git clone https://github.com/ariushieu/e-learning-microservices.git
 cd e-learning-microservices
 ```
 
-Chạy một service bất kỳ bằng Maven Wrapper (ví dụ `auth-service`):
+### Mở bằng IntelliJ IDEA
+
+1. **File > Open**, chọn thư mục gốc `e-learning-microservices` (hoặc file `pom.xml` ở gốc).
+2. IntelliJ tự nhận 7 module Maven. Đợi index và tải dependency xong.
+3. **File > Project Structure > Project SDK**: chọn JDK 17 trở lên.
+4. Chạy từng service bằng cách mở class `*Application.java` và nhấn Run.
+
+### Build toàn bộ dự án
 
 ```bash
-cd auth-service
-
 # Windows
-mvnw.cmd spring-boot:run
+mvnw.cmd clean package -DskipTests
 
 # Linux / macOS
-./mvnw spring-boot:run
+./mvnw clean package -DskipTests
 ```
 
-Build ra file JAR:
+### Chạy một service bằng Maven (từ thư mục gốc)
 
 ```bash
-./mvnw clean package
-java -jar target/auth-service-0.0.1-SNAPSHOT.jar
+# Windows
+mvnw.cmd -pl auth-service spring-boot:run
+
+# Linux / macOS
+./mvnw -pl auth-service spring-boot:run
+```
+
+### Chạy bằng file JAR
+
+```bash
+java -jar auth-service/target/auth-service-0.0.1-SNAPSHOT.jar
+```
+
+### Kiểm tra service đã lên
+
+```bash
+curl http://localhost:8081/actuator/health
+# {"status":"UP"}
 ```
 
 ## Lộ trình phát triển
 
 - [x] Khởi tạo skeleton cho 7 module Spring Boot
 - [x] Cấu hình port cho từng service trong `application.properties`
-- [ ] Cài đặt API Gateway với Spring Cloud Gateway
+- [x] Parent POM đa module, thêm dependency cơ bản (Web MVC, Validation, Actuator, Lombok, Spring Cloud Gateway)
+- [ ] Cấu hình route cho API Gateway tới các service
 - [ ] Auth Service: đăng ký / đăng nhập, phát hành JWT
 - [ ] Course Service: CRUD khóa học, bài học
 - [ ] Enrollment Service: ghi danh, tiến độ
 - [ ] Quiz Service: câu hỏi, bài kiểm tra, chấm điểm
 - [ ] Notification Service: gửi thông báo qua message queue
+- [ ] Kết nối database (Spring Data JPA)
 - [ ] Docker Compose cho toàn bộ hệ thống
 - [ ] Tài liệu API (Swagger / OpenAPI)
 
