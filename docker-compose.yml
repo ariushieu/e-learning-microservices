@@ -1,0 +1,106 @@
+# Hạ tầng cho môi trường phát triển: MySQL + Apache Kafka (KRaft) + Kafka UI.
+# Các service Spring Boot chạy ngoài Docker (IntelliJ) và kết nối qua localhost.
+#
+#   docker compose up -d        # khởi động
+#   docker compose ps           # xem trạng thái / healthcheck
+#   docker compose logs -f kafka
+#   docker compose down         # dừng, GIỮ dữ liệu
+#   docker compose down -v      # dừng và XÓA dữ liệu (volume)
+
+name: elearning
+
+services:
+
+  # ---------------------------------------------------------------- MySQL
+  mysql:
+    image: mysql:8.4
+    container_name: elearning-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_USER: ${MYSQL_USER:-elearning}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-elearning}
+      TZ: Asia/Ho_Chi_Minh
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      # Tên bảng không phân biệt hoa/thường, giống MySQL trên Windows -> tránh lỗi khi chuyển môi trường
+      - --lower_case_table_names=1
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # Script tạo 5 database (một database cho mỗi service), chỉ chạy lần khởi tạo đầu tiên
+      - ./infra/mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ---------------------------------------------------------------- Kafka
+  kafka:
+    image: apache/kafka:4.3.1
+    container_name: elearning-kafka
+    restart: unless-stopped
+    ports:
+      # Cho ứng dụng chạy trên máy host (IntelliJ) kết nối: localhost:9092
+      - "9092:9092"
+    environment:
+      # KRaft: một node vừa là broker vừa là controller, không cần ZooKeeper
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      # Hai listener cho client:
+      #   INTERNAL  kafka:29092     -> container khác trong mạng compose (kafka-ui, sau này là các service khi chạy trong Docker)
+      #   EXTERNAL  localhost:9092  -> ứng dụng chạy trên máy host
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+
+      # Single node -> replication factor = 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_SHARE_COORDINATOR_STATE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+      # Tiện cho dev: producer gửi vào topic chưa có thì tự tạo với 3 partition
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: 3
+
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      # Cố định cluster id để khởi động lại container vẫn đọc được dữ liệu cũ trong volume
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+
+  # ---------------------------------------------------------------- Kafka UI
+  # Giao diện web xem topic, partition, message, consumer group: http://localhost:8090
+  kafka-ui:
+    image: ghcr.io/kafbat/kafka-ui:v1.5.0
+    container_name: elearning-kafka-ui
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: elearning-local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      DYNAMIC_CONFIG_ENABLED: "true"
+
+volumes:
+  mysql_data:
+  kafka_data:
