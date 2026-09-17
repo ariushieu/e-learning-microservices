@@ -3,7 +3,7 @@
 [![CI](https://github.com/ariushieu/e-learning-microservices/actions/workflows/ci.yml/badge.svg)](https://github.com/ariushieu/e-learning-microservices/actions/workflows/ci.yml)
 
 Hệ thống website học trực tuyến (E-Learning) được xây dựng theo kiến trúc **Microservices** với Spring Boot.
-Đây là đồ án môn học *Kiến trúc Microservices* tại Trường Đại học Tài nguyên và Môi trường Hà Nội (HUNRE).
+Đây là sản phẩm môn học *Kiến trúc Microservices* tại Trường Đại học Tài nguyên và Môi trường Hà Nội (HUNRE).
 
 ## Mục lục
 
