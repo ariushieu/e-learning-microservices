@@ -1,5 +1,7 @@
 # E-Learning Microservices
 
+[![CI](https://github.com/ariushieu/e-learning-microservices/actions/workflows/ci.yml/badge.svg)](https://github.com/ariushieu/e-learning-microservices/actions/workflows/ci.yml)
+
 Hệ thống website học trực tuyến (E-Learning) được xây dựng theo kiến trúc **Microservices** với Spring Boot.
 Đây là đồ án môn học *Kiến trúc Microservices* tại Trường Đại học Tài nguyên và Môi trường Hà Nội (HUNRE).
 
@@ -196,6 +198,7 @@ curl http://localhost:8081/actuator/health
 - [x] Cấu hình port cho từng service trong `application.properties`
 - [x] Parent POM đa module, thêm dependency cơ bản (Web MVC, Validation, Actuator, Lombok, Spring Cloud Gateway)
 - [x] Docker Compose cho hạ tầng dev: MySQL, Kafka (KRaft), Kafka UI
+- [x] CI với GitHub Actions: build, test Maven và kiểm tra docker-compose cho mọi PR
 - [ ] Kết nối database: Spring Data JPA + MySQL cho từng service
 - [ ] Cấu hình route cho API Gateway tới các service
 - [ ] Auth Service: đăng ký / đăng nhập, phát hành JWT
