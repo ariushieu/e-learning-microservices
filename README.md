@@ -39,7 +39,7 @@ Mọi request từ client đi qua **API Gateway** trước khi được điều 
 
 ## Danh sách services
 
-| Service                | Vai trò                                                                 | Port (dự kiến) |
+| Service                | Vai trò                                                                 | Port           |
 |------------------------|-------------------------------------------------------------------------|----------------|
 | `api-gateway`          | Cổng vào duy nhất, định tuyến request, xác thực token, rate limiting    | 8080           |
 | `auth-service`         | Đăng ký, đăng nhập, quản lý người dùng, phân quyền (JWT)                | 8081           |
@@ -122,7 +122,7 @@ java -jar target/auth-service-0.0.1-SNAPSHOT.jar
 ## Lộ trình phát triển
 
 - [x] Khởi tạo skeleton cho 7 module Spring Boot
-- [ ] Cấu hình port và `application.properties` cho từng service
+- [x] Cấu hình port cho từng service trong `application.properties`
 - [ ] Cài đặt API Gateway với Spring Cloud Gateway
 - [ ] Auth Service: đăng ký / đăng nhập, phát hành JWT
 - [ ] Course Service: CRUD khóa học, bài học
