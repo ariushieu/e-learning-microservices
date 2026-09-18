@@ -17,7 +17,12 @@ riêng của từng service không thuộc về đây.
 | Vỏ response, phân trang, hình dạng lỗi | DTO request/response riêng của một service |
 | Mã lỗi và handler dựng response lỗi | Logic nghiệp vụ |
 | Payload sự kiện Kafka, tên topic | JPA entity, repository |
-| Hằng số dùng chung giữa các service | Cấu hình riêng của một service |
+| Cách đọc và kiểm JWT, mã vai trò | Cấu hình riêng của một service |
+| Hằng số dùng chung giữa các service | |
+
+Phần xác thực nằm ở đây vì nó vượt qua đúng bài kiểm tra bên dưới: định dạng token và tên
+vai trò là thứ cả 5 service phải hiểu **giống hệt nhau**, lệch một chữ là phân quyền sai.
+Chi tiết ở [docs/authentication.md](authentication.md).
 
 Hai lý do cho cột bên phải:
 

@@ -1,1 +1,2 @@
 com.hunre.sharedcommon.autoconfigure.SharedCommonAutoConfiguration
+com.hunre.sharedcommon.autoconfigure.SecurityAutoConfiguration

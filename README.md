@@ -132,6 +132,7 @@ dùng và lý do từng quyết định ở **[docs/shared-contracts.md](docs/sh
 | Response | `ApiResponse<T>`, `PageResponse<T>` | Vỏ bọc và phân trang thống nhất cho mọi API |
 | Lỗi | `ErrorCode`, `ErrorResponse`, `BusinessException`, `GlobalExceptionHandler` | 5 service trả lỗi cùng một hình dạng, frontend chỉ xử lý một chỗ |
 | Sự kiện | `EnrollmentCreatedEvent`, `EnrollmentCompletedEvent`, `CertificateIssuedEvent`, `QuizGradedEvent`, `KafkaTopics`, `EventTypes` | Hợp đồng Kafka giữa service phát và service nhận |
+| Xác thực | `AuthenticatedUser`, `JwtVerifier`, `Roles`, `JwtAuthenticationFilter` | Kiểm JWT và lấy danh tính người gọi, xem [docs/authentication.md](docs/authentication.md) |
 
 `GlobalExceptionHandler` được đăng ký **tự động** qua auto-configuration, service không
 phải khai báo `@ComponentScan` hay tạo bean. Service muốn xử lý riêng thì tự tạo bean cùng
@@ -172,6 +173,7 @@ e-learning-microservices/
 ├── scripts/
 │   └── check-commit-subject.sh  # Bộ kiểm tra dùng chung cho hook và CI
 ├── docs/
+│   ├── authentication.md   # Xác thực JWT, phân quyền, đường dẫn công khai
 │   ├── database-design.md  # Sơ đồ và thuyết minh thiết kế database
 │   └── shared-contracts.md # Hợp đồng dùng chung giữa các service
 ├── infra/
@@ -302,12 +304,14 @@ curl http://localhost:8081/actuator/health
 - [x] Thiết kế schema cho 5 database, viết migration theo chuẩn Flyway ([tài liệu](docs/database-design.md))
 - [x] Tài liệu và công cụ cho nhóm: quy ước commit, git hook và CI kiểm tra ([CONTRIBUTING.md](CONTRIBUTING.md))
 - [x] Hợp đồng dùng chung trong `shared-common`: vỏ response, xử lý lỗi, sự kiện Kafka ([tài liệu](docs/shared-contracts.md))
-- [ ] Kết nối database: Spring Data JPA + Flyway + MySQL cho từng service
-- [ ] Cấu hình route cho API Gateway tới các service
-- [ ] Auth Service: đăng ký / đăng nhập, phát hành JWT
-- [ ] Course Service: CRUD khóa học, bài học
+- [x] Kết nối database: Spring Data JPA + Flyway + MySQL (auth, course, quiz; còn enrollment và notification)
+- [x] Cấu hình route cho API Gateway tới các service
+- [x] Auth Service: đăng ký / đăng nhập, phát hành JWT
+- [x] Xác thực JWT ở gateway và ở từng service ([tài liệu](docs/authentication.md))
+- [x] Course Service: CRUD khóa học, bài học
 - [ ] Enrollment Service: ghi danh, tiến độ, phát sự kiện Kafka
-- [ ] Quiz Service: câu hỏi, bài kiểm tra, chấm điểm
+- [x] Quiz Service: câu hỏi, bài kiểm tra, chấm điểm
+- [ ] Phân quyền theo vai trò trong từng service
 - [ ] Notification Service: consume sự kiện Kafka, gửi thông báo
 - [ ] Frontend Next.js (pnpm)
 - [ ] Dockerfile cho từng service, chạy toàn bộ hệ thống bằng Docker Compose

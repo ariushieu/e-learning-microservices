@@ -24,7 +24,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * thì mọi thứ vẫn biên dịch và chạy bình thường, chỉ có điều lỗi trả về sai định dạng
  * mà không ai nhận ra cho tới khi frontend gọi thử.
  */
-@SpringBootTest(classes = SharedCommonAutoConfigurationTest.TestApp.class)
+@SpringBootTest(
+        classes = SharedCommonAutoConfigurationTest.TestApp.class,
+        // Test nay kiem tra auto-config cua phan xu ly loi, khong lien quan xac thuc.
+        // Khong tat thi context khong khoi dong duoc vi thieu elearning.security.jwt-secret.
+        properties = "elearning.security.enabled=false")
 class SharedCommonAutoConfigurationTest {
 
     @Autowired

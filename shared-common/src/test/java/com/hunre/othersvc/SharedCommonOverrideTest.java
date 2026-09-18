@@ -16,7 +16,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * nhờ {@code @ConditionalOnMissingBean}. Không có điều này thì hai handler cùng tồn tại
  * và Spring sẽ chọn một cách khó đoán.
  */
-@SpringBootTest(classes = SharedCommonOverrideTest.TestApp.class)
+@SpringBootTest(
+        classes = SharedCommonOverrideTest.TestApp.class,
+        // Test nay kiem tra auto-config cua phan xu ly loi, khong lien quan xac thuc.
+        // Khong tat thi context khong khoi dong duoc vi thieu elearning.security.jwt-secret.
+        properties = "elearning.security.enabled=false")
 class SharedCommonOverrideTest {
 
     @Autowired
