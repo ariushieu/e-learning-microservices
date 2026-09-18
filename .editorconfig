@@ -1,0 +1,24 @@
+# Thống nhất định dạng file giữa các thành viên, bất kể dùng IntelliJ hay VS Code.
+# IntelliJ đọc file này mặc định, VS Code cần cài extension EditorConfig.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{yml,yaml,json,xml}]
+indent_size = 2
+
+[*.md]
+# Markdown dùng hai khoảng trắng cuối dòng để xuống dòng, không được cắt
+trim_trailing_whitespace = false
+
+[*.{bat,cmd}]
+end_of_line = crlf
+
+[Makefile]
+indent_style = tab

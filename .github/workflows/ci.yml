@@ -51,3 +51,32 @@ jobs:
 
       - name: docker compose config
         run: docker compose config --quiet
+
+  # Chặn commit sai quy ước ở tầng pull request, phòng khi ai đó chưa bật git hook.
+  # Tiêu đề PR cũng được kiểm tra vì merge kiểu squash lấy nó làm tiêu đề commit trên main.
+  commit-style:
+    name: Commit message style
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0          # cần đủ lịch sử để liệt kê commit của nhánh
+
+      - name: Check pull request title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: bash scripts/check-commit-subject.sh "$PR_TITLE" "Tiêu đề pull request"
+
+      - name: Check commit subjects
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          status=0
+          while IFS= read -r subject; do
+            [ -n "$subject" ] || continue
+            bash scripts/check-commit-subject.sh "$subject" "Tiêu đề commit" || status=1
+          done < <(git log --format='%s' "$BASE_SHA".."$HEAD_SHA")
+          exit $status

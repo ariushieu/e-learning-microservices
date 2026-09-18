@@ -4,6 +4,10 @@
 # Script chạy trên Linux, có CR ở cuối dòng là lỗi "bad interpreter"
 *.sh text eol=lf
 
+# Git hook không có đuôi .sh nên phải chỉ định riêng. Thiếu dòng này thì máy Windows
+# clone về sẽ nhận file CRLF và hook hỏng ngay từ dòng shebang.
+.githooks/* text eol=lf
+
 # Flyway tính checksum theo nội dung file, khác kiểu xuống dòng giữa các máy
 # sẽ làm migration đã chạy bị báo checksum mismatch
 *.sql text eol=lf

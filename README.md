@@ -5,6 +5,10 @@
 Hệ thống website học trực tuyến (E-Learning) được xây dựng theo kiến trúc **Microservices** với Spring Boot.
 Đây là sản phẩm môn học *Kiến trúc Microservices* tại Trường Đại học Tài nguyên và Môi trường Hà Nội (HUNRE).
 
+> **Thành viên nhóm mới tham gia:** đọc **[CONTRIBUTING.md](CONTRIBUTING.md)** trước khi
+> commit. Tài liệu đó có quy ước đặt tên nhánh, quy ước viết commit và quy trình pull request.
+> Ở giai đoạn hiện tại **chưa cần Docker** vẫn clone về build và chạy được.
+
 ## Mục lục
 
 - [Kiến trúc tổng quan](#kiến-trúc-tổng-quan)
@@ -129,6 +133,12 @@ e-learning-microservices/
 ├── pom.xml                 # Parent POM: khai báo module, quản lý version chung
 ├── docker-compose.yml      # MySQL + Kafka + Kafka UI
 ├── .env.example            # Mẫu biến môi trường cho docker compose
+├── CONTRIBUTING.md         # Quy ước nhánh, commit, pull request cho cả nhóm
+├── .editorconfig           # Thống nhất encoding và định dạng giữa các IDE
+├── .githooks/
+│   └── commit-msg          # Chặn commit sai quy ước ngay trên máy
+├── scripts/
+│   └── check-commit-subject.sh  # Bộ kiểm tra dùng chung cho hook và CI
 ├── docs/
 │   └── database-design.md  # Sơ đồ và thuyết minh thiết kế database
 ├── infra/
@@ -167,12 +177,18 @@ Mỗi service có cấu trúc chuẩn Spring Boot:
 
 ## Yêu cầu môi trường
 
-- JDK 17 trở lên (đã kiểm thử build với JDK 26)
-- Docker Desktop (Docker Compose v2 trở lên)
-- Git
-- IntelliJ IDEA (khuyến nghị) hoặc VS Code
+| Phần mềm       | Bắt buộc | Ghi chú                                                     |
+|----------------|----------|--------------------------------------------------------------|
+| JDK 17 trở lên | Có       | Đã kiểm thử build với JDK 26                                |
+| Git            | Có       | Windows nên dùng Git for Windows, có sẵn Git Bash           |
+| IntelliJ IDEA  | Khuyến nghị | Community Edition là đủ, hoặc VS Code                    |
+| Docker Desktop | Chưa cần | Chỉ cần khi muốn chạy MySQL và Kafka ở mục [Hạ tầng](#hạ-tầng) |
 
 Không cần cài Maven, dự án dùng Maven Wrapper (`mvnw`).
+
+Hiện chưa service nào kết nối database hay Kafka, nên **không có Docker vẫn build và chạy
+được toàn bộ service**. Đã kiểm chứng: clone sạch, tắt hết container, `./mvnw clean verify`
+thành công cả 7 module, `auth-service` và `api-gateway` khởi động và trả `{"status":"UP"}`.
 
 ## Hướng dẫn chạy
 
@@ -184,6 +200,9 @@ cd e-learning-microservices
 ```
 
 ### 2. Khởi động hạ tầng (MySQL, Kafka)
+
+> Bước này **có thể bỏ qua ở giai đoạn hiện tại**, vì chưa service nào kết nối database
+> hay Kafka. Chỉ cần khi bạn muốn xem thử database hoặc nghịch Kafka UI.
 
 ```bash
 docker compose up -d
@@ -239,6 +258,7 @@ curl http://localhost:8081/actuator/health
 - [x] Docker Compose cho hạ tầng dev: MySQL, Kafka (KRaft), Kafka UI
 - [x] CI với GitHub Actions: build, test Maven và kiểm tra docker-compose cho mọi PR
 - [x] Thiết kế schema cho 5 database, viết migration theo chuẩn Flyway ([tài liệu](docs/database-design.md))
+- [x] Tài liệu và công cụ cho nhóm: quy ước commit, git hook và CI kiểm tra ([CONTRIBUTING.md](CONTRIBUTING.md))
 - [ ] Kết nối database: Spring Data JPA + Flyway + MySQL cho từng service
 - [ ] Cấu hình route cho API Gateway tới các service
 - [ ] Auth Service: đăng ký / đăng nhập, phát hành JWT

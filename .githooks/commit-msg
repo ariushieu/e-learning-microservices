@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Git hook: chặn commit có tiêu đề sai quy ước ngay trên máy, trước khi kịp push.
+#
+# Bật một lần sau khi clone:
+#   git config core.hooksPath .githooks
+#
+# Git không tự chia sẻ hook qua clone, nên phải chạy lệnh trên thủ công.
+
+set -uo pipefail
+
+MESSAGE_FILE="$1"
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+# Bỏ qua dòng chú thích git tự chèn, lấy dòng nội dung đầu tiên làm tiêu đề
+SUBJECT="$(grep -v '^#' "$MESSAGE_FILE" | sed '/^[[:space:]]*$/d' | head -1)"
+
+bash "$REPO_ROOT/scripts/check-commit-subject.sh" "$SUBJECT" "Tiêu đề commit"
