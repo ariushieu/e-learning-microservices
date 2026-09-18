@@ -6,6 +6,10 @@ import com.hunre.quizservice.dto.QuizResponse;
 import com.hunre.quizservice.dto.UpdateQuizRequest;
 import com.hunre.quizservice.service.QuizService;
 import com.hunre.sharedcommon.dto.ApiResponse;
+import com.hunre.sharedcommon.exception.BusinessException;
+import com.hunre.sharedcommon.exception.ErrorCode;
+import com.hunre.sharedcommon.security.AuthenticatedUser;
+import com.hunre.sharedcommon.security.Roles;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -51,7 +55,10 @@ public class QuizController {
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<QuizDetailResponse> getQuizDetail(@PathVariable Long id) {
+    public ApiResponse<QuizDetailResponse> getQuizDetail(@PathVariable Long id, AuthenticatedUser user) {
+        if (user == null || !user.hasAnyRole(Roles.INSTRUCTOR, Roles.ADMIN)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "Chỉ giảng viên hoặc quản trị viên mới có quyền xem chi tiết bài kiểm tra kèm đáp án");
+        }
         return ApiResponse.ok(quizService.getQuizDetail(id));
     }
 

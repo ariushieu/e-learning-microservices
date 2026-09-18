@@ -5,7 +5,12 @@ import com.hunre.quizservice.dto.CreateQuizRequest;
 import com.hunre.quizservice.dto.QuizResponse;
 import com.hunre.quizservice.entity.QuizStatus;
 import com.hunre.quizservice.service.QuizService;
+import com.hunre.quizservice.dto.QuizDetailResponse;
 import com.hunre.sharedcommon.exception.GlobalExceptionHandler;
+import com.hunre.sharedcommon.security.AuthenticatedUser;
+import com.hunre.sharedcommon.security.AuthenticatedUserArgumentResolver;
+import com.hunre.sharedcommon.security.JwtAuthenticationFilter;
+import com.hunre.sharedcommon.security.Roles;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,9 +24,12 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -43,6 +51,7 @@ class QuizControllerTest {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(quizController)
                 .setControllerAdvice(new GlobalExceptionHandler())
+                .setCustomArgumentResolvers(new AuthenticatedUserArgumentResolver())
                 .build();
         objectMapper = new ObjectMapper();
     }
@@ -97,5 +106,60 @@ class QuizControllerTest {
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
                 .andExpect(jsonPath("$.fieldErrors").isArray());
+    }
+
+    @Test
+    @DisplayName("GET /api/quizzes/{id}: Học viên (ROLE_STUDENT) bị chặn 403 FORBIDDEN")
+    void getQuizDetail_forbiddenForStudent() throws Exception {
+        AuthenticatedUser student = new AuthenticatedUser(
+                10L, "student@hunre.edu.vn", "Nguyen Van A", Set.of(Roles.STUDENT));
+
+        mockMvc.perform(get("/api/quizzes/1")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, student))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+
+    @Test
+    @DisplayName("GET /api/quizzes/{id}: Giảng viên (ROLE_INSTRUCTOR) được xem chi tiết bài kiểm tra kèm đáp án")
+    void getQuizDetail_successForInstructor() throws Exception {
+        AuthenticatedUser instructor = new AuthenticatedUser(
+                1L, "teacher@hunre.edu.vn", "Thay Giao", Set.of(Roles.INSTRUCTOR));
+
+        QuizDetailResponse detail = QuizDetailResponse.builder()
+                .id(1L)
+                .title("Kiểm tra chương 1")
+                .questions(Collections.emptyList())
+                .build();
+
+        when(quizService.getQuizDetail(1L)).thenReturn(detail);
+
+        mockMvc.perform(get("/api/quizzes/1")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.id").value(1L));
+    }
+
+    @Test
+    @DisplayName("GET /api/quizzes/{id}: Quản trị viên (ROLE_ADMIN) được xem chi tiết bài kiểm tra kèm đáp án")
+    void getQuizDetail_successForAdmin() throws Exception {
+        AuthenticatedUser admin = new AuthenticatedUser(
+                2L, "admin@hunre.edu.vn", "Admin", Set.of(Roles.ADMIN));
+
+        QuizDetailResponse detail = QuizDetailResponse.builder()
+                .id(1L)
+                .title("Kiểm tra chương 1")
+                .questions(Collections.emptyList())
+                .build();
+
+        when(quizService.getQuizDetail(1L)).thenReturn(detail);
+
+        mockMvc.perform(get("/api/quizzes/1")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, admin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.id").value(1L));
     }
 }
