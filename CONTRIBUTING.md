@@ -45,6 +45,17 @@ chọn JDK 17 trở lên.
 Chạy một service: mở class `*Application.java` tương ứng rồi nhấn Run. Riêng `shared-common`
 là thư viện dùng chung, không có hàm `main` và không chạy độc lập được.
 
+> **Luôn mở thư mục gốc, đừng mở riêng thư mục service.** Cả 5 service đều phụ thuộc
+> `shared-common`. Mở riêng một service thì IntelliJ không thấy module đó và báo không tìm
+> thấy `com.hunre:shared-common`. Chạy bằng dòng lệnh cũng vậy, phải thêm `-am`:
+>
+> ```bash
+> ./mvnw -pl auth-service -am spring-boot:run
+> ```
+>
+> Hoặc cài `shared-common` vào kho Maven trên máy một lần bằng `./mvnw install -DskipTests`,
+> nhớ chạy lại mỗi khi `shared-common` thay đổi.
+
 Kiểm tra service đã lên:
 
 ```bash
