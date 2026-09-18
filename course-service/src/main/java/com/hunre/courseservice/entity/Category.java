@@ -23,18 +23,16 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(
         name = "categories",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_categories_slug", columnNames = "slug")
-        },
         indexes = {
-                @Index(name = "idx_categories_parent", columnList = "parent_id")
+                @Index(name = "idx_categories_slug", columnList = "slug", unique = true),
+                @Index(name = "idx_categories_parent_id", columnList = "parent_id")
         }
 )
 @Getter
@@ -52,7 +50,7 @@ public class Category {
     @JoinColumn(name = "parent_id", foreignKey = @ForeignKey(name = "fk_categories_parent"))
     private Category parent;
 
-    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = false)
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("position ASC")
     @Builder.Default
     private List<Category> subCategories = new ArrayList<>();
@@ -72,9 +70,9 @@ public class Category {
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 }

@@ -16,7 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -56,8 +56,8 @@ class CategoryControllerTest {
                 .name("CNTT")
                 .slug("cntt")
                 .position(1)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
                 .build();
 
         when(categoryService.getCategoryTree()).thenReturn(List.of(cat));

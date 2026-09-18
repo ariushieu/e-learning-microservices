@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,8 +22,8 @@ public class SectionResponse {
     private Long courseId;
     private String title;
     private Integer position;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Instant createdAt;
+    private Instant updatedAt;
 
     @Builder.Default
     private List<LessonResponse> lessons = new ArrayList<>();

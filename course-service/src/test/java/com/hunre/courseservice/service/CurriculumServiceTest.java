@@ -25,7 +25,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -86,7 +86,7 @@ class CurriculumServiceTest {
         when(sectionRepository.save(any(Section.class))).thenAnswer(i -> {
             Section s = i.getArgument(0);
             s.setId(10L);
-            s.setCreatedAt(LocalDateTime.now());
+            s.setCreatedAt(Instant.now());
             return s;
         });
 

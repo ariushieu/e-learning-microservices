@@ -22,7 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -63,8 +63,8 @@ class CourseServiceTest {
         when(courseRepository.save(any(Course.class))).thenAnswer(invocation -> {
             Course c = invocation.getArgument(0);
             c.setId(10L);
-            c.setCreatedAt(LocalDateTime.now());
-            c.setUpdatedAt(LocalDateTime.now());
+            c.setCreatedAt(Instant.now());
+            c.setUpdatedAt(Instant.now());
             return c;
         });
 
