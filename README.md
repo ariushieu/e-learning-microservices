@@ -269,11 +269,20 @@ Dừng hạ tầng: `docker compose down` (giữ dữ liệu) hoặc `docker com
 # Build toàn bộ (Windows dùng mvnw.cmd)
 ./mvnw clean package -DskipTests
 
-# Chạy một service từ thư mục gốc
-./mvnw -pl auth-service spring-boot:run
+# Chạy một service từ thư mục gốc.
+# Bắt buộc có -am (also make), vì 5 service phụ thuộc shared-common;
+# thiếu nó Maven báo "Could not find artifact com.hunre:shared-common".
+./mvnw -pl auth-service -am spring-boot:run
 
 # Hoặc chạy bằng file JAR
 java -jar auth-service/target/auth-service-0.0.1-SNAPSHOT.jar
+```
+
+Nếu hay chạy riêng từng service, cài `shared-common` vào kho Maven trên máy một lần cho
+đỡ phải gõ `-am` mỗi lần. Chạy lại sau mỗi khi `shared-common` thay đổi:
+
+```bash
+./mvnw install -DskipTests
 ```
 
 ### 5. Kiểm tra service đã lên
