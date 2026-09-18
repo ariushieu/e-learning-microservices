@@ -57,27 +57,62 @@ curl http://localhost:8081/actuator/health
 Không commit thẳng vào `main`. Nhánh `main` đã bật bảo vệ trên GitHub, mọi thay đổi đều
 phải đi qua pull request.
 
-```
-<loại>/<mô tả ngắn, tiếng Anh, nối bằng gạch ngang>
-```
+Mỗi thành viên có **một nhánh cố định mang tên service mình phụ trách**, dùng lâu dài
+trong suốt dự án, không xóa sau mỗi lần merge:
 
-| Ví dụ đúng                   | Dùng khi                          |
-|------------------------------|------------------------------------|
-| `feat/auth-login`            | Thêm tính năng mới                 |
-| `fix/course-duplicate-slug`  | Sửa lỗi                            |
-| `docs/api-gateway-routes`    | Chỉ sửa tài liệu                   |
-| `refactor/quiz-grading`      | Dọn code, không đổi hành vi        |
+| Nhánh                 | Người phụ trách          |
+|-----------------------|--------------------------|
+| `auth-service`        | Người làm auth-service   |
+| `course-service`      | Người làm course-service |
+| `enrollment-service`  | Người làm enrollment     |
+| `quiz-service`        | Người làm quiz-service   |
 
-Mỗi nhánh giải quyết một việc và nên sống ngắn, vài ngày là merge. Nhánh ôm quá nhiều
-việc và để lâu sẽ rất khó merge về sau.
+Chỉ làm việc trên nhánh của mình. Muốn sửa code trong service của người khác thì báo
+người đó, đừng tự sửa trên nhánh mình rồi để lúc merge mới lộ ra.
 
-Trước khi bắt đầu, luôn lấy code mới nhất:
+### Quan trọng: đồng bộ lại nhánh sau mỗi lần pull request được merge
+
+Dự án merge kiểu squash — GitHub gộp toàn bộ pull request thành **một commit mới** trên
+`main`, và commit đó không có liên hệ lịch sử nào với các commit trên nhánh bạn. Với nhánh
+dùng một lần thì không sao vì merge xong là xóa. Với nhánh sống lâu dài thì đây là cái bẫy:
+
+> Git không biết phần việc của bạn đã vào `main` rồi. Lần sau bạn chạy `git merge main`,
+> nó sẽ bắt bạn giải quyết xung đột **với chính code của mình vừa merge tuần trước**.
+> Càng để lâu càng rối, và lỗi này lặp lại sau mỗi lần merge.
+
+Cách tránh, làm **ngay sau khi pull request của bạn được merge**:
 
 ```bash
-git checkout main
-git pull
-git checkout -b feat/ten-viec-cua-ban
+git checkout <nhánh của bạn>
+git fetch origin
+git reset --hard origin/main        # nhánh trở về đúng bằng main
+git push --force-with-lease         # đồng bộ lên GitHub
 ```
+
+Nhánh vẫn còn nguyên và bạn làm tiếp trên đó như bình thường, chỉ là điểm xuất phát được
+đưa về trùng với `main`. Từ đó `git merge main` sẽ sạch.
+
+**Chỉ chạy `reset --hard` khi nhánh của bạn không còn gì chưa merge.** Lệnh này xóa sạch
+commit chưa vào `main`. Kiểm tra trước bằng:
+
+```bash
+git log --oneline origin/main..<nhánh của bạn>
+```
+
+Không in ra dòng nào nghĩa là an toàn. Nếu có dòng, dừng lại và hỏi nhóm trưởng.
+
+### Lấy code mới từ main về nhánh của mình
+
+Làm thường xuyên, ít nhất mỗi ngày một lần và luôn làm trước khi mở pull request:
+
+```bash
+git checkout <nhánh của bạn>
+git fetch origin
+git merge origin/main
+```
+
+Nhánh sống lâu mà không đồng bộ với `main` sẽ trôi xa dần, tới lúc merge thì xung đột
+chồng chất và rất khó gỡ. Merge sớm, merge thường xuyên, mỗi lần một ít.
 
 ## 4. Quy ước viết commit
 
@@ -154,10 +189,14 @@ Bộ lọc tiếng Việt không dấu hoạt động theo danh sách cụm từ
 ## 5. Quy trình pull request
 
 ```bash
-git push -u origin feat/ten-viec-cua-ban
+git push origin <nhánh của bạn>
 ```
 
 Rồi mở pull request trên GitHub nhắm vào `main`.
+
+Đừng dồn cả tháng công việc vào một pull request. Làm xong một phần chạy được thì mở pull
+request cho phần đó, kể cả khi service chưa hoàn chỉnh. Pull request nhỏ thì review nhanh,
+merge sớm, và nhánh của bạn không bị trôi xa khỏi `main`.
 
 **Tiêu đề pull request cũng phải theo đúng quy ước ở mục 4.** Lý do: dự án merge kiểu
 squash, GitHub lấy tiêu đề pull request làm tiêu đề commit trên `main`. Viết tiêu đề
@@ -169,7 +208,13 @@ Phần mô tả pull request nên có:
 - Cách người review kiểm chứng (lệnh chạy, endpoint gọi thử, kết quả mong đợi)
 - Ảnh chụp màn hình nếu có thay đổi giao diện
 
-Pull request chỉ được merge khi toàn bộ check của CI xanh. Merge xong thì xóa nhánh.
+Pull request chỉ được merge khi toàn bộ check của CI xanh.
+
+**Merge xong thì KHÔNG xóa nhánh** — nhánh của bạn dùng lâu dài. Thay vào đó đồng bộ lại
+nhánh về `main` theo hướng dẫn ở [mục 3](#quan-trọng-đồng-bộ-lại-nhánh-sau-mỗi-lần-pull-request-được-merge).
+Bỏ qua bước này là lần merge sau sẽ gặp xung đột với chính code của mình.
+
+Nếu GitHub hiện nút "Delete branch" sau khi merge thì đừng bấm.
 
 ## 6. Trước khi mở pull request
 
@@ -177,15 +222,14 @@ Chạy đủ ba bước này, đừng để CI phát hiện hộ:
 
 ```bash
 # 1. Lấy code mới nhất từ main về nhánh của mình
-git checkout main && git pull
-git checkout feat/ten-viec-cua-ban
-git merge main
+git fetch origin
+git merge origin/main
 
 # 2. Build và chạy toàn bộ test
 ./mvnw clean verify
 
 # 3. Xem lại đúng những gì mình sắp đưa lên
-git diff main...HEAD
+git diff origin/main...HEAD
 ```
 
 Bước 3 hay bị bỏ qua nhất và cũng hay lộ ra nhiều thứ không định commit nhất: file cấu
