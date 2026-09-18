@@ -31,6 +31,8 @@
         <java.version>17</java.version>
         <!-- Spring Cloud 2025.1.x (Oakwood) tương thích Spring Boot 4.0.x / 4.1.x -->
         <spring-cloud.version>2025.1.3</spring-cloud.version>
+        <!-- auth-service ký token, các service khác kiểm chữ ký: phải cùng một phiên bản -->
+        <jjwt.version>0.12.6</jjwt.version>
     </properties>
 
     <dependencyManagement>
@@ -46,6 +48,23 @@
                 <groupId>com.hunre</groupId>
                 <artifactId>shared-common</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jjwt.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${jjwt.version}</version>
+                <scope>runtime</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

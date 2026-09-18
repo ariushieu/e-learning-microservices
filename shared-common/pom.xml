@@ -19,9 +19,19 @@
         nên KHÔNG có class main và KHÔNG dùng spring-boot-maven-plugin.
     -->
     <dependencies>
+        <!--
+            optional = không lan truyền sang module nào import shared-common.
+
+            Lý do: api-gateway chạy WebFlux. Nếu spring-boot-starter-webmvc theo shared-common
+            chui vào classpath của gateway thì Spring Boot thấy có cả servlet lẫn reactive và
+            chọn servlet, gateway hỏng hoàn toàn. Cả 5 service đều đã tự khai webmvc trong pom
+            của mình nên không mất gì, còn gateway thì chỉ lấy đúng phần không phụ thuộc web
+            (JwtVerifier, ErrorResponse).
+        -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -31,6 +41,23 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
+        </dependency>
+
+        <!--
+            Kiểm chữ ký JWT. Cùng thư viện và cùng phiên bản với auth-service (bên ký token)
+            để không gặp khác biệt khi đọc claim. Phiên bản khai ở pom cha.
+        -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
         </dependency>
 
         <dependency>

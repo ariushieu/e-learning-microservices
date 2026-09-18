@@ -311,3 +311,48 @@ bash infra/mysql/apply-schema.sh
 
 Dù cài kiểu nào, **không commit thông tin kết nối của riêng bạn**. File `.env` và
 `application-local.properties` đã được `.gitignore` bỏ qua — cứ để cấu hình cá nhân ở đó.
+
+
+## 8. Xác thực: việc bạn phải sửa trong service của mình
+
+Hệ thống đã có JWT. Controller **không được nhận `userId` từ client nữa**.
+
+Sai — ai cũng gọi `?userId=5` để thao tác thay người khác:
+
+```java
+public ApiResponse<X> startAttempt(@PathVariable Long quizId, @RequestParam Long userId)
+```
+
+Đúng — danh tính lấy từ token đã kiểm chữ ký:
+
+```java
+public ApiResponse<X> startAttempt(@PathVariable Long quizId, AuthenticatedUser user) {
+    return ApiResponse.ok(service.startAttempt(quizId, user.userId()));
+}
+```
+
+Chỉ cần thêm tham số kiểu `AuthenticatedUser`, không cần annotation hay khai báo bean.
+Tầng service bên dưới giữ nguyên chữ ký `Long userId`.
+
+Muốn chặn theo vai trò thì dùng hằng số, đừng gõ chuỗi:
+
+```java
+if (!user.hasRole(Roles.INSTRUCTOR)) {
+    throw new BusinessException(ErrorCode.FORBIDDEN, "Chỉ giảng viên mới được tạo khóa học");
+}
+```
+
+### Test bằng Postman
+
+Hai cách, chọn một:
+
+1. Lấy token thật: gọi `POST /api/auth/login`, copy `accessToken`, đính vào header
+   `Authorization: Bearer <token>` cho mọi request sau đó.
+2. Tắt xác thực khi chạy máy mình: thêm `elearning.security.enabled=false` vào
+   `application-local.properties`. Mọi request sẽ được coi là một người dùng giả lập có đủ
+   ba vai trò.
+
+Đừng commit cách 2 vào `application.properties`.
+
+Chi tiết đầy đủ — đường dẫn công khai, phân quyền, cấu hình khóa ký — ở
+[docs/authentication.md](docs/authentication.md).
