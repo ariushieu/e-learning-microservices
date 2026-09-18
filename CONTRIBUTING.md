@@ -70,6 +70,11 @@ trong suốt dự án, không xóa sau mỗi lần merge:
 Chỉ làm việc trên nhánh của mình. Muốn sửa code trong service của người khác thì báo
 người đó, đừng tự sửa trên nhánh mình rồi để lúc merge mới lộ ra.
 
+Riêng thư mục `shared-common/` là **của chung**. Nó chứa hợp đồng giữa các service: vỏ
+response, mã lỗi, payload sự kiện Kafka. Sửa ở đó ảnh hưởng cả 5 service, nên phải báo
+nhóm trước khi đụng vào. Đọc [docs/shared-contracts.md](docs/shared-contracts.md) để biết
+cái gì được đưa vào đó và thay đổi nào là phá vỡ hợp đồng.
+
 ### Quan trọng: đồng bộ lại nhánh sau mỗi lần pull request được merge
 
 Dự án merge kiểu squash — GitHub gộp toàn bộ pull request thành **một commit mới** trên
