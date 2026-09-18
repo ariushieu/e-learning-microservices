@@ -102,12 +102,24 @@ Ba quy tắc quan trọng nhất:
 
 File migration đặt theo chuẩn Flyway ngay trong service sở hữu schema, tại
 `<service>/src/main/resources/db/migration/`. Flyway sẽ được bật cùng bước cấu hình Spring
-Data JPA; trước mắt áp dụng thủ công để xem database:
+Data JPA; trước mắt áp dụng thủ công để xem database.
+
+Dùng Docker:
 
 ```bash
 docker compose up -d mysql
 bash infra/mysql/apply-schema.sh
 ```
+
+Dùng MySQL cài trực tiếp trên máy (cần **MySQL 8.0.16 trở lên** vì schema có ràng buộc
+`CHECK`, bản cũ hơn bỏ qua ràng buộc này mà không báo lỗi):
+
+```bash
+mysql -u root -p < infra/mysql/init/01-create-databases.sql
+```
+
+Lệnh trên tạo 5 database, tạo user `elearning` và cấp quyền. Các bước nạp bảng ở
+[CONTRIBUTING.md](CONTRIBUTING.md#7-làm-việc-với-database).
 
 ## Công nghệ sử dụng
 

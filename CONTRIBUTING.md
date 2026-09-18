@@ -202,12 +202,52 @@ File migration nằm trong chính service sở hữu schema, tại
 `<service>/src/main/resources/db/migration/`.
 
 Hiện **chưa service nào kết nối database**, nên chưa cần cài gì để code và chạy. Khi bước
-cấu hình Spring Data JPA hoàn tất, mỗi người sẽ cần một MySQL 8. Ai có Docker thì chạy:
+cấu hình Spring Data JPA hoàn tất, mỗi người sẽ cần một MySQL 8 trên máy mình.
+
+### Nếu bạn dùng MySQL cài trực tiếp trên máy
+
+Tạo 5 database và user ứng dụng bằng một lệnh, chạy với tài khoản `root`:
+
+```bash
+mysql -u root -p < infra/mysql/init/01-create-databases.sql
+```
+
+File này tạo `auth_db`, `course_db`, `enrollment_db`, `quiz_db`, `notification_db` với bảng
+mã `utf8mb4`, tạo user `elearning` (mật khẩu `elearning`, chỉ dùng cho môi trường phát
+triển) và cấp quyền trên cả 5 database. Chạy lại nhiều lần không lỗi.
+
+Nạp cấu trúc bảng vào từng database:
+
+```bash
+mysql -u elearning -p auth_db         < auth-service/src/main/resources/db/migration/V1__init_auth_schema.sql
+mysql -u elearning -p auth_db         < auth-service/src/main/resources/db/migration/V2__seed_roles.sql
+mysql -u elearning -p course_db       < course-service/src/main/resources/db/migration/V1__init_course_schema.sql
+mysql -u elearning -p enrollment_db   < enrollment-service/src/main/resources/db/migration/V1__init_enrollment_schema.sql
+mysql -u elearning -p quiz_db         < quiz-service/src/main/resources/db/migration/V1__init_quiz_schema.sql
+mysql -u elearning -p notification_db < notification-service/src/main/resources/db/migration/V1__init_notification_schema.sql
+mysql -u elearning -p notification_db < notification-service/src/main/resources/db/migration/V2__seed_notification_templates.sql
+```
+
+Bước này chỉ cần làm một lần. Sau khi Flyway được bật, schema sẽ tự chạy lúc service khởi động.
+
+**Yêu cầu phiên bản: MySQL 8.0.16 trở lên.** Schema dùng ràng buộc `CHECK`, mà các bản
+cũ hơn chỉ đọc qua rồi bỏ qua, không hề báo lỗi — dữ liệu sai vẫn lọt vào database. Kiểm tra:
+
+```bash
+mysql -u root -p -e "SELECT VERSION();"
+```
+
+Nếu máy bạn đang chạy MariaDB (thường đi kèm XAMPP) thì báo nhóm trưởng, đừng tự xoay,
+vì MariaDB khác MySQL ở kiểu `JSON` và vài hành vi khác.
+
+### Nếu bạn dùng Docker
 
 ```bash
 docker compose up -d mysql
 bash infra/mysql/apply-schema.sh
 ```
 
-Ai không có Docker sẽ được hướng dẫn cài MySQL trực tiếp, nhóm trưởng sẽ thông báo cách
-làm thống nhất. Đừng tự cài mỗi người một kiểu.
+### Thông tin kết nối
+
+Dù cài kiểu nào, **không commit thông tin kết nối của riêng bạn**. File `.env` và
+`application-local.properties` đã được `.gitignore` bỏ qua — cứ để cấu hình cá nhân ở đó.
