@@ -15,6 +15,7 @@ Hệ thống website học trực tuyến (E-Learning) được xây dựng theo
 - [Danh sách services](#danh-sách-services)
 - [Hạ tầng](#hạ-tầng)
 - [Thiết kế database](#thiết-kế-database)
+- [Hợp đồng dùng chung](#hợp-đồng-dùng-chung)
 - [Công nghệ sử dụng](#công-nghệ-sử-dụng)
 - [Cấu trúc thư mục](#cấu-trúc-thư-mục)
 - [Yêu cầu môi trường](#yêu-cầu-môi-trường)
@@ -121,6 +122,25 @@ mysql -u root -p < infra/mysql/init/01-create-databases.sql
 Lệnh trên tạo 5 database, tạo user `elearning` và cấp quyền. Các bước nạp bảng ở
 [CONTRIBUTING.md](CONTRIBUTING.md#7-làm-việc-với-database).
 
+## Hợp đồng dùng chung
+
+`shared-common` chứa những thứ **nhiều service cùng phải đồng ý với nhau**. Chi tiết cách
+dùng và lý do từng quyết định ở **[docs/shared-contracts.md](docs/shared-contracts.md)**.
+
+| Nhóm | Lớp | Vai trò |
+|------|-----|---------|
+| Response | `ApiResponse<T>`, `PageResponse<T>` | Vỏ bọc và phân trang thống nhất cho mọi API |
+| Lỗi | `ErrorCode`, `ErrorResponse`, `BusinessException`, `GlobalExceptionHandler` | 5 service trả lỗi cùng một hình dạng, frontend chỉ xử lý một chỗ |
+| Sự kiện | `EnrollmentCreatedEvent`, `EnrollmentCompletedEvent`, `CertificateIssuedEvent`, `QuizGradedEvent`, `KafkaTopics`, `EventTypes` | Hợp đồng Kafka giữa service phát và service nhận |
+
+`GlobalExceptionHandler` được đăng ký **tự động** qua auto-configuration, service không
+phải khai báo `@ComponentScan` hay tạo bean. Service muốn xử lý riêng thì tự tạo bean cùng
+kiểu, bản mặc định tự nhường chỗ.
+
+Ranh giới quan trọng: **DTO request/response riêng của một service thì để trong service đó**,
+và **không bao giờ đưa JPA entity vào `shared-common`** — làm vậy là 5 service chung một mô
+hình dữ liệu, phá vỡ database-per-service.
+
 ## Công nghệ sử dụng
 
 | Thành phần        | Công nghệ                                              |
@@ -152,7 +172,8 @@ e-learning-microservices/
 ├── scripts/
 │   └── check-commit-subject.sh  # Bộ kiểm tra dùng chung cho hook và CI
 ├── docs/
-│   └── database-design.md  # Sơ đồ và thuyết minh thiết kế database
+│   ├── database-design.md  # Sơ đồ và thuyết minh thiết kế database
+│   └── shared-contracts.md # Hợp đồng dùng chung giữa các service
 ├── infra/
 │   └── mysql/
 │       ├── init/           # SQL tạo 5 database rỗng khi MySQL khởi tạo lần đầu
@@ -271,6 +292,7 @@ curl http://localhost:8081/actuator/health
 - [x] CI với GitHub Actions: build, test Maven và kiểm tra docker-compose cho mọi PR
 - [x] Thiết kế schema cho 5 database, viết migration theo chuẩn Flyway ([tài liệu](docs/database-design.md))
 - [x] Tài liệu và công cụ cho nhóm: quy ước commit, git hook và CI kiểm tra ([CONTRIBUTING.md](CONTRIBUTING.md))
+- [x] Hợp đồng dùng chung trong `shared-common`: vỏ response, xử lý lỗi, sự kiện Kafka ([tài liệu](docs/shared-contracts.md))
 - [ ] Kết nối database: Spring Data JPA + Flyway + MySQL cho từng service
 - [ ] Cấu hình route cho API Gateway tới các service
 - [ ] Auth Service: đăng ký / đăng nhập, phát hành JWT
