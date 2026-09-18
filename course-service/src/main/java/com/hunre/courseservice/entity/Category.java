@@ -30,9 +30,11 @@ import java.util.List;
 @Entity
 @Table(
         name = "categories",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_categories_slug", columnNames = "slug")
+        },
         indexes = {
-                @Index(name = "idx_categories_slug", columnList = "slug", unique = true),
-                @Index(name = "idx_categories_parent_id", columnList = "parent_id")
+                @Index(name = "idx_categories_parent", columnList = "parent_id")
         }
 )
 @Getter
@@ -50,7 +52,7 @@ public class Category {
     @JoinColumn(name = "parent_id", foreignKey = @ForeignKey(name = "fk_categories_parent"))
     private Category parent;
 
-    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = false)
     @OrderBy("position ASC")
     @Builder.Default
     private List<Category> subCategories = new ArrayList<>();
