@@ -1,2 +1,9 @@
 /mvnw text eol=lf
 *.cmd text eol=crlf
+
+# Script chạy trên Linux, có CR ở cuối dòng là lỗi "bad interpreter"
+*.sh text eol=lf
+
+# Flyway tính checksum theo nội dung file, khác kiểu xuống dòng giữa các máy
+# sẽ làm migration đã chạy bị báo checksum mismatch
+*.sql text eol=lf

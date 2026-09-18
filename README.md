@@ -10,6 +10,7 @@ Hệ thống website học trực tuyến (E-Learning) được xây dựng theo
 - [Kiến trúc tổng quan](#kiến-trúc-tổng-quan)
 - [Danh sách services](#danh-sách-services)
 - [Hạ tầng](#hạ-tầng)
+- [Thiết kế database](#thiết-kế-database)
 - [Công nghệ sử dụng](#công-nghệ-sử-dụng)
 - [Cấu trúc thư mục](#cấu-trúc-thư-mục)
 - [Yêu cầu môi trường](#yêu-cầu-môi-trường)
@@ -72,6 +73,38 @@ Tài khoản MySQL mặc định: user `elearning` / mật khẩu `elearning`, r
 
 Kafka có hai listener: ứng dụng trên máy host dùng `localhost:9092`; container khác trong mạng compose dùng `kafka:29092`.
 
+## Thiết kế database
+
+Mỗi service sở hữu một database riêng và không đọc database của service khác. Chi tiết
+sơ đồ quan hệ, quy ước đặt tên và lý do các quyết định thiết kế nằm ở
+**[docs/database-design.md](docs/database-design.md)**.
+
+| Database          | Service                | Bảng chính                                                                              |
+|-------------------|------------------------|------------------------------------------------------------------------------------------|
+| `auth_db`         | `auth-service`         | `users`, `roles`, `user_roles`, `refresh_tokens`, `verification_tokens`                    |
+| `course_db`       | `course-service`       | `categories`, `courses`, `sections`, `lessons`, `lesson_resources`, `course_reviews`       |
+| `enrollment_db`   | `enrollment-service`   | `enrollments`, `lesson_progress`, `certificates`, `course_snapshots`, `outbox_events`      |
+| `quiz_db`         | `quiz-service`         | `quizzes`, `questions`, `answer_options`, `quiz_attempts`, `attempt_answers`, `attempt_answer_options` |
+| `notification_db` | `notification-service` | `notification_templates`, `notifications`, `notification_preferences`, `processed_events`  |
+
+Ba quy tắc quan trọng nhất:
+
+- **Không có khóa ngoại xuyên database.** Liên kết sang service khác chỉ lưu id kèm index,
+  tính toàn vẹn do tầng ứng dụng bảo đảm.
+- **Trạng thái dùng `VARCHAR` + `CHECK`**, không dùng `ENUM` của MySQL, để thêm giá trị mới
+  không phải `ALTER TABLE` và ánh xạ thẳng được với `@Enumerated(EnumType.STRING)`.
+- **Sự kiện đi qua bảng trung gian**: `outbox_events` bên phía gửi để không mất sự kiện khi
+  Kafka lỗi, `processed_events` bên phía nhận để một sự kiện tới hai lần không bị xử lý hai lần.
+
+File migration đặt theo chuẩn Flyway ngay trong service sở hữu schema, tại
+`<service>/src/main/resources/db/migration/`. Flyway sẽ được bật cùng bước cấu hình Spring
+Data JPA; trước mắt áp dụng thủ công để xem database:
+
+```bash
+docker compose up -d mysql
+bash infra/mysql/apply-schema.sh
+```
+
 ## Công nghệ sử dụng
 
 | Thành phần        | Công nghệ                                              |
@@ -87,7 +120,7 @@ Kafka có hai listener: ứng dụng trên máy host dùng `localhost:9092`; con
 | Build             | Maven multi-module (parent POM ở thư mục gốc)         |
 | Hạ tầng dev       | Docker Compose                                         |
 
-**Dự kiến bổ sung:** Spring Security + JWT, Spring Data JPA, Spring for Apache Kafka, Swagger/OpenAPI, Dockerfile cho từng service, frontend Next.js.
+**Dự kiến bổ sung:** Spring Security + JWT, Spring Data JPA, Flyway, Spring for Apache Kafka, Swagger/OpenAPI, Dockerfile cho từng service, frontend Next.js.
 
 ## Cấu trúc thư mục
 
@@ -96,8 +129,12 @@ e-learning-microservices/
 ├── pom.xml                 # Parent POM: khai báo module, quản lý version chung
 ├── docker-compose.yml      # MySQL + Kafka + Kafka UI
 ├── .env.example            # Mẫu biến môi trường cho docker compose
+├── docs/
+│   └── database-design.md  # Sơ đồ và thuyết minh thiết kế database
 ├── infra/
-│   └── mysql/init/         # SQL tạo database cho từng service
+│   └── mysql/
+│       ├── init/           # SQL tạo 5 database rỗng khi MySQL khởi tạo lần đầu
+│       └── apply-schema.sh # Áp dụng migration thủ công (tạm thời, tới khi bật Flyway)
 ├── mvnw / mvnw.cmd         # Maven Wrapper
 ├── .mvn/
 ├── shared-common/          # Thư viện dùng chung (JAR thường, không có main)
@@ -119,7 +156,9 @@ Mỗi service có cấu trúc chuẩn Spring Boot:
 └── src/
     ├── main/
     │   ├── java/com/hunre/<service>/
-    │   └── resources/application.properties
+    │   └── resources/
+    │       ├── application.properties
+    │       └── db/migration/   # Migration Flyway của riêng service này
     └── test/
 ```
 
@@ -199,7 +238,8 @@ curl http://localhost:8081/actuator/health
 - [x] Parent POM đa module, thêm dependency cơ bản (Web MVC, Validation, Actuator, Lombok, Spring Cloud Gateway)
 - [x] Docker Compose cho hạ tầng dev: MySQL, Kafka (KRaft), Kafka UI
 - [x] CI với GitHub Actions: build, test Maven và kiểm tra docker-compose cho mọi PR
-- [ ] Kết nối database: Spring Data JPA + MySQL cho từng service
+- [x] Thiết kế schema cho 5 database, viết migration theo chuẩn Flyway ([tài liệu](docs/database-design.md))
+- [ ] Kết nối database: Spring Data JPA + Flyway + MySQL cho từng service
 - [ ] Cấu hình route cho API Gateway tới các service
 - [ ] Auth Service: đăng ký / đăng nhập, phát hành JWT
 - [ ] Course Service: CRUD khóa học, bài học
