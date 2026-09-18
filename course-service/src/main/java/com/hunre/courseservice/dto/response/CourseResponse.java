@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -38,9 +38,9 @@ public class CourseResponse {
     private Integer studentCount;
     private BigDecimal ratingAvg;
     private Integer ratingCount;
-    private LocalDateTime publishedAt;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Instant publishedAt;
+    private Instant createdAt;
+    private Instant updatedAt;
 
     public static CourseResponse from(Course course) {
         if (course == null) {

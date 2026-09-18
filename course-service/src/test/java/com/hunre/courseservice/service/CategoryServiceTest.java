@@ -17,7 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -53,8 +53,8 @@ class CategoryServiceTest {
         when(categoryRepository.save(any(Category.class))).thenAnswer(invocation -> {
             Category c = invocation.getArgument(0);
             c.setId(1L);
-            c.setCreatedAt(LocalDateTime.now());
-            c.setUpdatedAt(LocalDateTime.now());
+            c.setCreatedAt(Instant.now());
+            c.setUpdatedAt(Instant.now());
             return c;
         });
 

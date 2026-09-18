@@ -24,7 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -170,7 +170,7 @@ class CourseControllerTest {
         CourseResponse response = CourseResponse.builder()
                 .id(1L)
                 .status(CourseStatus.PUBLISHED)
-                .publishedAt(LocalDateTime.now())
+                .publishedAt(Instant.now())
                 .build();
 
         when(courseService.changeCourseStatus(eq(1L), any(ChangeCourseStatusRequest.class)))

@@ -27,7 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -180,7 +180,7 @@ public class CourseServiceImpl implements CourseService {
 
         // Ghi nhận thời điểm xuất bản lần đầu
         if (newStatus == CourseStatus.PUBLISHED && course.getPublishedAt() == null) {
-            course.setPublishedAt(LocalDateTime.now());
+            course.setPublishedAt(Instant.now());
         }
 
         course.setStatus(newStatus);

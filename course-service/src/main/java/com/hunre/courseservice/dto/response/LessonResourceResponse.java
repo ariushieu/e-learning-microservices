@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -20,7 +20,7 @@ public class LessonResourceResponse {
     private Long lessonId;
     private String name;
     private String fileUrl;
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     public static LessonResourceResponse from(LessonResource resource) {
         if (resource == null) {

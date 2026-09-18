@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,8 +27,8 @@ public class LessonResponse {
     private Integer durationSeconds;
     private Integer position;
     private Boolean isPreview;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Instant createdAt;
+    private Instant updatedAt;
 
     @Builder.Default
     private List<LessonResourceResponse> resources = new ArrayList<>();
