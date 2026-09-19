@@ -49,10 +49,63 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Persistence (JPA / Hibernate) & Migration (Flyway) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <!--
+            spring-boot-flyway là module chứa auto-configuration của Flyway ở Spring Boot 4.
+            Thiếu nó thì flyway-core vẫn nằm trên classpath nhưng không có gì chạy migration,
+            và không có lỗi nào báo ra. Xem #14.
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-flyway</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+        </dependency>
+
+        <!--
+            Messaging (Kafka): service này chỉ nhận sự kiện, không phát.
+
+            spring-boot-kafka là module chứa KafkaAutoConfiguration ở Spring Boot 4, và nó
+            KHÔNG đi kèm org.springframework.kafka:spring-kafka. Thiếu nó thì @KafkaListener
+            không được đăng ký, service khởi động sạch sẽ và im lặng không nghe gì cả — không
+            một dòng log nào nhắc tới Kafka. Cùng loại bẫy với spring-boot-flyway ở #14.
+
+            quiz-service không vấp phải vì nó tự khai KafkaTemplate trong KafkaProducerConfig,
+            không nhờ tới auto-configuration.
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-kafka</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

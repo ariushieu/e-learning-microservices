@@ -177,6 +177,7 @@ e-learning-microservices/
 │   └── check-commit-subject.sh  # Bộ kiểm tra dùng chung cho hook và CI
 ├── docs/
 │   ├── authentication.md   # Xác thực JWT, phân quyền, đường dẫn công khai
+│   ├── notifications.md    # Luồng sự kiện Kafka và cách dựng thông báo
 │   ├── database-design.md  # Sơ đồ và thuyết minh thiết kế database
 │   └── shared-contracts.md # Hợp đồng dùng chung giữa các service
 ├── infra/
@@ -315,7 +316,7 @@ curl http://localhost:8081/actuator/health
 - [ ] Enrollment Service: ghi danh, tiến độ, phát sự kiện Kafka
 - [x] Quiz Service: câu hỏi, bài kiểm tra, chấm điểm
 - [ ] Phân quyền theo vai trò trong từng service
-- [ ] Notification Service: consume sự kiện Kafka, gửi thông báo
+- [x] Notification Service: consume sự kiện Kafka, dựng thông báo trong ứng dụng ([tài liệu](docs/notifications.md))
 - [ ] Frontend Next.js (pnpm)
 - [ ] Dockerfile cho từng service, chạy toàn bộ hệ thống bằng Docker Compose
 - [ ] Tài liệu API (Swagger / OpenAPI)
