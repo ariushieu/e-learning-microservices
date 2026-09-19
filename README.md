@@ -102,8 +102,11 @@ Ba quy tắc quan trọng nhất:
   Kafka lỗi, `processed_events` bên phía nhận để một sự kiện tới hai lần không bị xử lý hai lần.
 
 File migration đặt theo chuẩn Flyway ngay trong service sở hữu schema, tại
-`<service>/src/main/resources/db/migration/`. Flyway sẽ được bật cùng bước cấu hình Spring
-Data JPA; trước mắt áp dụng thủ công để xem database.
+`<service>/src/main/resources/db/migration/`. **Flyway chạy tự động lúc service khởi động**:
+database rỗng thì migration được áp dụng, database đã có bảng thì Flyway đặt mốc baseline và
+không đụng vào dữ liệu sẵn có.
+
+Chỉ cần `apply-schema.sh` khi muốn xem trước schema mà chưa chạy service nào.
 
 Dùng Docker:
 
@@ -179,7 +182,7 @@ e-learning-microservices/
 ├── infra/
 │   └── mysql/
 │       ├── init/           # SQL tạo 5 database rỗng khi MySQL khởi tạo lần đầu
-│       └── apply-schema.sh # Áp dụng migration thủ công (tạm thời, tới khi bật Flyway)
+│       └── apply-schema.sh # Áp dụng migration thủ công khi chưa muốn chạy service
 ├── mvnw / mvnw.cmd         # Maven Wrapper
 ├── .mvn/
 ├── shared-common/          # Thư viện dùng chung (JAR thường, không có main)
