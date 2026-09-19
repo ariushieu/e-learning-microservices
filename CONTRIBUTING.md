@@ -304,8 +304,10 @@ vì MariaDB khác MySQL ở kiểu `JSON` và vài hành vi khác.
 
 ```bash
 docker compose up -d mysql
-bash infra/mysql/apply-schema.sh
 ```
+
+Không cần chạy gì thêm: Flyway tự áp dụng migration khi service khởi động. Muốn xem schema
+trước khi chạy service thì dùng `bash infra/mysql/apply-schema.sh`.
 
 ### Thông tin kết nối
 
