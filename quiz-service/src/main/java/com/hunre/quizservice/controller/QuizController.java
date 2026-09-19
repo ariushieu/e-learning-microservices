@@ -35,28 +35,37 @@ public class QuizController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<QuizResponse> createQuiz(@Valid @RequestBody CreateQuizRequest request) {
+    public ApiResponse<QuizResponse> createQuiz(
+            @Valid @RequestBody CreateQuizRequest request,
+            AuthenticatedUser user) {
+        requireQuizManager(user);
         return ApiResponse.ok(quizService.createQuiz(request), "Tạo bài kiểm tra thành công");
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<QuizResponse> updateQuiz(@PathVariable Long id, @Valid @RequestBody UpdateQuizRequest request) {
+    public ApiResponse<QuizResponse> updateQuiz(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateQuizRequest request,
+            AuthenticatedUser user) {
+        requireQuizManager(user);
         return ApiResponse.ok(quizService.updateQuiz(id, request), "Cập nhật bài kiểm tra thành công");
     }
 
     @PatchMapping("/{id}/publish")
-    public ApiResponse<QuizResponse> publishQuiz(@PathVariable Long id) {
+    public ApiResponse<QuizResponse> publishQuiz(@PathVariable Long id, AuthenticatedUser user) {
+        requireQuizManager(user);
         return ApiResponse.ok(quizService.publishQuiz(id), "Xuất bản bài kiểm tra thành công");
     }
 
     @PatchMapping("/{id}/archive")
-    public ApiResponse<QuizResponse> archiveQuiz(@PathVariable Long id) {
+    public ApiResponse<QuizResponse> archiveQuiz(@PathVariable Long id, AuthenticatedUser user) {
+        requireQuizManager(user);
         return ApiResponse.ok(quizService.archiveQuiz(id), "Lưu trữ bài kiểm tra thành công");
     }
 
     @GetMapping("/{id}")
     public ApiResponse<QuizDetailResponse> getQuizDetail(@PathVariable Long id, AuthenticatedUser user) {
-        if (user == null || !user.hasAnyRole(Roles.INSTRUCTOR, Roles.ADMIN)) {
+        if (!user.hasAnyRole(Roles.INSTRUCTOR, Roles.ADMIN)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "Chỉ giảng viên hoặc quản trị viên mới có quyền xem chi tiết bài kiểm tra kèm đáp án");
         }
         return ApiResponse.ok(quizService.getQuizDetail(id));
@@ -73,8 +82,16 @@ public class QuizController {
     }
 
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> deleteQuiz(@PathVariable Long id) {
+    public ApiResponse<Void> deleteQuiz(@PathVariable Long id, AuthenticatedUser user) {
+        requireQuizManager(user);
         quizService.deleteQuiz(id);
         return ApiResponse.message("Đã xóa bài kiểm tra");
+    }
+
+    private void requireQuizManager(AuthenticatedUser user) {
+        if (!user.hasAnyRole(Roles.INSTRUCTOR, Roles.ADMIN)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN,
+                    "Chỉ giảng viên hoặc quản trị viên mới có quyền quản lý bài kiểm tra");
+        }
     }
 }

@@ -28,9 +28,13 @@ import java.util.Collections;
 import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -39,6 +43,8 @@ class QuizControllerTest {
 
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
+    private AuthenticatedUser instructor;
+    private AuthenticatedUser student;
 
     @Mock
     private QuizService quizService;
@@ -54,6 +60,10 @@ class QuizControllerTest {
                 .setCustomArgumentResolvers(new AuthenticatedUserArgumentResolver())
                 .build();
         objectMapper = new ObjectMapper();
+        instructor = new AuthenticatedUser(
+                1L, "teacher@hunre.edu.vn", "Thay Giao", Set.of(Roles.INSTRUCTOR));
+        student = new AuthenticatedUser(
+                10L, "student@hunre.edu.vn", "Nguyen Van A", Set.of(Roles.STUDENT));
     }
 
     @Test
@@ -82,6 +92,7 @@ class QuizControllerTest {
         when(quizService.createQuiz(any(CreateQuizRequest.class))).thenReturn(response);
 
         mockMvc.perform(post("/api/quizzes")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -100,6 +111,7 @@ class QuizControllerTest {
                 .build();
 
         mockMvc.perform(post("/api/quizzes")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest())
@@ -111,9 +123,6 @@ class QuizControllerTest {
     @Test
     @DisplayName("GET /api/quizzes/{id}: Học viên (ROLE_STUDENT) bị chặn 403 FORBIDDEN")
     void getQuizDetail_forbiddenForStudent() throws Exception {
-        AuthenticatedUser student = new AuthenticatedUser(
-                10L, "student@hunre.edu.vn", "Nguyen Van A", Set.of(Roles.STUDENT));
-
         mockMvc.perform(get("/api/quizzes/1")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, student))
                 .andExpect(status().isForbidden())
@@ -124,9 +133,6 @@ class QuizControllerTest {
     @Test
     @DisplayName("GET /api/quizzes/{id}: Giảng viên (ROLE_INSTRUCTOR) được xem chi tiết bài kiểm tra kèm đáp án")
     void getQuizDetail_successForInstructor() throws Exception {
-        AuthenticatedUser instructor = new AuthenticatedUser(
-                1L, "teacher@hunre.edu.vn", "Thay Giao", Set.of(Roles.INSTRUCTOR));
-
         QuizDetailResponse detail = QuizDetailResponse.builder()
                 .id(1L)
                 .title("Kiểm tra chương 1")
@@ -161,5 +167,58 @@ class QuizControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.id").value(1L));
+    }
+
+    @Test
+    @DisplayName("Các endpoint quản lý quiz: Học viên (ROLE_STUDENT) đều bị chặn 403 FORBIDDEN")
+    void quizManagementEndpoints_forbiddenForStudent() throws Exception {
+        CreateQuizRequest createRequest = CreateQuizRequest.builder()
+                .courseId(10L)
+                .title("Kiểm tra chương 1")
+                .timeLimitMinutes(30)
+                .passScore(new BigDecimal("60.00"))
+                .maxAttempts(3)
+                .createdBy(1L)
+                .build();
+
+        String updateRequest = """
+                {
+                  "title": "Kiểm tra chương 1 - cập nhật",
+                  "timeLimitMinutes": 45,
+                  "passScore": 60,
+                  "maxAttempts": 3
+                }
+                """;
+
+        mockMvc.perform(post("/api/quizzes")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, student)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createRequest)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        mockMvc.perform(put("/api/quizzes/1")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, student)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updateRequest))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        mockMvc.perform(patch("/api/quizzes/1/publish")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, student))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        mockMvc.perform(patch("/api/quizzes/1/archive")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, student))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        mockMvc.perform(delete("/api/quizzes/1")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, student))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        verifyNoInteractions(quizService);
     }
 }
