@@ -255,6 +255,35 @@ Không commit các thứ sau: file `.env`, mật khẩu, khóa bí mật, thư m
 riêng của IDE. Nếu thấy chúng xuất hiện trong `git status`, báo nhóm trưởng thay vì tự ý
 sửa `.gitignore`.
 
+### Nếu bạn có sửa entity hoặc migration
+
+`./mvnw verify` **không** bắt được lệch giữa entity và migration, vì test chạy trên H2 với
+`ddl-auto=create-drop` — schema được dựng từ chính entity nên hai bên không bao giờ gặp
+nhau. Lỗi chỉ lộ khi chạy với MySQL thật, thường là lúc sắp demo.
+
+Chạy thêm bước này:
+
+```bash
+docker compose up -d mysql
+./mvnw -DskipTests package
+bash scripts/verify-schema.sh
+```
+
+Script dựng database rỗng, để Flyway chạy migration, rồi khởi động từng service với
+`ddl-auto=validate`. Lệch một cột là nó báo đúng tên cột đó:
+
+```
+✘ course-service không khởi động được với schema do Flyway dựng
+
+   Entity không khớp schema:
+     Schema validation: missing column [thumbnail_url] in table [courses]
+```
+
+CI cũng chạy đúng script này ở job **Schema matches entities (MySQL)**.
+
+Service của bạn được kiểm tự động ngay khi pom khai `spring-boot-flyway`, không phải sửa
+file CI. Chưa khai thì Flyway không chạy và service bị bỏ qua.
+
 ## 7. Làm việc với database
 
 Thiết kế database đã hoàn tất, xem [docs/database-design.md](docs/database-design.md).
