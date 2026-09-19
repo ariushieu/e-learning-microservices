@@ -1,22 +1,23 @@
 # Enrollment & Progress Tracking Service
 
-Service quản lý đăng ký khóa học (Enrollment) và theo dõi tiến độ học tập (Progress Tracking) cho nền tảng E-Learning HUNRE, thuộc kiến trúc Microservices.
+Service quản lý đăng ký khóa học (Enrollment), theo dõi tiến độ học tập (Progress Tracking) và cấp chứng chỉ hoàn thành (Certificate) cho nền tảng E-Learning HUNRE, thuộc kiến trúc Microservices.
 
 ---
 
 ## 1. Công nghệ sử dụng
 - **Ngôn ngữ & Framework:** Java 21, Spring Boot 4.1.1 (Spring MVC, Spring Data JPA, Spring Validation).
 - **Cơ sở dữ liệu:** MySQL 8.4 (`enrollment_db`), Flyway Migration, H2 In-Memory DB (chạy kiểm thử tự động).
+- **Xác thực:** JWT thông qua `AuthenticatedUser` (từ `shared-common`).
 - **Giao tiếp liên dịch vụ:** 
-  - RESTful API (Client stub gọi `auth-service` và `course-service`).
-  - Transactional Outbox Pattern (`outbox_events`) sẵn sàng phát sự kiện Kafka (`enrollment.created`, `enrollment.completed`).
-- **Kiến trúc:** Layered Architecture chuẩn:
+  - Đọc bản sao chỉ đọc `course_snapshots` (nhất quán cuối đồng bộ từ `course-service`).
+  - Transactional Outbox Pattern (`outbox_events`) lưu các sự kiện `enrollment.created`, `enrollment.completed`, `certificate.issued`.
+- **Kiến trúc:** Layered Architecture:
   - `controller`: Tiếp nhận HTTP request, phân luồng và trả về `ApiResponse<T>`.
   - `service`: Chứa logic nghiệp vụ, tính toán % tiến độ bài học, transactional outbox.
   - `repository`: Tầng truy cập dữ liệu Spring Data JPA.
-  - `entity`: Định nghĩa các thực thể JPA (`Enrollment`, `LessonProgress`, `CourseSnapshot`, `OutboxEvent`).
+  - `entity`: Định nghĩa các thực thể JPA (`Enrollment`, `LessonProgress`, `Certificate`, `CourseSnapshot`, `OutboxEvent`).
   - `dto`: Request & Response DTOs với Bean Validation.
-  - `client`: Giao tiếp hoặc giả lập dữ liệu từ các service khác (`AuthClient`, `CourseClient`).
+  - `client`: Tra cứu dữ liệu từ `course_snapshots`.
 
 ---
 
@@ -27,187 +28,51 @@ Mã nguồn migration nằm tại: `src/main/resources/db/migration/V1__init_enr
 1. **`enrollments`**: Quản lý lượt đăng ký khóa học của học viên.
    - Khóa chính `id`, `user_id`, `course_id`, `status` (`ACTIVE`, `COMPLETED`, `CANCELLED`), `progress_percent`, `enrolled_at`, `completed_at`, `last_accessed_at`.
    - Ràng buộc `UNIQUE(user_id, course_id)` chống đăng ký trùng lặp.
+   - Ràng buộc `CHECK (progress_percent BETWEEN 0 AND 100)`.
 2. **`lesson_progress`**: Theo dõi trạng thái từng bài học.
    - Khóa chính `id`, `enrollment_id` (FK), `lesson_id`, `status` (`IN_PROGRESS`, `COMPLETED`), `watched_seconds`, `completed_at`.
    - Ràng buộc `UNIQUE(enrollment_id, lesson_id)`.
-3. **`course_snapshots`**: Lưu bản sao thông tin khóa học (tên, tổng số bài học `total_lessons`) giảm thiểu phụ thuộc mạng sang `course-service`.
-4. **`outbox_events`**: Bảng outbox lưu sự kiện để phát sang Apache Kafka một cách an toàn.
-5. **`course_progress`**: View tiến độ khóa học tổng hợp từ `enrollments`.
+3. **`certificates`**: Lưu chứng chỉ tốt nghiệp cấp khi hoàn thành 100% khóa học.
+   - Khóa chính `id`, `enrollment_id` (FK-UK), `certificate_code` (UK), `file_url`, `issued_at`.
+4. **`course_snapshots`**: Lưu bản sao thông tin khóa học đồng bộ qua Kafka (`title`, `slug`, `total_lessons`, `status`).
+5. **`outbox_events`**: Bảng outbox lưu sự kiện để phát sang Apache Kafka theo Transactional Outbox Pattern.
 
 ---
 
-## 3. Danh sách REST API & Hướng dẫn Test bằng cURL
+## 3. Danh sách REST API
 
 Cổng mặc định: `http://localhost:8083`
 
+> **Lưu ý xác thực:** Các endpoint nghiệp vụ yêu cầu header `Authorization: Bearer <jwt-token>`. Thông tin `userId` được tự động trích xuất từ token qua `AuthenticatedUser`. Khi chạy kiểm thử local không cần token, bật `elearning.security.enabled=false` trong `application-local.properties`.
+
 ### Module 1: Đăng ký khóa học (Enrollment)
 
-#### 1. Đăng ký khóa học mới (`POST /api/enrollments`)
-```bash
-curl -X POST http://localhost:8083/api/enrollments \
-  -H "Content-Type: application/json" \
-  -d '{
-    "courseId": 1,
-    "userId": 1
-  }'
-```
-*Phản hồi mẫu (HTTP 201):*
-```json
-{
-  "success": true,
-  "message": "Đăng ký khóa học thành công",
-  "data": {
-    "id": 1,
-    "userId": 1,
-    "courseId": 1,
-    "courseTitle": "Khóa học Lập trình Microservices #1",
-    "status": "ACTIVE",
-    "progressPercent": 0.00,
-    "enrolledAt": "2026-09-19T06:00:00Z",
-    "completedAt": null,
-    "lastAccessedAt": "2026-09-19T06:00:00Z"
-  },
-  "timestamp": "2026-09-19T06:00:00Z"
-}
-```
-
-#### 2. Lấy danh sách khóa học của học viên (`GET /api/enrollments/my-courses`)
-```bash
-curl -X GET "http://localhost:8083/api/enrollments/my-courses?userId=1&page=0&size=10"
-```
-
-#### 3. Lấy chi tiết lượt ghi danh theo ID (`GET /api/enrollments/{id}`)
-```bash
-curl -X GET http://localhost:8083/api/enrollments/1
-```
-
----
+| Phương thức | Endpoint | Mô tả |
+|---|---|---|
+| `POST` | `/api/enrollments` | Đăng ký khóa học mới (Body: `{"courseId": 1}`) |
+| `GET` | `/api/enrollments/my-courses` | Danh sách khóa học của học viên (hỗ trợ phân trang `page`, `size`) |
+| `GET` | `/api/enrollments/{id}` | Lấy chi tiết lượt ghi danh theo ID |
+| `PATCH` | `/api/enrollments/{id}/cancel` | Hủy đăng ký khóa học (chuyển sang `CANCELLED`) |
+| `DELETE` | `/api/enrollments/course/{courseId}` | Đặt lại / Hủy ghi danh để học lại từ đầu |
+| `GET` | `/api/enrollments/{id}/certificate` | Xem thông tin chứng chỉ hoàn thành khóa học |
 
 ### Module 2: Theo dõi tiến độ học (Progress Tracking)
 
-#### 1. Cập nhật tiến độ bài học (`POST /api/progress/lesson`)
-```bash
-# Đánh dấu đang học bài học số 1, đã xem 180 giây:
-curl -X POST http://localhost:8083/api/progress/lesson \
-  -H "Content-Type: application/json" \
-  -d '{
-    "courseId": 1,
-    "lessonId": 1,
-    "status": "IN_PROGRESS",
-    "watchedSeconds": 180,
-    "userId": 1
-  }'
-
-# Đánh dấu hoàn thành bài học số 1 (hệ thống sẽ tự động tính lại % của khóa học):
-curl -X POST http://localhost:8083/api/progress/lesson \
-  -H "Content-Type: application/json" \
-  -d '{
-    "courseId": 1,
-    "lessonId": 1,
-    "status": "COMPLETED",
-    "watchedSeconds": 450,
-    "userId": 1
-  }'
-```
-
-#### 2. Lấy tiến độ chi tiết khóa học (`GET /api/progress/course/{courseId}`)
-```bash
-curl -X GET "http://localhost:8083/api/progress/course/1?userId=1"
-```
-*Phản hồi mẫu:*
-```json
-{
-  "success": true,
-  "data": {
-    "courseId": 1,
-    "enrollmentId": 1,
-    "courseTitle": "Khóa học Lập trình Microservices #1",
-    "status": "ACTIVE",
-    "progressPercent": 20.00,
-    "completedLessonsCount": 1,
-    "totalLessonsCount": 5,
-    "lastAccessedAt": "2026-09-19T06:05:00Z",
-    "lessons": [
-      {
-        "lessonId": 1,
-        "status": "COMPLETED",
-        "watchedSeconds": 450,
-        "completedAt": "2026-09-19T06:05:00Z"
-      }
-    ]
-  },
-  "timestamp": "2026-09-19T06:05:00Z"
-}
-```
+| Phương thức | Endpoint | Mô tả |
+|---|---|---|
+| `POST` | `/api/progress/lesson` | Cập nhật tiến độ bài học (thời gian xem, trạng thái `IN_PROGRESS`/`COMPLETED`) |
+| `GET` | `/api/progress/course/{courseId}` | Lấy chi tiết tiến độ khóa học, % hoàn thành và danh sách bài học |
 
 ---
 
-## 4. Hướng dẫn chạy
-
-### Cách 1: Chạy trực tiếp trên máy cục bộ (Local)
-1. Khởi động hạ tầng MySQL:
-   ```bash
-   docker compose up -d mysql
-   ```
-2. Chạy service từ thư mục gốc của dự án:
-   ```bash
-   ./mvnw -pl enrollment-service -am spring-boot:run
-   ```
-
-### Cách 2: Chạy kiểm thử tự động (Unit / Integration Tests)
-```bash
-./mvnw clean test -pl enrollment-service -am
-```
-
-### Cách 3: Chạy qua Docker
-1. Build Docker image từ thư mục gốc:
-   ```bash
-   docker build -t e-learning-enrollment-service -f enrollment-service/Dockerfile .
-   ```
-2. Khởi chạy container:
-   ```bash
-   docker run -d -p 8083:8083 \
-     --name enrollment-service \
-     --env-file enrollment-service/.env.example \
-     e-learning-enrollment-service
-   ```
+## 4. Kế hoạch phát triển tiếp theo (Next Steps / PRs)
+- **Outbox Publisher Worker:** Triển khai một `@Scheduled` job định kỳ đọc các dòng chưa gửi (`published_at IS NULL`) trong bảng `outbox_events`, gửi thông điệp lên topic Kafka `KafkaTopics.ENROLLMENT_EVENTS`, và đánh dấu thời điểm `published_at`.
+- **Course Kafka Consumer:** Lắng nghe topic `course.*` từ `course-service` để tự động cập nhật bản ghi trong `course_snapshots`.
 
 ---
 
-## 5. Hướng dẫn kiểm thử toàn diện với Postman (`postman_collection.json`)
+## 5. Hướng dẫn kiểm thử với Postman
 
-Tất cả các API và kịch bản test đã được cấu hình sẵn trong file: `enrollment-service/postman_collection.json`.
+File bộ sưu tập kiểm thử: `docs/postman/enrollment-service.postman_collection.json`.
 
-### Các bước nhập (Import) và thực thi:
-1. Mở ứng dụng **Postman**.
-2. Nhấn nút **Import** (góc trên bên trái) $\rightarrow$ Chọn tab **Files** $\rightarrow$ Trỏ tới file:
-   ```
-   d:\download\BTL_T6\e-learning-microservices\enrollment-service\postman_collection.json
-   ```
-3. Sau khi Import thành công, bạn sẽ thấy collection **"HUNRE E-Learning - Enrollment & Progress Tracking Service"** với 4 nhóm kiểm thử:
-   - **🔥 1. Kịch bản kiểm thử luồng thực tế (Khóa 3 bài đạt 100%)**:
-     - *Bước 1:* Đăng ký Khóa học 3 bài (Khóa #3: Docker & Microservices) $\rightarrow$ Status `ACTIVE`, Tiến độ `0%`.
-     - *Bước 2:* Tra cứu `my-courses` của học viên.
-     - *Bước 3:* Học bài 1 (`IN_PROGRESS`, đã xem 120s).
-     - *Bước 4:* Hoàn thành bài 1 (`COMPLETED`).
-     - *Bước 5:* Kiểm tra tiến độ khóa học đạt **$33.33\%$** ($1/3$ bài).
-     - *Bước 6:* Hoàn thành bài 2 (`COMPLETED`) $\rightarrow$ Tiến độ đạt **$66.67\%$** ($2/3$ bài).
-     - *Bước 7:* Hoàn thành bài 3 (`COMPLETED` - Bài cuối).
-     - *Bước 8:* Kiểm tra chi tiết tiến độ đạt đủ **$3/3$ bài ($100.00\%$)** và trạng thái tự động chuyển thành **`COMPLETED`**.
-   - **📚 2. Module 1: Đăng ký khóa học (Enrollment APIs)**:
-     - Đăng ký thành công (`HTTP 201`).
-     - Bắt lỗi đăng ký trùng lặp (`HTTP 409 DUPLICATE_RESOURCE`).
-     - Bắt lỗi thiếu trường bắt buộc (`HTTP 400 VALIDATION_FAILED`).
-     - Lấy danh sách khóa học có phân trang (`GET /api/enrollments/my-courses`).
-     - Tra cứu chi tiết lượt ghi danh theo ID.
-   - **📈 3. Module 2: Theo dõi tiến độ học (Progress Tracking APIs)**:
-     - Cập nhật đang học bài (`IN_PROGRESS`).
-     - Cập nhật hoàn thành bài (`COMPLETED`).
-     - Lấy chi tiết tiến độ (`GET /api/progress/course/{id}`).
-     - Bắt lỗi cập nhật khi chưa đăng ký (`HTTP 404 RESOURCE_NOT_FOUND`).
-   - **⚙️ 4. Giám sát & Vận hành**:
-     - Kiểm tra sức khỏe dịch vụ qua Spring Actuator (`GET /actuator/health`).
-
-### Chạy tự động (Runner):
-- Bạn có thể nhấn chuột phải vào Collection $\rightarrow$ Chọn **Run collection** $\rightarrow$ Nhấn **Run** để Postman tự động kiểm tra toàn bộ assertions (`pm.test`) xanh 100%.
-
+Import vào Postman và chạy với biến môi trường `baseUrl = http://localhost:8083`. Khi chạy với cấu hình `elearning.security.enabled=false`, hệ thống tự động gán danh tính học viên `id=1` cho toàn bộ các request.

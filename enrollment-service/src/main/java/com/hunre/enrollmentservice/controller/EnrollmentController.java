@@ -7,8 +7,6 @@ import com.hunre.enrollmentservice.service.EnrollmentService;
 import com.hunre.sharedcommon.dto.ApiResponse;
 import com.hunre.sharedcommon.dto.PageResponse;
 import com.hunre.sharedcommon.security.AuthenticatedUser;
-import com.hunre.sharedcommon.security.JwtAuthenticationFilter;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -22,7 +20,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -40,10 +37,9 @@ public class EnrollmentController {
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<EnrollmentResponse> enroll(
             @Valid @RequestBody EnrollCourseRequest request,
-            HttpServletRequest servletRequest) {
+            AuthenticatedUser user) {
 
-        Long currentUserId = resolveUserId(servletRequest, request.getUserId());
-        EnrollmentResponse response = enrollmentService.enroll(currentUserId, request);
+        EnrollmentResponse response = enrollmentService.enroll(user.userId(), request);
         return ApiResponse.ok(response, "Đăng ký khóa học thành công");
     }
 
@@ -52,12 +48,10 @@ public class EnrollmentController {
      */
     @GetMapping("/my-courses")
     public ApiResponse<PageResponse<EnrollmentResponse>> getMyCourses(
-            HttpServletRequest servletRequest,
-            @RequestParam(required = false) Long userId,
+            AuthenticatedUser user,
             @PageableDefault(size = 10, sort = "enrolledAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        Long currentUserId = resolveUserId(servletRequest, userId);
-        PageResponse<EnrollmentResponse> response = enrollmentService.getMyCourses(currentUserId, pageable);
+        PageResponse<EnrollmentResponse> response = enrollmentService.getMyCourses(user.userId(), pageable);
         return ApiResponse.ok(response);
     }
 
@@ -67,10 +61,9 @@ public class EnrollmentController {
     @GetMapping("/{id}")
     public ApiResponse<EnrollmentResponse> getEnrollmentById(
             @PathVariable Long id,
-            HttpServletRequest servletRequest) {
+            AuthenticatedUser user) {
 
-        Long currentUserId = resolveUserId(servletRequest, null);
-        EnrollmentResponse response = enrollmentService.getEnrollmentById(id, currentUserId);
+        EnrollmentResponse response = enrollmentService.getEnrollmentById(id, user.userId());
         return ApiResponse.ok(response);
     }
 
@@ -80,11 +73,9 @@ public class EnrollmentController {
     @PatchMapping("/{id}/cancel")
     public ApiResponse<EnrollmentResponse> cancelEnrollment(
             @PathVariable Long id,
-            HttpServletRequest servletRequest,
-            @RequestParam(required = false) Long userId) {
+            AuthenticatedUser user) {
 
-        Long currentUserId = resolveUserId(servletRequest, userId);
-        EnrollmentResponse response = enrollmentService.cancelEnrollment(currentUserId, id);
+        EnrollmentResponse response = enrollmentService.cancelEnrollment(user.userId(), id);
         return ApiResponse.ok(response, "Hủy đăng ký khóa học thành công");
     }
 
@@ -94,11 +85,9 @@ public class EnrollmentController {
     @DeleteMapping("/course/{courseId}")
     public ApiResponse<Void> unenrollCourse(
             @PathVariable Long courseId,
-            HttpServletRequest servletRequest,
-            @RequestParam(required = false) Long userId) {
+            AuthenticatedUser user) {
 
-        Long currentUserId = resolveUserId(servletRequest, userId);
-        enrollmentService.unenrollCourse(currentUserId, courseId);
+        enrollmentService.unenrollCourse(user.userId(), courseId);
         return ApiResponse.message("Đã hủy ghi danh và đặt lại tiến độ khóa học thành công");
     }
 
@@ -108,21 +97,9 @@ public class EnrollmentController {
     @GetMapping("/{id}/certificate")
     public ApiResponse<CertificateResponse> getCertificate(
             @PathVariable Long id,
-            HttpServletRequest servletRequest,
-            @RequestParam(required = false) Long userId) {
+            AuthenticatedUser user) {
 
-        Long currentUserId = resolveUserId(servletRequest, userId);
-        CertificateResponse response = enrollmentService.getCertificate(currentUserId, id);
+        CertificateResponse response = enrollmentService.getCertificate(user.userId(), id);
         return ApiResponse.ok(response);
-    }
-
-    private Long resolveUserId(HttpServletRequest servletRequest, Long fallbackUserId) {
-        if (servletRequest != null) {
-            Object userObj = servletRequest.getAttribute(JwtAuthenticationFilter.USER_ATTRIBUTE);
-            if (userObj instanceof AuthenticatedUser authUser && authUser.userId() != null) {
-                return authUser.userId();
-            }
-        }
-        return fallbackUserId;
     }
 }

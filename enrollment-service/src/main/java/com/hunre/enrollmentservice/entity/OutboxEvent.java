@@ -34,7 +34,10 @@ public class OutboxEvent {
     @Column(name = "aggregate_type", nullable = false, length = 50)
     private String aggregateType;
 
-    @Column(name = "event_type", nullable = false, length = 100)
+    @Column(name = "aggregate_id", nullable = false, length = 50)
+    private String aggregateId;
+
+    @Column(name = "event_type", nullable = false, length = 80)
     private String eventType;
 
     @Column(name = "payload", nullable = false, columnDefinition = "JSON")

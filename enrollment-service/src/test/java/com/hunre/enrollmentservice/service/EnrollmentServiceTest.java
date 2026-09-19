@@ -1,10 +1,7 @@
 package com.hunre.enrollmentservice.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hunre.enrollmentservice.client.AuthClient;
 import com.hunre.enrollmentservice.client.CourseClient;
 import com.hunre.enrollmentservice.client.CourseDto;
-import com.hunre.enrollmentservice.client.UserDto;
 import com.hunre.enrollmentservice.dto.request.EnrollCourseRequest;
 import com.hunre.enrollmentservice.dto.response.EnrollmentResponse;
 import com.hunre.enrollmentservice.entity.Enrollment;
@@ -17,13 +14,11 @@ import com.hunre.sharedcommon.dto.PageResponse;
 import com.hunre.sharedcommon.exception.BusinessException;
 import com.hunre.sharedcommon.exception.DuplicateResourceException;
 import com.hunre.sharedcommon.exception.ResourceNotFoundException;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -62,12 +57,6 @@ class EnrollmentServiceTest {
     @Mock
     private CourseClient courseClient;
 
-    @Mock
-    private AuthClient authClient;
-
-    @Spy
-    private ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-
     @InjectMocks
     private EnrollmentServiceImpl enrollmentService;
 
@@ -80,7 +69,6 @@ class EnrollmentServiceTest {
                 .courseId(courseId)
                 .build();
 
-        when(authClient.getUserById(userId)).thenReturn(Optional.of(UserDto.builder().id(userId).build()));
         when(courseClient.getCourseById(courseId)).thenReturn(Optional.of(CourseDto.builder()
                 .id(courseId)
                 .title("Lập trình Spring Boot")
@@ -117,7 +105,6 @@ class EnrollmentServiceTest {
         Long courseId = 100L;
         EnrollCourseRequest request = EnrollCourseRequest.builder().courseId(courseId).build();
 
-        when(authClient.getUserById(userId)).thenReturn(Optional.of(UserDto.builder().id(userId).build()));
         when(courseClient.getCourseById(courseId)).thenReturn(Optional.of(CourseDto.builder()
                 .id(courseId)
                 .title("Lập trình Spring Boot")
@@ -136,7 +123,6 @@ class EnrollmentServiceTest {
         Long courseId = 100L;
         EnrollCourseRequest request = EnrollCourseRequest.builder().courseId(courseId).build();
 
-        when(authClient.getUserById(userId)).thenReturn(Optional.of(UserDto.builder().id(userId).build()));
         when(courseClient.getCourseById(courseId)).thenReturn(Optional.of(CourseDto.builder()
                 .id(courseId)
                 .title("Khóa học nháp")
@@ -155,7 +141,6 @@ class EnrollmentServiceTest {
         Long courseId = 999L;
         EnrollCourseRequest request = EnrollCourseRequest.builder().courseId(courseId).build();
 
-        when(authClient.getUserById(userId)).thenReturn(Optional.of(UserDto.builder().id(userId).build()));
         when(courseClient.getCourseById(courseId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> enrollmentService.enroll(userId, request))

@@ -1,7 +1,5 @@
 package com.hunre.enrollmentservice.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hunre.enrollmentservice.client.CourseClient;
 import com.hunre.enrollmentservice.client.CourseDto;
 import com.hunre.enrollmentservice.dto.request.UpdateLessonProgressRequest;
@@ -29,13 +27,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -49,20 +48,23 @@ public class ProgressServiceImpl implements ProgressService {
     private final CertificateRepository certificateRepository;
     private final OutboxEventRepository outboxEventRepository;
     private final CourseClient courseClient;
-    private final ObjectMapper objectMapper;
+
+    private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     @Override
     @Transactional
     public LessonProgressResponse updateLessonProgress(Long currentUserId, UpdateLessonProgressRequest request) {
-        Long effectiveUserId = resolveUserId(currentUserId, request.getUserId());
+        if (currentUserId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "Người dùng chưa được xác thực");
+        }
         Long courseId = request.getCourseId();
         Long lessonId = request.getLessonId();
 
         // 1. Kiểm tra học viên đã ghi danh khóa học chưa
-        Enrollment enrollment = enrollmentRepository.findByUserIdAndCourseId(effectiveUserId, courseId)
+        Enrollment enrollment = enrollmentRepository.findByUserIdAndCourseId(currentUserId, courseId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Không tìm thấy lượt ghi danh của học viên %s cho khóa học %s"
-                                .formatted(effectiveUserId, courseId)));
+                                .formatted(currentUserId, courseId)));
 
         if (enrollment.getStatus() == EnrollmentStatus.CANCELLED) {
             throw new BusinessException(ErrorCode.BUSINESS_RULE_VIOLATED,
@@ -102,10 +104,7 @@ public class ProgressServiceImpl implements ProgressService {
                 enrollment.getId(), LessonProgressStatus.COMPLETED);
 
         BigDecimal progressPercent;
-        if (totalLessons <= 0) {
-            progressPercent = BigDecimal.ZERO;
-        } else if (completedLessons >= totalLessons) {
-            // Khi đã hoàn thành tất cả số bài học của khóa học (hoặc nhiều hơn), tiến độ đạt 100.00%
+        if (completedLessons >= totalLessons) {
             progressPercent = BigDecimal.valueOf(100).setScale(2, RoundingMode.HALF_UP);
         } else {
             progressPercent = BigDecimal.valueOf(completedLessons)
@@ -133,7 +132,7 @@ public class ProgressServiceImpl implements ProgressService {
         enrollmentRepository.save(enrollment);
 
         log.info("Cập nhật tiến độ: user={}, course={}, lesson={}, courseProgress={}%",
-                effectiveUserId, courseId, lessonId, progressPercent);
+                currentUserId, courseId, lessonId, progressPercent);
 
         return LessonProgressResponse.from(savedLessonProgress);
     }
@@ -141,12 +140,14 @@ public class ProgressServiceImpl implements ProgressService {
     @Override
     @Transactional
     public CourseProgressResponse getCourseProgress(Long currentUserId, Long courseId) {
-        Long effectiveUserId = resolveUserId(currentUserId, null);
+        if (currentUserId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "Người dùng chưa được xác thực");
+        }
 
-        Enrollment enrollment = enrollmentRepository.findByUserIdAndCourseId(effectiveUserId, courseId)
+        Enrollment enrollment = enrollmentRepository.findByUserIdAndCourseId(currentUserId, courseId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Không tìm thấy lượt ghi danh của học viên %s cho khóa học %s"
-                                .formatted(effectiveUserId, courseId)));
+                                .formatted(currentUserId, courseId)));
 
         List<LessonProgress> progresses = lessonProgressRepository.findAllByEnrollmentId(enrollment.getId());
         List<LessonProgressResponse> lessonResponses = progresses.stream()
@@ -158,11 +159,9 @@ public class ProgressServiceImpl implements ProgressService {
                 .filter(p -> p.getStatus() == LessonProgressStatus.COMPLETED)
                 .count();
 
-        // Tự động chuẩn hóa và đồng bộ lại tiến độ của enrollment nếu có sự chênh lệch
+        // Chuẩn hóa và đồng bộ lại tiến độ của enrollment nếu có sự chênh lệch
         BigDecimal accuratePercent;
-        if (totalLessons <= 0) {
-            accuratePercent = BigDecimal.ZERO;
-        } else if (completedCount >= totalLessons) {
+        if (completedCount >= totalLessons) {
             accuratePercent = BigDecimal.valueOf(100).setScale(2, RoundingMode.HALF_UP);
         } else {
             accuratePercent = BigDecimal.valueOf(completedCount)
@@ -192,9 +191,11 @@ public class ProgressServiceImpl implements ProgressService {
                     .orElse(null);
         }
 
-        String courseTitle = courseClient.getCourseById(courseId)
-                .map(CourseDto::getTitle)
-                .orElse("Khóa học #" + courseId);
+        String courseTitle = courseSnapshotRepository.findById(courseId)
+                .map(CourseSnapshot::getTitle)
+                .orElseGet(() -> courseClient.getCourseById(courseId)
+                        .map(CourseDto::getTitle)
+                        .orElse("Khóa học #" + courseId));
 
         return CourseProgressResponse.builder()
                 .courseId(courseId)
@@ -228,53 +229,36 @@ public class ProgressServiceImpl implements ProgressService {
                 savedCert = certificate;
             }
 
-            String courseTitle = courseClient.getCourseById(enrollment.getCourseId())
-                    .map(CourseDto::getTitle)
-                    .orElse("Khóa học #" + enrollment.getCourseId());
+            String courseTitle = courseSnapshotRepository.findById(enrollment.getCourseId())
+                    .map(CourseSnapshot::getTitle)
+                    .orElseGet(() -> courseClient.getCourseById(enrollment.getCourseId())
+                            .map(CourseDto::getTitle)
+                            .orElse("Khóa học #" + enrollment.getCourseId()));
 
             saveCertificateIssuedOutboxEvent(savedCert, enrollment, courseTitle);
-            log.info("Đã cấp chứng chỉ {} cho học viên id={} hoàn thành khóa học id={}", certCode, enrollment.getUserId(), enrollment.getCourseId());
+            log.info("Đã cấp chứng chỉ {} cho học viên id={} hoàn thành khóa học id={}",
+                    certCode, enrollment.getUserId(), enrollment.getCourseId());
         }
     }
 
     private int resolveTotalLessons(Long courseId) {
         if (courseId == null) {
-            return 3;
+            throw new ResourceNotFoundException("Thiếu ID khóa học");
         }
-
-        // 1. Lấy từ client hoặc snapshot khóa học
-        Optional<CourseDto> courseDtoOpt = courseClient.getCourseById(courseId);
-        if (courseDtoOpt.isPresent() && courseDtoOpt.get().getTotalLessons() != null
-                && courseDtoOpt.get().getTotalLessons() > 0) {
-            return courseDtoOpt.get().getTotalLessons();
-        }
-
-        // 2. Lấy từ bảng course_snapshots
-        Optional<CourseSnapshot> snapshotOpt = courseSnapshotRepository.findById(courseId);
-        if (snapshotOpt.isPresent() && snapshotOpt.get().getTotalLessons() != null
-                && snapshotOpt.get().getTotalLessons() > 0) {
-            return snapshotOpt.get().getTotalLessons();
-        }
-
-        // 3. Fallback mặc định an toàn cho khóa học mới
-        return 3;
-    }
-
-    private Long resolveUserId(Long currentUserId, Long requestUserId) {
-        if (currentUserId != null) {
-            return currentUserId;
-        }
-        if (requestUserId != null) {
-            return requestUserId;
-        }
-        throw new BusinessException(ErrorCode.BAD_REQUEST, "Thiếu thông tin ID người dùng (userId)");
+        return courseSnapshotRepository.findById(courseId)
+                .map(CourseSnapshot::getTotalLessons)
+                .filter(t -> t != null && t > 0)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Không tìm thấy thông tin khóa học hoặc khóa học chưa có bài học: id=" + courseId));
     }
 
     private void saveEnrollmentCompletedOutboxEvent(Enrollment enrollment) {
         try {
-            String courseTitle = courseClient.getCourseById(enrollment.getCourseId())
-                    .map(CourseDto::getTitle)
-                    .orElse("Khóa học #" + enrollment.getCourseId());
+            String courseTitle = courseSnapshotRepository.findById(enrollment.getCourseId())
+                    .map(CourseSnapshot::getTitle)
+                    .orElseGet(() -> courseClient.getCourseById(enrollment.getCourseId())
+                            .map(CourseDto::getTitle)
+                            .orElse("Khóa học #" + enrollment.getCourseId()));
 
             EnrollmentCompletedEvent event = EnrollmentCompletedEvent.of(
                     enrollment.getId(),
@@ -286,14 +270,16 @@ public class ProgressServiceImpl implements ProgressService {
 
             OutboxEvent outbox = OutboxEvent.builder()
                     .eventId(event.eventId())
-                    .aggregateType("enrollment")
+                    .aggregateType("ENROLLMENT")
+                    .aggregateId(String.valueOf(enrollment.getId()))
                     .eventType(event.eventType())
                     .payload(objectMapper.writeValueAsString(event))
                     .build();
 
             outboxEventRepository.save(outbox);
-        } catch (JsonProcessingException e) {
+        } catch (Exception e) {
             log.error("Lỗi tuần tự hóa EnrollmentCompletedEvent sang JSON", e);
+            throw new IllegalStateException("Lỗi tuần tự hóa sự kiện outbox: " + e.getMessage(), e);
         }
     }
 
@@ -311,14 +297,16 @@ public class ProgressServiceImpl implements ProgressService {
 
             OutboxEvent outbox = OutboxEvent.builder()
                     .eventId(event.eventId())
-                    .aggregateType("certificate")
+                    .aggregateType("CERTIFICATE")
+                    .aggregateId(String.valueOf(certificate.getId() != null ? certificate.getId() : enrollment.getId()))
                     .eventType(event.eventType())
                     .payload(objectMapper.writeValueAsString(event))
                     .build();
 
             outboxEventRepository.save(outbox);
-        } catch (JsonProcessingException e) {
+        } catch (Exception e) {
             log.error("Lỗi tuần tự hóa CertificateIssuedEvent sang JSON", e);
+            throw new IllegalStateException("Lỗi tuần tự hóa sự kiện outbox: " + e.getMessage(), e);
         }
     }
 }

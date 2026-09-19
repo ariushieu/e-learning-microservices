@@ -31,7 +31,7 @@ public class Certificate {
     @Column(name = "enrollment_id", nullable = false, unique = true)
     private Long enrollmentId;
 
-    @Column(name = "certificate_code", nullable = false, unique = true, length = 50)
+    @Column(name = "certificate_code", nullable = false, unique = true, length = 40)
     private String certificateCode;
 
     @Column(name = "file_url", length = 500)

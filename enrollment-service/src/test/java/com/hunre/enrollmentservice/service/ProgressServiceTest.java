@@ -1,6 +1,5 @@
 package com.hunre.enrollmentservice.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hunre.enrollmentservice.client.CourseClient;
 import com.hunre.enrollmentservice.client.CourseDto;
 import com.hunre.enrollmentservice.dto.request.UpdateLessonProgressRequest;
@@ -16,14 +15,12 @@ import com.hunre.enrollmentservice.repository.EnrollmentRepository;
 import com.hunre.enrollmentservice.repository.LessonProgressRepository;
 import com.hunre.enrollmentservice.repository.OutboxEventRepository;
 import com.hunre.enrollmentservice.service.impl.ProgressServiceImpl;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.hunre.sharedcommon.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
@@ -58,9 +55,6 @@ class ProgressServiceTest {
 
     @Mock
     private CourseClient courseClient;
-
-    @Spy
-    private ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     @InjectMocks
     private ProgressServiceImpl progressService;
@@ -169,6 +163,11 @@ class ProgressServiceTest {
                 .id(courseId)
                 .title("Microservices")
                 .build()));
+        when(certificateRepository.save(any())).thenAnswer(i -> {
+            com.hunre.enrollmentservice.entity.Certificate c = i.getArgument(0);
+            c.setId(100L);
+            return c;
+        });
 
         LessonProgressResponse response = progressService.updateLessonProgress(userId, request);
 

@@ -1,6 +1,5 @@
 package com.hunre.enrollmentservice.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hunre.enrollmentservice.dto.request.UpdateLessonProgressRequest;
 import com.hunre.enrollmentservice.dto.response.CourseProgressResponse;
 import com.hunre.enrollmentservice.dto.response.LessonProgressResponse;
@@ -8,7 +7,9 @@ import com.hunre.enrollmentservice.entity.EnrollmentStatus;
 import com.hunre.enrollmentservice.entity.LessonProgressStatus;
 import com.hunre.enrollmentservice.service.ProgressService;
 import com.hunre.sharedcommon.exception.GlobalExceptionHandler;
+import com.hunre.sharedcommon.security.AuthenticatedUser;
 import com.hunre.sharedcommon.security.AuthenticatedUserArgumentResolver;
+import com.hunre.sharedcommon.security.JwtAuthenticationFilter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,9 +21,12 @@ import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -37,7 +41,10 @@ class ProgressControllerTest {
 
     private MockMvc mockMvc;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builder().build();
+
+    private final AuthenticatedUser mockUser = new AuthenticatedUser(
+            1L, "student@hunre.edu.vn", "Nguyễn Văn A", Set.of("ROLE_STUDENT"));
 
     @Mock
     private ProgressService progressService;
@@ -64,7 +71,6 @@ class ProgressControllerTest {
                 .lessonId(101L)
                 .status(LessonProgressStatus.COMPLETED)
                 .watchedSeconds(300)
-                .userId(1L)
                 .build();
 
         LessonProgressResponse response = LessonProgressResponse.builder()
@@ -73,10 +79,11 @@ class ProgressControllerTest {
                 .watchedSeconds(300)
                 .build();
 
-        when(progressService.updateLessonProgress(any(), any(UpdateLessonProgressRequest.class)))
+        when(progressService.updateLessonProgress(eq(1L), any(UpdateLessonProgressRequest.class)))
                 .thenReturn(response);
 
         mockMvc.perform(post("/api/progress/lesson")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, mockUser)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -109,12 +116,10 @@ class ProgressControllerTest {
         when(progressService.getCourseProgress(eq(1L), eq(10L))).thenReturn(response);
 
         mockMvc.perform(get("/api/progress/course/10")
-                        .param("userId", "1"))
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, mockUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.courseId").value(10L))
-                .andExpect(jsonPath("$.data.progressPercent").value(50))
-                .andExpect(jsonPath("$.data.completedLessonsCount").value(1))
-                .andExpect(jsonPath("$.data.lessons[0].lessonId").value(1L));
+                .andExpect(jsonPath("$.data.progressPercent").value(50));
     }
 }

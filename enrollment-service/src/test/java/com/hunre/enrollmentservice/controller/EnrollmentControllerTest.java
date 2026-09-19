@@ -1,13 +1,15 @@
 package com.hunre.enrollmentservice.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hunre.enrollmentservice.dto.request.EnrollCourseRequest;
+import com.hunre.enrollmentservice.dto.response.CertificateResponse;
 import com.hunre.enrollmentservice.dto.response.EnrollmentResponse;
 import com.hunre.enrollmentservice.entity.EnrollmentStatus;
 import com.hunre.enrollmentservice.service.EnrollmentService;
 import com.hunre.sharedcommon.dto.PageResponse;
 import com.hunre.sharedcommon.exception.GlobalExceptionHandler;
+import com.hunre.sharedcommon.security.AuthenticatedUser;
 import com.hunre.sharedcommon.security.AuthenticatedUserArgumentResolver;
+import com.hunre.sharedcommon.security.JwtAuthenticationFilter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,15 +22,20 @@ import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -38,7 +45,10 @@ class EnrollmentControllerTest {
 
     private MockMvc mockMvc;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builder().build();
+
+    private final AuthenticatedUser mockUser = new AuthenticatedUser(
+            1L, "student@hunre.edu.vn", "Nguyễn Văn A", Set.of("ROLE_STUDENT"));
 
     @Mock
     private EnrollmentService enrollmentService;
@@ -62,7 +72,6 @@ class EnrollmentControllerTest {
     void enroll_success() throws Exception {
         EnrollCourseRequest request = EnrollCourseRequest.builder()
                 .courseId(10L)
-                .userId(1L)
                 .build();
 
         EnrollmentResponse response = EnrollmentResponse.builder()
@@ -75,9 +84,10 @@ class EnrollmentControllerTest {
                 .enrolledAt(Instant.now())
                 .build();
 
-        when(enrollmentService.enroll(any(), any(EnrollCourseRequest.class))).thenReturn(response);
+        when(enrollmentService.enroll(eq(1L), any(EnrollCourseRequest.class))).thenReturn(response);
 
         mockMvc.perform(post("/api/enrollments")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, mockUser)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -96,6 +106,7 @@ class EnrollmentControllerTest {
                 .build();
 
         mockMvc.perform(post("/api/enrollments")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, mockUser)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -120,7 +131,7 @@ class EnrollmentControllerTest {
         when(enrollmentService.getMyCourses(eq(1L), any(Pageable.class))).thenReturn(page);
 
         mockMvc.perform(get("/api/enrollments/my-courses")
-                        .param("userId", "1"))
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, mockUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.content[0].courseId").value(10L))
@@ -139,9 +150,10 @@ class EnrollmentControllerTest {
                 .progressPercent(BigDecimal.valueOf(100))
                 .build();
 
-        when(enrollmentService.getEnrollmentById(eq(5L), any())).thenReturn(response);
+        when(enrollmentService.getEnrollmentById(eq(5L), eq(1L))).thenReturn(response);
 
-        mockMvc.perform(get("/api/enrollments/5"))
+        mockMvc.perform(get("/api/enrollments/5")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, mockUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.id").value(5L))
@@ -162,8 +174,8 @@ class EnrollmentControllerTest {
 
         when(enrollmentService.cancelEnrollment(eq(1L), eq(5L))).thenReturn(response);
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/enrollments/5/cancel")
-                        .param("userId", "1"))
+        mockMvc.perform(patch("/api/enrollments/5/cancel")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, mockUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.status").value("CANCELLED"));
@@ -172,8 +184,8 @@ class EnrollmentControllerTest {
     @Test
     @DisplayName("DELETE /api/enrollments/course/{courseId} - Reset hoặc hủy ghi danh khóa học")
     void unenrollCourse_success() throws Exception {
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/enrollments/course/10")
-                        .param("userId", "1"))
+        mockMvc.perform(delete("/api/enrollments/course/10")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, mockUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Đã hủy ghi danh và đặt lại tiến độ khóa học thành công"));
@@ -182,19 +194,18 @@ class EnrollmentControllerTest {
     @Test
     @DisplayName("GET /api/enrollments/{id}/certificate - Lấy chứng chỉ tốt nghiệp")
     void getCertificate_success() throws Exception {
-        com.hunre.enrollmentservice.dto.response.CertificateResponse certResponse =
-                com.hunre.enrollmentservice.dto.response.CertificateResponse.builder()
-                        .id(1L)
-                        .enrollmentId(5L)
-                        .certificateCode("CERT-2026-C10-U1-TEST")
-                        .fileUrl("/certificates/CERT-2026-C10-U1-TEST.pdf")
-                        .issuedAt(Instant.now())
-                        .build();
+        CertificateResponse certResponse = CertificateResponse.builder()
+                .id(1L)
+                .enrollmentId(5L)
+                .certificateCode("CERT-2026-C10-U1-TEST")
+                .fileUrl("/certificates/CERT-2026-C10-U1-TEST.pdf")
+                .issuedAt(Instant.now())
+                .build();
 
         when(enrollmentService.getCertificate(eq(1L), eq(5L))).thenReturn(certResponse);
 
         mockMvc.perform(get("/api/enrollments/5/certificate")
-                        .param("userId", "1"))
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, mockUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.certificateCode").value("CERT-2026-C10-U1-TEST"));

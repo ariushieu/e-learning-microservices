@@ -34,9 +34,4 @@ public class UpdateLessonProgressRequest {
     @Min(value = 0, message = "Thời lượng xem phải lớn hơn hoặc bằng 0")
     @Builder.Default
     private Integer watchedSeconds = 0;
-
-    /**
-     * Tùy chọn truyền userId khi test thủ công không qua JWT.
-     */
-    private Long userId;
 }

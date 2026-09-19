@@ -21,10 +21,4 @@ public class EnrollCourseRequest {
     @NotNull(message = "ID khóa học không được để trống")
     @Positive(message = "ID khóa học phải là số dương")
     private Long courseId;
-
-    /**
-     * Tùy chọn truyền userId khi test thủ công không qua JWT.
-     * Nếu có JWT token, hệ thống sẽ ưu tiên dùng userId từ token.
-     */
-    private Long userId;
 }

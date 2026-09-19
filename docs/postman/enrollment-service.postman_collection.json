@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "b7891234-5678-4321-9876-enrollment-service-v3",
     "name": "HUNRE E-Learning - Enrollment & Progress Tracking Service",
-    "description": "Bộ sưu tập kiểm thử toàn diện cho Enrollment & Progress Tracking Service (Port 8083).\nBao gồm đầy đủ các kịch bản: Ghi danh, Hủy ghi danh, Tái kích hoạt, Cập nhật tiến độ động (Khóa 3 bài đạt đúng 33.33%, 66.67%, 100.00%), Cấp chứng chỉ số và Bắt lỗi chuẩn mực.",
+    "description": "Bộ sưu tập kiểm thử tự động cho Enrollment & Progress Tracking Service (E-Learning Microservices), đồng bộ với AuthenticatedUser (JWT).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -12,7 +12,6 @@
       "type": "string"
     },
     {
-      "key": "demoUserId",
       "value": "1",
       "type": "string"
     },
@@ -55,14 +54,15 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/enrollments/course/{{testCourseId}}?userId={{demoUserId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "enrollments", "course", "{{testCourseId}}"],
-              "query": [
-                {
-                  "key": "userId",
-                  "value": "{{demoUserId}}"
-                }
+              "raw": "{{baseUrl}}/api/enrollments/course/{{testCourseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "enrollments",
+                "course",
+                "{{testCourseId}}"
               ]
             },
             "description": "Xóa sạch dữ liệu kiểm thử của khóa học để bất kỳ lần chạy nào cũng có thể kiểm thử đăng ký mới."
@@ -101,13 +101,17 @@
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"courseId\": {{testCourseId}},\n  \"userId\": {{demoUserId}}\n}"
+              "mode": "raw"
             },
             "url": {
               "raw": "{{baseUrl}}/api/enrollments",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "enrollments"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "enrollments"
+              ]
             },
             "description": "Đăng ký khóa học 3 bài học cho học viên."
           }
@@ -139,14 +143,16 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/enrollments/my-courses?userId={{demoUserId}}&page=0&size=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "enrollments", "my-courses"],
+              "raw": "{{baseUrl}}/api/enrollments/my-courses?page=0&size=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "enrollments",
+                "my-courses"
+              ],
               "query": [
-                {
-                  "key": "userId",
-                  "value": "{{demoUserId}}"
-                },
                 {
                   "key": "page",
                   "value": "0"
@@ -190,13 +196,18 @@
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"courseId\": {{testCourseId}},\n  \"lessonId\": 1,\n  \"status\": \"IN_PROGRESS\",\n  \"watchedSeconds\": 120,\n  \"userId\": {{demoUserId}}\n}"
+              "mode": "raw"
             },
             "url": {
               "raw": "{{baseUrl}}/api/progress/lesson",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "progress", "lesson"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "progress",
+                "lesson"
+              ]
             },
             "description": "Cập nhật thời gian xem bài học 1."
           }
@@ -230,13 +241,18 @@
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"courseId\": {{testCourseId}},\n  \"lessonId\": 1,\n  \"status\": \"COMPLETED\",\n  \"watchedSeconds\": 600,\n  \"userId\": {{demoUserId}}\n}"
+              "mode": "raw"
             },
             "url": {
               "raw": "{{baseUrl}}/api/progress/lesson",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "progress", "lesson"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "progress",
+                "lesson"
+              ]
             },
             "description": "Đánh dấu hoàn thành bài học số 1."
           }
@@ -267,14 +283,15 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/progress/course/{{testCourseId}}?userId={{demoUserId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "progress", "course", "{{testCourseId}}"],
-              "query": [
-                {
-                  "key": "userId",
-                  "value": "{{demoUserId}}"
-                }
+              "raw": "{{baseUrl}}/api/progress/course/{{testCourseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "progress",
+                "course",
+                "{{testCourseId}}"
               ]
             },
             "description": "Kiểm tra tiến độ sau bài 1."
@@ -309,13 +326,18 @@
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"courseId\": {{testCourseId}},\n  \"lessonId\": 2,\n  \"status\": \"COMPLETED\",\n  \"watchedSeconds\": 600,\n  \"userId\": {{demoUserId}}\n}"
+              "mode": "raw"
             },
             "url": {
               "raw": "{{baseUrl}}/api/progress/lesson",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "progress", "lesson"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "progress",
+                "lesson"
+              ]
             },
             "description": "Đánh dấu hoàn thành bài học 2."
           }
@@ -349,13 +371,18 @@
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"courseId\": {{testCourseId}},\n  \"lessonId\": 3,\n  \"status\": \"COMPLETED\",\n  \"watchedSeconds\": 600,\n  \"userId\": {{demoUserId}}\n}"
+              "mode": "raw"
             },
             "url": {
               "raw": "{{baseUrl}}/api/progress/lesson",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "progress", "lesson"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "progress",
+                "lesson"
+              ]
             },
             "description": "Hoàn thành bài học cuối cùng của khóa học."
           }
@@ -388,14 +415,15 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/progress/course/{{testCourseId}}?userId={{demoUserId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "progress", "course", "{{testCourseId}}"],
-              "query": [
-                {
-                  "key": "userId",
-                  "value": "{{demoUserId}}"
-                }
+              "raw": "{{baseUrl}}/api/progress/course/{{testCourseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "progress",
+                "course",
+                "{{testCourseId}}"
               ]
             },
             "description": "Xác nhận khóa học đạt 100% và đã được cấp chứng chỉ."
@@ -426,14 +454,15 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/enrollments/{{activeEnrollmentId}}/certificate?userId={{demoUserId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "enrollments", "{{activeEnrollmentId}}", "certificate"],
-              "query": [
-                {
-                  "key": "userId",
-                  "value": "{{demoUserId}}"
-                }
+              "raw": "{{baseUrl}}/api/enrollments/{{activeEnrollmentId}}/certificate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "enrollments",
+                "{{activeEnrollmentId}}",
+                "certificate"
               ]
             },
             "description": "Lấy thông tin chi tiết chứng chỉ hoàn thành khóa học từ database."
@@ -474,13 +503,17 @@
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"courseId\": {{testCourseId}},\n  \"userId\": {{demoUserId}}\n}"
+              "mode": "raw"
             },
             "url": {
               "raw": "{{baseUrl}}/api/enrollments",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "enrollments"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "enrollments"
+              ]
             },
             "description": "Cố tình ghi danh lại khóa học đã đăng ký để kiểm tra phản hồi 409 Conflict."
           }
@@ -519,8 +552,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/enrollments",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "enrollments"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "enrollments"
+              ]
             },
             "description": "Gửi request thiếu trường courseId bắt buộc."
           }
@@ -555,12 +593,18 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"courseId\": 9999,\n  \"lessonId\": 1,\n  \"status\": \"COMPLETED\",\n  \"watchedSeconds\": 300,\n  \"userId\": 9999\n}"
+              "raw": "{\n  \"courseId\": 9999,\n  \"lessonId\": 1,\n  \"status\": \"COMPLETED\",\n  \"watchedSeconds\": 300\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/progress/lesson",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "progress", "lesson"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "progress",
+                "lesson"
+              ]
             },
             "description": "Thử cập nhật bài học cho khóa học mà học viên chưa từng đăng ký."
           }
@@ -589,14 +633,15 @@
             "method": "PATCH",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/enrollments/{{activeEnrollmentId}}/cancel?userId={{demoUserId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "enrollments", "{{activeEnrollmentId}}", "cancel"],
-              "query": [
-                {
-                  "key": "userId",
-                  "value": "{{demoUserId}}"
-                }
+              "raw": "{{baseUrl}}/api/enrollments/{{activeEnrollmentId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "enrollments",
+                "{{activeEnrollmentId}}",
+                "cancel"
               ]
             },
             "description": "Hủy đăng ký khóa học đã tham gia."
@@ -632,8 +677,13 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/actuator/health",
-              "host": ["{{baseUrl}}"],
-              "path": ["actuator", "health"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
             },
             "description": "Endpoint kiểm tra tình trạng dịch vụ qua Spring Boot Actuator."
           }

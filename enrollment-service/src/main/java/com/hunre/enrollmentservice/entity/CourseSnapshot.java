@@ -32,12 +32,22 @@ public class CourseSnapshot {
     @Column(name = "slug", length = 220)
     private String slug;
 
+    @Column(name = "thumbnail_url", length = 500)
+    private String thumbnailUrl;
+
     @Column(name = "instructor_id")
     private Long instructorId;
+
+    @Column(name = "instructor_name", length = 150)
+    private String instructorName;
 
     @Column(name = "total_lessons", nullable = false)
     @Builder.Default
     private Integer totalLessons = 0;
+
+    @Column(name = "status", nullable = false, length = 20)
+    @Builder.Default
+    private String status = "PUBLISHED";
 
     @Column(name = "synced_at", nullable = false)
     private Instant syncedAt;

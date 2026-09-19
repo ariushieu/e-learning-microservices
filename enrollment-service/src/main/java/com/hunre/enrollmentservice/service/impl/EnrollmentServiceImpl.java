@@ -1,8 +1,5 @@
 package com.hunre.enrollmentservice.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hunre.enrollmentservice.client.AuthClient;
 import com.hunre.enrollmentservice.client.CourseClient;
 import com.hunre.enrollmentservice.client.CourseDto;
 import com.hunre.enrollmentservice.dto.request.EnrollCourseRequest;
@@ -31,6 +28,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -48,31 +47,28 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     private final CertificateRepository certificateRepository;
     private final OutboxEventRepository outboxEventRepository;
     private final CourseClient courseClient;
-    private final AuthClient authClient;
-    private final ObjectMapper objectMapper;
+
+    private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     @Override
     @Transactional
     public EnrollmentResponse enroll(Long currentUserId, EnrollCourseRequest request) {
-        Long effectiveUserId = resolveUserId(currentUserId, request.getUserId());
+        if (currentUserId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "Người dùng chưa được xác thực");
+        }
         Long courseId = request.getCourseId();
 
-        // 1. Kiểm tra học viên tồn tại bên auth-service
-        authClient.getUserById(effectiveUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("người dùng", "id", effectiveUserId));
-
-        // 2. Kiểm tra khóa học tồn tại bên course-service
+        // 1. Kiểm tra khóa học tồn tại trong snapshot và đã PUBLISHED
         CourseDto course = courseClient.getCourseById(courseId)
                 .orElseThrow(() -> new ResourceNotFoundException("khóa học", "id", courseId));
 
-        // 3. Kiểm tra trạng thái xuất bản của khóa học
         if (!"PUBLISHED".equalsIgnoreCase(course.getStatus())) {
             throw new BusinessException(ErrorCode.BUSINESS_RULE_VIOLATED,
                     "Khóa học chưa được xuất bản nên không thể ghi danh");
         }
 
-        // 4. Kiểm tra học viên đã đăng ký khóa học này chưa (hoặc đã bị hủy)
-        Optional<Enrollment> existingOpt = enrollmentRepository.findByUserIdAndCourseId(effectiveUserId, courseId);
+        // 2. Kiểm tra học viên đã đăng ký khóa học này chưa (hoặc đã bị hủy)
+        Optional<Enrollment> existingOpt = enrollmentRepository.findByUserIdAndCourseId(currentUserId, courseId);
         if (existingOpt.isPresent()) {
             Enrollment existing = existingOpt.get();
             if (existing.getStatus() == EnrollmentStatus.CANCELLED) {
@@ -81,45 +77,19 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 existing.setLastAccessedAt(Instant.now());
                 Enrollment reactivated = enrollmentRepository.save(existing);
                 saveEnrollmentCreatedOutboxEvent(reactivated, course.getTitle());
-                log.info("Học viên id={} kích hoạt lại lượt ghi danh khóa học id={}", effectiveUserId, courseId);
+                log.info("Học viên id={} kích hoạt lại lượt ghi danh khóa học id={}", currentUserId, courseId);
                 return EnrollmentResponse.from(reactivated, course.getTitle());
             }
             throw new DuplicateResourceException("học viên đã đăng ký khóa học này");
         }
-        if (enrollmentRepository.existsByUserIdAndCourseId(effectiveUserId, courseId)) {
+        if (enrollmentRepository.existsByUserIdAndCourseId(currentUserId, courseId)) {
             throw new DuplicateResourceException("học viên đã đăng ký khóa học này");
         }
 
-        // 5. Lưu snapshot khóa học hoặc đồng bộ lại nếu dữ liệu có thay đổi
-        courseSnapshotRepository.findById(courseId).ifPresentOrElse(snapshot -> {
-            boolean changed = false;
-            if (course.getTitle() != null && !course.getTitle().equals(snapshot.getTitle())) {
-                snapshot.setTitle(course.getTitle());
-                changed = true;
-            }
-            if (course.getTotalLessons() != null && course.getTotalLessons() > 0
-                    && !course.getTotalLessons().equals(snapshot.getTotalLessons())) {
-                snapshot.setTotalLessons(course.getTotalLessons());
-                changed = true;
-            }
-            if (changed) {
-                snapshot.setSyncedAt(Instant.now());
-                courseSnapshotRepository.save(snapshot);
-            }
-        }, () -> {
-            CourseSnapshot snapshot = CourseSnapshot.builder()
-                    .courseId(courseId)
-                    .title(course.getTitle())
-                    .totalLessons(course.getTotalLessons() != null && course.getTotalLessons() > 0 ? course.getTotalLessons() : 3)
-                    .syncedAt(Instant.now())
-                    .build();
-            courseSnapshotRepository.save(snapshot);
-        });
-
-        // 6. Tạo bản ghi ghi danh
+        // 3. Tạo bản ghi ghi danh
         Instant now = Instant.now();
         Enrollment enrollment = Enrollment.builder()
-                .userId(effectiveUserId)
+                .userId(currentUserId)
                 .courseId(courseId)
                 .status(EnrollmentStatus.ACTIVE)
                 .progressPercent(BigDecimal.ZERO)
@@ -129,10 +99,10 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         Enrollment savedEnrollment = enrollmentRepository.save(enrollment);
 
-        // 7. Ghi sự kiện vào bảng outbox_events (Transactional Outbox Pattern)
+        // 4. Ghi sự kiện ra Transactional Outbox
         saveEnrollmentCreatedOutboxEvent(savedEnrollment, course.getTitle());
 
-        log.info("Học viên id={} ghi danh thành công khóa học id={}", effectiveUserId, courseId);
+        log.info("Học viên id={} ghi danh thành công khóa học id={}", currentUserId, courseId);
         return EnrollmentResponse.from(savedEnrollment, course.getTitle());
     }
 
@@ -140,16 +110,17 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     @Transactional(readOnly = true)
     public PageResponse<EnrollmentResponse> getMyCourses(Long currentUserId, Pageable pageable) {
         if (currentUserId == null) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED, "Vui lòng đăng nhập để xem danh sách khóa học của bạn");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "Người dùng chưa được xác thực");
         }
-
         Page<Enrollment> page = enrollmentRepository.findAllByUserId(currentUserId, pageable);
 
         List<EnrollmentResponse> responses = page.getContent().stream()
                 .map(enrollment -> {
-                    String title = courseClient.getCourseById(enrollment.getCourseId())
-                            .map(CourseDto::getTitle)
-                            .orElse("Khóa học #" + enrollment.getCourseId());
+                    String title = courseSnapshotRepository.findById(enrollment.getCourseId())
+                            .map(com.hunre.enrollmentservice.entity.CourseSnapshot::getTitle)
+                            .orElseGet(() -> courseClient.getCourseById(enrollment.getCourseId())
+                                    .map(CourseDto::getTitle)
+                                    .orElse("Khóa học #" + enrollment.getCourseId()));
                     return EnrollmentResponse.from(enrollment, title);
                 })
                 .toList();
@@ -159,17 +130,19 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     @Transactional(readOnly = true)
-    public EnrollmentResponse getEnrollmentById(Long id, Long currentUserId) {
-        Enrollment enrollment = enrollmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("lượt ghi danh", "id", id));
+    public EnrollmentResponse getEnrollmentById(Long enrollmentId, Long currentUserId) {
+        Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("lượt ghi danh", "id", enrollmentId));
 
         if (currentUserId != null && !enrollment.getUserId().equals(currentUserId)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "Bạn không có quyền truy cập lượt ghi danh này");
         }
 
-        String courseTitle = courseClient.getCourseById(enrollment.getCourseId())
-                .map(CourseDto::getTitle)
-                .orElse("Khóa học #" + enrollment.getCourseId());
+        String courseTitle = courseSnapshotRepository.findById(enrollment.getCourseId())
+                .map(com.hunre.enrollmentservice.entity.CourseSnapshot::getTitle)
+                .orElseGet(() -> courseClient.getCourseById(enrollment.getCourseId())
+                        .map(CourseDto::getTitle)
+                        .orElse("Khóa học #" + enrollment.getCourseId()));
 
         return EnrollmentResponse.from(enrollment, courseTitle);
     }
@@ -177,68 +150,83 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     @Override
     @Transactional
     public EnrollmentResponse cancelEnrollment(Long currentUserId, Long enrollmentId) {
+        if (currentUserId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "Người dùng chưa được xác thực");
+        }
         Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("lượt ghi danh", "id", enrollmentId));
 
-        if (currentUserId != null && !enrollment.getUserId().equals(currentUserId)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "Bạn không có quyền thao tác trên lượt ghi danh này");
+        if (!enrollment.getUserId().equals(currentUserId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "Bạn không có quyền hủy lượt ghi danh của người khác");
+        }
+
+        if (enrollment.getStatus() == EnrollmentStatus.COMPLETED) {
+            throw new BusinessException(ErrorCode.BUSINESS_RULE_VIOLATED,
+                    "Khóa học đã hoàn thành, không thể hủy ghi danh");
         }
 
         enrollment.setStatus(EnrollmentStatus.CANCELLED);
         enrollment.setLastAccessedAt(Instant.now());
         Enrollment saved = enrollmentRepository.save(enrollment);
 
-        String courseTitle = courseClient.getCourseById(enrollment.getCourseId())
-                .map(CourseDto::getTitle)
-                .orElse("Khóa học #" + enrollment.getCourseId());
+        String courseTitle = courseSnapshotRepository.findById(enrollment.getCourseId())
+                .map(com.hunre.enrollmentservice.entity.CourseSnapshot::getTitle)
+                .orElseGet(() -> courseClient.getCourseById(enrollment.getCourseId())
+                        .map(CourseDto::getTitle)
+                        .orElse("Khóa học #" + enrollment.getCourseId()));
 
-        log.info("Học viên id={} đã hủy lượt ghi danh id={} khóa học id={}", enrollment.getUserId(), enrollmentId, enrollment.getCourseId());
+        log.info("Học viên id={} đã hủy lượt ghi danh id={} khóa học id={}",
+                currentUserId, enrollmentId, enrollment.getCourseId());
         return EnrollmentResponse.from(saved, courseTitle);
     }
 
     @Override
     @Transactional
     public void unenrollCourse(Long currentUserId, Long courseId) {
-        if (currentUserId == null || courseId == null) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "Thiếu userId hoặc courseId để hủy ghi danh");
+        if (currentUserId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "Người dùng chưa được xác thực");
         }
+        Enrollment enrollment = enrollmentRepository.findByUserIdAndCourseId(currentUserId, courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("lượt ghi danh của khóa học", "courseId", courseId));
 
-        enrollmentRepository.findByUserIdAndCourseId(currentUserId, courseId).ifPresent(enrollment -> {
-            certificateRepository.findByEnrollmentId(enrollment.getId()).ifPresent(certificateRepository::delete);
-            lessonProgressRepository.findAllByEnrollmentId(enrollment.getId()).forEach(lessonProgressRepository::delete);
-            enrollmentRepository.delete(enrollment);
-            log.info("Đã hủy và xóa sạch lượt ghi danh id={} của học viên id={} cho khóa học id={}", enrollment.getId(), currentUserId, courseId);
-        });
+        // Xóa sạch tiến độ bài học của lượt ghi danh này
+        lessonProgressRepository.deleteAllByEnrollmentId(enrollment.getId());
+
+        // Xóa chứng chỉ nếu có
+        certificateRepository.findByEnrollmentId(enrollment.getId())
+                .ifPresent(certificateRepository::delete);
+
+        // Xóa bản ghi ghi danh
+        enrollmentRepository.delete(enrollment);
+
+        log.info("Đã hủy và xóa sạch lượt ghi danh id={} của học viên id={} cho khóa học id={}",
+                enrollment.getId(), currentUserId, courseId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public CertificateResponse getCertificate(Long currentUserId, Long enrollmentId) {
+        if (currentUserId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "Người dùng chưa được xác thực");
+        }
         Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("lượt ghi danh", "id", enrollmentId));
 
-        if (currentUserId != null && !enrollment.getUserId().equals(currentUserId)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "Bạn không có quyền truy cập chứng chỉ này");
+        if (!enrollment.getUserId().equals(currentUserId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "Bạn không có quyền xem chứng chỉ này");
         }
 
         Certificate certificate = certificateRepository.findByEnrollmentId(enrollmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("chứng chỉ", "enrollmentId", enrollmentId));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Khóa học này chưa hoàn thành hoặc chưa được cấp chứng chỉ"));
 
-        String courseTitle = courseClient.getCourseById(enrollment.getCourseId())
-                .map(CourseDto::getTitle)
-                .orElse("Khóa học #" + enrollment.getCourseId());
+        String courseTitle = courseSnapshotRepository.findById(enrollment.getCourseId())
+                .map(CourseSnapshot::getTitle)
+                .orElseGet(() -> courseClient.getCourseById(enrollment.getCourseId())
+                        .map(CourseDto::getTitle)
+                        .orElse("Khóa học #" + enrollment.getCourseId()));
 
         return CertificateResponse.from(certificate, enrollment.getUserId(), enrollment.getCourseId(), courseTitle);
-    }
-
-    private Long resolveUserId(Long currentUserId, Long requestUserId) {
-        if (currentUserId != null) {
-            return currentUserId;
-        }
-        if (requestUserId != null) {
-            return requestUserId;
-        }
-        throw new BusinessException(ErrorCode.BAD_REQUEST, "Thiếu thông tin ID người dùng (userId)");
     }
 
     private void saveEnrollmentCreatedOutboxEvent(Enrollment enrollment, String courseTitle) {
@@ -252,14 +240,16 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
             OutboxEvent outbox = OutboxEvent.builder()
                     .eventId(event.eventId())
-                    .aggregateType("enrollment")
+                    .aggregateType("ENROLLMENT")
+                    .aggregateId(String.valueOf(enrollment.getId()))
                     .eventType(event.eventType())
                     .payload(objectMapper.writeValueAsString(event))
                     .build();
 
             outboxEventRepository.save(outbox);
-        } catch (JsonProcessingException e) {
+        } catch (Exception e) {
             log.error("Lỗi tuần tự hóa EnrollmentCreatedEvent sang JSON", e);
+            throw new IllegalStateException("Lỗi tuần tự hóa sự kiện outbox: " + e.getMessage(), e);
         }
     }
 }
