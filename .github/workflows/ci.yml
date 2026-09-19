@@ -42,6 +42,70 @@ jobs:
           path: '**/target/surefire-reports/*.xml'
           retention-days: 7
 
+  # Test của các service chạy trên H2 với ddl-auto=create-drop, tức schema được dựng TỪ
+  # entity, nên entity lệch migration bao nhiêu thì test vẫn xanh. Job này bắt đúng chỗ đó:
+  # database rỗng, Flyway dựng schema từ migration, Hibernate validate đối chiếu lại.
+  schema:
+    name: Schema matches entities (MySQL)
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_USER: elearning
+          MYSQL_PASSWORD: elearning
+        ports:
+          - 3306:3306
+        # Không dùng volume init như docker-compose vì các database được tạo ở bước dưới,
+        # và phải để chúng RỖNG thì Flyway mới thực sự chạy migration.
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      # Chạy client trong container mysql:8.4 thay vì dùng lệnh mysql của runner, để không
+      # phụ thuộc vào việc ảnh runner có sẵn mysql-client hay không. Ảnh này đã được tải về
+      # cho service container ở trên nên không tốn thêm thời gian.
+      - name: Create empty databases
+        run: |
+          docker run --rm --network host mysql:8.4 \
+            mysql -h 127.0.0.1 -P 3306 -uroot -proot -e "
+              CREATE DATABASE IF NOT EXISTS auth_db         CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+              CREATE DATABASE IF NOT EXISTS course_db       CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+              CREATE DATABASE IF NOT EXISTS enrollment_db   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+              CREATE DATABASE IF NOT EXISTS quiz_db         CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+              CREATE DATABASE IF NOT EXISTS notification_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+              GRANT ALL PRIVILEGES ON *.* TO 'elearning'@'%';
+              FLUSH PRIVILEGES;"
+
+      - name: Package services
+        run: ./mvnw -B -ntp -DskipTests package
+
+      - name: Start each service against MySQL and validate its schema
+        run: bash scripts/verify-schema.sh
+
+      - name: Upload service logs (khi fail)
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: verify-schema-logs
+          path: target/verify-schema/*.log
+          retention-days: 7
+
   compose:
     name: Validate docker-compose
     runs-on: ubuntu-latest
