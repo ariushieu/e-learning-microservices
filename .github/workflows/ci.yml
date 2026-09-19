@@ -116,6 +116,26 @@ jobs:
       - name: docker compose config
         run: docker compose config --quiet
 
+  # Job "Schema matches entities" không bắt được việc sửa một migration đã merge, vì CI luôn
+  # dựng database mới tinh nên bản sửa lúc nào cũng chạy trót lọt. Lỗi chỉ hiện trên máy đã
+  # có sẵn database, tức máy của mọi người trừ người viết. Job này nhìn vào diff thay vì
+  # nhìn vào kết quả chạy.
+  migrations:
+    name: Merged migrations unchanged
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0          # cần cả base lẫn head để so diff
+
+      - name: Check migration files
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: bash scripts/check-migrations.sh "$BASE_SHA" "$HEAD_SHA"
+
   # Chặn commit sai quy ước ở tầng pull request, phòng khi ai đó chưa bật git hook.
   # Tiêu đề PR cũng được kiểm tra vì merge kiểu squash lấy nó làm tiêu đề commit trên main.
   commit-style:

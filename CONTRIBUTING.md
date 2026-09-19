@@ -281,6 +281,28 @@ Script dựng database rỗng, để Flyway chạy migration, rồi khởi độ
 
 CI cũng chạy đúng script này ở job **Schema matches entities (MySQL)**.
 
+### Đổi schema thì thêm file mới, đừng sửa file cũ
+
+File migration đã vào `main` thì coi như đã chạy trên máy người khác. Flyway lưu checksum
+của từng file, nên sửa lại file cũ sẽ khiến máy nào đã chạy nó báo lỗi checksum và không
+khởi động được, còn máy nào chưa chạy thì nhận một schema khác hẳn.
+
+Muốn đổi schema thì thêm file mới:
+
+```sql
+-- course-service/src/main/resources/db/migration/V3__them_cot_thumbnail.sql
+ALTER TABLE courses ADD COLUMN thumbnail_url VARCHAR(500) NULL;
+```
+
+Kiểm tra trước khi mở PR:
+
+```bash
+bash scripts/check-migrations.sh
+```
+
+CI cũng kiểm ở job **Merged migrations unchanged**. Job schema ở trên *không* bắt được lỗi
+này, vì CI luôn dựng database mới nên bản sửa lúc nào cũng chạy trót lọt.
+
 Service của bạn được kiểm tự động ngay khi pom khai `spring-boot-flyway`, không phải sửa
 file CI. Chưa khai thì Flyway không chạy và service bị bỏ qua.
 
