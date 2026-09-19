@@ -1,0 +1,24 @@
+package com.hunre.enrollmentservice.dto.request;
+
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+/**
+ * Yêu cầu ghi danh khóa học.
+ */
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class EnrollCourseRequest {
+
+    @NotNull(message = "ID khóa học không được để trống")
+    @Positive(message = "ID khóa học phải là số dương")
+    private Long courseId;
+}
