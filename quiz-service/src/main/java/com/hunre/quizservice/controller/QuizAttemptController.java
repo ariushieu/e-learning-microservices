@@ -5,6 +5,7 @@ import com.hunre.quizservice.dto.QuizResultResponse;
 import com.hunre.quizservice.dto.SubmitQuizAttemptRequest;
 import com.hunre.quizservice.service.QuizAttemptService;
 import com.hunre.sharedcommon.dto.ApiResponse;
+import com.hunre.sharedcommon.security.AuthenticatedUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -13,7 +14,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -30,29 +30,29 @@ public class QuizAttemptController {
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<QuizAttemptResponse> startAttempt(
             @PathVariable Long quizId,
-            @RequestParam Long userId) {
-        return ApiResponse.ok(quizAttemptService.startAttempt(quizId, userId), "Bắt đầu làm bài kiểm tra");
+            AuthenticatedUser user) {
+        return ApiResponse.ok(quizAttemptService.startAttempt(quizId, user.userId()), "Bắt đầu làm bài kiểm tra");
     }
 
     @PostMapping("/attempts/{attemptId}/submit")
     public ApiResponse<QuizResultResponse> submitAttempt(
             @PathVariable Long attemptId,
-            @RequestParam Long userId,
+            AuthenticatedUser user,
             @Valid @RequestBody SubmitQuizAttemptRequest request) {
-        return ApiResponse.ok(quizAttemptService.submitAttempt(attemptId, userId, request), "Nộp bài thành công");
+        return ApiResponse.ok(quizAttemptService.submitAttempt(attemptId, user.userId(), request), "Nộp bài thành công");
     }
 
     @GetMapping("/attempts/{attemptId}")
     public ApiResponse<QuizResultResponse> getAttemptResult(
             @PathVariable Long attemptId,
-            @RequestParam Long userId) {
-        return ApiResponse.ok(quizAttemptService.getAttemptResult(attemptId, userId));
+            AuthenticatedUser user) {
+        return ApiResponse.ok(quizAttemptService.getAttemptResult(attemptId, user.userId()));
     }
 
     @GetMapping("/{quizId}/attempts/history")
     public ApiResponse<List<QuizAttemptResponse>> getMyAttempts(
             @PathVariable Long quizId,
-            @RequestParam Long userId) {
-        return ApiResponse.ok(quizAttemptService.getUserAttempts(quizId, userId));
+            AuthenticatedUser user) {
+        return ApiResponse.ok(quizAttemptService.getUserAttempts(quizId, user.userId()));
     }
 }
