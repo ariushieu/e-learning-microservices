@@ -1,0 +1,644 @@
+{
+  "info": {
+    "_postman_id": "b7891234-5678-4321-9876-enrollment-service-v3",
+    "name": "HUNRE E-Learning - Enrollment & Progress Tracking Service",
+    "description": "Bộ sưu tập kiểm thử toàn diện cho Enrollment & Progress Tracking Service (Port 8083).\nBao gồm đầy đủ các kịch bản: Ghi danh, Hủy ghi danh, Tái kích hoạt, Cập nhật tiến độ động (Khóa 3 bài đạt đúng 33.33%, 66.67%, 100.00%), Cấp chứng chỉ số và Bắt lỗi chuẩn mực.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8083",
+      "type": "string"
+    },
+    {
+      "key": "demoUserId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "testCourseId",
+      "value": "3",
+      "type": "string"
+    },
+    {
+      "key": "activeEnrollmentId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔥 1. Kịch bản Toàn trình: Đăng ký, Học 3 bài (100%) & Cấp chứng chỉ",
+      "description": "Kịch bản chạy tuần tự từ làm sạch dữ liệu -> Đăng ký -> Hoàn thành từng bài (33.33% -> 66.67% -> 100.00%) -> Tự động cấp chứng chỉ.",
+      "item": [
+        {
+          "name": "Bước 1 - Chuẩn bị môi trường: Đặt lại khóa học kiểm thử",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP Status là 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Dữ liệu sẵn sàng để ghi danh mới\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/enrollments/course/{{testCourseId}}?userId={{demoUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "enrollments", "course", "{{testCourseId}}"],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "{{demoUserId}}"
+                }
+              ]
+            },
+            "description": "Xóa sạch dữ liệu kiểm thử của khóa học để bất kỳ lần chạy nào cũng có thể kiểm thử đăng ký mới."
+          }
+        },
+        {
+          "name": "Bước 2 - Đăng ký Khóa học (Khóa #3: Docker & Microservices)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP Status là 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "pm.test(\"Ghi danh thành công và trạng thái là ACTIVE\", function () {",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    pm.expect(json.data.status).to.eql(\"ACTIVE\");",
+                  "    pm.expect(json.data.progressPercent).to.eql(0);",
+                  "});",
+                  "if (json.data && json.data.id) {",
+                  "    pm.collectionVariables.set(\"activeEnrollmentId\", json.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{testCourseId}},\n  \"userId\": {{demoUserId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/enrollments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "enrollments"]
+            },
+            "description": "Đăng ký khóa học 3 bài học cho học viên."
+          }
+        },
+        {
+          "name": "Bước 3 - Kiểm tra Danh sách khóa học của học viên (My Courses)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP Status là 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "pm.test(\"Tìm thấy khóa học vừa đăng ký trong danh sách\", function () {",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    pm.expect(json.data.content).to.be.an('array');",
+                  "    var course = json.data.content.find(function(c) { return c.courseId == pm.collectionVariables.get('testCourseId'); });",
+                  "    pm.expect(course).to.not.be.undefined;",
+                  "    pm.expect(course.status).to.eql(\"ACTIVE\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/enrollments/my-courses?userId={{demoUserId}}&page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "enrollments", "my-courses"],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "{{demoUserId}}"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Lấy danh sách khóa học mà học viên đang tham gia."
+          }
+        },
+        {
+          "name": "Bước 4 - Bắt đầu học Bài 1 (Trạng thái IN_PROGRESS - Đã xem 120s)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP Status là 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "pm.test(\"Trạng thái bài học là IN_PROGRESS\", function () {",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    pm.expect(json.data.status).to.eql(\"IN_PROGRESS\");",
+                  "    pm.expect(json.data.watchedSeconds).to.be.at.least(120);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{testCourseId}},\n  \"lessonId\": 1,\n  \"status\": \"IN_PROGRESS\",\n  \"watchedSeconds\": 120,\n  \"userId\": {{demoUserId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/progress/lesson",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "progress", "lesson"]
+            },
+            "description": "Cập nhật thời gian xem bài học 1."
+          }
+        },
+        {
+          "name": "Bước 5 - Hoàn thành Bài 1 -> Tiến độ đạt chuẩn 33.33% (1/3 bài)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP Status là 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "pm.test(\"Bài học 1 đã chuyển sang COMPLETED\", function () {",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    pm.expect(json.data.status).to.eql(\"COMPLETED\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{testCourseId}},\n  \"lessonId\": 1,\n  \"status\": \"COMPLETED\",\n  \"watchedSeconds\": 600,\n  \"userId\": {{demoUserId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/progress/lesson",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "progress", "lesson"]
+            },
+            "description": "Đánh dấu hoàn thành bài học số 1."
+          }
+        },
+        {
+          "name": "Bước 6 - Kiểm tra Chi tiết Tiến độ sau Bài 1 (33.33% - 1 / 3 bài)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP Status là 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "pm.test(\"Tiến độ khóa học đạt chính xác 33.33%\", function () {",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    pm.expect(Number(json.data.progressPercent)).to.eql(33.33);",
+                  "    pm.expect(json.data.completedLessonsCount).to.eql(1);",
+                  "    pm.expect(json.data.totalLessonsCount).to.eql(3);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/progress/course/{{testCourseId}}?userId={{demoUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "progress", "course", "{{testCourseId}}"],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "{{demoUserId}}"
+                }
+              ]
+            },
+            "description": "Kiểm tra tiến độ sau bài 1."
+          }
+        },
+        {
+          "name": "Bước 7 - Hoàn thành Bài 2 -> Tiến độ đạt chuẩn 66.67% (2/3 bài)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP Status là 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "pm.test(\"Bài học 2 hoàn thành\", function () {",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    pm.expect(json.data.status).to.eql(\"COMPLETED\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{testCourseId}},\n  \"lessonId\": 2,\n  \"status\": \"COMPLETED\",\n  \"watchedSeconds\": 600,\n  \"userId\": {{demoUserId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/progress/lesson",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "progress", "lesson"]
+            },
+            "description": "Đánh dấu hoàn thành bài học 2."
+          }
+        },
+        {
+          "name": "Bước 8 - Hoàn thành Bài 3 (Bài cuối) -> Đạt đủ 3/3 bài = 100% & Cấp chứng chỉ",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP Status là 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "pm.test(\"Bài 3 hoàn thành thành công\", function () {",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    pm.expect(json.data.status).to.eql(\"COMPLETED\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{testCourseId}},\n  \"lessonId\": 3,\n  \"status\": \"COMPLETED\",\n  \"watchedSeconds\": 600,\n  \"userId\": {{demoUserId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/progress/lesson",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "progress", "lesson"]
+            },
+            "description": "Hoàn thành bài học cuối cùng của khóa học."
+          }
+        },
+        {
+          "name": "Bước 9 - Kiểm tra Chi tiết Tiến độ: 3 / 3 bài học & 100% COMPLETED",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP Status là 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "pm.test(\"Tiến độ khóa học đạt tròn 100% và trạng thái COMPLETED\", function () {",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    pm.expect(Number(json.data.progressPercent)).to.eql(100);",
+                  "    pm.expect(json.data.status).to.eql(\"COMPLETED\");",
+                  "    pm.expect(json.data.completedLessonsCount).to.eql(3);",
+                  "    pm.expect(json.data.totalLessonsCount).to.eql(3);",
+                  "    pm.expect(json.data.certificateCode).to.not.be.null;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/progress/course/{{testCourseId}}?userId={{demoUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "progress", "course", "{{testCourseId}}"],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "{{demoUserId}}"
+                }
+              ]
+            },
+            "description": "Xác nhận khóa học đạt 100% và đã được cấp chứng chỉ."
+          }
+        },
+        {
+          "name": "Bước 10 - Lấy thông tin Chứng chỉ tốt nghiệp",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP Status là 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "pm.test(\"Chứng chỉ hợp lệ và có đầy đủ thông tin\", function () {",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    pm.expect(json.data.certificateCode).to.include(\"CERT-\");",
+                  "    pm.expect(json.data.courseId).to.eql(Number(pm.collectionVariables.get('testCourseId')));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/enrollments/{{activeEnrollmentId}}/certificate?userId={{demoUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "enrollments", "{{activeEnrollmentId}}", "certificate"],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "{{demoUserId}}"
+                }
+              ]
+            },
+            "description": "Lấy thông tin chi tiết chứng chỉ hoàn thành khóa học từ database."
+          }
+        }
+      ]
+    },
+    {
+      "name": "📚 2. Kiểm thử Bắt lỗi & Ràng buộc nghiệp vụ (Validation & Business Rules)",
+      "description": "Kiểm tra hệ thống xử lý lỗi chuẩn theo chuẩn REST: 409 Duplicate, 400 Validation Error, 404 Not Found.",
+      "item": [
+        {
+          "name": "1. Bắt lỗi Đăng ký trùng lặp (Duplicate Resource - HTTP 409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP Status là 409 Conflict\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "pm.test(\"Mã lỗi DUPLICATE_RESOURCE\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.false;",
+                  "    pm.expect(json.code).to.eql(\"DUPLICATE_RESOURCE\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{testCourseId}},\n  \"userId\": {{demoUserId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/enrollments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "enrollments"]
+            },
+            "description": "Cố tình ghi danh lại khóa học đã đăng ký để kiểm tra phản hồi 409 Conflict."
+          }
+        },
+        {
+          "name": "2. Bắt lỗi Thiếu trường bắt buộc (Validation Error - HTTP 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP Status là 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Mã lỗi VALIDATION_FAILED\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.false;",
+                  "    pm.expect(json.code).to.eql(\"VALIDATION_FAILED\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/enrollments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "enrollments"]
+            },
+            "description": "Gửi request thiếu trường courseId bắt buộc."
+          }
+        },
+        {
+          "name": "3. Bắt lỗi Cập nhật tiến độ khi chưa đăng ký (HTTP 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP Status là 404 Not Found\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Mã lỗi RESOURCE_NOT_FOUND\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.false;",
+                  "    pm.expect(json.code).to.eql(\"RESOURCE_NOT_FOUND\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": 9999,\n  \"lessonId\": 1,\n  \"status\": \"COMPLETED\",\n  \"watchedSeconds\": 300,\n  \"userId\": 9999\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/progress/lesson",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "progress", "lesson"]
+            },
+            "description": "Thử cập nhật bài học cho khóa học mà học viên chưa từng đăng ký."
+          }
+        },
+        {
+          "name": "4. Hủy đăng ký khóa học (Cancel Enrollment - HTTP 200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP Status là 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "pm.test(\"Trạng thái chuyển sang CANCELLED\", function () {",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    pm.expect(json.data.status).to.eql(\"CANCELLED\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/enrollments/{{activeEnrollmentId}}/cancel?userId={{demoUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "enrollments", "{{activeEnrollmentId}}", "cancel"],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "{{demoUserId}}"
+                }
+              ]
+            },
+            "description": "Hủy đăng ký khóa học đã tham gia."
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚙️ 3. Giám sát Sức khỏe Dịch vụ (Actuator Health)",
+      "description": "Kiểm tra tình trạng hoạt động của service.",
+      "item": [
+        {
+          "name": "Kiểm tra Sức khỏe dịch vụ (Healthcheck)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"HTTP Status là 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Trạng thái service là UP\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql(\"UP\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["actuator", "health"]
+            },
+            "description": "Endpoint kiểm tra tình trạng dịch vụ qua Spring Boot Actuator."
+          }
+        }
+      ]
+    }
+  ]
+}
