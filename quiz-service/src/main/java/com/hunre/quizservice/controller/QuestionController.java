@@ -5,6 +5,10 @@ import com.hunre.quizservice.dto.QuestionResponse;
 import com.hunre.quizservice.dto.UpdateQuestionRequest;
 import com.hunre.quizservice.service.QuestionService;
 import com.hunre.sharedcommon.dto.ApiResponse;
+import com.hunre.sharedcommon.exception.BusinessException;
+import com.hunre.sharedcommon.exception.ErrorCode;
+import com.hunre.sharedcommon.security.AuthenticatedUser;
+import com.hunre.sharedcommon.security.Roles;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -31,7 +35,9 @@ public class QuestionController {
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<QuestionResponse> addQuestion(
             @PathVariable Long quizId,
-            @Valid @RequestBody CreateQuestionRequest request) {
+            @Valid @RequestBody CreateQuestionRequest request,
+            AuthenticatedUser user) {
+        requireQuizManager(user);
         return ApiResponse.ok(questionService.addQuestion(quizId, request), "Thêm câu hỏi thành công");
     }
 
@@ -39,20 +45,34 @@ public class QuestionController {
     public ApiResponse<QuestionResponse> updateQuestion(
             @PathVariable Long quizId,
             @PathVariable Long questionId,
-            @Valid @RequestBody UpdateQuestionRequest request) {
+            @Valid @RequestBody UpdateQuestionRequest request,
+            AuthenticatedUser user) {
+        requireQuizManager(user);
         return ApiResponse.ok(questionService.updateQuestion(quizId, questionId, request), "Cập nhật câu hỏi thành công");
     }
 
     @DeleteMapping("/{questionId}")
     public ApiResponse<Void> deleteQuestion(
             @PathVariable Long quizId,
-            @PathVariable Long questionId) {
+            @PathVariable Long questionId,
+            AuthenticatedUser user) {
+        requireQuizManager(user);
         questionService.deleteQuestion(quizId, questionId);
         return ApiResponse.message("Đã xóa câu hỏi");
     }
 
     @GetMapping
-    public ApiResponse<List<QuestionResponse>> getQuestions(@PathVariable Long quizId) {
+    public ApiResponse<List<QuestionResponse>> getQuestions(
+            @PathVariable Long quizId,
+            AuthenticatedUser user) {
+        requireQuizManager(user);
         return ApiResponse.ok(questionService.getQuestionsByQuiz(quizId));
+    }
+
+    private void requireQuizManager(AuthenticatedUser user) {
+        if (!user.hasAnyRole(Roles.INSTRUCTOR, Roles.ADMIN)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN,
+                    "Chỉ giảng viên hoặc quản trị viên mới có quyền quản lý câu hỏi và xem đáp án");
+        }
     }
 }
