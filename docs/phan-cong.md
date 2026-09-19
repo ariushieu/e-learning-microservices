@@ -1,17 +1,32 @@
-# Phân công công việc
+# Bảng theo dõi công việc
 
-*Chốt ngày 19/09/2026, khi `main` ở commit `171cec4`.*
+> **Cập nhật lần cuối:** 19/09/2026 22:05 — `main` ở `caffb94`
+>
+> File này là nơi duy nhất ghi ai đang làm gì. Xong một việc thì nhóm trưởng cập nhật ngay
+> tại đây, nên **cứ `git pull` là biết việc tiếp theo của mình**, không phải hỏi ai.
 
-Tài liệu này ghi việc còn lại của từng người, kèm cách tự kiểm tra kết quả. Đọc phần
-[Trạng thái hiện tại](#trạng-thái-hiện-tại) trước để biết mình đang đứng ở đâu.
-
-- [Trạng thái hiện tại](#trạng-thái-hiện-tại)
-- [Bảng phân công](#bảng-phân-công)
-- [Việc của từng người](#việc-của-từng-người)
+- [Việc của bạn](#việc-của-bạn)
+- [Trạng thái hệ thống](#trạng-thái-hệ-thống)
+- [Chi tiết từng việc](#chi-tiết-từng-việc)
+- [Đã xong](#đã-xong)
 - [Hai cái bẫy của Spring Boot 4](#hai-cái-bẫy-của-spring-boot-4)
 - [Trước khi code](#trước-khi-code)
 
-## Trạng thái hiện tại
+## Việc của bạn
+
+| Người | Service | Việc đang mở | Ưu tiên | Cỡ |
+|---|---|---|---|---|
+| quocluibotre | auth-service | [API gán vai trò + admin đầu tiên](#quocluibotre--api-gán-vai-trò) | **Cao nhất** — chặn cả nhóm | ~2h |
+| duyd92689-debug | course-service | [Phát `course.published`](#duyd92689-debug--phát-sự-kiện-coursepublished) + [bỏ `instructorId` khỏi body](#duyd92689-debug--bỏ-instructorid-khỏi-request-body) | Cao — chặn phamquyet | ~2h |
+| phamquyet19042005-netizen | enrollment-service | [Gửi outbox](#phamquyet19042005-netizen--gửi-outbox-lên-kafka) + [nạp snapshot](#phamquyet19042005-netizen--nạp-course_snapshots) | Cao | ~3h |
+| hiepdeptrai0111 | quiz-service | [Chuyển phát sự kiện sang outbox](#hiepdeptrai0111--chuyển-phát-sự-kiện-sang-outbox) | Thấp — làm sau cùng | ~2h |
+| Hiếu (nhóm trưởng) | shared-common | `CoursePublishedEvent` | Cao — chặn 2 người | 30 phút |
+
+**Thứ tự.** quocluibotre làm trước vì không có tài khoản giảng viên thì cả nhóm không test
+được phần tạo bài kiểm tra. `CoursePublishedEvent` làm song song vì nó chặn hai người. Ba
+việc còn lại chạy song song sau đó.
+
+## Trạng thái hệ thống
 
 Năm service đã có code, database chạy tự động bằng Flyway, xác thực JWT hoạt động ở cả
 gateway lẫn từng service.
@@ -33,25 +48,11 @@ gateway lẫn từng service.
 Ba việc đó xong là demo chạy trọn vẹn: đăng ký → ghi danh → học → làm bài → nhận thông báo
 → chứng chỉ.
 
-## Bảng phân công
-
-| Người | Service | Việc | Chặn ai | Cỡ |
-|---|---|---|---|---|
-| Hiếu (nhóm trưởng) | shared-common | `CoursePublishedEvent` | duyd, phamquyet | 30 phút |
-| quocluibotre | auth-service | API gán vai trò + admin đầu tiên | cả nhóm | ~2h |
-| hiepdeptrai0111 | quiz-service | Bỏ `?userId=` ở 4 endpoint làm bài | không ai | 15 phút |
-| duyd92689-debug | course-service | Phát sự kiện `course.published` | phamquyet | ~1,5h |
-| phamquyet19042005-netizen | enrollment-service | Gửi outbox + nạp snapshot | không ai | ~3h |
-
-**Thứ tự:** quocluibotre làm trước — không có giảng viên thì cả nhóm không test được phần
-tạo bài kiểm tra. `CoursePublishedEvent` làm song song vì nó chặn hai người. Ba việc còn lại
-chạy song song sau đó.
-
 ---
 
-## Việc của từng người
+## Chi tiết từng việc
 
-### quocluibotre — auth-service
+### quocluibotre — API gán vai trò
 
 **Vấn đề.** Hiện không tài khoản nào có thể trở thành giảng viên.
 `AuthServiceImpl.register()` gán cứng `ROLE_STUDENT`, và auth-service chỉ có bốn endpoint:
@@ -93,50 +94,7 @@ của shared-common đã làm việc đó trước khi request tới nơi rồi,
 
 ---
 
-### hiepdeptrai0111 — quiz-service
-
-**Vấn đề.** `QuizAttemptController` còn bốn endpoint nhận `?userId=` do client tự khai.
-
-Đã thử với hai tài khoản học viên thật, A là id 3 và B là id 4. Mọi lệnh dưới đây B dùng
-**token hợp lệ của chính B**, chỉ đổi tham số:
-
-```
-GET  /api/quizzes/attempts/3?userId=3          → 200, đọc nguyên bài làm của A
-GET  /api/quizzes/1/attempts/history?userId=3  → 200, lịch sử của A
-POST /api/quizzes/1/attempts?userId=3          → 201, mở lượt mang tên A
-POST /api/quizzes/attempts/4/submit?userId=3   → 200, score 0.00, passed=false
-```
-
-Hồ sơ của A sau đó:
-
-```
-id  user_id  attempt_no  score    passed
-3   3        1           100.00   1      ← A tự làm
-4   3        2           0.00     0      ← B cài vào
-```
-
-B vừa phá điểm của A, vừa đốt một lượt trong `maxAttempts` của A.
-
-**Cần làm.** Bỏ `@RequestParam Long userId`, thêm `AuthenticatedUser user`, truyền
-`user.userId()` xuống service. Tầng service giữ nguyên chữ ký, không phải sửa gì.
-
-```java
-@PostMapping("/{quizId}/attempts")
-public ApiResponse<QuizAttemptResponse> startAttempt(
-        @PathVariable Long quizId,
-        AuthenticatedUser user) {
-    return ApiResponse.ok(quizAttemptService.startAttempt(quizId, user.userId()), "...");
-}
-```
-
-`EnrollmentController` có bản mẫu đủ sáu endpoint. Nhớ sửa Postman collection nếu có dùng.
-
-**Tự kiểm.** Hai tài khoản học viên, A nộp bài, B dùng token của B gọi
-`GET /api/quizzes/attempts/{id}?userId=<A>` — phải trả 404, không được trả bài của A.
-
----
-
-### duyd92689-debug — course-service
+### duyd92689-debug — phát sự kiện `course.published`
 
 **Vấn đề.** enrollment-service cần biết khóa học nào tồn tại và đã xuất bản, nhưng nó không
 được phép đọc `course_db` — đó là nguyên tắc database-per-service. Nó giữ một bản sao trong
@@ -155,20 +113,42 @@ Nhóm trưởng sẽ thêm `CoursePublishedEvent` vào shared-common trước, b
 
 **Tự kiểm.** Chạy kèm notification-service (nó nghe cả ba topic), xuất bản một khóa học, xem
 log notification-service thấy dòng `Bỏ qua sự kiện loại course.published` — nghĩa là message
-đã tới nơi. Sau khi phamquyet làm xong phần nhận thì kiểm bằng cách ghi danh khóa đó.
+đã tới nơi.
 
 ---
 
-### phamquyet19042005-netizen — enrollment-service
+### duyd92689-debug — bỏ `instructorId` khỏi request body
 
-Hai việc, làm song song được.
+**Vấn đề.** `CreateCourseRequest` có trường `instructorId` do client tự khai, và
+`CourseServiceImpl` ghi thẳng vào khóa học:
 
-#### 1. Gửi outbox lên Kafka
+```java
+.instructorId(request.getInstructorId())
+```
 
-Bảng `outbox_events` đang được ghi đúng trong cùng transaction với nghiệp vụ, nhưng không ai
-đọc nó. `published_at` của mọi dòng đều là NULL.
+Nên ai cũng tạo được khóa học đứng tên giảng viên khác.
 
-Cần một `@Scheduled` chạy mỗi vài giây:
+Cùng họ với lỗi `?userId=` vừa vá ở quiz-service và enrollment-service, chỉ khác là nó nằm
+trong body chứ không phải query param.
+
+**Cần làm.** Bỏ `instructorId` khỏi `CreateCourseRequest`, thêm `AuthenticatedUser user` vào
+controller, dùng `user.userId()`. Nhân tiện chặn luôn theo vai trò: chỉ `ROLE_INSTRUCTOR`
+hoặc `ROLE_ADMIN` mới được tạo, sửa, xóa khóa học và danh mục.
+
+`QuizController.requireQuizManager` là bản mẫu gọn nhất.
+
+**Tự kiểm.** Học viên thường gọi `POST /api/courses` phải nhận 403. Giảng viên tạo khóa học
+thì `instructor_id` trong database phải là id của chính họ, kể cả khi body có gửi kèm id
+khác.
+
+---
+
+### phamquyet19042005-netizen — gửi outbox lên Kafka
+
+**Vấn đề.** Bảng `outbox_events` đang được ghi đúng trong cùng transaction với nghiệp vụ,
+nhưng không ai đọc nó. `published_at` của mọi dòng đều là NULL.
+
+**Cần làm.** Một `@Scheduled` chạy mỗi vài giây:
 
 ```java
 List<OutboxEvent> chuaGui = outboxEventRepository.findTop50ByPublishedAtIsNullOrderByCreatedAtAsc();
@@ -187,10 +167,12 @@ curl -H "Authorization: Bearer <token>" localhost:8085/api/notifications
 Phải thấy *"Bạn đã ghi danh khóa học ..."*. Đây là chuỗi hoàn chỉnh đầu tiên đi qua ba
 service của hệ thống.
 
-#### 2. Nạp `course_snapshots` từ Kafka
+---
 
-Nghe `course.published` trên topic `elearning.course.events`, ghi hoặc cập nhật một dòng
-trong `course_snapshots`. Phụ thuộc vào việc của duyd92689-debug.
+### phamquyet19042005-netizen — nạp `course_snapshots`
+
+**Cần làm.** Nghe `course.published` trên topic `elearning.course.events`, ghi hoặc cập nhật
+một dòng trong `course_snapshots`. Phụ thuộc vào việc của duyd92689-debug.
 
 **Phải khử trùng lặp.** Kafka bảo đảm at-least-once nên một sự kiện có thể tới nhiều lần.
 notification-service đã làm sẵn bằng bảng `processed_events` với khóa chính là `event_id`,
@@ -205,6 +187,59 @@ tường minh.
 **Tự kiểm.** Xuất bản một khóa học bên course-service, kiểm tra
 `SELECT * FROM course_snapshots` trong `enrollment_db` thấy dòng tương ứng, rồi ghi danh
 khóa đó phải thành công thay vì 404.
+
+---
+
+### hiepdeptrai0111 — chuyển phát sự kiện sang outbox
+
+> Ưu tiên thấp. Ba việc ở trên chặn demo, việc này thì không — cứ làm sau khi nhóm thông
+> được chuỗi ghi danh. Nếu rảnh sớm thì báo nhóm trưởng.
+
+**Vấn đề.** `QuizAttemptServiceImpl.submitAttempt` gửi Kafka **bên trong transaction**, ngay
+sau khi lưu bài làm:
+
+```java
+QuizAttempt savedAttempt = quizAttemptRepository.save(attempt);   // dòng 204
+...
+quizEventPublisher.publishQuizGraded(event);                       // dòng 216, vẫn trong transaction
+```
+
+Nếu transaction rollback sau dòng 216 thì sự kiện đã bay đi rồi, và học viên nhận thông báo
+về một điểm số không tồn tại trong database. Ngược lại, gửi Kafka hỏng thì bài làm vẫn được
+lưu nhưng không ai biết để gửi lại.
+
+Đây là bài toán ghi hai nơi (dual write) mà mẫu outbox sinh ra để giải.
+
+**Cần làm.** Giống enrollment-service: thêm bảng `outbox_events` cho `quiz_db` bằng một
+migration mới, ghi sự kiện vào bảng đó trong cùng transaction với bài làm, rồi một
+`@Scheduled` riêng đọc và gửi lên Kafka.
+
+Đợi phamquyet19042005-netizen làm xong phần gửi bên enrollment-service rồi copy cách làm,
+để hai service không mỗi bên một kiểu.
+
+**Tự kiểm.** Nộp bài khi **tắt Kafka** (`spring.kafka.enabled=false`): bài làm vẫn lưu, và
+có một dòng trong `outbox_events` với `published_at` là NULL. Bật Kafka lại thì dòng đó được
+gửi đi và thông báo xuất hiện.
+
+---
+
+## Đã xong
+
+| Ngày | PR | Việc | Người |
+|---|---|---|---|
+| 19/09 | #21 | Bỏ `?userId=` ở 4 endpoint làm bài | hiepdeptrai0111 |
+| 19/09 | #20 | Bảng theo dõi công việc | Hiếu |
+| 19/09 | #13 | Chặn xem đáp án và quản lý bài kiểm tra theo vai trò, nối Flyway | hiepdeptrai0111 |
+| 19/09 | #15 | enrollment-service: ghi danh, tiến độ, chứng chỉ | phamquyet19042005-netizen |
+| 19/09 | #18 | notification-service: dựng thông báo từ sự kiện Kafka | Hiếu |
+| 19/09 | #17 | CI chặn sửa migration đã merge | Hiếu |
+| 19/09 | #16 | CI đối chiếu entity với schema bằng MySQL thật | Hiếu |
+| 19/09 | #14 | Nối auto-configuration của Flyway | Hiếu |
+| 19/09 | #11 | course-service dùng `Instant` thay `LocalDateTime` | duyd92689-debug |
+| 18/09 | #12 | Xác thực JWT ở gateway và từng service | Hiếu |
+| 18/09 | #9 | course-service: danh mục, khóa học, chương trình học | duyd92689-debug |
+| 18/09 | #8 | auth-service: đăng ký, đăng nhập, JWT | quocluibotre |
+| 18/09 | #7 | quiz-service: bài kiểm tra, câu hỏi, chấm điểm | hiepdeptrai0111 |
 
 ---
 
@@ -263,9 +298,6 @@ git reset --hard origin/main
 git push --force-with-lease
 ```
 
-Tính tới lúc chốt tài liệu này: auth-service và course-service đang sau main 5 commit,
-enrollment-service sau 5 commit và còn 2 commit cũ thừa, quiz-service đã đồng bộ.
-
 ### Nếu có sửa entity hoặc migration
 
 ```bash
@@ -280,6 +312,12 @@ bash scripts/verify-schema.sh
 Và **đừng sửa file migration đã vào main**. Flyway lưu checksum, sửa lại thì máy nào đã chạy
 sẽ không khởi động được, máy nào chưa chạy thì nhận schema khác. Đổi schema thì thêm file mới
 `V<n>__*.sql` với câu `ALTER TABLE`. CI có job kiểm việc này.
+
+### Lấy danh tính người gọi
+
+Không controller nào được nhận `userId` hay `instructorId` từ client, dù qua query param hay
+qua body. Nhận `AuthenticatedUser user` rồi dùng `user.userId()`. Chi tiết ở
+[authentication.md](authentication.md).
 
 ### Tài liệu nên đọc
 
