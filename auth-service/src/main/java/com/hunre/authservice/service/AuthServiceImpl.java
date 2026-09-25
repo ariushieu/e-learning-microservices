@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -176,5 +177,24 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("người dùng", "id", userId));
         return UserResponse.from(user);
+    }
+
+    @Override
+    @Transactional
+    public UserResponse updateUserRoles(Long userId, Set<RoleCode> roleCodes) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("người dùng", "id", userId));
+
+        Set<Role> newRoles = roleCodes.stream()
+                .map(code -> roleRepository.findByCode(code)
+                        .orElseThrow(() -> new ResourceNotFoundException("vai trò", "code", code)))
+                .collect(Collectors.toSet());
+
+        user.setRoles(newRoles);
+        User saved = userRepository.save(user);
+
+        log.info("Updated roles for user {} to {}", userId,
+                roleCodes.stream().map(Enum::name).collect(Collectors.joining(", ")));
+        return UserResponse.from(saved);
     }
 }
