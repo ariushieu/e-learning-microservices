@@ -525,7 +525,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"categoryId\": {{subCategoryId}},\n    \"instructorId\": {{instructorId}},\n    \"instructorName\": \"Nguyễn Văn Giảng Viên\",\n    \"title\": \"Lập trình Microservices Spring Boot {{runId}}\",\n    \"summary\": \"Khóa học chuyên sâu xây dựng kiến trúc Microservices production-ready\",\n    \"description\": \"Tìm hiểu Domain-Driven Design, Service Discovery, API Gateway, Circuit Breaker, Kafka và Docker\",\n    \"thumbnailUrl\": \"https://images.unsplash.com/photo-1517694712202-14dd9538aa97\",\n    \"level\": \"INTERMEDIATE\",\n    \"language\": \"vi\",\n    \"price\": 799000.00\n}"
+                            "raw": "{\n    \"categoryId\": {{subCategoryId}},\n    \"instructorName\": \"Nguyễn Văn Giảng Viên\",\n    \"title\": \"Lập trình Microservices Spring Boot {{runId}}\",\n    \"summary\": \"Khóa học chuyên sâu xây dựng kiến trúc Microservices production-ready\",\n    \"description\": \"Tìm hiểu Domain-Driven Design, Service Discovery, API Gateway, Circuit Breaker, Kafka và Docker\",\n    \"thumbnailUrl\": \"https://images.unsplash.com/photo-1517694712202-14dd9538aa97\",\n    \"level\": \"INTERMEDIATE\",\n    \"language\": \"vi\",\n    \"price\": 799000.00\n}"
                         },
                         "url": {
                             "raw": "{{baseUrl}}/api/courses",
@@ -830,7 +830,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"categoryId\": {{subCategoryId}},\n    \"instructorId\": {{instructorId}},\n    \"title\": \"\"\n}"
+                            "raw": "{\n    \"categoryId\": {{subCategoryId}},\n    \"title\": \"\"\n}"
                         },
                         "url": {
                             "raw": "{{baseUrl}}/api/courses",

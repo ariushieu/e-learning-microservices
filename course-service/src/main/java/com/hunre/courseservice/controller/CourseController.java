@@ -9,6 +9,10 @@ import com.hunre.courseservice.entity.CourseLevel;
 import com.hunre.courseservice.service.CourseService;
 import com.hunre.sharedcommon.dto.ApiResponse;
 import com.hunre.sharedcommon.dto.PageResponse;
+import com.hunre.sharedcommon.exception.BusinessException;
+import com.hunre.sharedcommon.exception.ErrorCode;
+import com.hunre.sharedcommon.security.AuthenticatedUser;
+import com.hunre.sharedcommon.security.Roles;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -62,27 +66,42 @@ public class CourseController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<CourseResponse> createCourse(@Valid @RequestBody CreateCourseRequest request) {
-        return ApiResponse.ok(courseService.createCourse(request), "Tạo khóa học thành công");
+    public ApiResponse<CourseResponse> createCourse(
+            @Valid @RequestBody CreateCourseRequest request,
+            AuthenticatedUser user) {
+        requireCourseManager(user);
+        return ApiResponse.ok(courseService.createCourse(request, user.userId(), user.fullName()), "Tạo khóa học thành công");
     }
 
     @PutMapping("/{id}")
     public ApiResponse<CourseResponse> updateCourse(
             @PathVariable Long id,
-            @Valid @RequestBody UpdateCourseRequest request) {
-        return ApiResponse.ok(courseService.updateCourse(id, request), "Cập nhật khóa học thành công");
+            @Valid @RequestBody UpdateCourseRequest request,
+            AuthenticatedUser user) {
+        requireCourseManager(user);
+        return ApiResponse.ok(courseService.updateCourse(id, request, user.userId(), user.hasRole(Roles.ADMIN)), "Cập nhật khóa học thành công");
     }
 
     @PatchMapping("/{id}/status")
     public ApiResponse<CourseResponse> changeCourseStatus(
             @PathVariable Long id,
-            @Valid @RequestBody ChangeCourseStatusRequest request) {
-        return ApiResponse.ok(courseService.changeCourseStatus(id, request), "Thay đổi trạng thái khóa học thành công");
+            @Valid @RequestBody ChangeCourseStatusRequest request,
+            AuthenticatedUser user) {
+        requireCourseManager(user);
+        return ApiResponse.ok(courseService.changeCourseStatus(id, request, user.userId(), user.hasRole(Roles.ADMIN)), "Thay đổi trạng thái khóa học thành công");
     }
 
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> deleteCourse(@PathVariable Long id) {
-        courseService.deleteCourse(id);
+    public ApiResponse<Void> deleteCourse(@PathVariable Long id, AuthenticatedUser user) {
+        requireCourseManager(user);
+        courseService.deleteCourse(id, user.userId(), user.hasRole(Roles.ADMIN));
         return ApiResponse.message("Đã xóa khóa học");
+    }
+
+    private void requireCourseManager(AuthenticatedUser user) {
+        if (!user.hasAnyRole(Roles.INSTRUCTOR, Roles.ADMIN)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN,
+                    "Chỉ giảng viên hoặc quản trị viên mới có quyền quản lý khóa học");
+        }
     }
 }
