@@ -1,11 +1,12 @@
 # Bảng theo dõi công việc
 
-> **Cập nhật lần cuối:** 19/09/2026 22:05 — `main` ở `caffb94`
+> **Cập nhật lần cuối:** 25/09/2026 — `main` ở `0f328a0`
 >
 > File này là nơi duy nhất ghi ai đang làm gì. Xong một việc thì nhóm trưởng cập nhật ngay
 > tại đây, nên **cứ `git pull` là biết việc tiếp theo của mình**, không phải hỏi ai.
 
 - [Việc của bạn](#việc-của-bạn)
+- [Quy tắc viết API](#quy-tắc-viết-api)
 - [Trạng thái hệ thống](#trạng-thái-hệ-thống)
 - [Chi tiết từng việc](#chi-tiết-từng-việc)
 - [Đã xong](#đã-xong)
@@ -17,19 +18,42 @@
 | Người | Service | Việc đang mở | Ưu tiên | Cỡ |
 |---|---|---|---|---|
 | quocluibotre | auth-service | [API gán vai trò + admin đầu tiên](#quocluibotre--api-gán-vai-trò) | **Cao nhất** — chặn cả nhóm | ~2h |
-| duyd92689-debug | course-service | [Phát `course.published`](#duyd92689-debug--phát-sự-kiện-coursepublished) + [bỏ `instructorId` khỏi body](#duyd92689-debug--bỏ-instructorid-khỏi-request-body) | Cao — chặn phamquyet | ~2h |
+| duyd92689-debug | course-service | [Phân quyền và lọc trạng thái](#duyd92689-debug--phân-quyền-và-lọc-trạng-thái-cho-course-service) | **Cao nhất** — 3 lỗ hổng | ~3h |
+| duyd92689-debug | course-service | [Phát `course.published`](#duyd92689-debug--phát-sự-kiện-coursepublished) | Cao — chặn phamquyet | ~1h |
+| duyd92689-debug | course-service | [Trả nội dung bài học](#duyd92689-debug--trả-nội-dung-bài-học) | Trung bình | ~1h |
 | phamquyet19042005-netizen | enrollment-service | [Gửi outbox](#phamquyet19042005-netizen--gửi-outbox-lên-kafka) + [nạp snapshot](#phamquyet19042005-netizen--nạp-course_snapshots) | Cao | ~3h |
+| hiepdeptrai0111 | quiz-service | [Bỏ `createdBy` khỏi body](#hiepdeptrai0111--bỏ-createdby-khỏi-request-body) | Trung bình — rất nhanh | 15 phút |
 | hiepdeptrai0111 | quiz-service | [Chuyển phát sự kiện sang outbox](#hiepdeptrai0111--chuyển-phát-sự-kiện-sang-outbox) | Thấp — làm sau cùng | ~2h |
 | Hiếu (nhóm trưởng) | shared-common | `CoursePublishedEvent` | Cao — chặn 2 người | 30 phút |
+| Cả nhóm | mọi service | [Chuẩn hóa đường dẫn API](#cả-nhóm--chuẩn-hóa-đường-dẫn-api) | Thấp — sau khi demo chạy | ~1h/người |
 
 **Thứ tự.** quocluibotre làm trước vì không có tài khoản giảng viên thì cả nhóm không test
-được phần tạo bài kiểm tra. `CoursePublishedEvent` làm song song vì nó chặn hai người. Ba
-việc còn lại chạy song song sau đó.
+được phần tạo bài kiểm tra. Việc phân quyền của duyd92689-debug ngang hàng về độ gấp:
+hiện course-service không kiểm quyền ở bất kỳ đâu. `CoursePublishedEvent` làm song song vì
+nó chặn hai người. Việc chuẩn hóa đường dẫn để cuối cùng, nhưng **phải xong trước khi bắt
+đầu frontend** — đổi đường dẫn sau khi frontend đã gọi là gãy hết.
+
+## Quy tắc viết API
+
+Mới thêm: **[docs/api-conventions.md](api-conventions.md)** — luật chung cho cả 5 service,
+mỗi quy tắc có số hiệu để review chỉ cần ghi *"vi phạm A2"*.
+
+Đọc trước khi viết endpoint mới. Tóm tắt phần bắt buộc:
+
+| Mã | Quy tắc |
+|---|---|
+| A1 | Danh tính lấy từ token, không nhận `userId`/`instructorId`/`createdBy` từ client |
+| A2 | Mọi endpoint ghi phải kiểm vai trò |
+| A3 | Endpoint công khai phải tự lọc trạng thái, không trả dữ liệu chưa xuất bản |
+| A4 | Thêm controller mới thì khai route ở gateway (CI kiểm) |
+| A5 | Dùng `ApiResponse` và `ErrorCode`, không tự chế hình dạng response |
+
+Bốn trong năm quy tắc này sinh ra từ lỗi có thật trong repo, ghi rõ trong tài liệu.
 
 ## Trạng thái hệ thống
 
 Năm service đã có code, database chạy tự động bằng Flyway, xác thực JWT hoạt động ở cả
-gateway lẫn từng service.
+gateway lẫn từng service. Toàn bộ 212 test xanh.
 
 **Chuỗi đã chạy thông:**
 
@@ -44,9 +68,18 @@ gateway lẫn từng service.
 | Tạo bài kiểm tra, thêm câu hỏi | Không tài khoản nào có `ROLE_INSTRUCTOR` được | quocluibotre |
 | Ghi danh khóa học | `course_snapshots` rỗng, không ai đổ dữ liệu vào | duyd + phamquyet |
 | Thông báo khi ghi danh | Outbox ghi rồi nhưng không ai gửi lên Kafka | phamquyet |
+| Xem nội dung bài học | `LessonResponse` không có trường `content` | duyd |
 
-Ba việc đó xong là demo chạy trọn vẹn: đăng ký → ghi danh → học → làm bài → nhận thông báo
-→ chứng chỉ.
+**Lỗ hổng đang mở:**
+
+| Lỗ hổng | Mức độ | Ai sửa |
+|---|---|---|
+| course-service không kiểm quyền ở bất kỳ endpoint nào | Nặng | duyd |
+| Khóa học `DRAFT` đọc được không cần đăng nhập | Nặng | duyd |
+| `instructorId` và `createdBy` do client tự khai | Vừa | duyd + hiepdeptrai |
+
+Ba việc ở bảng trên xong là demo chạy trọn vẹn: đăng ký → ghi danh → học → làm bài → nhận
+thông báo → chứng chỉ.
 
 ---
 
@@ -85,12 +118,77 @@ Hệ quả: chín chỗ kiểm quyền `requireQuizManager` trong quiz-service *
    Đừng làm kiểu "email này trong biến môi trường thì tự lên admin lúc khởi động" — dễ quên
    tắt, và quên thì ai biết email đó đều thành admin.
 
+3. **Đường dẫn mới `/api/users/**` phải khai route ở gateway** (quy tắc A4), nếu không thì
+   gọi qua cổng 8080 nhận 404 dù service chạy đúng. `GatewayRouteCoverageTest` sẽ làm CI đỏ
+   nếu quên — sửa trong `api-gateway/src/main/resources/application.properties`, route
+   `[0]` của auth-service.
+
 **Tự kiểm.** Đăng nhập bằng admin, gán `ROLE_INSTRUCTOR` cho một tài khoản khác, rồi tài
 khoản đó gọi `POST /api/quizzes` phải thành công. Học viên thường gọi vẫn phải nhận 403.
+Gọi **qua gateway** chứ không gọi thẳng cổng 8081.
 
 **Tiện thể.** `/api/auth/me` đang tự đọc và kiểm token thủ công ngay trong controller. Filter
 của shared-common đã làm việc đó trước khi request tới nơi rồi, nên đổi sang nhận
 `AuthenticatedUser user` là bỏ được cả đoạn.
+
+---
+
+### duyd92689-debug — phân quyền và lọc trạng thái cho course-service
+
+> Việc gấp nhất của bạn. Ba lỗ hổng, cùng nằm trong course-service.
+
+**1. Không có lấy một dòng kiểm quyền.** Đếm `hasRole|hasAnyRole|AuthenticatedUser` trong
+cả 4 controller ra đúng 0:
+
+```
+CategoryController.java:0   CourseController.java:0
+LessonController.java:0     SectionController.java:0
+```
+
+Đã thử bằng tài khoản chỉ có `ROLE_STUDENT`: `POST /api/courses` tạo khóa học thành công.
+Bất kỳ ai đăng nhập cũng tạo, sửa, xóa được khóa học, danh mục, chương và bài học.
+
+**2. `instructorId` do client tự khai.** `CreateCourseRequest` có trường đó và
+`CourseServiceImpl` ghi thẳng `.instructorId(request.getInstructorId())`. Gửi
+`{"instructorId": 999}` thì database ghi đúng 999 — tạo khóa học đứng tên người khác.
+Cùng họ với lỗi `?userId=` đã vá ở quiz-service và enrollment-service, chỉ khác là nó nằm
+trong body.
+
+**3. Khóa học chưa xuất bản đọc được không cần đăng nhập.** `public-paths` mở
+`GET:/api/courses/**` và `GET:/api/lessons/**`, nhưng chỉ `getPublishedCourses` lọc trạng
+thái. Ba hàm còn lại thì không, nên gọi **không kèm token** vẫn ra dữ liệu `DRAFT`:
+
+```
+GET /api/courses/{id}               → 200, đủ cả summary và description
+GET /api/courses/slug/{slug}        → 200
+GET /api/courses/instructor/{id}    → 200, liệt kê khóa DRAFT của giảng viên đó
+GET /api/courses/{id}/curriculum    → 200, cả cây chương
+```
+
+**Cần làm.**
+
+1. Bỏ `instructorId` khỏi `CreateCourseRequest`, thêm `AuthenticatedUser user` vào
+   controller, dùng `user.userId()` (quy tắc A1).
+2. Chặn theo vai trò: chỉ `ROLE_INSTRUCTOR` hoặc `ROLE_ADMIN` mới được tạo, sửa, xóa khóa
+   học, danh mục, chương, bài học (A2). `QuizController.requireQuizManager` là bản mẫu gọn
+   nhất — copy sang cả 4 controller.
+3. Sửa được thì chặn luôn ở tầng dữ liệu: giảng viên chỉ sửa và xóa được khóa học của
+   chính mình, trừ admin.
+4. Lọc trạng thái cho ba hàm đọc công khai và cho `getCurriculumByCourseId` (A3). Cách
+   làm: khách và học viên chỉ thấy `PUBLISHED`; chủ khóa học và admin thấy tất cả.
+
+**Tự kiểm.**
+
+```bash
+# Học viên thường tạo khóa học: phải 403
+curl -i -X POST localhost:8080/api/courses -H "Authorization: Bearer $TOKEN_HOC_VIEN" ...
+
+# Giảng viên tạo, body cố tình gửi instructorId của người khác:
+#   instructor_id trong database phải là id của chính người gọi
+
+# Khóa học DRAFT, gọi KHÔNG token: phải 404 (đừng trả 403 — 403 là xác nhận nó có tồn tại)
+curl -i localhost:8080/api/courses/<id-draft>
+```
 
 ---
 
@@ -117,29 +215,27 @@ log notification-service thấy dòng `Bỏ qua sự kiện loại course.publis
 
 ---
 
-### duyd92689-debug — bỏ `instructorId` khỏi request body
+### duyd92689-debug — trả nội dung bài học
 
-**Vấn đề.** `CreateCourseRequest` có trường `instructorId` do client tự khai, và
-`CourseServiceImpl` ghi thẳng vào khóa học:
+**Vấn đề.** `LessonResponse` có `title`, `type`, `durationSeconds`, `position`,
+`isPreview`, `resources` — nhưng **không có `content` lẫn `contentUrl`**. Hai cột đó có
+trong bảng `lessons`, có trong entity, và không một chỗ nào trong course-service map chúng
+ra response.
 
-```java
-.instructorId(request.getInstructorId())
-```
+Nghĩa là một website học trực tuyến hiện không có đường nào để xem bài học.
 
-Nên ai cũng tạo được khóa học đứng tên giảng viên khác.
+**Cần làm.** Thêm `content` và `contentUrl` vào `LessonResponse`, nhưng **không trả cho
+mọi người** — đây là phần đáng tiền của khóa học:
 
-Cùng họ với lỗi `?userId=` vừa vá ở quiz-service và enrollment-service, chỉ khác là nó nằm
-trong body chứ không phải query param.
+- Bài có `isPreview = true`: ai cũng xem được, kể cả khách chưa đăng nhập.
+- Bài thường: chỉ trả khi người gọi là chủ khóa học, là admin, hoặc đã ghi danh.
 
-**Cần làm.** Bỏ `instructorId` khỏi `CreateCourseRequest`, thêm `AuthenticatedUser user` vào
-controller, dùng `user.userId()`. Nhân tiện chặn luôn theo vai trò: chỉ `ROLE_INSTRUCTOR`
-hoặc `ROLE_ADMIN` mới được tạo, sửa, xóa khóa học và danh mục.
+Phần "đã ghi danh" phải hỏi enrollment-service, mà course-service chưa gọi sang service nào
+bao giờ. Làm sau cùng và hỏi nhóm trưởng trước khi bắt đầu — có thể để tạm mức "đã đăng
+nhập" rồi siết sau, miễn là ghi rõ `// TODO` kèm lý do.
 
-`QuizController.requireQuizManager` là bản mẫu gọn nhất.
-
-**Tự kiểm.** Học viên thường gọi `POST /api/courses` phải nhận 403. Giảng viên tạo khóa học
-thì `instructor_id` trong database phải là id của chính họ, kể cả khi body có gửi kèm id
-khác.
+**Tự kiểm.** Bài `isPreview = true` gọi không token phải thấy `content`. Bài thường gọi
+bằng token người lạ không được thấy.
 
 ---
 
@@ -161,7 +257,7 @@ Trường `payload` đã là chuỗi JSON sẵn nên gửi thẳng được, kh�
 một khóa học, rồi gọi bằng token của chính học viên đó:
 
 ```bash
-curl -H "Authorization: Bearer <token>" localhost:8085/api/notifications
+curl -H "Authorization: Bearer <token>" localhost:8080/api/notifications
 ```
 
 Phải thấy *"Bạn đã ghi danh khóa học ..."*. Đây là chuỗi hoàn chỉnh đầu tiên đi qua ba
@@ -187,6 +283,31 @@ tường minh.
 **Tự kiểm.** Xuất bản một khóa học bên course-service, kiểm tra
 `SELECT * FROM course_snapshots` trong `enrollment_db` thấy dòng tương ứng, rồi ghi danh
 khóa đó phải thành công thay vì 404.
+
+---
+
+### hiepdeptrai0111 — bỏ `createdBy` khỏi request body
+
+> Nhanh nhất trong bảng, làm trước việc outbox.
+
+**Vấn đề.** `CreateQuizRequest` có:
+
+```java
+@NotNull(message = "createdBy không được để trống")
+private Long createdBy;
+```
+
+và `QuizServiceImpl` ghi thẳng `.createdBy(request.getCreatedBy())`. Giảng viên A tạo bài
+kiểm tra rồi khai `createdBy` là id của giảng viên B thì bài đó đứng tên B.
+
+Đây đúng là lỗi bạn đã vá ở PR #21 cho `?userId=`, chỉ khác chỗ nó nằm trong body nên lần
+đó không thấy (quy tắc A1).
+
+**Cần làm.** Bỏ trường khỏi `CreateQuizRequest`, `QuizController.createQuiz` đã có sẵn
+`AuthenticatedUser user` rồi — truyền `user.userId()` xuống service.
+
+**Tự kiểm.** Tạo bài kiểm tra bằng token của giảng viên A, body gửi kèm `createdBy` của
+người khác: cột `created_by` trong `quiz_db` phải là id của A.
 
 ---
 
@@ -223,10 +344,49 @@ gửi đi và thông báo xuất hiện.
 
 ---
 
+### Cả nhóm — chuẩn hóa đường dẫn API
+
+> Ưu tiên thấp nhưng **có hạn chót**: phải xong trước khi ai đó bắt đầu viết frontend.
+> Đổi đường dẫn sau khi frontend đã gọi thì gãy hết và không ai muốn sửa nữa.
+
+**Vấn đề.** Năm service đang đặt đường dẫn theo năm kiểu khác nhau. Không sai về chức năng,
+nhưng người viết frontend sẽ phải nhớ mỗi service một quy ước, và đây là thứ dễ mất điểm
+nhất khi chấm.
+
+Luật đã viết ở [api-conventions.md](api-conventions.md), phần B. Mỗi người sửa service của
+mình:
+
+| Người | Đang là | Đổi thành | Quy tắc |
+|---|---|---|---|
+| duyd | `GET /api/courses/instructor/{id}` | `GET /api/courses?instructorId={id}` | B2 |
+| duyd | `DELETE /api/lessons/resources/{id}` | `DELETE /api/lessons/{lessonId}/resources/{id}` | B3 |
+| duyd | `POST /api/sections` (courseId trong body) | `POST /api/courses/{courseId}/sections` | B3 |
+| duyd | `POST /api/lessons` (sectionId trong body) | `POST /api/sections/{sectionId}/lessons` | B3 |
+| hiepdeptrai | `GET /api/quizzes/course/{id}` | `GET /api/quizzes?courseId={id}` | B2 |
+| hiepdeptrai | `PATCH /api/quizzes/{id}/publish` và `/archive` | `PATCH /api/quizzes/{id}/status` + body | B4 |
+| hiepdeptrai | `GET /api/quizzes/{id}/attempts/history` | `GET /api/quizzes/{id}/attempts` | B5 |
+| hiepdeptrai | `GET /api/quizzes/attempts/{attemptId}` | `GET /api/attempts/{attemptId}` | B7 |
+| phamquyet | `GET /api/enrollments/my-courses` | `GET /api/enrollments` | B6 |
+| phamquyet | `DELETE /api/enrollments/course/{id}` | `DELETE /api/enrollments?courseId={id}` | B2 |
+| phamquyet | `PATCH /api/enrollments/{id}/cancel` | `PATCH /api/enrollments/{id}/status` + body | B4 |
+| phamquyet | `POST /api/progress/lesson` | `PUT /api/lessons/{lessonId}/progress` | B1, B2 |
+| phamquyet | `GET /api/progress/course/{id}` | `GET /api/progress?courseId={id}` | B2 |
+
+**Lưu ý.** Đổi đường dẫn là đổi cả route ở gateway (A4) và `public-paths` nếu endpoint đó
+công khai. Đổi `/api/progress` thành `/api/lessons/{id}/progress` thì đường dẫn đó rơi sang
+route của course-service — báo nhóm trưởng trước, đừng tự đổi.
+
+Ai làm xong phần của mình thì mở một pull request riêng, đừng gộp chung với việc khác:
+đường dẫn đổi là frontend phải sửa theo, cần nhìn thấy rõ trong lịch sử.
+
+---
+
 ## Đã xong
 
 | Ngày | PR | Việc | Người |
 |---|---|---|---|
+| 25/09 | #23 | Sửa route `/api/progress` bị sót ở gateway, `?sort=` sai trả 400, quy tắc viết API | Hiếu |
+| 19/09 | #22 | Biến danh sách phân công thành bảng theo dõi sống | Hiếu |
 | 19/09 | #21 | Bỏ `?userId=` ở 4 endpoint làm bài | hiepdeptrai0111 |
 | 19/09 | #20 | Bảng theo dõi công việc | Hiếu |
 | 19/09 | #13 | Chặn xem đáp án và quản lý bài kiểm tra theo vai trò, nối Flyway | hiepdeptrai0111 |
@@ -256,12 +416,21 @@ Spring Boot 4 tách auto-configuration ra khỏi thư viện gốc. Khai thư vi
 |---|---|
 | Flyway | `org.springframework.boot:spring-boot-flyway` |
 | Kafka | `org.springframework.boot:spring-boot-kafka` |
+| MockMvc trong test | `org.springframework.boot:spring-boot-starter-webmvc-test` |
 
 Thiếu module này thì `@KafkaListener` không được đăng ký, hoặc migration không chạy — và
 **log không có lấy một dòng nào nhắc tới Kafka hay Flyway**. Service khởi động sạch sẽ, health
 báo UP, mọi thứ trông bình thường.
 
 Ở Spring Boot 3 thì chỉ cần thư viện gốc, nên mọi hướng dẫn trên mạng đều thiếu dòng này.
+
+Kèm theo đó là vài lớp bị đổi gói, tìm theo tên cũ sẽ không ra:
+
+| Lớp | Gói cũ (Boot 3) | Gói mới (Boot 4) |
+|---|---|---|
+| `AutoConfigureMockMvc` | `...boot.test.autoconfigure.web.servlet` | `...boot.webmvc.test.autoconfigure` |
+| `ErrorWebExceptionHandler` | `...boot.web.reactive.error` | `...boot.webflux.error` |
+| `PropertyReferenceException` | `...data.mapping` | `...data.core` |
 
 ### 2. Spring Kafka vẫn dùng Jackson 2, Boot 4 đã sang Jackson 3
 
@@ -313,16 +482,26 @@ Và **đừng sửa file migration đã vào main**. Flyway lưu checksum, sửa
 sẽ không khởi động được, máy nào chưa chạy thì nhận schema khác. Đổi schema thì thêm file mới
 `V<n>__*.sql` với câu `ALTER TABLE`. CI có job kiểm việc này.
 
+### Nếu có thêm hoặc sửa endpoint
+
+Đọc [api-conventions.md](api-conventions.md) và chạy phần tự kiểm ở cuối tài liệu đó. Hai
+việc hay quên nhất:
+
+- Khai route ở gateway cho tiền tố mới (A4) — CI có `GatewayRouteCoverageTest` kiểm.
+- Gọi thử **qua gateway cổng 8080**, không gọi thẳng cổng của service. Gọi thẳng thì bỏ qua
+  cả định tuyến lẫn lớp kiểm token vòng ngoài, đúng hai thứ hay hỏng nhất.
+
 ### Lấy danh tính người gọi
 
-Không controller nào được nhận `userId` hay `instructorId` từ client, dù qua query param hay
-qua body. Nhận `AuthenticatedUser user` rồi dùng `user.userId()`. Chi tiết ở
+Không controller nào được nhận `userId`, `instructorId` hay `createdBy` từ client, dù qua
+query param hay qua body. Nhận `AuthenticatedUser user` rồi dùng `user.userId()`. Chi tiết ở
 [authentication.md](authentication.md).
 
 ### Tài liệu nên đọc
 
 | Làm phần nào | Đọc gì |
 |---|---|
+| Bất cứ endpoint nào | [api-conventions.md](api-conventions.md) — luật đặt đường dẫn, mã lỗi, phân quyền |
 | Bất cứ endpoint nào | [authentication.md](authentication.md) — lấy danh tính, chặn theo vai trò |
 | Kafka, sự kiện | [notifications.md](notifications.md), [shared-contracts.md](shared-contracts.md) |
 | Entity, migration | [database-design.md](database-design.md) |

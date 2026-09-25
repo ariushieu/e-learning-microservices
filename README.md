@@ -137,6 +137,10 @@ dùng và lý do từng quyết định ở **[docs/shared-contracts.md](docs/sh
 | Sự kiện | `EnrollmentCreatedEvent`, `EnrollmentCompletedEvent`, `CertificateIssuedEvent`, `QuizGradedEvent`, `KafkaTopics`, `EventTypes` | Hợp đồng Kafka giữa service phát và service nhận |
 | Xác thực | `AuthenticatedUser`, `JwtVerifier`, `Roles`, `JwtAuthenticationFilter` | Kiểm JWT và lấy danh tính người gọi, xem [docs/authentication.md](docs/authentication.md) |
 
+Luật viết endpoint — đặt đường dẫn, chọn mã trạng thái, chặn theo vai trò — ở
+**[docs/api-conventions.md](docs/api-conventions.md)**. Mỗi quy tắc có số hiệu để review
+pull request chỉ cần dẫn số.
+
 `GlobalExceptionHandler` được đăng ký **tự động** qua auto-configuration, service không
 phải khai báo `@ComponentScan` hay tạo bean. Service muốn xử lý riêng thì tự tạo bean cùng
 kiểu, bản mặc định tự nhường chỗ.
@@ -176,9 +180,11 @@ e-learning-microservices/
 ├── scripts/
 │   └── check-commit-subject.sh  # Bộ kiểm tra dùng chung cho hook và CI
 ├── docs/
+│   ├── api-conventions.md  # Luật viết API: đường dẫn, mã lỗi, phân quyền
 │   ├── authentication.md   # Xác thực JWT, phân quyền, đường dẫn công khai
 │   ├── notifications.md    # Luồng sự kiện Kafka và cách dựng thông báo
 │   ├── database-design.md  # Sơ đồ và thuyết minh thiết kế database
+│   ├── phan-cong.md        # Bảng theo dõi ai đang làm việc gì
 │   └── shared-contracts.md # Hợp đồng dùng chung giữa các service
 ├── infra/
 │   └── mysql/

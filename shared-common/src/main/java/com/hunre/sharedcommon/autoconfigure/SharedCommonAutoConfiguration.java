@@ -1,10 +1,14 @@
 package com.hunre.sharedcommon.autoconfigure;
 
 import com.hunre.sharedcommon.exception.GlobalExceptionHandler;
+import com.hunre.sharedcommon.exception.SortPropertyExceptionHandler;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.core.PropertyReferenceException;
 
 /**
  * Tự động đăng ký các bean dùng chung khi service có shared-common trong dependency.
@@ -40,5 +44,25 @@ public class SharedCommonAutoConfiguration {
     @ConditionalOnMissingBean
     public GlobalExceptionHandler globalExceptionHandler() {
         return new GlobalExceptionHandler();
+    }
+
+    /**
+     * Phần chỉ bật khi service có Spring Data trên classpath.
+     *
+     * <p>Phải là lớp lồng riêng chứ không đặt {@code @ConditionalOnClass} thẳng lên
+     * {@code @Bean}: Spring Boot đọc điều kiện bằng ASM nên không nạp lớp trong annotation,
+     * nhưng nếu {@code @Bean} nằm ở lớp ngoài thì kiểu trả về của method vẫn bị nạp và
+     * {@code SortPropertyExceptionHandler} kéo theo {@code PropertyReferenceException}.
+     * Gói vào lớp lồng thì cả lớp lồng lẫn kiểu trả về chỉ được nạp sau khi điều kiện đúng.
+     */
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(PropertyReferenceException.class)
+    static class SpringDataErrorConfiguration {
+
+        @Bean
+        @ConditionalOnMissingBean
+        SortPropertyExceptionHandler sortPropertyExceptionHandler() {
+            return new SortPropertyExceptionHandler();
+        }
     }
 }

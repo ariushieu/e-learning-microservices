@@ -27,7 +27,11 @@ import java.util.List;
  * {@code com.hunre.sharedcommon.autoconfigure.SharedCommonAutoConfiguration}.
  *
  * <p>Service muốn xử lý riêng một loại exception thì tự khai báo
- * {@code @RestControllerAdvice} trong service đó; handler cụ thể hơn sẽ được ưu tiên.
+ * {@code @RestControllerAdvice} trong service đó, và <b>phải kèm {@code @Order}</b> với mức
+ * ưu tiên cao hơn. Spring dừng ở advice đầu tiên có method khớp chứ không chọn advice khai
+ * kiểu exception cụ thể hơn, mà lớp này có {@code @ExceptionHandler(Exception.class)} bắt
+ * tất — quên {@code @Order} thì handler riêng bị lớp này nuốt mất. Xem
+ * {@link SortPropertyExceptionHandler} làm mẫu.
  *
  * <p>Lưu ý: trong file này {@code ErrorResponse} là DTO của dự án, còn interface
  * {@code org.springframework.web.ErrorResponse} của Spring được viết đầy đủ tên gói
