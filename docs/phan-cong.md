@@ -1,6 +1,6 @@
 # Bảng theo dõi công việc
 
-> **Cập nhật lần cuối:** 25/09/2026 — `main` ở `9b305a7`
+> **Cập nhật lần cuối:** 25/09/2026 — `main` ở `5df8194`
 >
 > File này là nơi duy nhất ghi ai đang làm gì. Xong một việc thì nhóm trưởng cập nhật ngay
 > tại đây, nên **cứ `git pull` là biết việc tiếp theo của mình**, không phải hỏi ai.
@@ -491,6 +491,7 @@ Ai làm xong phần của mình thì mở một pull request riêng, đừng g�
 
 | Ngày | PR | Việc | Người |
 |---|---|---|---|
+| 25/09 | #30 | CI chặn cấu hình tắt xác thực; sửa hướng dẫn tắt xác thực trên máy (thiếu bước bật profile) | Hiếu |
 | 25/09 | #28 | Chạy cả hệ thống bằng Docker; gateway trả 502 sau tối đa 3 giây khi một service chết | Hiếu |
 | 25/09 | #26 | Lệnh đồng bộ nhánh ghi rõ tên nhánh | Hiếu |
 | 25/09 | #25 | Bỏ `createdBy` khỏi body, người tạo bài kiểm tra lấy từ token | hiepdeptrai0111 |
