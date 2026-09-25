@@ -409,3 +409,26 @@ Hai cách, chọn một:
 
 Chi tiết đầy đủ — đường dẫn công khai, phân quyền, cấu hình khóa ký — ở
 [docs/authentication.md](docs/authentication.md).
+
+
+## 9. Viết endpoint mới
+
+Luật chung cho cả 5 service ở [docs/api-conventions.md](docs/api-conventions.md). Mỗi quy
+tắc có số hiệu, nên lúc review chỉ cần ghi *"vi phạm A2"* là người kia biết tra ở đâu.
+
+Năm điều bắt buộc, sai là pull request bị trả lại:
+
+| Mã | Quy tắc |
+|---|---|
+| A1 | Danh tính lấy từ token, không nhận `userId`/`instructorId`/`createdBy` từ client |
+| A2 | Mọi endpoint ghi phải kiểm vai trò |
+| A3 | Endpoint công khai phải tự lọc trạng thái, không trả dữ liệu chưa xuất bản |
+| A4 | Thêm controller mới thì khai route ở gateway |
+| A5 | Dùng `ApiResponse` và `ErrorCode`, không tự chế hình dạng response |
+
+A4 là cái hay quên nhất và khó đoán nhất: quên khai route thì gọi qua gateway nhận **404
+dù service chạy hoàn toàn bình thường**, còn gọi thẳng cổng nội bộ thì vẫn đúng — rất dễ
+tưởng là lỗi của frontend. CI có `GatewayRouteCoverageTest` bắt việc này.
+
+Vì vậy khi thử endpoint mới, **gọi qua gateway cổng 8080** chứ đừng gọi thẳng cổng của
+service. Danh sách lệnh tự kiểm ở cuối [api-conventions.md](docs/api-conventions.md).
