@@ -1,6 +1,6 @@
 # Bảng theo dõi công việc
 
-> **Cập nhật lần cuối:** 25/09/2026 — `main` ở `0f328a0`
+> **Cập nhật lần cuối:** 25/09/2026 — `main` ở `f366dd1`
 >
 > File này là nơi duy nhất ghi ai đang làm gì. Xong một việc thì nhóm trưởng cập nhật ngay
 > tại đây, nên **cứ `git pull` là biết việc tiếp theo của mình**, không phải hỏi ai.
@@ -19,19 +19,22 @@
 |---|---|---|---|---|
 | quocluibotre | auth-service | [API gán vai trò + admin đầu tiên](#quocluibotre--api-gán-vai-trò) | **Cao nhất** — chặn cả nhóm | ~2h |
 | duyd92689-debug | course-service | [Phân quyền và lọc trạng thái](#duyd92689-debug--phân-quyền-và-lọc-trạng-thái-cho-course-service) | **Cao nhất** — 3 lỗ hổng | ~3h |
-| duyd92689-debug | course-service | [Phát `course.published`](#duyd92689-debug--phát-sự-kiện-coursepublished) | Cao — chặn phamquyet | ~1h |
+| duyd92689-debug | course-service | [Phát `course.updated`](#duyd92689-debug--phát-sự-kiện-courseupdated) | Cao | ~1h |
 | duyd92689-debug | course-service | [Trả nội dung bài học](#duyd92689-debug--trả-nội-dung-bài-học) | Trung bình | ~1h |
 | phamquyet19042005-netizen | enrollment-service | [Gửi outbox](#phamquyet19042005-netizen--gửi-outbox-lên-kafka) + [nạp snapshot](#phamquyet19042005-netizen--nạp-course_snapshots) | Cao | ~3h |
 | hiepdeptrai0111 | quiz-service | [Bỏ `createdBy` khỏi body](#hiepdeptrai0111--bỏ-createdby-khỏi-request-body) | Trung bình — rất nhanh | 15 phút |
 | hiepdeptrai0111 | quiz-service | [Chuyển phát sự kiện sang outbox](#hiepdeptrai0111--chuyển-phát-sự-kiện-sang-outbox) | Thấp — làm sau cùng | ~2h |
-| Hiếu (nhóm trưởng) | shared-common | `CoursePublishedEvent` | Cao — chặn 2 người | 30 phút |
 | Cả nhóm | mọi service | [Chuẩn hóa đường dẫn API](#cả-nhóm--chuẩn-hóa-đường-dẫn-api) | Thấp — sau khi demo chạy | ~1h/người |
 
-**Thứ tự.** quocluibotre làm trước vì không có tài khoản giảng viên thì cả nhóm không test
-được phần tạo bài kiểm tra. Việc phân quyền của duyd92689-debug ngang hàng về độ gấp:
-hiện course-service không kiểm quyền ở bất kỳ đâu. `CoursePublishedEvent` làm song song vì
-nó chặn hai người. Việc chuẩn hóa đường dẫn để cuối cùng, nhưng **phải xong trước khi bắt
-đầu frontend** — đổi đường dẫn sau khi frontend đã gọi là gãy hết.
+**Không ai phải chờ ai.** Sự kiện `CourseUpdatedEvent` đã có trong shared-common, nên phía
+phát (duyd) và phía nhận (phamquyet) làm song song được — phamquyet tự tạo message mẫu bằng
+Kafka UI để test, không cần đợi course-service.
+
+**Thứ tự ưu tiên.** quocluibotre làm trước vì không có tài khoản giảng viên thì cả nhóm
+không test được phần tạo bài kiểm tra. Việc phân quyền của duyd92689-debug ngang hàng về độ
+gấp: hiện course-service không kiểm quyền ở bất kỳ đâu. Việc chuẩn hóa đường dẫn để cuối
+cùng, nhưng **phải xong trước khi bắt đầu frontend** — đổi đường dẫn sau khi frontend đã
+gọi là gãy hết.
 
 ## Quy tắc viết API
 
@@ -53,7 +56,7 @@ Bốn trong năm quy tắc này sinh ra từ lỗi có thật trong repo, ghi r�
 ## Trạng thái hệ thống
 
 Năm service đã có code, database chạy tự động bằng Flyway, xác thực JWT hoạt động ở cả
-gateway lẫn từng service. Toàn bộ 212 test xanh.
+gateway lẫn từng service. Toàn bộ 215 test xanh.
 
 **Chuỗi đã chạy thông:**
 
@@ -192,26 +195,76 @@ curl -i localhost:8080/api/courses/<id-draft>
 
 ---
 
-### duyd92689-debug — phát sự kiện `course.published`
+### duyd92689-debug — phát sự kiện `course.updated`
 
-**Vấn đề.** enrollment-service cần biết khóa học nào tồn tại và đã xuất bản, nhưng nó không
+> Tên cũ trong bảng này là `course.published`. Đã đổi — lý do ở dưới.
+
+**Vấn đề.** enrollment-service cần biết khóa học nào tồn tại và đang mở, nhưng nó không
 được phép đọc `course_db` — đó là nguyên tắc database-per-service. Nó giữ một bản sao trong
 bảng `course_snapshots`, và bản sao đó phải do course-service báo sang qua Kafka.
 
 Hiện bảng đó rỗng và không có gì đổ vào, nên `POST /api/enrollments` luôn trả 404.
 
-**Cần làm.** Khi `changeCourseStatus` chuyển khóa học sang `PUBLISHED`, và khi `updateCourse`
-sửa một khóa đã xuất bản, phát sự kiện `course.published` lên topic
-`elearning.course.events`.
+**Sự kiện đã có sẵn:** `CourseUpdatedEvent` trong shared-common. Nó mang **ảnh chụp toàn
+bộ** khóa học, kể cả `status`, chứ không chỉ báo "vừa xuất bản". Nếu chỉ báo lúc xuất bản
+thì lưu trữ khóa học sẽ không phát gì, và học viên vẫn ghi danh được vào khóa đã đóng.
+Chi tiết ở [shared-contracts.md](shared-contracts.md#courseupdatedevent-khác-các-sự-kiện-còn-lại).
 
-Nhóm trưởng sẽ thêm `CoursePublishedEvent` vào shared-common trước, bạn chỉ việc dùng.
+**Cần làm.**
 
-Đọc [Hai cái bẫy của Spring Boot 4](#hai-cái-bẫy-của-spring-boot-4) trước khi bắt đầu —
-đã có hai người vấp rồi.
+1. Thêm **hai** dependency vào `course-service/pom.xml` — hiện chưa có dòng Kafka nào:
 
-**Tự kiểm.** Chạy kèm notification-service (nó nghe cả ba topic), xuất bản một khóa học, xem
-log notification-service thấy dòng `Bỏ qua sự kiện loại course.published` — nghĩa là message
-đã tới nơi.
+   ```xml
+   <dependency>
+       <groupId>org.springframework.kafka</groupId>
+       <artifactId>spring-kafka</artifactId>
+   </dependency>
+   <dependency>
+       <groupId>org.springframework.boot</groupId>
+       <artifactId>spring-boot-kafka</artifactId>
+   </dependency>
+   ```
+
+   Thiếu dòng thứ hai là service chạy êm mà không gửi gì, log không nhắc tới Kafka lấy một
+   lần. Xem [bẫy số 1](#1-auto-configuration-nằm-ở-module-riêng).
+
+2. Phát `CourseUpdatedEvent` lên `KafkaTopics.COURSE_EVENTS` trong ba trường hợp:
+
+   | Khi nào | Ở đâu |
+   |---|---|
+   | Khóa học chuyển sang `PUBLISHED` | `changeCourseStatus` |
+   | Sửa một khóa đang `PUBLISHED` | `updateCourse`, và khi thêm/xóa bài học (đổi `totalLessons`) |
+   | Khóa đang `PUBLISHED` chuyển sang trạng thái khác | `changeCourseStatus` |
+
+   Bản nháp chưa từng xuất bản thì **không** phát.
+
+3. Khóa message là **`courseId`**, không phải `userId` như các sự kiện khác — để mọi phiên
+   bản của cùng một khóa học tới đúng thứ tự.
+
+4. Gửi bằng `KafkaTemplate<String, String>` + `tools.jackson.databind.ObjectMapper`, đừng
+   dùng `JsonSerializer`. Chép `QuizEventPublisher` trong quiz-service là nhanh nhất — xem
+   [bẫy số 2](#2-spring-kafka-vẫn-dùng-jackson-2-boot-4-đã-sang-jackson-3).
+
+```java
+CourseUpdatedEvent event = CourseUpdatedEvent.of(
+        course.getId(), course.getTitle(), course.getSlug(), course.getThumbnailUrl(),
+        course.getInstructorId(), course.getInstructorName(), course.getTotalLessons(),
+        course.getStatus().name());
+```
+
+**Tự kiểm.** Bật Kafka và Kafka UI:
+
+```bash
+docker compose up -d kafka kafka-ui
+```
+
+Xuất bản một khóa học, mở http://localhost:8090 → Topics → `elearning.course.events` →
+Messages. Phải thấy một message có key là id khóa học, `eventType` là `course.updated`,
+`status` là `PUBLISHED`. Lưu trữ khóa đó, phải thấy message thứ hai với `status` là
+`ARCHIVED`.
+
+Đừng tìm trong log của notification-service: nó có nhận, nhưng dòng "bỏ qua" ghi ở mức
+`DEBUG` nên cấu hình mặc định không in ra.
 
 ---
 
@@ -244,6 +297,11 @@ bằng token người lạ không được thấy.
 **Vấn đề.** Bảng `outbox_events` đang được ghi đúng trong cùng transaction với nghiệp vụ,
 nhưng không ai đọc nó. `published_at` của mọi dòng đều là NULL.
 
+**Trước tiên:** `enrollment-service/pom.xml` chưa có dòng Kafka nào. Thêm cả `spring-kafka`
+lẫn `spring-boot-kafka` — thiếu cái thứ hai là service chạy êm mà không gửi gì. Xem
+[bẫy số 1](#1-auto-configuration-nằm-ở-module-riêng). Việc nạp snapshot bên dưới cũng cần
+hai dòng này, nên làm một lần cho cả hai.
+
 **Cần làm.** Một `@Scheduled` chạy mỗi vài giây:
 
 ```java
@@ -267,22 +325,50 @@ service của hệ thống.
 
 ### phamquyet19042005-netizen — nạp `course_snapshots`
 
-**Cần làm.** Nghe `course.published` trên topic `elearning.course.events`, ghi hoặc cập nhật
-một dòng trong `course_snapshots`. Phụ thuộc vào việc của duyd92689-debug.
+**Sự kiện đã có sẵn:** `CourseUpdatedEvent` (loại `course.updated`) trong shared-common.
+Tên cũ trong bảng này là `course.published` — đã đổi, lý do ở
+[shared-contracts.md](shared-contracts.md#courseupdatedevent-khác-các-sự-kiện-còn-lại).
 
-**Phải khử trùng lặp.** Kafka bảo đảm at-least-once nên một sự kiện có thể tới nhiều lần.
-notification-service đã làm sẵn bằng bảng `processed_events` với khóa chính là `event_id`,
-copy cách đó là được.
+**Cần làm.** Nghe topic `KafkaTopics.COURSE_EVENTS`, lọc `eventType` bằng
+`EventTypes.COURSE_UPDATED`, rồi **ghi đè cả dòng** trong `course_snapshots` theo `courseId`.
+Mỗi trường của sự kiện khớp đúng một cột của bảng.
 
-Có một bẫy JPA ghi rõ trong [docs/notifications.md](notifications.md): **không dùng `save()`**
-để ghi sổ khử trùng lặp. `save()` chọn INSERT hay UPDATE dựa vào `@Id` có null không, mà
-khóa ở đây là UUID do bên gửi sinh ra nên luôn khác null — thành ra nó UPDATE đè lên dòng cũ,
-không hề có lỗi trùng khóa, và cơ chế chống trùng im lặng mất tác dụng. Dùng câu INSERT
-tường minh.
+Không cần viết code chờ duyd: sự kiện đã có, bạn tự tạo message mẫu bằng Kafka UI để test
+(xem phần Tự kiểm).
 
-**Tự kiểm.** Xuất bản một khóa học bên course-service, kiểm tra
-`SELECT * FROM course_snapshots` trong `enrollment_db` thấy dòng tương ứng, rồi ghi danh
-khóa đó phải thành công thay vì 404.
+Đọc String rồi tự phân tích bằng `tools.jackson.databind.ObjectMapper`, đừng dùng
+`JsonDeserializer`. Chép `KafkaEventConsumer` trong notification-service — xem
+[bẫy số 2](#2-spring-kafka-vẫn-dùng-jackson-2-boot-4-đã-sang-jackson-3).
+
+**Không cần bảng `processed_events` ở đây** — khác với phần outbox và khác với
+notification-service. Sự kiện này là ảnh chụp, không phải "một việc vừa xảy ra": nhận trùng
+hai lần thì ghi đè hai lần cùng một giá trị, kết quả vẫn đúng. Khử trùng lặp chỉ cần khi xử
+lý hai lần gây ra hậu quả hai lần, như gửi hai email.
+
+Cũng vì thế mà ở đây **dùng `save()` là đúng**, dù [notifications.md](notifications.md) dặn
+đừng dùng cho bảng khử trùng lặp. `save()` với `@Id` khác null sẽ tìm dòng cũ, có thì UPDATE,
+không có thì INSERT — đúng thứ cần cho một bản sao. Cái bẫy bên kia là do ở đó cần *lỗi* khi
+trùng; ở đây thì không.
+
+Nhớ gán `syncedAt = Instant.now()` mỗi lần ghi đè. `CourseSnapshot` chỉ điền trường này
+trong `@PrePersist`, nên lúc cập nhật Hibernate ghi lại giá trị cũ, và
+`ON UPDATE CURRENT_TIMESTAMP` của MySQL không chạy vì cột đã được gán tường minh.
+
+**Tự kiểm.** Không cần đợi course-service. Bật Kafka và Kafka UI:
+
+```bash
+docker compose up -d kafka kafka-ui
+```
+
+Mở http://localhost:8090 → Topics → `elearning.course.events` → Produce Message, key là
+`3`, value dán ví dụ JSON trong
+[shared-contracts.md](shared-contracts.md#courseupdatedevent-khác-các-sự-kiện-còn-lại).
+Rồi:
+
+1. `SELECT * FROM course_snapshots` trong `enrollment_db` thấy dòng `course_id = 3`.
+2. Ghi danh khóa 3 qua gateway phải thành công thay vì 404.
+3. Gửi lại đúng message đó lần nữa: vẫn một dòng, không lỗi.
+4. Gửi bản có `"status": "ARCHIVED"`: ghi danh khóa 3 phải bị từ chối.
 
 ---
 
@@ -385,6 +471,7 @@ Ai làm xong phần của mình thì mở một pull request riêng, đừng g�
 
 | Ngày | PR | Việc | Người |
 |---|---|---|---|
+| 25/09 | #24 | `CourseUpdatedEvent`: hợp đồng sự kiện khóa học cho `course_snapshots` | Hiếu |
 | 25/09 | #23 | Sửa route `/api/progress` bị sót ở gateway, `?sort=` sai trả 400, quy tắc viết API | Hiếu |
 | 19/09 | #22 | Biến danh sách phân công thành bảng theo dõi sống | Hiếu |
 | 19/09 | #21 | Bỏ `?userId=` ở 4 endpoint làm bài | hiepdeptrai0111 |

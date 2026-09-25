@@ -179,7 +179,7 @@ GlobalExceptionHandler authExceptionHandler() {
 | Topic | Service phát | Sự kiện |
 |-------|--------------|---------|
 | `elearning.enrollment.events` | enrollment-service | `enrollment.created`, `enrollment.completed`, `certificate.issued` |
-| `elearning.course.events` | course-service | sự kiện về khóa học |
+| `elearning.course.events` | course-service | `course.updated` |
 | `elearning.quiz.events` | quiz-service | `quiz.graded` |
 
 Gom theo service phát chứ không tách mỗi loại sự kiện một topic, vì Kafka chỉ bảo đảm thứ
@@ -197,9 +197,46 @@ người rơi vào cùng partition.
 | `EnrollmentCompletedEvent` | `enrollment.completed` | enrollment | notification | `COURSE_COMPLETED` |
 | `CertificateIssuedEvent` | `certificate.issued` | enrollment | notification | `CERTIFICATE_ISSUED` |
 | `QuizGradedEvent` | `quiz.graded` | quiz | notification, enrollment | `QUIZ_GRADED` |
+| `CourseUpdatedEvent` | `course.updated` | course | enrollment | — |
 
 Cột cuối trỏ tới `notification_templates.code` đã nạp sẵn trong migration của
 notification-service.
+
+### `CourseUpdatedEvent` khác các sự kiện còn lại
+
+Bốn sự kiện kia báo **một việc vừa xảy ra** (ghi danh, chấm bài). Sự kiện này thì mang
+**ảnh chụp toàn bộ** một khóa học ở thời điểm hiện tại — đủ mọi cột nghiệp vụ của
+`course_snapshots`, kể cả trường không đổi. Consumer ghi đè cả dòng theo `courseId`, không
+phải so trường nào mới.
+
+Tài liệu cũ từng dự tính tách thành `course.created`, `course.updated`, rồi có lúc gọi là
+`course.published`. Chốt lại một loại duy nhất vì lý do cụ thể: nếu chỉ báo lúc xuất bản thì
+**lưu trữ khóa học không phát gì**, bản sao vẫn ghi `PUBLISHED`, và học viên vẫn ghi danh
+được vào khóa đã đóng. Mang theo `status` thì một sự kiện lo được cả xuất bản, sửa nội dung
+lẫn lưu trữ.
+
+Phát khi khóa học chuyển sang `PUBLISHED`, khi sửa một khóa đang `PUBLISHED`, và khi khóa
+đang `PUBLISHED` chuyển sang trạng thái khác. Bản nháp chưa từng xuất bản thì không phát.
+
+Khóa message là **`courseId`**, không phải `userId`: thứ cần giữ đúng thứ tự ở đây là các
+phiên bản của cùng một khóa học. Lệch thứ tự thì bản "đã lưu trữ" tới trước bản "đã xuất
+bản" và bản sao kẹt ở trạng thái sai.
+
+```json
+{
+  "eventId": "3b2e8f10-7c4d-4a1e-9f6b-2d5c8e7a1b90",
+  "eventType": "course.updated",
+  "occurredAt": "2026-09-25T07:15:00Z",
+  "courseId": 3,
+  "title": "Kiến trúc Microservices",
+  "slug": "kien-truc-microservices",
+  "thumbnailUrl": null,
+  "instructorId": 7,
+  "instructorName": "Nguyễn Văn A",
+  "totalLessons": 12,
+  "status": "PUBLISHED"
+}
+```
 
 Luôn dùng hằng số `EventTypes.*` và `KafkaTopics.*`, đừng gõ chuỗi trực tiếp. Gõ tay thì
 một bên viết `"enrollment.created"` còn bên kia viết `"enrollmentCreated"` là message không
