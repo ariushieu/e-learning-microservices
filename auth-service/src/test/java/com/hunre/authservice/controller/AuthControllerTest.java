@@ -1,13 +1,17 @@
 package com.hunre.authservice.controller;
 
 import com.hunre.authservice.domain.UserStatus;
-import com.hunre.authservice.dto.*;
-import com.hunre.authservice.security.JwtService;
+import com.hunre.authservice.dto.AuthResponse;
+import com.hunre.authservice.dto.LoginRequest;
+import com.hunre.authservice.dto.RegisterRequest;
+import com.hunre.authservice.dto.UserResponse;
 import com.hunre.authservice.service.AuthService;
 import com.hunre.sharedcommon.exception.BusinessException;
 import com.hunre.sharedcommon.exception.DuplicateResourceException;
 import com.hunre.sharedcommon.exception.ErrorCode;
 import com.hunre.sharedcommon.exception.GlobalExceptionHandler;
+import com.hunre.sharedcommon.security.AuthenticatedUser;
+import com.hunre.sharedcommon.security.AuthenticatedUserArgumentResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,9 +24,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Collections;
+import java.util.Set;
 
+import static com.hunre.sharedcommon.security.JwtAuthenticationFilter.USER_ATTRIBUTE;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -36,17 +41,19 @@ class AuthControllerTest {
     @Mock
     private AuthService authService;
 
-    @Mock
-    private JwtService jwtService;
-
     @InjectMocks
     private AuthController authController;
+
+    private static final AuthenticatedUser STUDENT_USER = new AuthenticatedUser(
+            1L, "student@hunre.edu.vn", "Nguyen Van A",
+            Set.of("ROLE_STUDENT"));
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(authController)
                 .setControllerAdvice(new GlobalExceptionHandler())
+                .setCustomArgumentResolvers(new AuthenticatedUserArgumentResolver())
                 .build();
     }
 
@@ -176,7 +183,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/auth/me không có Authorization header trả về 401 UNAUTHORIZED")
+    @DisplayName("GET /api/auth/me không có token trả về 401 UNAUTHORIZED")
     void getMe_missingHeader_returns401() throws Exception {
         mockMvc.perform(get("/api/auth/me"))
                 .andExpect(status().isUnauthorized())
@@ -185,23 +192,20 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/auth/me với token hợp lệ trả về thông tin user")
+    @DisplayName("GET /api/auth/me với AuthenticatedUser hợp lệ trả về thông tin user")
     void getMe_validToken_returnsUser() throws Exception {
-        when(jwtService.validateToken("valid.token")).thenReturn(true);
-        when(jwtService.extractUserId("valid.token")).thenReturn(10L);
-
         UserResponse userResponse = UserResponse.builder()
-                .id(10L)
+                .id(1L)
                 .email("student@hunre.edu.vn")
                 .fullName("Nguyen Van A")
                 .build();
-        when(authService.getUserById(10L)).thenReturn(userResponse);
+        when(authService.getUserById(1L)).thenReturn(userResponse);
 
         mockMvc.perform(get("/api/auth/me")
-                        .header("Authorization", "Bearer valid.token"))
+                        .requestAttr(USER_ATTRIBUTE, STUDENT_USER))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.id").value(10))
+                .andExpect(jsonPath("$.data.id").value(1))
                 .andExpect(jsonPath("$.data.email").value("student@hunre.edu.vn"));
     }
 }
