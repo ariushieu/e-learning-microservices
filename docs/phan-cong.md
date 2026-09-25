@@ -1,6 +1,6 @@
 # Bảng theo dõi công việc
 
-> **Cập nhật lần cuối:** 25/09/2026 — `main` ở `bab55ac`
+> **Cập nhật lần cuối:** 25/09/2026 — `main` ở `ccdfefa`
 >
 > File này là nơi duy nhất ghi ai đang làm gì. Xong một việc thì nhóm trưởng cập nhật ngay
 > tại đây, nên **cứ `git pull` là biết việc tiếp theo của mình**, không phải hỏi ai.
@@ -20,14 +20,14 @@
 |---|---|---|---|---|
 | duyd92689-debug | course-service | [Chủ sở hữu của chương và bài học](#duyd92689-debug--chủ-sở-hữu-của-chương-và-bài-học) | **Cao** — lỗ hổng | ~1h |
 | duyd92689-debug | course-service | [Trả nội dung bài học](#duyd92689-debug--trả-nội-dung-bài-học) | Trung bình | ~1h |
-| phamquyet19042005-netizen | enrollment-service | [Sửa PR #29 (gửi outbox)](#phamquyet19042005-netizen--gửi-outbox-lên-kafka) rồi [nạp snapshot](#phamquyet19042005-netizen--nạp-course_snapshots) | **Cao** — chặn chuỗi ghi danh | ~2h |
+| phamquyet19042005-netizen | enrollment-service | [Nạp `course_snapshots`](#phamquyet19042005-netizen--nạp-course_snapshots) | **Cao nhất** — mắt xích cuối của chuỗi ghi danh | ~1h |
 | hiepdeptrai0111 | quiz-service | [Chuyển phát sự kiện sang outbox](#hiepdeptrai0111--chuyển-phát-sự-kiện-sang-outbox) | Thấp — làm sau cùng | ~2h |
 | Cả nhóm | mọi service | [Chuẩn hóa đường dẫn API](#cả-nhóm--chuẩn-hóa-đường-dẫn-api) | Trung bình — trước đợt test Postman | ~1h/người |
 | quocluibotre | — | Đã xong việc chính, chờ nhóm trưởng giao việc mới | — | — |
 
-**Việc gấp nhất là của phamquyet.** course-service đã phát `course.updated` thật (#31), nên
-chỉ còn thiếu phía nhận: sửa xong PR #29 và nạp `course_snapshots` là chuỗi đăng ký → ghi danh →
-thông báo chạy thông lần đầu tiên.
+**Việc gấp nhất là của phamquyet.** course-service đã phát `course.updated` (#31), enrollment
+đã gửi outbox lên Kafka (#29). Chỉ còn một mắt xích: nạp `course_snapshots` từ sự kiện đó là
+chuỗi đăng ký → ghi danh → thông báo chạy thông trọn vẹn lần đầu tiên.
 
 **Tài khoản giảng viên và admin giờ tạo được bằng API** (#27), không cần SQL nữa:
 
@@ -52,7 +52,7 @@ làm lại hết.
 |---|---|---|---|
 | 1 | API gán vai trò | Người test phải sửa database bằng SQL mới có tài khoản giảng viên | **Xong** (#27) |
 | 2 | Phân quyền course-service, lọc khóa `DRAFT` | "Học viên tạo được khóa học" sẽ bị ghi nhận là chạy đúng | Gần xong (#31) — còn [chủ sở hữu chương/bài học](#duyd92689-debug--chủ-sở-hữu-của-chương-và-bài-học) |
-| 3 | Ghi danh chạy thông (`course.updated` + nạp snapshot + gửi outbox) | Ghi danh, tiến độ, chứng chỉ, thông báo ghi danh đều 404 — nửa hệ thống không test được | Phía phát xong (#31); chờ phamquyet sửa #29 và nạp snapshot |
+| 3 | Ghi danh chạy thông (`course.updated` + nạp snapshot + gửi outbox) | Ghi danh, tiến độ, chứng chỉ, thông báo ghi danh đều 404 — nửa hệ thống không test được | Phát sự kiện xong (#31), gửi outbox xong (#29) — chỉ còn nạp snapshot |
 | 4 | Chuẩn hóa đường dẫn | Viết collection xong, đổi đường dẫn là viết lại | Chưa bắt đầu |
 
 **Môi trường test đã sẵn.** Không ai phải tự bật 6 service trong IntelliJ:
@@ -99,7 +99,7 @@ Bốn trong năm quy tắc này sinh ra từ lỗi có thật trong repo, ghi r�
 ## Trạng thái hệ thống
 
 Năm service đã có code, database chạy tự động bằng Flyway, xác thực JWT hoạt động ở cả
-gateway lẫn từng service. Toàn bộ 259 test xanh. Cả hệ thống chạy được bằng một lệnh
+gateway lẫn từng service. Toàn bộ 264 test xanh. Cả hệ thống chạy được bằng một lệnh
 `docker compose --profile app up -d --build --wait`, xem
 [README](../README.md#cách-nhanh-nhất-chạy-cả-hệ-thống-bằng-docker).
 
@@ -115,7 +115,6 @@ admin cấp quyền giảng viên → tạo khóa học → xuất bản → s�
 | Không làm được | Nguyên nhân | Ai sửa |
 |---|---|---|
 | Ghi danh khóa học | Sự kiện `course.updated` đã lên Kafka nhưng chưa ai nạp vào `course_snapshots` | phamquyet |
-| Thông báo khi ghi danh | Code gửi outbox đã có trong PR #29, chờ sửa hai dòng cấu hình | phamquyet |
 | Xem nội dung bài học | `LessonResponse` không có trường `content` | duyd |
 
 **Lỗ hổng đang mở:**
@@ -124,7 +123,7 @@ admin cấp quyền giảng viên → tạo khóa học → xuất bản → s�
 |---|---|---|
 | Giảng viên thêm/sửa/xóa được chương và bài học trong khóa của giảng viên khác | Vừa | duyd |
 
-Hai việc của phamquyet ở bảng trên xong là demo chạy trọn vẹn: đăng ký → ghi danh → học → làm bài → nhận
+Việc đó của phamquyet xong là demo chạy trọn vẹn: đăng ký → ghi danh → học → làm bài → nhận
 thông báo → chứng chỉ.
 
 ---
@@ -194,48 +193,14 @@ bằng token người lạ không được thấy.
 
 ---
 
-### phamquyet19042005-netizen — gửi outbox lên Kafka
-
-> **Đã có PR #29, đang chờ sửa.** Worker chạy đúng — đã chạy thật, thông báo ghi danh tới qua
-> Kafka sau khoảng 4 giây. Chỉ cần bỏ `elearning.security.enabled=false` và
-> `spring.flyway.validate-on-migrate=false` khỏi `application.properties`, tách hai file
-> Postman ra khỏi PR. Chi tiết trong review trên GitHub.
-
-**Vấn đề.** Bảng `outbox_events` đang được ghi đúng trong cùng transaction với nghiệp vụ,
-nhưng không ai đọc nó. `published_at` của mọi dòng đều là NULL.
-
-**Trước tiên:** `enrollment-service/pom.xml` chưa có dòng Kafka nào. Thêm cả `spring-kafka`
-lẫn `spring-boot-kafka` — thiếu cái thứ hai là service chạy êm mà không gửi gì. Xem
-[bẫy số 1](#1-auto-configuration-nằm-ở-module-riêng). Việc nạp snapshot bên dưới cũng cần
-hai dòng này, nên làm một lần cho cả hai. Không phải sửa `docker-compose.yml` — compose đã
-truyền sẵn địa chỉ Kafka cho mọi service.
-
-**Cần làm.** Một `@Scheduled` chạy mỗi vài giây:
-
-```java
-List<OutboxEvent> chuaGui = outboxEventRepository.findTop50ByPublishedAtIsNullOrderByCreatedAtAsc();
-// gửi lên KafkaTopics.ENROLLMENT_EVENTS, gửi xong thì set published_at
-```
-
-Trường `payload` đã là chuỗi JSON sẵn nên gửi thẳng được, không phải chuyển đổi lại.
-
-**Tự kiểm — lần đầu tiên nhìn thấy kết quả thật.** Chạy kèm notification-service, ghi danh
-một khóa học, rồi gọi bằng token của chính học viên đó:
-
-```bash
-curl -H "Authorization: Bearer <token>" localhost:8080/api/notifications
-```
-
-Phải thấy *"Bạn đã ghi danh khóa học ..."*. Đây là chuỗi hoàn chỉnh đầu tiên đi qua ba
-service của hệ thống.
-
----
-
 ### phamquyet19042005-netizen — nạp `course_snapshots`
 
 **Sự kiện đã có sẵn:** `CourseUpdatedEvent` (loại `course.updated`) trong shared-common.
 Tên cũ trong bảng này là `course.published` — đã đổi, lý do ở
 [shared-contracts.md](shared-contracts.md#courseupdatedevent-khác-các-sự-kiện-còn-lại).
+
+Dependency Kafka (`spring-kafka` + `spring-boot-kafka`) đã có trong `enrollment-service/pom.xml`
+từ #29 — không phải thêm gì, chỉ việc viết consumer.
 
 **Cần làm.** Nghe topic `KafkaTopics.COURSE_EVENTS`, lọc `eventType` bằng
 `EventTypes.COURSE_UPDATED`, rồi **ghi đè cả dòng** trong `course_snapshots` theo `courseId`.
@@ -304,8 +269,10 @@ lưu nhưng không ai biết để gửi lại.
 migration mới, ghi sự kiện vào bảng đó trong cùng transaction với bài làm, rồi một
 `@Scheduled` riêng đọc và gửi lên Kafka.
 
-Đợi phamquyet19042005-netizen làm xong phần gửi bên enrollment-service rồi copy cách làm,
-để hai service không mỗi bên một kiểu.
+Phần gửi bên enrollment-service đã xong (#29): chép `OutboxPublisherWorker` và
+`KafkaProducerConfig` của enrollment-service, để hai service không mỗi bên một kiểu. Worker đó
+đã được chạy thật — dừng cả đợt khi một sự kiện gửi hỏng để giữ thứ tự, và chỉ đánh dấu
+`published_at` sau khi Kafka xác nhận.
 
 **Tự kiểm.** Nộp bài khi **tắt Kafka** (`spring.kafka.enabled=false`): bài làm vẫn lưu, và
 có một dòng trong `outbox_events` với `published_at` là NULL. Bật Kafka lại thì dòng đó được
@@ -355,6 +322,7 @@ Ai làm xong phần của mình thì mở một pull request riêng, đừng g�
 
 | Ngày | PR | Việc | Người |
 |---|---|---|---|
+| 25/09 | #29 | Gửi outbox của enrollment-service lên Kafka | phamquyet19042005-netizen |
 | 25/09 | #31 | Phân quyền course-service, ẩn khóa DRAFT, phát `course.updated` | duyd92689-debug |
 | 25/09 | #27 | API gán vai trò, admin đầu tiên, `/me` dùng `AuthenticatedUser` | quocluibotre |
 | 25/09 | #30 | CI chặn cấu hình tắt xác thực; sửa hướng dẫn tắt xác thực trên máy (thiếu bước bật profile) | Hiếu |
