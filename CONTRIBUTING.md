@@ -404,13 +404,39 @@ if (!user.hasRole(Roles.INSTRUCTOR)) {
 
 Hai cách, chọn một:
 
-1. Lấy token thật: gọi `POST /api/auth/login`, copy `accessToken`, đính vào header
-   `Authorization: Bearer <token>` cho mọi request sau đó.
-2. Tắt xác thực khi chạy máy mình: thêm `elearning.security.enabled=false` vào
-   `application-local.properties`. Mọi request sẽ được coi là một người dùng giả lập có đủ
-   ba vai trò.
+1. **Lấy token thật** (nên dùng): gọi `POST /api/auth/login`, copy `accessToken`, đính vào
+   header `Authorization: Bearer <token>` cho mọi request sau đó. Cần tài khoản giảng viên
+   thì dùng API gán vai trò `PATCH /api/users/{id}/roles` bằng tài khoản admin tạo sẵn —
+   cả hai đến từ PR #27; trước khi PR đó vào `main` thì vẫn phải gán vai trò bằng SQL.
+2. **Tắt xác thực trên máy mình.** Phải làm đủ **hai** bước — bản cũ của tài liệu này chỉ
+   ghi bước a, và làm mỗi bước a thì không có tác dụng gì:
 
-Đừng commit cách 2 vào `application.properties`.
+   a. Tạo file `<service>/src/main/resources/application-local.properties` (đã được
+      `.gitignore`, không bao giờ bị commit) với một dòng:
+
+      ```properties
+      elearning.security.enabled=false
+      ```
+
+   b. **Bật profile `local`** khi chạy service. Spring chỉ đọc
+      `application-local.properties` khi profile đó đang bật; không bật thì file bị bỏ qua
+      và service vẫn đòi token.
+
+      - IntelliJ: **Run > Edit Configurations**, chọn cấu hình chạy service, thêm biến môi
+        trường `SPRING_PROFILES_ACTIVE=local`. Bản Ultimate có sẵn ô **Active profiles**,
+        điền `local`.
+      - Dòng lệnh: `SPRING_PROFILES_ACTIVE=local ./mvnw -pl enrollment-service -am spring-boot:run`
+
+   Kiểm tra: gọi một endpoint cần đăng nhập mà không gửi token. Nhận 200 là đã tắt, nhận 401
+   là profile chưa bật.
+
+   Khi tắt, **mọi request được coi là cùng một người dùng giả lập** (id 1, đủ ba vai trò).
+   Không test được những gì phụ thuộc danh tính — hai học viên khác nhau sẽ thành một người.
+
+**Không bao giờ đặt cách 2 vào `application.properties`.** Service vẫn chạy, mọi endpoint
+vẫn trả 200, nhưng dữ liệu của mọi người dồn về một tài khoản — lỗi này không làm hỏng test
+nào. CI có job "Security enabled in committed config" chặn việc đó: pull request nào tắt xác
+thực trong file cấu hình được commit sẽ đỏ.
 
 Chi tiết đầy đủ — đường dẫn công khai, phân quyền, cấu hình khóa ký — ở
 [docs/authentication.md](docs/authentication.md).

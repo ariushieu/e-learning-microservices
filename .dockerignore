@@ -19,6 +19,12 @@
 # host rồi truyền vào container qua environment, không cần đưa file vào image.
 .env
 
+# Cấu hình riêng trên máy từng người, thường dùng để tắt xác thực khi test (CONTRIBUTING
+# mục 8). File nằm ngay trong src/main/resources nên nếu không chặn ở đây thì build image
+# trên máy ai có file này là nó lọt vào image cùng mã nguồn.
+**/application-local.properties
+**/application-local.yml
+
 docs
 infra
 scripts
