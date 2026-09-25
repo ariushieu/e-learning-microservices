@@ -18,11 +18,12 @@ commit dòng code đầu tiên.
 | JDK 17 trở lên   | Có       | Không cần cài Maven, dự án dùng Maven Wrapper                 |
 | Git              | Có       | Trên Windows nên dùng Git for Windows, có sẵn Git Bash        |
 | IntelliJ IDEA    | Khuyến nghị | Community Edition là đủ                                    |
-| Docker Desktop   | **Không** ở giai đoạn hiện tại | Xem [mục 7](#7-làm-việc-với-database) |
+| Docker Desktop   | Có       | Chạy MySQL và Kafka, xem [mục 7](#7-làm-việc-với-database) |
 
-Hiện tại chưa service nào kết nối database, nên **không có Docker vẫn clone về build và
-chạy được bình thường**. Khi nào bước cấu hình Spring Data JPA hoàn tất thì mới cần một
-MySQL, lúc đó tài liệu này sẽ được cập nhật.
+`./mvnw clean verify` chạy được mà không cần Docker — test dùng H2 trong bộ nhớ. Nhưng **chạy
+service thì phải có MySQL**: cả 5 service kết nối database lúc khởi động và dừng ngay nếu
+không có. Cách nhanh nhất là `docker compose up -d mysql`, hoặc chạy luôn cả hệ thống bằng
+một lệnh như README hướng dẫn ở mục "Cách nhanh nhất: chạy cả hệ thống bằng Docker".
 
 ## 2. Clone và thiết lập
 

@@ -1,6 +1,6 @@
 # Bảng theo dõi công việc
 
-> **Cập nhật lần cuối:** 25/09/2026 — `main` ở `5df8194`
+> **Cập nhật lần cuối:** 25/09/2026 — `main` ở `bab55ac`
 >
 > File này là nơi duy nhất ghi ai đang làm gì. Xong một việc thì nhóm trưởng cập nhật ngay
 > tại đây, nên **cứ `git pull` là biết việc tiếp theo của mình**, không phải hỏi ai.
@@ -18,36 +18,42 @@
 
 | Người | Service | Việc đang mở | Ưu tiên | Cỡ |
 |---|---|---|---|---|
-| quocluibotre | auth-service | [API gán vai trò + admin đầu tiên](#quocluibotre--api-gán-vai-trò) | **Cao nhất** — chặn cả nhóm | ~2h |
-| duyd92689-debug | course-service | [Phân quyền và lọc trạng thái](#duyd92689-debug--phân-quyền-và-lọc-trạng-thái-cho-course-service) | **Cao nhất** — 3 lỗ hổng | ~3h |
-| duyd92689-debug | course-service | [Phát `course.updated`](#duyd92689-debug--phát-sự-kiện-courseupdated) | Cao | ~1h |
+| duyd92689-debug | course-service | [Chủ sở hữu của chương và bài học](#duyd92689-debug--chủ-sở-hữu-của-chương-và-bài-học) | **Cao** — lỗ hổng | ~1h |
 | duyd92689-debug | course-service | [Trả nội dung bài học](#duyd92689-debug--trả-nội-dung-bài-học) | Trung bình | ~1h |
-| phamquyet19042005-netizen | enrollment-service | [Gửi outbox](#phamquyet19042005-netizen--gửi-outbox-lên-kafka) + [nạp snapshot](#phamquyet19042005-netizen--nạp-course_snapshots) | Cao | ~3h |
+| phamquyet19042005-netizen | enrollment-service | [Sửa PR #29 (gửi outbox)](#phamquyet19042005-netizen--gửi-outbox-lên-kafka) rồi [nạp snapshot](#phamquyet19042005-netizen--nạp-course_snapshots) | **Cao** — chặn chuỗi ghi danh | ~2h |
 | hiepdeptrai0111 | quiz-service | [Chuyển phát sự kiện sang outbox](#hiepdeptrai0111--chuyển-phát-sự-kiện-sang-outbox) | Thấp — làm sau cùng | ~2h |
 | Cả nhóm | mọi service | [Chuẩn hóa đường dẫn API](#cả-nhóm--chuẩn-hóa-đường-dẫn-api) | Trung bình — trước đợt test Postman | ~1h/người |
+| quocluibotre | — | Đã xong việc chính, chờ nhóm trưởng giao việc mới | — | — |
 
-**Không ai phải chờ ai.** Sự kiện `CourseUpdatedEvent` đã có trong shared-common, nên phía
-phát (duyd) và phía nhận (phamquyet) làm song song được — phamquyet tự tạo message mẫu bằng
-Kafka UI để test, không cần đợi course-service.
+**Việc gấp nhất là của phamquyet.** course-service đã phát `course.updated` thật (#31), nên
+chỉ còn thiếu phía nhận: sửa xong PR #29 và nạp `course_snapshots` là chuỗi đăng ký → ghi danh →
+thông báo chạy thông lần đầu tiên.
 
-**Thứ tự ưu tiên.** quocluibotre làm trước vì không có tài khoản giảng viên thì cả nhóm
-không test được phần tạo bài kiểm tra. Việc phân quyền của duyd92689-debug ngang hàng về độ
-gấp: hiện course-service không kiểm quyền ở bất kỳ đâu. Việc chuẩn hóa đường dẫn để cuối
-cùng, nhưng **phải xong trước đợt test Postman và trước khi bắt đầu frontend** — đổi đường
-dẫn sau khi đã viết collection hay đã có frontend gọi là phải làm lại hết.
+**Tài khoản giảng viên và admin giờ tạo được bằng API** (#27), không cần SQL nữa:
+
+```
+Admin có sẵn: admin@elearning.hunre.edu.vn / Admin@123456   (tài khoản dev — đổi khi triển khai thật)
+Cấp quyền:    PATCH /api/users/{id}/roles   {"roles": ["ROLE_STUDENT", "ROLE_INSTRUCTOR"]}
+```
+
+Người được cấp quyền phải **đăng nhập lại** mới nhận vai trò mới — token cũ vẫn mang vai trò
+cũ tới khi hết hạn.
+
+Việc chuẩn hóa đường dẫn để cuối cùng, nhưng **phải xong trước đợt test Postman và trước khi
+bắt đầu frontend** — đổi đường dẫn sau khi đã viết collection hay đã có frontend gọi là phải
+làm lại hết.
 
 ## Khi nào test toàn bộ API bằng Postman
 
-**Chưa sẵn sàng.** Môi trường test thì đã có (xem dưới), nhưng test bây giờ thì một nửa kết
-quả là lỗi đã biết, còn một phần là "PASS" cho những hành vi đáng ra phải bị chặn. Đủ bốn
-điều kiện sau thì nhóm trưởng báo cả nhóm vào test:
+**Chưa sẵn sàng — xong 1/4, điều kiện 2 gần xong.** Môi trường test thì đã có (xem dưới).
+Đủ bốn điều kiện sau thì nhóm trưởng báo cả nhóm vào test:
 
-| # | Điều kiện | Nếu test trước khi có | Ai |
+| # | Điều kiện | Nếu test trước khi có | Tình trạng |
 |---|---|---|---|
-| 1 | API gán vai trò | Người test phải sửa database bằng SQL mới có tài khoản giảng viên | quocluibotre |
-| 2 | Phân quyền course-service, lọc khóa `DRAFT` | "Học viên tạo được khóa học" sẽ bị ghi nhận là chạy đúng | duyd |
-| 3 | Ghi danh chạy thông (`course.updated` + nạp snapshot + gửi outbox) | Ghi danh, tiến độ, chứng chỉ, thông báo ghi danh đều 404 — nửa hệ thống không test được | duyd + phamquyet |
-| 4 | Chuẩn hóa đường dẫn | Viết collection xong, đổi đường dẫn là viết lại | cả nhóm |
+| 1 | API gán vai trò | Người test phải sửa database bằng SQL mới có tài khoản giảng viên | **Xong** (#27) |
+| 2 | Phân quyền course-service, lọc khóa `DRAFT` | "Học viên tạo được khóa học" sẽ bị ghi nhận là chạy đúng | Gần xong (#31) — còn [chủ sở hữu chương/bài học](#duyd92689-debug--chủ-sở-hữu-của-chương-và-bài-học) |
+| 3 | Ghi danh chạy thông (`course.updated` + nạp snapshot + gửi outbox) | Ghi danh, tiến độ, chứng chỉ, thông báo ghi danh đều 404 — nửa hệ thống không test được | Phía phát xong (#31); chờ phamquyet sửa #29 và nạp snapshot |
+| 4 | Chuẩn hóa đường dẫn | Viết collection xong, đổi đường dẫn là viết lại | Chưa bắt đầu |
 
 **Môi trường test đã sẵn.** Không ai phải tự bật 6 service trong IntelliJ:
 
@@ -93,7 +99,7 @@ Bốn trong năm quy tắc này sinh ra từ lỗi có thật trong repo, ghi r�
 ## Trạng thái hệ thống
 
 Năm service đã có code, database chạy tự động bằng Flyway, xác thực JWT hoạt động ở cả
-gateway lẫn từng service. Toàn bộ 222 test xanh. Cả hệ thống chạy được bằng một lệnh
+gateway lẫn từng service. Toàn bộ 259 test xanh. Cả hệ thống chạy được bằng một lệnh
 `docker compose --profile app up -d --build --wait`, xem
 [README](../README.md#cách-nhanh-nhất-chạy-cả-hệ-thống-bằng-docker).
 
@@ -101,213 +107,66 @@ gateway lẫn từng service. Toàn bộ 222 test xanh. Cả hệ thống chạy
 
 ```
 đăng nhập → làm bài kiểm tra → nộp bài → nhận thông báo trong ứng dụng
+admin cấp quyền giảng viên → tạo khóa học → xuất bản → sự kiện course.updated lên Kafka
 ```
 
 **Chuỗi chưa chạy, và vì sao:**
 
 | Không làm được | Nguyên nhân | Ai sửa |
 |---|---|---|
-| Tạo bài kiểm tra, thêm câu hỏi | Không tài khoản nào có `ROLE_INSTRUCTOR` được | quocluibotre |
-| Ghi danh khóa học | `course_snapshots` rỗng, không ai đổ dữ liệu vào | duyd + phamquyet |
-| Thông báo khi ghi danh | Outbox ghi rồi nhưng không ai gửi lên Kafka | phamquyet |
+| Ghi danh khóa học | Sự kiện `course.updated` đã lên Kafka nhưng chưa ai nạp vào `course_snapshots` | phamquyet |
+| Thông báo khi ghi danh | Code gửi outbox đã có trong PR #29, chờ sửa hai dòng cấu hình | phamquyet |
 | Xem nội dung bài học | `LessonResponse` không có trường `content` | duyd |
 
 **Lỗ hổng đang mở:**
 
 | Lỗ hổng | Mức độ | Ai sửa |
 |---|---|---|
-| course-service không kiểm quyền ở bất kỳ endpoint nào | Nặng | duyd |
-| Khóa học `DRAFT` đọc được không cần đăng nhập | Nặng | duyd |
-| `instructorId` do client tự khai | Vừa | duyd |
+| Giảng viên thêm/sửa/xóa được chương và bài học trong khóa của giảng viên khác | Vừa | duyd |
 
-Ba việc ở bảng trên xong là demo chạy trọn vẹn: đăng ký → ghi danh → học → làm bài → nhận
+Hai việc của phamquyet ở bảng trên xong là demo chạy trọn vẹn: đăng ký → ghi danh → học → làm bài → nhận
 thông báo → chứng chỉ.
 
 ---
 
 ## Chi tiết từng việc
 
-### quocluibotre — API gán vai trò
+### duyd92689-debug — chủ sở hữu của chương và bài học
 
-**Vấn đề.** Hiện không tài khoản nào có thể trở thành giảng viên.
-`AuthServiceImpl.register()` gán cứng `ROLE_STUDENT`, và auth-service chỉ có bốn endpoint:
-register, login, refresh-token, logout. Không có chỗ nào đổi vai trò.
+> Phần còn lại của việc phân quyền. PR #31 đã chặn đúng những gì bảng phân công yêu cầu — chỉ
+> chủ khóa học mới sửa, đổi trạng thái, xóa được khóa học. Đề bài thiếu phần chương và bài
+> học; lỗi đó là của nhóm trưởng.
 
-`ROLE_INSTRUCTOR` và `ROLE_ADMIN` có trong enum `RoleCode`, có sẵn trong bảng `roles`
-(migration `V2__seed_roles.sql` đã nạp), nhưng không ai giữ được.
-
-Hệ quả: chín chỗ kiểm quyền `requireQuizManager` trong quiz-service **không ai vượt qua
-được**. Không thể tạo bài kiểm tra, thêm câu hỏi, xuất bản hay xem đáp án.
-
-**Cần làm.**
-
-1. `PATCH /api/users/{id}/roles` — gán và gỡ vai trò cho một tài khoản. Chỉ `ROLE_ADMIN`
-   gọi được:
-
-   ```java
-   if (!user.hasRole(Roles.ADMIN)) {
-       throw new BusinessException(ErrorCode.FORBIDDEN, "Chỉ quản trị viên mới được đổi vai trò");
-   }
-   ```
-
-   Xem `QuizController.requireQuizManager` làm mẫu.
-
-2. **Tài khoản admin đầu tiên.** Đây là bài toán con gà quả trứng: cần admin mới gán được
-   admin. Gợi ý một migration `V3__seed_admin.sql` tạo sẵn một tài khoản admin với mật khẩu
-   đã băm BCrypt, ghi rõ trong tài liệu rằng đây là tài khoản dev và phải đổi khi triển khai
-   thật.
-
-   Đừng làm kiểu "email này trong biến môi trường thì tự lên admin lúc khởi động" — dễ quên
-   tắt, và quên thì ai biết email đó đều thành admin.
-
-3. **Đường dẫn mới `/api/users/**` phải khai route ở gateway** (quy tắc A4), nếu không thì
-   gọi qua cổng 8080 nhận 404 dù service chạy đúng. `GatewayRouteCoverageTest` sẽ làm CI đỏ
-   nếu quên — sửa trong `api-gateway/src/main/resources/application.properties`, route
-   `[0]` của auth-service.
-
-**Tự kiểm.** Đăng nhập bằng admin, gán `ROLE_INSTRUCTOR` cho một tài khoản khác, rồi tài
-khoản đó gọi `POST /api/quizzes` phải thành công. Học viên thường gọi vẫn phải nhận 403.
-Gọi **qua gateway** chứ không gọi thẳng cổng 8081.
-
-**Tiện thể.** `/api/auth/me` đang tự đọc và kiểm token thủ công ngay trong controller. Filter
-của shared-common đã làm việc đó trước khi request tới nơi rồi, nên đổi sang nhận
-`AuthenticatedUser user` là bỏ được cả đoạn.
-
----
-
-### duyd92689-debug — phân quyền và lọc trạng thái cho course-service
-
-> Việc gấp nhất của bạn. Ba lỗ hổng, cùng nằm trong course-service.
-
-**1. Không có lấy một dòng kiểm quyền.** Đếm `hasRole|hasAnyRole|AuthenticatedUser` trong
-cả 4 controller ra đúng 0:
+**Vấn đề.** Các endpoint ghi của chương, bài học và tài liệu đính kèm chỉ kiểm vai trò, không
+kiểm ai là chủ. Chạy thật qua gateway với hai giảng viên A và B:
 
 ```
-CategoryController.java:0   CourseController.java:0
-LessonController.java:0     SectionController.java:0
+B tạo chương trong khóa của A      → 201
+B tạo bài học trong chương của A   → 201
+B đổi tên chương của A             → 200
 ```
 
-Đã thử bằng tài khoản chỉ có `ROLE_STUDENT`: `POST /api/courses` tạo khóa học thành công.
-Bất kỳ ai đăng nhập cũng tạo, sửa, xóa được khóa học, danh mục, chương và bài học.
+Bài học B chèn vào còn được tính vào `totalLessons` và đi theo sự kiện `course.updated` sang
+enrollment-service, nên phần trăm tiến độ của mọi học viên trong khóa đó bị tính sai.
 
-**2. `instructorId` do client tự khai.** `CreateCourseRequest` có trường đó và
-`CourseServiceImpl` ghi thẳng `.instructorId(request.getInstructorId())`. Gửi
-`{"instructorId": 999}` thì database ghi đúng 999 — tạo khóa học đứng tên người khác.
-Cùng họ với lỗi `?userId=` đã vá ở quiz-service và enrollment-service, chỉ khác là nó nằm
-trong body.
-
-**3. Khóa học chưa xuất bản đọc được không cần đăng nhập.** `public-paths` mở
-`GET:/api/courses/**` và `GET:/api/lessons/**`, nhưng chỉ `getPublishedCourses` lọc trạng
-thái. Ba hàm còn lại thì không, nên gọi **không kèm token** vẫn ra dữ liệu `DRAFT`:
-
-```
-GET /api/courses/{id}               → 200, đủ cả summary và description
-GET /api/courses/slug/{slug}        → 200
-GET /api/courses/instructor/{id}    → 200, liệt kê khóa DRAFT của giảng viên đó
-GET /api/courses/{id}/curriculum    → 200, cả cây chương
-```
-
-**Cần làm.**
-
-1. Bỏ `instructorId` khỏi `CreateCourseRequest`, thêm `AuthenticatedUser user` vào
-   controller, dùng `user.userId()` (quy tắc A1).
-2. Chặn theo vai trò: chỉ `ROLE_INSTRUCTOR` hoặc `ROLE_ADMIN` mới được tạo, sửa, xóa khóa
-   học, danh mục, chương, bài học (A2). `QuizController.requireQuizManager` là bản mẫu gọn
-   nhất — copy sang cả 4 controller.
-3. Sửa được thì chặn luôn ở tầng dữ liệu: giảng viên chỉ sửa và xóa được khóa học của
-   chính mình, trừ admin.
-4. Lọc trạng thái cho ba hàm đọc công khai và cho `getCurriculumByCourseId` (A3). Cách
-   làm: khách và học viên chỉ thấy `PUBLISHED`; chủ khóa học và admin thấy tất cả.
-
-**Tự kiểm.**
-
-```bash
-# Học viên thường tạo khóa học: phải 403
-curl -i -X POST localhost:8080/api/courses -H "Authorization: Bearer $TOKEN_HOC_VIEN" ...
-
-# Giảng viên tạo, body cố tình gửi instructorId của người khác:
-#   instructor_id trong database phải là id của chính người gọi
-
-# Khóa học DRAFT, gọi KHÔNG token: phải 404 (đừng trả 403 — 403 là xác nhận nó có tồn tại)
-curl -i localhost:8080/api/courses/<id-draft>
-```
-
----
-
-### duyd92689-debug — phát sự kiện `course.updated`
-
-> Tên cũ trong bảng này là `course.published`. Đã đổi — lý do ở dưới.
-
-**Vấn đề.** enrollment-service cần biết khóa học nào tồn tại và đang mở, nhưng nó không
-được phép đọc `course_db` — đó là nguyên tắc database-per-service. Nó giữ một bản sao trong
-bảng `course_snapshots`, và bản sao đó phải do course-service báo sang qua Kafka.
-
-Hiện bảng đó rỗng và không có gì đổ vào, nên `POST /api/enrollments` luôn trả 404.
-
-**Sự kiện đã có sẵn:** `CourseUpdatedEvent` trong shared-common. Nó mang **ảnh chụp toàn
-bộ** khóa học, kể cả `status`, chứ không chỉ báo "vừa xuất bản". Nếu chỉ báo lúc xuất bản
-thì lưu trữ khóa học sẽ không phát gì, và học viên vẫn ghi danh được vào khóa đã đóng.
-Chi tiết ở [shared-contracts.md](shared-contracts.md#courseupdatedevent-khác-các-sự-kiện-còn-lại).
-
-**Cần làm.**
-
-1. Thêm **hai** dependency vào `course-service/pom.xml` — hiện chưa có dòng Kafka nào:
-
-   ```xml
-   <dependency>
-       <groupId>org.springframework.kafka</groupId>
-       <artifactId>spring-kafka</artifactId>
-   </dependency>
-   <dependency>
-       <groupId>org.springframework.boot</groupId>
-       <artifactId>spring-boot-kafka</artifactId>
-   </dependency>
-   ```
-
-   Thiếu dòng thứ hai là service chạy êm mà không gửi gì, log không nhắc tới Kafka lấy một
-   lần. Xem [bẫy số 1](#1-auto-configuration-nằm-ở-module-riêng).
-
-   Không phải sửa `docker-compose.yml`: compose đã truyền
-   `SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092` cho cả 5 service, Spring tự nhận biến này
-   và đè lên `localhost:9092` trong `application.properties` khi chạy trong Docker.
-
-2. Phát `CourseUpdatedEvent` lên `KafkaTopics.COURSE_EVENTS` trong ba trường hợp:
-
-   | Khi nào | Ở đâu |
-   |---|---|
-   | Khóa học chuyển sang `PUBLISHED` | `changeCourseStatus` |
-   | Sửa một khóa đang `PUBLISHED` | `updateCourse`, và khi thêm/xóa bài học (đổi `totalLessons`) |
-   | Khóa đang `PUBLISHED` chuyển sang trạng thái khác | `changeCourseStatus` |
-
-   Bản nháp chưa từng xuất bản thì **không** phát.
-
-3. Khóa message là **`courseId`**, không phải `userId` như các sự kiện khác — để mọi phiên
-   bản của cùng một khóa học tới đúng thứ tự.
-
-4. Gửi bằng `KafkaTemplate<String, String>` + `tools.jackson.databind.ObjectMapper`, đừng
-   dùng `JsonSerializer`. Chép `QuizEventPublisher` trong quiz-service là nhanh nhất — xem
-   [bẫy số 2](#2-spring-kafka-vẫn-dùng-jackson-2-boot-4-đã-sang-jackson-3).
+**Cần làm.** Trong `CurriculumServiceImpl`, mọi hàm ghi (`createSection`, `updateSection`,
+`deleteSection`, `createLesson`, `updateLesson`, `deleteLesson`, `addResource`, `deleteResource`)
+lấy khóa học cha ra rồi kiểm đúng như bạn đã làm cho khóa học:
 
 ```java
-CourseUpdatedEvent event = CourseUpdatedEvent.of(
-        course.getId(), course.getTitle(), course.getSlug(), course.getThumbnailUrl(),
-        course.getInstructorId(), course.getInstructorName(), course.getTotalLessons(),
-        course.getStatus().name());
+if (!isAdmin && !course.getInstructorId().equals(currentUserId)) {
+    throw new BusinessException(ErrorCode.FORBIDDEN,
+            "Bạn không có quyền chỉnh sửa khóa học của giảng viên khác");
+}
 ```
 
-**Tự kiểm.** Bật Kafka và Kafka UI:
+Controller truyền `user.userId()` và `user.hasRole(Roles.ADMIN)` xuống, giống `CourseController`.
 
-```bash
-docker compose up -d kafka kafka-ui
-```
+Tiện thể bỏ vế `currentUserId != null &&` trong các kiểm tra chủ sở hữu hiện có: lỡ id là null
+thì phải chặn chứ không được mở.
 
-Xuất bản một khóa học, mở http://localhost:8090 → Topics → `elearning.course.events` →
-Messages. Phải thấy một message có key là id khóa học, `eventType` là `course.updated`,
-`status` là `PUBLISHED`. Lưu trữ khóa đó, phải thấy message thứ hai với `status` là
-`ARCHIVED`.
-
-Đừng tìm trong log của notification-service: nó có nhận, nhưng dòng "bỏ qua" ghi ở mức
-`DEBUG` nên cấu hình mặc định không in ra.
+**Tự kiểm.** Giảng viên B tạo chương, tạo bài học, sửa, xóa trong khóa của A: cả bốn phải 403.
+A làm những việc đó trong khóa của mình vẫn 201/200. Admin làm được ở mọi khóa.
 
 ---
 
@@ -336,6 +195,11 @@ bằng token người lạ không được thấy.
 ---
 
 ### phamquyet19042005-netizen — gửi outbox lên Kafka
+
+> **Đã có PR #29, đang chờ sửa.** Worker chạy đúng — đã chạy thật, thông báo ghi danh tới qua
+> Kafka sau khoảng 4 giây. Chỉ cần bỏ `elearning.security.enabled=false` và
+> `spring.flyway.validate-on-migrate=false` khỏi `application.properties`, tách hai file
+> Postman ra khỏi PR. Chi tiết trong review trên GitHub.
 
 **Vấn đề.** Bảng `outbox_events` đang được ghi đúng trong cùng transaction với nghiệp vụ,
 nhưng không ai đọc nó. `published_at` của mọi dòng đều là NULL.
@@ -377,8 +241,8 @@ Tên cũ trong bảng này là `course.published` — đã đổi, lý do ở
 `EventTypes.COURSE_UPDATED`, rồi **ghi đè cả dòng** trong `course_snapshots` theo `courseId`.
 Mỗi trường của sự kiện khớp đúng một cột của bảng.
 
-Không cần viết code chờ duyd: sự kiện đã có, bạn tự tạo message mẫu bằng Kafka UI để test
-(xem phần Tự kiểm).
+course-service đã phát sự kiện thật từ #31: xuất bản một khóa học là có message trên topic.
+Vẫn có thể tự tạo message mẫu bằng Kafka UI như phần Tự kiểm bên dưới.
 
 Đọc String rồi tự phân tích bằng `tools.jackson.databind.ObjectMapper`, đừng dùng
 `JsonDeserializer`. Chép `KafkaEventConsumer` trong notification-service — xem
@@ -491,6 +355,8 @@ Ai làm xong phần của mình thì mở một pull request riêng, đừng g�
 
 | Ngày | PR | Việc | Người |
 |---|---|---|---|
+| 25/09 | #31 | Phân quyền course-service, ẩn khóa DRAFT, phát `course.updated` | duyd92689-debug |
+| 25/09 | #27 | API gán vai trò, admin đầu tiên, `/me` dùng `AuthenticatedUser` | quocluibotre |
 | 25/09 | #30 | CI chặn cấu hình tắt xác thực; sửa hướng dẫn tắt xác thực trên máy (thiếu bước bật profile) | Hiếu |
 | 25/09 | #28 | Chạy cả hệ thống bằng Docker; gateway trả 502 sau tối đa 3 giây khi một service chết | Hiếu |
 | 25/09 | #26 | Lệnh đồng bộ nhánh ghi rõ tên nhánh | Hiếu |
