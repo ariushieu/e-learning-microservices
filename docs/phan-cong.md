@@ -1,6 +1,6 @@
 # Bảng theo dõi công việc
 
-> **Cập nhật lần cuối:** 25/09/2026 — `main` ở `f366dd1`
+> **Cập nhật lần cuối:** 25/09/2026 — `main` ở `9b305a7`
 >
 > File này là nơi duy nhất ghi ai đang làm gì. Xong một việc thì nhóm trưởng cập nhật ngay
 > tại đây, nên **cứ `git pull` là biết việc tiếp theo của mình**, không phải hỏi ai.
@@ -22,7 +22,6 @@
 | duyd92689-debug | course-service | [Phát `course.updated`](#duyd92689-debug--phát-sự-kiện-courseupdated) | Cao | ~1h |
 | duyd92689-debug | course-service | [Trả nội dung bài học](#duyd92689-debug--trả-nội-dung-bài-học) | Trung bình | ~1h |
 | phamquyet19042005-netizen | enrollment-service | [Gửi outbox](#phamquyet19042005-netizen--gửi-outbox-lên-kafka) + [nạp snapshot](#phamquyet19042005-netizen--nạp-course_snapshots) | Cao | ~3h |
-| hiepdeptrai0111 | quiz-service | [Bỏ `createdBy` khỏi body](#hiepdeptrai0111--bỏ-createdby-khỏi-request-body) | Trung bình — rất nhanh | 15 phút |
 | hiepdeptrai0111 | quiz-service | [Chuyển phát sự kiện sang outbox](#hiepdeptrai0111--chuyển-phát-sự-kiện-sang-outbox) | Thấp — làm sau cùng | ~2h |
 | Cả nhóm | mọi service | [Chuẩn hóa đường dẫn API](#cả-nhóm--chuẩn-hóa-đường-dẫn-api) | Thấp — sau khi demo chạy | ~1h/người |
 
@@ -56,7 +55,7 @@ Bốn trong năm quy tắc này sinh ra từ lỗi có thật trong repo, ghi r�
 ## Trạng thái hệ thống
 
 Năm service đã có code, database chạy tự động bằng Flyway, xác thực JWT hoạt động ở cả
-gateway lẫn từng service. Toàn bộ 215 test xanh.
+gateway lẫn từng service. Toàn bộ 216 test xanh.
 
 **Chuỗi đã chạy thông:**
 
@@ -79,7 +78,7 @@ gateway lẫn từng service. Toàn bộ 215 test xanh.
 |---|---|---|
 | course-service không kiểm quyền ở bất kỳ endpoint nào | Nặng | duyd |
 | Khóa học `DRAFT` đọc được không cần đăng nhập | Nặng | duyd |
-| `instructorId` và `createdBy` do client tự khai | Vừa | duyd + hiepdeptrai |
+| `instructorId` do client tự khai | Vừa | duyd |
 
 Ba việc ở bảng trên xong là demo chạy trọn vẹn: đăng ký → ghi danh → học → làm bài → nhận
 thông báo → chứng chỉ.
@@ -372,31 +371,6 @@ Rồi:
 
 ---
 
-### hiepdeptrai0111 — bỏ `createdBy` khỏi request body
-
-> Nhanh nhất trong bảng, làm trước việc outbox.
-
-**Vấn đề.** `CreateQuizRequest` có:
-
-```java
-@NotNull(message = "createdBy không được để trống")
-private Long createdBy;
-```
-
-và `QuizServiceImpl` ghi thẳng `.createdBy(request.getCreatedBy())`. Giảng viên A tạo bài
-kiểm tra rồi khai `createdBy` là id của giảng viên B thì bài đó đứng tên B.
-
-Đây đúng là lỗi bạn đã vá ở PR #21 cho `?userId=`, chỉ khác chỗ nó nằm trong body nên lần
-đó không thấy (quy tắc A1).
-
-**Cần làm.** Bỏ trường khỏi `CreateQuizRequest`, `QuizController.createQuiz` đã có sẵn
-`AuthenticatedUser user` rồi — truyền `user.userId()` xuống service.
-
-**Tự kiểm.** Tạo bài kiểm tra bằng token của giảng viên A, body gửi kèm `createdBy` của
-người khác: cột `created_by` trong `quiz_db` phải là id của A.
-
----
-
 ### hiepdeptrai0111 — chuyển phát sự kiện sang outbox
 
 > Ưu tiên thấp. Ba việc ở trên chặn demo, việc này thì không — cứ làm sau khi nhóm thông
@@ -471,6 +445,7 @@ Ai làm xong phần của mình thì mở một pull request riêng, đừng g�
 
 | Ngày | PR | Việc | Người |
 |---|---|---|---|
+| 25/09 | #25 | Bỏ `createdBy` khỏi body, người tạo bài kiểm tra lấy từ token | hiepdeptrai0111 |
 | 25/09 | #24 | `CourseUpdatedEvent`: hợp đồng sự kiện khóa học cho `course_snapshots` | Hiếu |
 | 25/09 | #23 | Sửa route `/api/progress` bị sót ở gateway, `?sort=` sai trả 400, quy tắc viết API | Hiếu |
 | 19/09 | #22 | Biến danh sách phân công thành bảng theo dõi sống | Hiếu |
@@ -546,13 +521,22 @@ bên gửi không làm hỏng bên nhận. Consumer định tuyến theo trườ
 ### Đồng bộ nhánh
 
 Tất cả các PR đều merge kiểu squash, nên nhánh cũ sẽ xung đột với chính code mình vừa được
-merge. Chạy một lần trước khi bắt đầu:
+merge. Chạy một lần trước khi bắt đầu, **thay `quiz-service` bằng tên nhánh của bạn ở cả ba
+chỗ**:
 
 ```bash
 git fetch origin
+git checkout quiz-service
+git log --oneline origin/main..quiz-service     # in ra dòng nào là còn việc chưa merge: DỪNG, hỏi nhóm trưởng
 git reset --hard origin/main
-git push --force-with-lease
+git push --force-with-lease origin quiz-service
 ```
+
+**Lệnh push phải ghi tên nhánh.** Bản cũ trong file này viết `git push --force-with-lease`
+trống trơn và thiếu cả `git checkout`, nên đang đứng ở nhánh nào là đè lên nhánh đó — ngày
+25/09 nhánh `auth-service` đã bị đẩy từ máy của một người không phụ trách nó. Lần đó may là
+nhánh không có gì chưa merge nên không mất code, nhưng lần sau thì chưa chắc. Ghi rõ
+`origin quiz-service` thì dù lỡ đứng nhầm nhánh, lệnh cũng chỉ đụng đúng nhánh của bạn.
 
 ### Nếu có sửa entity hoặc migration
 
