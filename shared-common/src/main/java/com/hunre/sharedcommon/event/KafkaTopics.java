@@ -16,7 +16,7 @@ public final class KafkaTopics {
     /** Sự kiện do enrollment-service phát: ghi danh, hoàn thành, cấp chứng chỉ. */
     public static final String ENROLLMENT_EVENTS = "elearning.enrollment.events";
 
-    /** Sự kiện do course-service phát: tạo, sửa, xuất bản khóa học. */
+    /** Sự kiện do course-service phát: {@link CourseUpdatedEvent}. */
     public static final String COURSE_EVENTS = "elearning.course.events";
 
     /** Sự kiện do quiz-service phát: chấm bài kiểm tra. */

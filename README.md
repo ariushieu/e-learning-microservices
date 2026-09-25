@@ -134,7 +134,7 @@ dùng và lý do từng quyết định ở **[docs/shared-contracts.md](docs/sh
 |------|-----|---------|
 | Response | `ApiResponse<T>`, `PageResponse<T>` | Vỏ bọc và phân trang thống nhất cho mọi API |
 | Lỗi | `ErrorCode`, `ErrorResponse`, `BusinessException`, `GlobalExceptionHandler` | 5 service trả lỗi cùng một hình dạng, frontend chỉ xử lý một chỗ |
-| Sự kiện | `EnrollmentCreatedEvent`, `EnrollmentCompletedEvent`, `CertificateIssuedEvent`, `QuizGradedEvent`, `KafkaTopics`, `EventTypes` | Hợp đồng Kafka giữa service phát và service nhận |
+| Sự kiện | `EnrollmentCreatedEvent`, `EnrollmentCompletedEvent`, `CertificateIssuedEvent`, `QuizGradedEvent`, `CourseUpdatedEvent`, `KafkaTopics`, `EventTypes` | Hợp đồng Kafka giữa service phát và service nhận |
 | Xác thực | `AuthenticatedUser`, `JwtVerifier`, `Roles`, `JwtAuthenticationFilter` | Kiểm JWT và lấy danh tính người gọi, xem [docs/authentication.md](docs/authentication.md) |
 
 Luật viết endpoint — đặt đường dẫn, chọn mã trạng thái, chặn theo vai trò — ở
