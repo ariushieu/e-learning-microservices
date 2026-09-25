@@ -13,7 +13,8 @@ import com.hunre.quizservice.entity.Question;
 import com.hunre.quizservice.entity.Quiz;
 import com.hunre.quizservice.entity.QuizAttempt;
 import com.hunre.quizservice.entity.QuizStatus;
-import com.hunre.quizservice.event.QuizEventPublisher;
+import com.hunre.quizservice.entity.OutboxEvent;
+import com.hunre.quizservice.repository.OutboxEventRepository;
 import com.hunre.quizservice.repository.QuizAttemptRepository;
 import com.hunre.quizservice.repository.QuizRepository;
 import com.hunre.quizservice.service.QuizAttemptService;
@@ -25,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -45,7 +47,8 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
 
     private final QuizRepository quizRepository;
     private final QuizAttemptRepository quizAttemptRepository;
-    private final QuizEventPublisher quizEventPublisher;
+    private final OutboxEventRepository outboxEventRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
     @Transactional
@@ -203,7 +206,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
 
         QuizAttempt savedAttempt = quizAttemptRepository.save(attempt);
 
-        // Bắn sự kiện sang Kafka
+        // Lưu sự kiện cùng transaction với bài làm. Worker phát lên Kafka sau khi commit.
         QuizGradedEvent event = QuizGradedEvent.of(
                 savedAttempt.getId(),
                 quiz.getId(),
@@ -213,7 +216,13 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                 finalScorePercent,
                 passed
         );
-        quizEventPublisher.publishQuizGraded(event);
+        outboxEventRepository.save(OutboxEvent.builder()
+                .eventId(event.eventId())
+                .aggregateType("QUIZ_ATTEMPT")
+                .aggregateId(String.valueOf(savedAttempt.getId()))
+                .eventType(event.eventType())
+                .payload(objectMapper.writeValueAsString(event))
+                .build());
 
         return QuizResultResponse.builder()
                 .attemptId(savedAttempt.getId())

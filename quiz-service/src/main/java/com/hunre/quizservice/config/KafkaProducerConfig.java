@@ -36,8 +36,8 @@ public class KafkaProducerConfig {
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         // StringSerializer chứ không phải JsonSerializer của Spring Kafka: lớp đó chạy trên
-        // Jackson 2 còn Boot 4 dùng Jackson 3, và nó chết khi gặp Instant. QuizEventPublisher
-        // tự chuyển sự kiện sang JSON bằng Jackson 3 rồi gửi chuỗi.
+        // Jackson 2 còn Boot 4 dùng Jackson 3, và nó chết khi gặp Instant. Outbox lưu
+        // JSON từ Jackson 3; worker gửi nguyên chuỗi đó lên Kafka.
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configProps.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, maxBlockMs);
         return new DefaultKafkaProducerFactory<>(configProps);

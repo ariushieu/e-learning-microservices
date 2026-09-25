@@ -11,7 +11,8 @@ import com.hunre.quizservice.entity.QuestionType;
 import com.hunre.quizservice.entity.Quiz;
 import com.hunre.quizservice.entity.QuizAttempt;
 import com.hunre.quizservice.entity.QuizStatus;
-import com.hunre.quizservice.event.QuizEventPublisher;
+import com.hunre.quizservice.entity.OutboxEvent;
+import com.hunre.quizservice.repository.OutboxEventRepository;
 import com.hunre.quizservice.repository.QuizAttemptRepository;
 import com.hunre.quizservice.repository.QuizRepository;
 import com.hunre.quizservice.service.impl.QuizAttemptServiceImpl;
@@ -22,7 +23,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -47,7 +50,10 @@ class QuizAttemptServiceTest {
     private QuizAttemptRepository quizAttemptRepository;
 
     @Mock
-    private QuizEventPublisher quizEventPublisher;
+    private OutboxEventRepository outboxEventRepository;
+
+    @Spy
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     @InjectMocks
     private QuizAttemptServiceImpl quizAttemptService;
@@ -172,7 +178,17 @@ class QuizAttemptServiceTest {
         assertThat(result.getScore()).isEqualByComparingTo("100.00");
         assertThat(result.isPassed()).isTrue();
         assertThat(attempt.getStatus()).isEqualTo(AttemptStatus.SUBMITTED);
-        verify(quizEventPublisher).publishQuizGraded(any());
+        org.mockito.ArgumentCaptor<OutboxEvent> eventCaptor =
+                org.mockito.ArgumentCaptor.forClass(OutboxEvent.class);
+        verify(outboxEventRepository).save(eventCaptor.capture());
+        OutboxEvent outbox = eventCaptor.getValue();
+        assertThat(outbox.getAggregateType()).isEqualTo("QUIZ_ATTEMPT");
+        assertThat(outbox.getAggregateId()).isEqualTo("500");
+        assertThat(outbox.getEventType()).isEqualTo("quiz.graded");
+        assertThat(outbox.getPublishedAt()).isNull();
+        assertThat(objectMapper.readTree(outbox.getPayload()).get("userId").asLong()).isEqualTo(99L);
+        assertThat(objectMapper.readTree(outbox.getPayload()).get("score").decimalValue())
+                .isEqualByComparingTo("100.00");
     }
 
     @Test
@@ -205,5 +221,6 @@ class QuizAttemptServiceTest {
         // 1/3 * 100 = 33.33%
         assertThat(result.getScore()).isEqualByComparingTo("33.33");
         assertThat(result.isPassed()).isFalse();
+        verify(outboxEventRepository).save(any(OutboxEvent.class));
     }
 }
