@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface QuizService {
 
-    QuizResponse createQuiz(CreateQuizRequest request);
+    QuizResponse createQuiz(CreateQuizRequest request, Long createdBy);
 
     QuizResponse updateQuiz(Long id, UpdateQuizRequest request);
 

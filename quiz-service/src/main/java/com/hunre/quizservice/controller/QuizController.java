@@ -39,7 +39,7 @@ public class QuizController {
             @Valid @RequestBody CreateQuizRequest request,
             AuthenticatedUser user) {
         requireQuizManager(user);
-        return ApiResponse.ok(quizService.createQuiz(request), "Tạo bài kiểm tra thành công");
+        return ApiResponse.ok(quizService.createQuiz(request, user.userId()), "Tạo bài kiểm tra thành công");
     }
 
     @PutMapping("/{id}")

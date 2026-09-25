@@ -28,6 +28,8 @@ import java.util.Collections;
 import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -76,7 +78,6 @@ class QuizControllerTest {
                 .timeLimitMinutes(30)
                 .passScore(new BigDecimal("60.00"))
                 .maxAttempts(3)
-                .createdBy(1L)
                 .build();
 
         QuizResponse response = QuizResponse.builder()
@@ -89,7 +90,7 @@ class QuizControllerTest {
                 .updatedAt(Instant.now())
                 .build();
 
-        when(quizService.createQuiz(any(CreateQuizRequest.class))).thenReturn(response);
+        when(quizService.createQuiz(any(CreateQuizRequest.class), eq(instructor.userId()))).thenReturn(response);
 
         mockMvc.perform(post("/api/quizzes")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor)
@@ -101,6 +102,34 @@ class QuizControllerTest {
                 .andExpect(jsonPath("$.data.id").value(1L))
                 .andExpect(jsonPath("$.data.title").value("Kiểm tra chương 1"))
                 .andExpect(jsonPath("$.data.status").value("DRAFT"));
+
+        verify(quizService).createQuiz(any(CreateQuizRequest.class), eq(instructor.userId()));
+    }
+
+    @Test
+    @DisplayName("POST /api/quizzes: createdBy giả trong body không thay danh tính từ token")
+    void createQuiz_ignoresForgedCreatedBy() throws Exception {
+        String body = """
+                {
+                  "courseId": 10,
+                  "title": "Kiểm tra chương 1",
+                  "createdBy": 999
+                }
+                """;
+        QuizResponse response = QuizResponse.builder()
+                .id(1L)
+                .createdBy(instructor.userId())
+                .build();
+        when(quizService.createQuiz(any(CreateQuizRequest.class), eq(instructor.userId()))).thenReturn(response);
+
+        mockMvc.perform(post("/api/quizzes")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.createdBy").value(instructor.userId()));
+
+        verify(quizService).createQuiz(any(CreateQuizRequest.class), eq(instructor.userId()));
     }
 
     @Test
@@ -178,7 +207,6 @@ class QuizControllerTest {
                 .timeLimitMinutes(30)
                 .passScore(new BigDecimal("60.00"))
                 .maxAttempts(3)
-                .createdBy(1L)
                 .build();
 
         String updateRequest = """

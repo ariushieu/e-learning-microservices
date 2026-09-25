@@ -62,7 +62,6 @@ class QuizServiceTest {
         CreateQuizRequest request = CreateQuizRequest.builder()
                 .courseId(10L)
                 .title("Bài kiểm tra 1")
-                .createdBy(100L)
                 .build();
 
         when(quizRepository.save(any(Quiz.class))).thenAnswer(invocation -> {
@@ -71,11 +70,12 @@ class QuizServiceTest {
             return q;
         });
 
-        QuizResponse response = quizService.createQuiz(request);
+        QuizResponse response = quizService.createQuiz(request, 100L);
 
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(1L);
         assertThat(response.getStatus()).isEqualTo(QuizStatus.DRAFT);
+        assertThat(response.getCreatedBy()).isEqualTo(100L);
     }
 
     @Test
