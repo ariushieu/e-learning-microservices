@@ -18,7 +18,10 @@ import com.hunre.courseservice.repository.LessonRepository;
 import com.hunre.courseservice.repository.LessonResourceRepository;
 import com.hunre.courseservice.repository.SectionRepository;
 import com.hunre.courseservice.service.CurriculumService;
+import com.hunre.courseservice.entity.CourseStatus;
+import com.hunre.courseservice.security.CurrentUserProvider;
 import com.hunre.sharedcommon.exception.ResourceNotFoundException;
+import com.hunre.sharedcommon.security.Roles;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,10 +37,14 @@ public class CurriculumServiceImpl implements CurriculumService {
     private final SectionRepository sectionRepository;
     private final LessonRepository lessonRepository;
     private final LessonResourceRepository lessonResourceRepository;
+    private final CurrentUserProvider currentUserProvider;
 
     @Override
     public List<SectionResponse> getCurriculumByCourseId(Long courseId) {
-        if (!courseRepository.existsById(courseId)) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("khóa học", "id", courseId));
+
+        if (!canViewCourse(course)) {
             throw new ResourceNotFoundException("khóa học", "id", courseId);
         }
 
@@ -93,7 +100,21 @@ public class CurriculumServiceImpl implements CurriculumService {
     public LessonResponse getLessonById(Long id) {
         Lesson lesson = lessonRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("bài học", "id", id));
+
+        if (!canViewCourse(lesson.getCourse())) {
+            throw new ResourceNotFoundException("bài học", "id", id);
+        }
+
         return LessonResponse.from(lesson);
+    }
+
+    private boolean canViewCourse(Course course) {
+        if (course.getStatus() == CourseStatus.PUBLISHED) {
+            return true;
+        }
+        return currentUserProvider.getCurrentUser()
+                .filter(u -> u.hasRole(Roles.ADMIN) || u.userId().equals(course.getInstructorId()))
+                .isPresent();
     }
 
     @Override

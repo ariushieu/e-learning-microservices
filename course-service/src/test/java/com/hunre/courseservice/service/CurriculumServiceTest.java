@@ -35,6 +35,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.hunre.courseservice.entity.CourseStatus;
+import com.hunre.courseservice.security.CurrentUserProvider;
+import com.hunre.sharedcommon.security.AuthenticatedUser;
+import com.hunre.sharedcommon.security.Roles;
+
+import java.util.Set;
+
 @ExtendWith(MockitoExtension.class)
 class CurriculumServiceTest {
 
@@ -50,13 +57,17 @@ class CurriculumServiceTest {
     @Mock
     private LessonResourceRepository lessonResourceRepository;
 
+    @Mock
+    private CurrentUserProvider currentUserProvider;
+
     @InjectMocks
     private CurriculumServiceImpl curriculumService;
 
     @Test
     @DisplayName("Lấy danh sách giáo trình theo courseId thành công")
     void getCurriculumByCourseId_success() {
-        when(courseRepository.existsById(1L)).thenReturn(true);
+        Course course = Course.builder().id(1L).status(CourseStatus.PUBLISHED).build();
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
 
         Section section = Section.builder()
                 .id(10L)
@@ -70,6 +81,30 @@ class CurriculumServiceTest {
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getTitle()).isEqualTo("Chương 1: Giới thiệu");
+    }
+
+    @Test
+    @DisplayName("Lấy giáo trình khóa học DRAFT khi là khách chưa đăng nhập trả về 404")
+    void getCurriculumByCourseId_draft_whenGuest_throwsNotFound() {
+        Course course = Course.builder().id(1L).instructorId(50L).status(CourseStatus.DRAFT).build();
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(currentUserProvider.getCurrentUser()).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> curriculumService.getCurriculumByCourseId(1L))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("Lấy giáo trình khóa học DRAFT khi là chủ khóa học thành công")
+    void getCurriculumByCourseId_draft_whenOwnerInstructor_success() {
+        Course course = Course.builder().id(1L).instructorId(50L).status(CourseStatus.DRAFT).build();
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(currentUserProvider.getCurrentUser()).thenReturn(Optional.of(
+                new AuthenticatedUser(50L, "gv@hunre.edu.vn", "GV", Set.of(Roles.INSTRUCTOR))));
+        when(sectionRepository.findByCourseIdOrderByPositionAsc(1L)).thenReturn(List.of());
+
+        List<SectionResponse> result = curriculumService.getCurriculumByCourseId(1L);
+        assertThat(result).isNotNull();
     }
 
     @Test

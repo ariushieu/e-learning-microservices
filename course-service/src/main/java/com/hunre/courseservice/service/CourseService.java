@@ -19,11 +19,27 @@ public interface CourseService {
 
     CourseResponse getCourseBySlug(String slug);
 
-    CourseResponse createCourse(CreateCourseRequest request);
+    CourseResponse createCourse(CreateCourseRequest request, Long instructorId, String instructorName);
 
-    CourseResponse updateCourse(Long id, UpdateCourseRequest request);
+    default CourseResponse createCourse(CreateCourseRequest request, Long instructorId) {
+        return createCourse(request, instructorId, null);
+    }
 
-    CourseResponse changeCourseStatus(Long id, ChangeCourseStatusRequest request);
+    CourseResponse updateCourse(Long id, UpdateCourseRequest request, Long currentUserId, boolean isAdmin);
 
-    void deleteCourse(Long id);
+    default CourseResponse updateCourse(Long id, UpdateCourseRequest request) {
+        return updateCourse(id, request, null, true);
+    }
+
+    CourseResponse changeCourseStatus(Long id, ChangeCourseStatusRequest request, Long currentUserId, boolean isAdmin);
+
+    default CourseResponse changeCourseStatus(Long id, ChangeCourseStatusRequest request) {
+        return changeCourseStatus(id, request, null, true);
+    }
+
+    void deleteCourse(Long id, Long currentUserId, boolean isAdmin);
+
+    default void deleteCourse(Long id) {
+        deleteCourse(id, null, true);
+    }
 }

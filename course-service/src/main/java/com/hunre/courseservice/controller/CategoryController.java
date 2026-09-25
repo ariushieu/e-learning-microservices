@@ -6,6 +6,10 @@ import com.hunre.courseservice.dto.response.CategoryResponse;
 import com.hunre.courseservice.service.CategoryService;
 import com.hunre.sharedcommon.dto.ApiResponse;
 import com.hunre.sharedcommon.dto.PageResponse;
+import com.hunre.sharedcommon.exception.BusinessException;
+import com.hunre.sharedcommon.exception.ErrorCode;
+import com.hunre.sharedcommon.security.AuthenticatedUser;
+import com.hunre.sharedcommon.security.Roles;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -54,20 +58,33 @@ public class CategoryController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<CategoryResponse> createCategory(@Valid @RequestBody CreateCategoryRequest request) {
+    public ApiResponse<CategoryResponse> createCategory(
+            @Valid @RequestBody CreateCategoryRequest request,
+            AuthenticatedUser user) {
+        requireCategoryManager(user);
         return ApiResponse.ok(categoryService.createCategory(request), "Tạo danh mục thành công");
     }
 
     @PutMapping("/{id}")
     public ApiResponse<CategoryResponse> updateCategory(
             @PathVariable Long id,
-            @Valid @RequestBody UpdateCategoryRequest request) {
+            @Valid @RequestBody UpdateCategoryRequest request,
+            AuthenticatedUser user) {
+        requireCategoryManager(user);
         return ApiResponse.ok(categoryService.updateCategory(id, request), "Cập nhật danh mục thành công");
     }
 
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> deleteCategory(@PathVariable Long id) {
+    public ApiResponse<Void> deleteCategory(@PathVariable Long id, AuthenticatedUser user) {
+        requireCategoryManager(user);
         categoryService.deleteCategory(id);
         return ApiResponse.message("Đã xóa danh mục");
+    }
+
+    private void requireCategoryManager(AuthenticatedUser user) {
+        if (!user.hasAnyRole(Roles.INSTRUCTOR, Roles.ADMIN)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN,
+                    "Chỉ giảng viên hoặc quản trị viên mới có quyền quản lý danh mục");
+        }
     }
 }

@@ -5,6 +5,10 @@ import com.hunre.courseservice.dto.response.CategoryResponse;
 import com.hunre.courseservice.service.CategoryService;
 import com.hunre.sharedcommon.exception.GlobalExceptionHandler;
 import com.hunre.sharedcommon.exception.ResourceNotFoundException;
+import com.hunre.sharedcommon.security.AuthenticatedUser;
+import com.hunre.sharedcommon.security.AuthenticatedUserArgumentResolver;
+import com.hunre.sharedcommon.security.JwtAuthenticationFilter;
+import com.hunre.sharedcommon.security.Roles;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,6 +22,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -33,6 +38,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class CategoryControllerTest {
 
     private MockMvc mockMvc;
+    private AuthenticatedUser instructor;
+    private AuthenticatedUser student;
 
     @Mock
     private CategoryService categoryService;
@@ -44,8 +51,12 @@ class CategoryControllerTest {
     void setUp() {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(categoryController)
+                .setCustomArgumentResolvers(new AuthenticatedUserArgumentResolver())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
+
+        instructor = new AuthenticatedUser(1L, "teacher@hunre.edu.vn", "Thầy Tuấn", Set.of(Roles.INSTRUCTOR));
+        student = new AuthenticatedUser(2L, "student@hunre.edu.vn", "Học viên A", Set.of(Roles.STUDENT));
     }
 
     @Test
@@ -74,22 +85,22 @@ class CategoryControllerTest {
     @DisplayName("GET /api/categories/{id} thành công")
     void getCategoryById_success() throws Exception {
         CategoryResponse cat = CategoryResponse.builder()
-                .id(10L)
-                .name("Lập trình Java")
-                .slug("lap-trinh-java")
+                .id(1L)
+                .name("CNTT")
+                .slug("cntt")
                 .build();
 
-        when(categoryService.getCategoryById(10L)).thenReturn(cat);
+        when(categoryService.getCategoryById(1L)).thenReturn(cat);
 
-        mockMvc.perform(get("/api/categories/10"))
+        mockMvc.perform(get("/api/categories/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.id").value(10))
-                .andExpect(jsonPath("$.data.name").value("Lập trình Java"));
+                .andExpect(jsonPath("$.data.id").value(1))
+                .andExpect(jsonPath("$.data.name").value("CNTT"));
     }
 
     @Test
-    @DisplayName("GET /api/categories/{id} không tìm thấy trả về HTTP 404 và ErrorResponse chuẩn")
+    @DisplayName("GET /api/categories/{id} thất bại khi id không tồn tại trả về HTTP 404")
     void getCategoryById_notFound() throws Exception {
         when(categoryService.getCategoryById(999L))
                 .thenThrow(new ResourceNotFoundException("danh mục", "id", 999L));
@@ -102,15 +113,8 @@ class CategoryControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/categories thành công trả về HTTP 201")
+    @DisplayName("POST /api/categories thành công trả về HTTP 201 khi là Giảng viên")
     void createCategory_success() throws Exception {
-        CreateCategoryRequest request = CreateCategoryRequest.builder()
-                .name("DevOps")
-                .slug("devops")
-                .description("Khóa học DevOps")
-                .position(2)
-                .build();
-
         CategoryResponse response = CategoryResponse.builder()
                 .id(5L)
                 .name("DevOps")
@@ -129,6 +133,7 @@ class CategoryControllerTest {
                 """;
 
         mockMvc.perform(post("/api/categories")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isCreated())
@@ -136,6 +141,24 @@ class CategoryControllerTest {
                 .andExpect(jsonPath("$.message").value("Tạo danh mục thành công"))
                 .andExpect(jsonPath("$.data.id").value(5))
                 .andExpect(jsonPath("$.data.name").value("DevOps"));
+    }
+
+    @Test
+    @DisplayName("POST /api/categories bị chặn 403 Forbidden khi là Học viên")
+    void createCategory_whenStudent_returnsForbidden403() throws Exception {
+        String jsonRequest = """
+                {
+                    "name": "DevOps",
+                    "slug": "devops"
+                }
+                """;
+
+        mockMvc.perform(post("/api/categories")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, student)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
     }
 
     @Test
@@ -148,6 +171,7 @@ class CategoryControllerTest {
                 """;
 
         mockMvc.perform(post("/api/categories")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invalidJsonRequest))
                 .andExpect(status().isBadRequest())
@@ -157,13 +181,23 @@ class CategoryControllerTest {
     }
 
     @Test
-    @DisplayName("DELETE /api/categories/{id} thành công trả về HTTP 200 kèm message")
+    @DisplayName("DELETE /api/categories/{id} thành công trả về HTTP 200 khi là Giảng viên")
     void deleteCategory_success() throws Exception {
-        mockMvc.perform(delete("/api/categories/1"))
+        mockMvc.perform(delete("/api/categories/1")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Đã xóa danh mục"));
 
         verify(categoryService).deleteCategory(eq(1L));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/categories/{id} bị chặn 403 khi là Học viên")
+    void deleteCategory_whenStudent_returnsForbidden403() throws Exception {
+        mockMvc.perform(delete("/api/categories/1")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, student))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
     }
 }
