@@ -1,13 +1,67 @@
-# Hạ tầng cho môi trường phát triển: MySQL + Apache Kafka (KRaft) + Kafka UI.
-# Các service Spring Boot chạy ngoài Docker (IntelliJ) và kết nối qua localhost.
+# Hai cách dùng file này.
 #
-#   docker compose up -d        # khởi động
-#   docker compose ps           # xem trạng thái / healthcheck
+# 1. Lập trình hằng ngày — chỉ bật hạ tầng, các service chạy trong IntelliJ và nối qua
+#    localhost:
+#
+#      docker compose up -d                 # MySQL + Kafka + Kafka UI
+#      docker compose up -d mysql           # hoặc chỉ những gì cần
+#
+# 2. Chạy toàn bộ hệ thống — cả 6 service cũng chạy trong Docker, chỉ gateway mở ra ngoài
+#    ở cổng 8080. Dùng để demo hoặc kiểm tra các service nói chuyện được với nhau:
+#
+#      docker compose --profile app up -d --build --wait
+#      docker compose --profile app down    # dừng, GIỮ dữ liệu
+#
+# Sáu service nằm trong profile "app" nên cách 1 không bật chúng lên: không chiếm cổng
+# 8081-8085 của service đang chạy trong IntelliJ, không tốn thời gian build image.
+#
+#   docker compose ps                       # xem trạng thái / healthcheck
 #   docker compose logs -f kafka
-#   docker compose down         # dừng, GIỮ dữ liệu
-#   docker compose down -v      # dừng và XÓA dữ liệu (volume)
+#   docker compose down -v                  # dừng và XÓA dữ liệu (volume)
 
 name: elearning
+
+# =============================================================================
+# Cấu hình chung cho 6 service ứng dụng
+# =============================================================================
+# Khóa ký JWT phải GIỐNG NHAU ở mọi service, nên khai một lần ở đây. Đổi trong .env là
+# cả 6 service nhận cùng giá trị; khai riêng từng chỗ thì sớm muộn sẽ có chỗ quên đổi, và
+# token auth-service ký ra sẽ bị service đó từ chối.
+x-jwt: &jwt
+  JWT_SECRET: ${JWT_SECRET:-elearning-microservices-auth-service-jwt-secret-key-for-local-dev-only-32bytes}
+
+# Service chạy trong Docker gọi MySQL và Kafka bằng tên service trong mạng compose, không
+# phải localhost — localhost trong container là chính container đó. Kafka dùng listener
+# INTERNAL (kafka:29092) đã khai sẵn ở dưới cho đúng mục đích này.
+x-backend-env: &backend-env
+  <<: *jwt
+  DB_HOST: mysql
+  DB_PORT: "3306"
+  DB_USERNAME: ${MYSQL_USER:-elearning}
+  DB_PASSWORD: ${MYSQL_PASSWORD:-elearning}
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+
+x-app: &app
+  profiles: ["app"]
+  restart: unless-stopped
+  # Giới hạn bộ nhớ để 6 JVM không giành nhau RAM của máy. Dockerfile đặt heap tối đa
+  # 75% con số này; không giới hạn thì mỗi JVM thấy toàn bộ RAM của Docker và được phép
+  # phình tới hàng chục GB.
+  mem_limit: 768m
+
+x-backend-depends: &backend-depends
+  mysql:
+    condition: service_healthy
+  kafka:
+    condition: service_healthy
+
+# Spring Boot 4 khởi động mất 15-40 giây tùy máy; start_period cho khoảng đó không bị
+# tính là lỗi.
+x-healthcheck-timing: &healthcheck-timing
+  interval: 10s
+  timeout: 5s
+  retries: 12
+  start_period: 60s
 
 services:
 
@@ -100,6 +154,104 @@ services:
       KAFKA_CLUSTERS_0_NAME: elearning-local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
       DYNAMIC_CONFIG_ENABLED: "true"
+
+  # ================================================================ Ứng dụng
+  # Chỉ bật khi thêm --profile app. Không service nào mở cổng ra máy host trừ gateway:
+  # mọi request đi qua một cửa duy nhất, đúng như kiến trúc vẽ trong README. Gọi thẳng
+  # service thì dùng "docker compose exec <service> curl localhost:<cổng>/...".
+
+  auth-service:
+    <<: *app
+    build: { context: ., args: { SERVICE: auth-service } }
+    image: elearning/auth-service
+    container_name: elearning-auth-service
+    environment:
+      <<: *backend-env
+    depends_on: *backend-depends
+    healthcheck:
+      <<: *healthcheck-timing
+      test: ["CMD", "curl", "-fsS", "http://localhost:8081/actuator/health"]
+
+  course-service:
+    <<: *app
+    build: { context: ., args: { SERVICE: course-service } }
+    image: elearning/course-service
+    container_name: elearning-course-service
+    environment:
+      <<: *backend-env
+    depends_on: *backend-depends
+    healthcheck:
+      <<: *healthcheck-timing
+      test: ["CMD", "curl", "-fsS", "http://localhost:8082/actuator/health"]
+
+  enrollment-service:
+    <<: *app
+    build: { context: ., args: { SERVICE: enrollment-service } }
+    image: elearning/enrollment-service
+    container_name: elearning-enrollment-service
+    environment:
+      <<: *backend-env
+    depends_on: *backend-depends
+    healthcheck:
+      <<: *healthcheck-timing
+      test: ["CMD", "curl", "-fsS", "http://localhost:8083/actuator/health"]
+
+  quiz-service:
+    <<: *app
+    build: { context: ., args: { SERVICE: quiz-service } }
+    image: elearning/quiz-service
+    container_name: elearning-quiz-service
+    environment:
+      <<: *backend-env
+      # quiz-service đọc cả chuỗi kết nối thay vì DB_HOST như bốn service kia, nên phải
+      # truyền nguyên URL. DB_HOST ở trên vô hại với nó.
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/quiz_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8"
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-elearning}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-elearning}
+    depends_on: *backend-depends
+    healthcheck:
+      <<: *healthcheck-timing
+      test: ["CMD", "curl", "-fsS", "http://localhost:8084/actuator/health"]
+
+  notification-service:
+    <<: *app
+    build: { context: ., args: { SERVICE: notification-service } }
+    image: elearning/notification-service
+    container_name: elearning-notification-service
+    environment:
+      <<: *backend-env
+    depends_on: *backend-depends
+    healthcheck:
+      <<: *healthcheck-timing
+      test: ["CMD", "curl", "-fsS", "http://localhost:8085/actuator/health"]
+
+  api-gateway:
+    <<: *app
+    build: { context: ., args: { SERVICE: api-gateway } }
+    image: elearning/api-gateway
+    container_name: elearning-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      <<: *jwt
+      AUTH_SERVICE_URL: http://auth-service:8081
+      COURSE_SERVICE_URL: http://course-service:8082
+      ENROLLMENT_SERVICE_URL: http://enrollment-service:8083
+      QUIZ_SERVICE_URL: http://quiz-service:8084
+      NOTIFICATION_SERVICE_URL: http://notification-service:8085
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+    # service_started chứ không phải service_healthy: một service hỏng thì gateway vẫn lên
+    # và trả 502 cho riêng đường dẫn của service đó, thay vì kéo sập cả hệ thống. Đây cũng
+    # là thứ đáng demo nhất của microservices — một phần chết, phần còn lại vẫn chạy.
+    depends_on:
+      auth-service: { condition: service_started }
+      course-service: { condition: service_started }
+      enrollment-service: { condition: service_started }
+      quiz-service: { condition: service_started }
+      notification-service: { condition: service_started }
+    healthcheck:
+      <<: *healthcheck-timing
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
 
 volumes:
   mysql_data:

@@ -164,14 +164,16 @@ hình dữ liệu, phá vỡ database-per-service.
 | Build             | Maven multi-module (parent POM ở thư mục gốc)         |
 | Hạ tầng dev       | Docker Compose                                         |
 
-**Dự kiến bổ sung:** Spring Security + JWT, Spring Data JPA, Flyway, Spring for Apache Kafka, Swagger/OpenAPI, Dockerfile cho từng service, frontend Next.js.
+**Dự kiến bổ sung:** Swagger/OpenAPI, frontend Next.js.
 
 ## Cấu trúc thư mục
 
 ```
 e-learning-microservices/
 ├── pom.xml                 # Parent POM: khai báo module, quản lý version chung
-├── docker-compose.yml      # MySQL + Kafka + Kafka UI
+├── docker-compose.yml      # MySQL + Kafka + Kafka UI; thêm 6 service khi dùng --profile app
+├── Dockerfile              # Một Dockerfile dùng chung, chọn service bằng build arg SERVICE
+├── .dockerignore           # Không gửi target/, .git, .env vào lúc build image
 ├── .env.example            # Mẫu biến môi trường cho docker compose
 ├── CONTRIBUTING.md         # Quy ước nhánh, commit, pull request cho cả nhóm
 ├── .editorconfig           # Thống nhất encoding và định dạng giữa các IDE
@@ -227,15 +229,45 @@ Mỗi service có cấu trúc chuẩn Spring Boot:
 | JDK 17 trở lên | Có       | Đã kiểm thử build với JDK 26                                |
 | Git            | Có       | Windows nên dùng Git for Windows, có sẵn Git Bash           |
 | IntelliJ IDEA  | Khuyến nghị | Community Edition là đủ, hoặc VS Code                    |
-| Docker Desktop | Chưa cần | Chỉ cần khi muốn chạy MySQL và Kafka ở mục [Hạ tầng](#hạ-tầng) |
+| Docker Desktop | Có       | Chạy MySQL và Kafka; hoặc chạy luôn cả hệ thống, xem [cách nhanh nhất](#cách-nhanh-nhất-chạy-cả-hệ-thống-bằng-docker) |
 
 Không cần cài Maven, dự án dùng Maven Wrapper (`mvnw`).
 
-Hiện chưa service nào kết nối database hay Kafka, nên **không có Docker vẫn build và chạy
-được toàn bộ service**. Đã kiểm chứng: clone sạch, tắt hết container, `./mvnw clean verify`
-thành công cả 7 module, `auth-service` và `api-gateway` khởi động và trả `{"status":"UP"}`.
+`./mvnw clean verify` chạy được mà **không cần Docker** — test dùng H2 trong bộ nhớ. Nhưng
+**chạy service thì phải có MySQL**: cả 5 service backend đều kết nối database lúc khởi động
+và dừng ngay nếu không có.
 
 ## Hướng dẫn chạy
+
+### Cách nhanh nhất: chạy cả hệ thống bằng Docker
+
+Chỉ cần Docker Desktop, không cần JDK hay IntelliJ:
+
+```bash
+git clone https://github.com/ariushieu/e-learning-microservices.git
+cd e-learning-microservices
+docker compose --profile app up -d --build --wait
+```
+
+Lệnh build 6 image từ mã nguồn rồi bật MySQL, Kafka, Kafka UI và cả 6 service. `--wait`
+giữ lệnh lại cho tới khi mọi healthcheck xanh. Lần đầu mất vài phút vì phải tải thư viện
+Maven; các lần sau chỉ build lại phần mã đã sửa.
+
+Mọi API đi qua gateway ở **http://localhost:8080** — đây là cổng duy nhất mở ra máy host,
+đúng như sơ đồ kiến trúc ở trên. Kafka UI ở http://localhost:8090.
+
+```bash
+curl http://localhost:8080/api/courses          # công khai, không cần token
+docker compose --profile app ps                 # trạng thái từng container
+docker compose logs -f quiz-service             # log một service
+docker compose --profile app down               # dừng, GIỮ dữ liệu
+```
+
+Sửa code xong muốn chạy lại một service: `docker compose up -d --build quiz-service`.
+
+Cách này dùng để demo và để kiểm tra các service nói chuyện được với nhau. Khi đang viết
+code thì chạy service trong IntelliJ như các bước dưới đây sẽ nhanh hơn — không phải build
+lại image mỗi lần sửa, và đặt được breakpoint.
 
 ### 1. Clone repository
 
@@ -246,13 +278,16 @@ cd e-learning-microservices
 
 ### 2. Khởi động hạ tầng (MySQL, Kafka)
 
-> Bước này **có thể bỏ qua ở giai đoạn hiện tại**, vì chưa service nào kết nối database
-> hay Kafka. Chỉ cần khi bạn muốn xem thử database hoặc nghịch Kafka UI.
+**Bắt buộc** trước khi chạy bất kỳ service nào. Lệnh này chỉ bật hạ tầng, không bật 6
+service ứng dụng (chúng nằm trong profile `app`), nên không chiếm cổng của service đang
+chạy trong IntelliJ:
 
 ```bash
 docker compose up -d
 docker compose ps        # đợi cột STATUS hiện "healthy"
 ```
+
+Bảng trong database do Flyway tự tạo khi service khởi động lần đầu, không phải chạy gì thêm.
 
 Kiểm tra nhanh:
 
@@ -314,7 +349,7 @@ curl http://localhost:8081/actuator/health
 - [x] Thiết kế schema cho 5 database, viết migration theo chuẩn Flyway ([tài liệu](docs/database-design.md))
 - [x] Tài liệu và công cụ cho nhóm: quy ước commit, git hook và CI kiểm tra ([CONTRIBUTING.md](CONTRIBUTING.md))
 - [x] Hợp đồng dùng chung trong `shared-common`: vỏ response, xử lý lỗi, sự kiện Kafka ([tài liệu](docs/shared-contracts.md))
-- [x] Kết nối database: Spring Data JPA + Flyway + MySQL (auth, course, quiz; còn enrollment và notification)
+- [x] Kết nối database: Spring Data JPA + Flyway + MySQL cho cả 5 service
 - [x] Cấu hình route cho API Gateway tới các service
 - [x] Auth Service: đăng ký / đăng nhập, phát hành JWT
 - [x] Xác thực JWT ở gateway và ở từng service ([tài liệu](docs/authentication.md))
@@ -324,7 +359,7 @@ curl http://localhost:8081/actuator/health
 - [ ] Phân quyền theo vai trò trong từng service
 - [x] Notification Service: consume sự kiện Kafka, dựng thông báo trong ứng dụng ([tài liệu](docs/notifications.md))
 - [ ] Frontend Next.js (pnpm)
-- [ ] Dockerfile cho từng service, chạy toàn bộ hệ thống bằng Docker Compose
+- [x] Image Docker cho từng service, chạy toàn bộ hệ thống bằng một lệnh `docker compose`
 - [ ] Tài liệu API (Swagger / OpenAPI)
 
 ## Tác giả

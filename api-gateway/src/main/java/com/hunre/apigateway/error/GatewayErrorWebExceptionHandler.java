@@ -18,6 +18,8 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.net.ConnectException;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -60,12 +62,14 @@ public class GatewayErrorWebExceptionHandler implements ErrorWebExceptionHandler
         String code;
         String message;
 
-        if (hasCause(error, ConnectException.class)) {
+        if (isUpstreamUnreachable(error)) {
             status = ErrorCode.EXTERNAL_SERVICE_ERROR.httpStatus();
             code = ErrorCode.EXTERNAL_SERVICE_ERROR.name();
             message = "Dịch vụ tạm thời không phản hồi, vui lòng thử lại sau";
             // Chi tiết kỹ thuật chỉ nằm trong log của gateway, không gửi ra client.
-            log.error("Không kết nối được service đích cho {}: {}", path, error.getMessage());
+            // toString() thay vì getMessage(): message của Netty có khi chỉ là "null", tên lớp
+            // exception mới cho biết service tắt hẳn hay chỉ chưa kịp khởi động xong.
+            log.error("Không kết nối được service đích cho {}: {}", path, error.toString());
         } else if (error instanceof ResponseStatusException statusException) {
             status = statusException.getStatusCode();
             code = status.value() == 404 ? ErrorCode.RESOURCE_NOT_FOUND.name() : ErrorCode.BAD_REQUEST.name();
@@ -91,7 +95,31 @@ public class GatewayErrorWebExceptionHandler implements ErrorWebExceptionHandler
         return response.writeWith(Mono.just(buffer));
     }
 
-    /** Netty bọc ConnectException vào vài lớp exception khác nên phải lần theo cause. */
+    /**
+     * Service đích không với tới được — tắt, đang khởi động lại, hoặc mạng không thông.
+     *
+     * <p>Cùng một chuyện "service chết" nhưng Netty báo bằng nhiều kiểu exception, tùy gateway
+     * còn nhớ IP của service hay không. Cả ba kiểu dưới đây đều đã gặp khi tắt một container
+     * trong docker compose:
+     *
+     * <pre>
+     * ConnectTimeoutException  gateway còn nhớ IP cũ, gõ cửa tới khi hết thời hạn kết nối
+     * NoRouteToHostException   mạng Docker đã gỡ IP đó
+     * UnknownHostException     DNS của Docker không còn tên service
+     * </pre>
+     *
+     * <p>Bản cũ chỉ bắt {@link ConnectException}. {@code ConnectTimeoutException} là lớp con
+     * của nó nên ra 502 đúng, nhưng hai kiểu còn lại thì không — {@code NoRouteToHostException}
+     * là lớp con của {@link SocketException}, {@code UnknownHostException} của
+     * {@code IOException} — nên người dùng nhận 500 "hệ thống gặp sự cố" cho một lỗi thực ra là
+     * "service đang tắt". Bắt ở mức {@code SocketException} thì gồm cả hai kiểu đầu lẫn kết nối
+     * bị cắt giữa chừng khi service chết lúc đang xử lý.
+     */
+    private boolean isUpstreamUnreachable(Throwable error) {
+        return hasCause(error, SocketException.class) || hasCause(error, UnknownHostException.class);
+    }
+
+    /** Netty bọc exception gốc vào vài lớp khác nên phải lần theo cause. */
     private boolean hasCause(Throwable error, Class<? extends Throwable> type) {
         for (Throwable current = error; current != null; current = current.getCause()) {
             if (type.isInstance(current)) {

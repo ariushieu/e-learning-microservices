@@ -116,6 +116,39 @@ jobs:
       - name: docker compose config
         run: docker compose config --quiet
 
+      # Sáu service ứng dụng nằm trong profile "app"; lệnh trên không đọc tới chúng.
+      - name: docker compose config (profile app)
+        run: docker compose --profile app config --quiet
+
+  # Chạy cả hệ thống đúng như lúc demo rồi gọi thử từng service qua gateway.
+  #
+  # Bắt những lỗi chỉ lộ ra khi service chạy trong container: ghi cứng localhost trong
+  # application.properties thay vì đọc biến môi trường, đổi tên biến mà quên sửa compose,
+  # thêm module mà quên thêm vào Dockerfile. Chạy trong IntelliJ thì những lỗi đó vô hình vì
+  # localhost lúc ấy đúng là nơi MySQL đang chạy — phải tới hôm demo mới biết.
+  stack:
+    name: Full stack in Docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Build images
+        run: docker compose --profile app build
+
+      - name: Start everything
+        run: docker compose --profile app up -d --wait --wait-timeout 300
+
+      - name: Smoke test through the gateway
+        run: bash scripts/smoke-test.sh
+
+      - name: Container status and logs (khi fail)
+        if: failure()
+        run: |
+          docker compose --profile app ps
+          docker compose --profile app logs --no-color --tail=150
+
   # Job "Schema matches entities" không bắt được việc sửa một migration đã merge, vì CI luôn
   # dựng database mới tinh nên bản sửa lúc nào cũng chạy trót lọt. Lỗi chỉ hiện trên máy đã
   # có sẵn database, tức máy của mọi người trừ người viết. Job này nhìn vào diff thay vì
