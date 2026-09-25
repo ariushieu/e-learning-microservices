@@ -43,9 +43,16 @@ COPY ${SERVICE}/src    ${SERVICE}/src
 # --mount=type=cache giữ thư mục ~/.m2 giữa các lần build và giữa các service: thư viện
 # tải một lần là cả sáu image dùng lại, không tải lại mỗi lần sửa một dòng code.
 #
+# sharing=locked là bắt buộc, không phải tinh chỉnh. docker compose build cả sáu image SONG
+# SONG, và Maven Wrapper giải nén Maven vào chính thư mục cache này. Không khóa thì một lần
+# build thấy thư mục đã có trong khi lần khác còn giải nén dở, gọi bin/mvn và chết với
+# "mvn: not found" — CI gặp đúng như vậy ở lần chạy đầu tiên. Kho thư viện ~/.m2/repository
+# cũng không an toàn khi nhiều tiến trình Maven cùng ghi. Khóa lại thì bước này chạy lần
+# lượt từng service, đổi lại chỉ tải một lần và không bao giờ đọc phải file ghi dở.
+#
 # Bỏ qua test ở đây vì CI đã chạy toàn bộ test cho mọi pull request. Image là để chạy, không
 # phải chỗ kiểm tra lại lần hai.
-RUN --mount=type=cache,target=/root/.m2 \
+RUN --mount=type=cache,target=/root/.m2,sharing=locked \
     chmod +x mvnw \
  && ./mvnw -B -q -pl "${SERVICE}" -am package -DskipTests \
  && cp "${SERVICE}"/target/"${SERVICE}"-*.jar /app.jar
