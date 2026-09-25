@@ -6,6 +6,7 @@
 > tại đây, nên **cứ `git pull` là biết việc tiếp theo của mình**, không phải hỏi ai.
 
 - [Việc của bạn](#việc-của-bạn)
+- [Khi nào test toàn bộ API bằng Postman](#khi-nào-test-toàn-bộ-api-bằng-postman)
 - [Quy tắc viết API](#quy-tắc-viết-api)
 - [Trạng thái hệ thống](#trạng-thái-hệ-thống)
 - [Chi tiết từng việc](#chi-tiết-từng-việc)
@@ -23,7 +24,7 @@
 | duyd92689-debug | course-service | [Trả nội dung bài học](#duyd92689-debug--trả-nội-dung-bài-học) | Trung bình | ~1h |
 | phamquyet19042005-netizen | enrollment-service | [Gửi outbox](#phamquyet19042005-netizen--gửi-outbox-lên-kafka) + [nạp snapshot](#phamquyet19042005-netizen--nạp-course_snapshots) | Cao | ~3h |
 | hiepdeptrai0111 | quiz-service | [Chuyển phát sự kiện sang outbox](#hiepdeptrai0111--chuyển-phát-sự-kiện-sang-outbox) | Thấp — làm sau cùng | ~2h |
-| Cả nhóm | mọi service | [Chuẩn hóa đường dẫn API](#cả-nhóm--chuẩn-hóa-đường-dẫn-api) | Thấp — sau khi demo chạy | ~1h/người |
+| Cả nhóm | mọi service | [Chuẩn hóa đường dẫn API](#cả-nhóm--chuẩn-hóa-đường-dẫn-api) | Trung bình — trước đợt test Postman | ~1h/người |
 
 **Không ai phải chờ ai.** Sự kiện `CourseUpdatedEvent` đã có trong shared-common, nên phía
 phát (duyd) và phía nhận (phamquyet) làm song song được — phamquyet tự tạo message mẫu bằng
@@ -32,8 +33,45 @@ Kafka UI để test, không cần đợi course-service.
 **Thứ tự ưu tiên.** quocluibotre làm trước vì không có tài khoản giảng viên thì cả nhóm
 không test được phần tạo bài kiểm tra. Việc phân quyền của duyd92689-debug ngang hàng về độ
 gấp: hiện course-service không kiểm quyền ở bất kỳ đâu. Việc chuẩn hóa đường dẫn để cuối
-cùng, nhưng **phải xong trước khi bắt đầu frontend** — đổi đường dẫn sau khi frontend đã
-gọi là gãy hết.
+cùng, nhưng **phải xong trước đợt test Postman và trước khi bắt đầu frontend** — đổi đường
+dẫn sau khi đã viết collection hay đã có frontend gọi là phải làm lại hết.
+
+## Khi nào test toàn bộ API bằng Postman
+
+**Chưa sẵn sàng.** Môi trường test thì đã có (xem dưới), nhưng test bây giờ thì một nửa kết
+quả là lỗi đã biết, còn một phần là "PASS" cho những hành vi đáng ra phải bị chặn. Đủ bốn
+điều kiện sau thì nhóm trưởng báo cả nhóm vào test:
+
+| # | Điều kiện | Nếu test trước khi có | Ai |
+|---|---|---|---|
+| 1 | API gán vai trò | Người test phải sửa database bằng SQL mới có tài khoản giảng viên | quocluibotre |
+| 2 | Phân quyền course-service, lọc khóa `DRAFT` | "Học viên tạo được khóa học" sẽ bị ghi nhận là chạy đúng | duyd |
+| 3 | Ghi danh chạy thông (`course.updated` + nạp snapshot + gửi outbox) | Ghi danh, tiến độ, chứng chỉ, thông báo ghi danh đều 404 — nửa hệ thống không test được | duyd + phamquyet |
+| 4 | Chuẩn hóa đường dẫn | Viết collection xong, đổi đường dẫn là viết lại | cả nhóm |
+
+**Môi trường test đã sẵn.** Không ai phải tự bật 6 service trong IntelliJ:
+
+```bash
+git pull
+docker compose --profile app up -d --build --wait
+bash scripts/smoke-test.sh        # 10 dòng OK là cả 6 service đã lên và thông database
+```
+
+Mọi request trong Postman đi qua **gateway `http://localhost:8080`**. Đừng gọi thẳng cổng
+8081–8085: trong Docker các cổng đó không mở ra ngoài, và gọi thẳng thì bỏ qua đúng hai thứ
+hay hỏng nhất là định tuyến và kiểm token ở vòng ngoài.
+
+**Hai collection cũ trong `docs/postman/` không dùng lại được.** Collection của course-service
+gọi thẳng `localhost:8082` và không request nào gửi token — viết trước khi có JWT, nên giờ mọi
+lệnh ghi đều nhận 401. Collection của enrollment-service dùng đường dẫn sẽ đổi ở điều kiện 4.
+Đủ điều kiện thì nhóm trưởng dựng một collection chung đi qua gateway, có sẵn bước đăng nhập tự
+lưu token; người test chỉ việc thêm request.
+
+**Trong lúc chờ,** người được giao test viết trước **danh sách tình huống**: gọi gì, bằng tài
+khoản nào, mong nhận mã gì. Chưa cần mở Postman. Khung sẵn có ở
+[api-conventions.md mục E](api-conventions.md#e-tự-kiểm-trước-khi-mở-pull-request) — mỗi
+endpoint ít nhất sáu ca: đúng, không token, sai vai trò, không tồn tại, sai kiểu tham số, sắp
+xếp bằng trường bịa.
 
 ## Quy tắc viết API
 
@@ -55,7 +93,9 @@ Bốn trong năm quy tắc này sinh ra từ lỗi có thật trong repo, ghi r�
 ## Trạng thái hệ thống
 
 Năm service đã có code, database chạy tự động bằng Flyway, xác thực JWT hoạt động ở cả
-gateway lẫn từng service. Toàn bộ 216 test xanh.
+gateway lẫn từng service. Toàn bộ 222 test xanh. Cả hệ thống chạy được bằng một lệnh
+`docker compose --profile app up -d --build --wait`, xem
+[README](../README.md#cách-nhanh-nhất-chạy-cả-hệ-thống-bằng-docker).
 
 **Chuỗi đã chạy thông:**
 
@@ -227,6 +267,10 @@ Chi tiết ở [shared-contracts.md](shared-contracts.md#courseupdatedevent-khá
    Thiếu dòng thứ hai là service chạy êm mà không gửi gì, log không nhắc tới Kafka lấy một
    lần. Xem [bẫy số 1](#1-auto-configuration-nằm-ở-module-riêng).
 
+   Không phải sửa `docker-compose.yml`: compose đã truyền
+   `SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092` cho cả 5 service, Spring tự nhận biến này
+   và đè lên `localhost:9092` trong `application.properties` khi chạy trong Docker.
+
 2. Phát `CourseUpdatedEvent` lên `KafkaTopics.COURSE_EVENTS` trong ba trường hợp:
 
    | Khi nào | Ở đâu |
@@ -299,7 +343,8 @@ nhưng không ai đọc nó. `published_at` của mọi dòng đều là NULL.
 **Trước tiên:** `enrollment-service/pom.xml` chưa có dòng Kafka nào. Thêm cả `spring-kafka`
 lẫn `spring-boot-kafka` — thiếu cái thứ hai là service chạy êm mà không gửi gì. Xem
 [bẫy số 1](#1-auto-configuration-nằm-ở-module-riêng). Việc nạp snapshot bên dưới cũng cần
-hai dòng này, nên làm một lần cho cả hai.
+hai dòng này, nên làm một lần cho cả hai. Không phải sửa `docker-compose.yml` — compose đã
+truyền sẵn địa chỉ Kafka cho mọi service.
 
 **Cần làm.** Một `@Scheduled` chạy mỗi vài giây:
 
@@ -406,8 +451,9 @@ gửi đi và thông báo xuất hiện.
 
 ### Cả nhóm — chuẩn hóa đường dẫn API
 
-> Ưu tiên thấp nhưng **có hạn chót**: phải xong trước khi ai đó bắt đầu viết frontend.
-> Đổi đường dẫn sau khi frontend đã gọi thì gãy hết và không ai muốn sửa nữa.
+> **Có hạn chót**: phải xong trước [đợt test Postman](#khi-nào-test-toàn-bộ-api-bằng-postman)
+> và trước khi ai đó bắt đầu viết frontend. Đổi đường dẫn sau khi đã có collection hay
+> frontend gọi thì gãy hết và không ai muốn sửa nữa.
 
 **Vấn đề.** Năm service đang đặt đường dẫn theo năm kiểu khác nhau. Không sai về chức năng,
 nhưng người viết frontend sẽ phải nhớ mỗi service một quy ước, và đây là thứ dễ mất điểm
@@ -445,6 +491,8 @@ Ai làm xong phần của mình thì mở một pull request riêng, đừng g�
 
 | Ngày | PR | Việc | Người |
 |---|---|---|---|
+| 25/09 | #28 | Chạy cả hệ thống bằng Docker; gateway trả 502 sau tối đa 3 giây khi một service chết | Hiếu |
+| 25/09 | #26 | Lệnh đồng bộ nhánh ghi rõ tên nhánh | Hiếu |
 | 25/09 | #25 | Bỏ `createdBy` khỏi body, người tạo bài kiểm tra lấy từ token | hiepdeptrai0111 |
 | 25/09 | #24 | `CourseUpdatedEvent`: hợp đồng sự kiện khóa học cho `course_snapshots` | Hiếu |
 | 25/09 | #23 | Sửa route `/api/progress` bị sót ở gateway, `?sort=` sai trả 400, quy tắc viết API | Hiếu |

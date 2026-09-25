@@ -11,3 +11,8 @@
 # Flyway tính checksum theo nội dung file, khác kiểu xuống dòng giữa các máy
 # sẽ làm migration đã chạy bị báo checksum mismatch
 *.sql text eol=lf
+
+# Docker đọc hai file này trong container Linux. CRLF ở cuối dòng "RUN ... \" làm lệnh nối
+# dòng hỏng, và mẫu trong .dockerignore dính "\r" sẽ không khớp với file nào.
+Dockerfile    text eol=lf
+.dockerignore text eol=lf
