@@ -13,6 +13,7 @@ import com.hunre.courseservice.entity.Lesson;
 import com.hunre.courseservice.entity.LessonResource;
 import com.hunre.courseservice.entity.LessonType;
 import com.hunre.courseservice.entity.Section;
+import com.hunre.courseservice.event.CourseEventPublisher;
 import com.hunre.courseservice.repository.CourseRepository;
 import com.hunre.courseservice.repository.LessonRepository;
 import com.hunre.courseservice.repository.LessonResourceRepository;
@@ -38,6 +39,7 @@ public class CurriculumServiceImpl implements CurriculumService {
     private final LessonRepository lessonRepository;
     private final LessonResourceRepository lessonResourceRepository;
     private final CurrentUserProvider currentUserProvider;
+    private final CourseEventPublisher courseEventPublisher;
 
     @Override
     public List<SectionResponse> getCurriculumByCourseId(Long courseId) {
@@ -143,6 +145,10 @@ public class CurriculumServiceImpl implements CurriculumService {
         course.setTotalDurationSeconds(course.getTotalDurationSeconds() + duration);
         courseRepository.save(course);
 
+        if (course.getStatus() == CourseStatus.PUBLISHED) {
+            courseEventPublisher.publishCourseUpdated(course);
+        }
+
         return LessonResponse.from(saved);
     }
 
@@ -188,6 +194,10 @@ public class CurriculumServiceImpl implements CurriculumService {
         course.setTotalLessons(Math.max(0, course.getTotalLessons() - 1));
         course.setTotalDurationSeconds(Math.max(0, course.getTotalDurationSeconds() - duration));
         courseRepository.save(course);
+
+        if (course.getStatus() == CourseStatus.PUBLISHED) {
+            courseEventPublisher.publishCourseUpdated(course);
+        }
     }
 
     @Override
@@ -220,6 +230,9 @@ public class CurriculumServiceImpl implements CurriculumService {
             course.setTotalLessons(lessonRepository.countByCourseId(courseId));
             course.setTotalDurationSeconds(lessonRepository.sumDurationSecondsByCourseId(courseId));
             courseRepository.save(course);
+            if (course.getStatus() == CourseStatus.PUBLISHED) {
+                courseEventPublisher.publishCourseUpdated(course);
+            }
         });
     }
 }

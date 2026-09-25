@@ -28,6 +28,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.hunre.courseservice.event.CourseEventPublisher;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -41,6 +42,7 @@ public class CourseServiceImpl implements CourseService {
     private final CourseRepository courseRepository;
     private final CategoryRepository categoryRepository;
     private final CurrentUserProvider currentUserProvider;
+    private final CourseEventPublisher courseEventPublisher;
 
     @Override
     public PageResponse<CourseSummaryResponse> getPublishedCourses(
@@ -205,7 +207,13 @@ public class CourseServiceImpl implements CourseService {
         course.setPrice(request.getPrice() != null ? request.getPrice() : BigDecimal.ZERO);
 
         Course updated = courseRepository.save(course);
-        return CourseResponse.from(updated);
+        Course savedCourse = updated != null ? updated : course;
+
+        if (savedCourse.getStatus() == CourseStatus.PUBLISHED) {
+            courseEventPublisher.publishCourseUpdated(savedCourse);
+        }
+
+        return CourseResponse.from(savedCourse);
     }
 
     @Override
@@ -219,6 +227,7 @@ public class CourseServiceImpl implements CourseService {
                     "Bạn không có quyền thay đổi trạng thái khóa học của giảng viên khác");
         }
 
+        CourseStatus oldStatus = course.getStatus();
         CourseStatus newStatus = request.getStatus();
 
         // Ghi nhận thời điểm xuất bản lần đầu
@@ -228,7 +237,14 @@ public class CourseServiceImpl implements CourseService {
 
         course.setStatus(newStatus);
         Course updated = courseRepository.save(course);
-        return CourseResponse.from(updated);
+        Course savedCourse = updated != null ? updated : course;
+
+        // Phát sự kiện nếu khóa học chuyển sang PUBLISHED hoặc từ PUBLISHED sang trạng thái khác
+        if (newStatus == CourseStatus.PUBLISHED || oldStatus == CourseStatus.PUBLISHED) {
+            courseEventPublisher.publishCourseUpdated(savedCourse);
+        }
+
+        return CourseResponse.from(savedCourse);
     }
 
     @Override

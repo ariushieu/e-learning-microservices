@@ -32,9 +32,11 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.hunre.courseservice.event.CourseEventPublisher;
 import com.hunre.courseservice.entity.CourseStatus;
 import com.hunre.courseservice.security.CurrentUserProvider;
 import com.hunre.sharedcommon.security.AuthenticatedUser;
@@ -59,6 +61,9 @@ class CurriculumServiceTest {
 
     @Mock
     private CurrentUserProvider currentUserProvider;
+
+    @Mock
+    private CourseEventPublisher courseEventPublisher;
 
     @InjectMocks
     private CurriculumServiceImpl curriculumService;
@@ -250,5 +255,109 @@ class CurriculumServiceTest {
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(50L);
         assertThat(response.getName()).isEqualTo("Slide bài giảng");
+    }
+
+    @Test
+    @DisplayName("createLesson trên khóa học PUBLISHED phải phát sự kiện CourseUpdatedEvent")
+    void createLesson_khoaPublished_phatSuKien() {
+        Course course = Course.builder()
+                .id(1L)
+                .status(CourseStatus.PUBLISHED)
+                .totalLessons(5)
+                .totalDurationSeconds(1000)
+                .build();
+        Section section = Section.builder().id(10L).course(course).build();
+        CreateLessonRequest request = CreateLessonRequest.builder()
+                .sectionId(10L)
+                .title("Bài 1")
+                .durationSeconds(300)
+                .build();
+
+        when(sectionRepository.findById(10L)).thenReturn(Optional.of(section));
+        when(lessonRepository.save(any(Lesson.class))).thenAnswer(i -> {
+            Lesson l = i.getArgument(0);
+            l.setId(100L);
+            return l;
+        });
+        when(courseRepository.save(any(Course.class))).thenAnswer(i -> i.getArgument(0));
+
+        curriculumService.createLesson(request);
+
+        verify(courseEventPublisher).publishCourseUpdated(any(Course.class));
+    }
+
+    @Test
+    @DisplayName("createLesson trên khóa học DRAFT không phát sự kiện CourseUpdatedEvent")
+    void createLesson_khoaDraft_khongPhatSuKien() {
+        Course course = Course.builder()
+                .id(1L)
+                .status(CourseStatus.DRAFT)
+                .totalLessons(5)
+                .totalDurationSeconds(1000)
+                .build();
+        Section section = Section.builder().id(10L).course(course).build();
+        CreateLessonRequest request = CreateLessonRequest.builder()
+                .sectionId(10L)
+                .title("Bài 1")
+                .durationSeconds(300)
+                .build();
+
+        when(sectionRepository.findById(10L)).thenReturn(Optional.of(section));
+        when(lessonRepository.save(any(Lesson.class))).thenAnswer(i -> {
+            Lesson l = i.getArgument(0);
+            l.setId(100L);
+            return l;
+        });
+        when(courseRepository.save(any(Course.class))).thenAnswer(i -> i.getArgument(0));
+
+        curriculumService.createLesson(request);
+
+        verify(courseEventPublisher, never()).publishCourseUpdated(any(Course.class));
+    }
+
+    @Test
+    @DisplayName("deleteLesson trên khóa học PUBLISHED phải phát sự kiện CourseUpdatedEvent")
+    void deleteLesson_khoaPublished_phatSuKien() {
+        Course course = Course.builder()
+                .id(1L)
+                .status(CourseStatus.PUBLISHED)
+                .totalLessons(5)
+                .totalDurationSeconds(1500)
+                .build();
+        Lesson lesson = Lesson.builder()
+                .id(100L)
+                .course(course)
+                .durationSeconds(300)
+                .build();
+
+        when(lessonRepository.findById(100L)).thenReturn(Optional.of(lesson));
+        when(courseRepository.save(any(Course.class))).thenAnswer(i -> i.getArgument(0));
+
+        curriculumService.deleteLesson(100L);
+
+        verify(courseEventPublisher).publishCourseUpdated(any(Course.class));
+    }
+
+    @Test
+    @DisplayName("deleteLesson trên khóa học DRAFT không phát sự kiện CourseUpdatedEvent")
+    void deleteLesson_khoaDraft_khongPhatSuKien() {
+        Course course = Course.builder()
+                .id(1L)
+                .status(CourseStatus.DRAFT)
+                .totalLessons(5)
+                .totalDurationSeconds(1500)
+                .build();
+        Lesson lesson = Lesson.builder()
+                .id(100L)
+                .course(course)
+                .durationSeconds(300)
+                .build();
+
+        when(lessonRepository.findById(100L)).thenReturn(Optional.of(lesson));
+        when(courseRepository.save(any(Course.class))).thenAnswer(i -> i.getArgument(0));
+
+        curriculumService.deleteLesson(100L);
+
+        verify(courseEventPublisher, never()).publishCourseUpdated(any(Course.class));
     }
 }

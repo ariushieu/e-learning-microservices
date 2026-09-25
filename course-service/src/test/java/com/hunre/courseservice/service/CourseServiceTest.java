@@ -27,6 +27,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import com.hunre.courseservice.event.CourseEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
@@ -54,6 +55,9 @@ class CourseServiceTest {
 
     @Mock
     private CurrentUserProvider currentUserProvider;
+
+    @Mock
+    private CourseEventPublisher courseEventPublisher;
 
     @InjectMocks
     private CourseServiceImpl courseService;
@@ -345,5 +349,131 @@ class CourseServiceTest {
         courseService.deleteCourse(1L, 50L, false);
 
         verify(courseRepository).delete(course);
+    }
+
+    @Test
+    @DisplayName("changeCourseStatus sang PUBLISHED phải phát sự kiện CourseUpdatedEvent")
+    void changeCourseStatus_sangPublished_phatSuKien() {
+        Course course = Course.builder()
+                .id(1L)
+                .title("Khóa học Java")
+                .instructorId(10L)
+                .status(CourseStatus.DRAFT)
+                .totalLessons(5)
+                .build();
+
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.save(any(Course.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ChangeCourseStatusRequest request = new ChangeCourseStatusRequest();
+        request.setStatus(CourseStatus.PUBLISHED);
+
+        courseService.changeCourseStatus(1L, request, 10L, false);
+
+        verify(courseEventPublisher).publishCourseUpdated(any(Course.class));
+    }
+
+    @Test
+    @DisplayName("changeCourseStatus từ PUBLISHED sang ARCHIVED phải phát sự kiện CourseUpdatedEvent")
+    void changeCourseStatus_tuPublishedSangArchived_phatSuKien() {
+        Course course = Course.builder()
+                .id(1L)
+                .title("Khóa học Java")
+                .instructorId(10L)
+                .status(CourseStatus.PUBLISHED)
+                .totalLessons(5)
+                .build();
+
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.save(any(Course.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ChangeCourseStatusRequest request = new ChangeCourseStatusRequest();
+        request.setStatus(CourseStatus.ARCHIVED);
+
+        courseService.changeCourseStatus(1L, request, 10L, false);
+
+        verify(courseEventPublisher).publishCourseUpdated(any(Course.class));
+    }
+
+    @Test
+    @DisplayName("changeCourseStatus từ DRAFT sang ARCHIVED (chưa từng published) không phát sự kiện")
+    void changeCourseStatus_tuDraftSangArchived_khongPhatSuKien() {
+        Course course = Course.builder()
+                .id(1L)
+                .title("Khóa học Java")
+                .instructorId(10L)
+                .status(CourseStatus.DRAFT)
+                .totalLessons(5)
+                .build();
+
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.save(any(Course.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ChangeCourseStatusRequest request = new ChangeCourseStatusRequest();
+        request.setStatus(CourseStatus.ARCHIVED);
+
+        courseService.changeCourseStatus(1L, request, 10L, false);
+
+        verify(courseEventPublisher, never()).publishCourseUpdated(any(Course.class));
+    }
+
+    @Test
+    @DisplayName("updateCourse trên khóa học đang PUBLISHED phải phát sự kiện CourseUpdatedEvent")
+    void updateCourse_khoaPublished_phatSuKien() {
+        Category category = Category.builder().id(1L).name("CNTT").build();
+        Course course = Course.builder()
+                .id(1L)
+                .category(category)
+                .instructorId(10L)
+                .title("Tên cũ")
+                .slug("ten-cu")
+                .status(CourseStatus.PUBLISHED)
+                .totalLessons(10)
+                .build();
+
+        UpdateCourseRequest request = UpdateCourseRequest.builder()
+                .categoryId(1L)
+                .title("Tên mới")
+                .slug("ten-moi")
+                .build();
+
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+        when(courseRepository.existsBySlugAndIdNot("ten-moi", 1L)).thenReturn(false);
+        when(courseRepository.save(any(Course.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        courseService.updateCourse(1L, request, 10L, false);
+
+        verify(courseEventPublisher).publishCourseUpdated(any(Course.class));
+    }
+
+    @Test
+    @DisplayName("updateCourse trên khóa học DRAFT không phát sự kiện CourseUpdatedEvent")
+    void updateCourse_khoaDraft_khongPhatSuKien() {
+        Category category = Category.builder().id(1L).name("CNTT").build();
+        Course course = Course.builder()
+                .id(1L)
+                .category(category)
+                .instructorId(10L)
+                .title("Tên cũ")
+                .slug("ten-cu")
+                .status(CourseStatus.DRAFT)
+                .totalLessons(10)
+                .build();
+
+        UpdateCourseRequest request = UpdateCourseRequest.builder()
+                .categoryId(1L)
+                .title("Tên mới")
+                .slug("ten-moi")
+                .build();
+
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+        when(courseRepository.existsBySlugAndIdNot("ten-moi", 1L)).thenReturn(false);
+        when(courseRepository.save(any(Course.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        courseService.updateCourse(1L, request, 10L, false);
+
+        verify(courseEventPublisher, never()).publishCourseUpdated(any(Course.class));
     }
 }
