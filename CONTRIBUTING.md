@@ -101,12 +101,17 @@ Cách tránh, làm **ngay sau khi pull request của bạn được merge**:
 ```bash
 git checkout <nhánh của bạn>
 git fetch origin
-git reset --hard origin/main        # nhánh trở về đúng bằng main
-git push --force-with-lease         # đồng bộ lên GitHub
+git reset --hard origin/main                          # nhánh trở về đúng bằng main
+git push --force-with-lease origin <nhánh của bạn>    # đồng bộ lên GitHub
 ```
 
 Nhánh vẫn còn nguyên và bạn làm tiếp trên đó như bình thường, chỉ là điểm xuất phát được
 đưa về trùng với `main`. Từ đó `git merge main` sẽ sạch.
+
+**Lệnh push luôn ghi tên nhánh.** `git push --force-with-lease` trống trơn sẽ đẩy nhánh
+*đang đứng*, nên lỡ `checkout` nhầm là ghi đè nhánh của người khác. Chuyện này đã xảy ra
+một lần với `auth-service`. GitHub không chặn được việc đó — repo cá nhân không cho giới hạn
+từng người chỉ được đẩy nhánh nào — nên chỗ chặn duy nhất là chính câu lệnh.
 
 **Chỉ chạy `reset --hard` khi nhánh của bạn không còn gì chưa merge.** Lệnh này xóa sạch
 commit chưa vào `main`. Kiểm tra trước bằng:
