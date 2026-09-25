@@ -1,7 +1,9 @@
 package com.hunre.courseservice.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hunre.courseservice.dto.request.ChangeCourseStatusRequest;
 import com.hunre.courseservice.dto.request.CreateCourseRequest;
+import com.hunre.courseservice.dto.request.UpdateCourseRequest;
 import com.hunre.courseservice.dto.response.CourseResponse;
 import com.hunre.courseservice.dto.response.CourseSummaryResponse;
 import com.hunre.courseservice.entity.CourseLevel;
@@ -10,6 +12,10 @@ import com.hunre.courseservice.service.CourseService;
 import com.hunre.sharedcommon.dto.PageResponse;
 import com.hunre.sharedcommon.exception.GlobalExceptionHandler;
 import com.hunre.sharedcommon.exception.ResourceNotFoundException;
+import com.hunre.sharedcommon.security.AuthenticatedUser;
+import com.hunre.sharedcommon.security.AuthenticatedUserArgumentResolver;
+import com.hunre.sharedcommon.security.JwtAuthenticationFilter;
+import com.hunre.sharedcommon.security.Roles;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,8 +32,10 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,6 +43,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -42,6 +51,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class CourseControllerTest {
 
     private MockMvc mockMvc;
+    private ObjectMapper objectMapper;
+    private AuthenticatedUser instructor;
+    private AuthenticatedUser student;
 
     @Mock
     private CourseService courseService;
@@ -53,9 +65,15 @@ class CourseControllerTest {
     void setUp() {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(courseController)
-                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
+                .setCustomArgumentResolvers(
+                        new PageableHandlerMethodArgumentResolver(),
+                        new AuthenticatedUserArgumentResolver())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
+
+        objectMapper = new ObjectMapper();
+        instructor = new AuthenticatedUser(50L, "teacher@hunre.edu.vn", "Thầy Tuấn", Set.of(Roles.INSTRUCTOR));
+        student = new AuthenticatedUser(10L, "student@hunre.edu.vn", "Học viên A", Set.of(Roles.STUDENT));
     }
 
     @Test
@@ -117,7 +135,7 @@ class CourseControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/courses thành công trả về 201 Created")
+    @DisplayName("POST /api/courses thành công trả về 201 Created khi là Giảng viên")
     void createCourse_success() throws Exception {
         CourseResponse response = CourseResponse.builder()
                 .id(10L)
@@ -126,18 +144,18 @@ class CourseControllerTest {
                 .status(CourseStatus.DRAFT)
                 .build();
 
-        when(courseService.createCourse(any(CreateCourseRequest.class))).thenReturn(response);
+        when(courseService.createCourse(any(CreateCourseRequest.class), eq(50L), any())).thenReturn(response);
 
         String json = """
                 {
                     "categoryId": 1,
-                    "instructorId": 50,
                     "title": "Kafka For Beginners",
                     "price": 200000
                 }
                 """;
 
         mockMvc.perform(post("/api/courses")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isCreated())
@@ -145,6 +163,26 @@ class CourseControllerTest {
                 .andExpect(jsonPath("$.message").value("Tạo khóa học thành công"))
                 .andExpect(jsonPath("$.data.id").value(10))
                 .andExpect(jsonPath("$.data.title").value("Kafka For Beginners"));
+    }
+
+    @Test
+    @DisplayName("POST /api/courses bị từ chối 403 Forbidden khi là Học viên")
+    void createCourse_whenStudent_returnsForbidden403() throws Exception {
+        String json = """
+                {
+                    "categoryId": 1,
+                    "title": "Kafka For Beginners",
+                    "price": 200000
+                }
+                """;
+
+        mockMvc.perform(post("/api/courses")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, student)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
     }
 
     @Test
@@ -157,6 +195,7 @@ class CourseControllerTest {
                 """;
 
         mockMvc.perform(post("/api/courses")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invalidJson))
                 .andExpect(status().isBadRequest())
@@ -165,7 +204,29 @@ class CourseControllerTest {
     }
 
     @Test
-    @DisplayName("PATCH /api/courses/{id}/status thành công")
+    @DisplayName("PUT /api/courses/{id} thành công khi là Giảng viên")
+    void updateCourse_success() throws Exception {
+        CourseResponse response = CourseResponse.builder().id(1L).title("Updated").build();
+        when(courseService.updateCourse(eq(1L), any(UpdateCourseRequest.class), eq(50L), eq(false)))
+                .thenReturn(response);
+
+        String json = """
+                {
+                    "categoryId": 1,
+                    "title": "Updated"
+                }
+                """;
+
+        mockMvc.perform(put("/api/courses/1")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @DisplayName("PATCH /api/courses/{id}/status thành công khi là Giảng viên")
     void changeCourseStatus_success() throws Exception {
         CourseResponse response = CourseResponse.builder()
                 .id(1L)
@@ -173,7 +234,7 @@ class CourseControllerTest {
                 .publishedAt(Instant.now())
                 .build();
 
-        when(courseService.changeCourseStatus(eq(1L), any(ChangeCourseStatusRequest.class)))
+        when(courseService.changeCourseStatus(eq(1L), any(ChangeCourseStatusRequest.class), eq(50L), eq(false)))
                 .thenReturn(response);
 
         String json = """
@@ -183,6 +244,7 @@ class CourseControllerTest {
                 """;
 
         mockMvc.perform(patch("/api/courses/1/status")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isOk())
@@ -191,13 +253,23 @@ class CourseControllerTest {
     }
 
     @Test
-    @DisplayName("DELETE /api/courses/{id} thành công trả về 200")
+    @DisplayName("DELETE /api/courses/{id} thành công trả về 200 khi là Giảng viên")
     void deleteCourse_success() throws Exception {
-        mockMvc.perform(delete("/api/courses/1"))
+        mockMvc.perform(delete("/api/courses/1")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Đã xóa khóa học"));
 
-        verify(courseService).deleteCourse(eq(1L));
+        verify(courseService).deleteCourse(eq(1L), eq(50L), eq(false));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/courses/{id} bị chặn 403 khi là Học viên")
+    void deleteCourse_whenStudent_returnsForbidden403() throws Exception {
+        mockMvc.perform(delete("/api/courses/1")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, student))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
     }
 }

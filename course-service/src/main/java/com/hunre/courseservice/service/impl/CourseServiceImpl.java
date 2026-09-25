@@ -18,6 +18,8 @@ import com.hunre.sharedcommon.exception.BusinessException;
 import com.hunre.sharedcommon.exception.DuplicateResourceException;
 import com.hunre.sharedcommon.exception.ErrorCode;
 import com.hunre.sharedcommon.exception.ResourceNotFoundException;
+import com.hunre.courseservice.security.CurrentUserProvider;
+import com.hunre.sharedcommon.security.Roles;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,6 +28,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.hunre.courseservice.event.CourseEventPublisher;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -38,6 +41,8 @@ public class CourseServiceImpl implements CourseService {
 
     private final CourseRepository courseRepository;
     private final CategoryRepository categoryRepository;
+    private final CurrentUserProvider currentUserProvider;
+    private final CourseEventPublisher courseEventPublisher;
 
     @Override
     public PageResponse<CourseSummaryResponse> getPublishedCourses(
@@ -77,7 +82,14 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public PageResponse<CourseSummaryResponse> getInstructorCourses(Long instructorId, Pageable pageable) {
-        Page<Course> page = courseRepository.findByInstructorId(instructorId, pageable);
+        boolean canSeeAll = currentUserProvider.getCurrentUser()
+                .filter(u -> u.hasRole(Roles.ADMIN) || u.userId().equals(instructorId))
+                .isPresent();
+
+        Page<Course> page = canSeeAll
+                ? courseRepository.findByInstructorId(instructorId, pageable)
+                : courseRepository.findByInstructorIdAndStatus(instructorId, CourseStatus.PUBLISHED, pageable);
+
         List<CourseSummaryResponse> content = page.getContent().stream()
                 .map(CourseSummaryResponse::from)
                 .toList();
@@ -89,6 +101,11 @@ public class CourseServiceImpl implements CourseService {
     public CourseResponse getCourseById(Long id) {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("khóa học", "id", id));
+
+        if (!canViewCourse(course)) {
+            throw new ResourceNotFoundException("khóa học", "id", id);
+        }
+
         return CourseResponse.from(course);
     }
 
@@ -96,12 +113,26 @@ public class CourseServiceImpl implements CourseService {
     public CourseResponse getCourseBySlug(String slug) {
         Course course = courseRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("khóa học", "slug", slug));
+
+        if (!canViewCourse(course)) {
+            throw new ResourceNotFoundException("khóa học", "slug", slug);
+        }
+
         return CourseResponse.from(course);
+    }
+
+    private boolean canViewCourse(Course course) {
+        if (course.getStatus() == CourseStatus.PUBLISHED) {
+            return true;
+        }
+        return currentUserProvider.getCurrentUser()
+                .filter(u -> u.hasRole(Roles.ADMIN) || u.userId().equals(course.getInstructorId()))
+                .isPresent();
     }
 
     @Override
     @Transactional
-    public CourseResponse createCourse(CreateCourseRequest request) {
+    public CourseResponse createCourse(CreateCourseRequest request, Long instructorId, String instructorName) {
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("danh mục", "id", request.getCategoryId()));
 
@@ -111,10 +142,14 @@ public class CourseServiceImpl implements CourseService {
             throw new DuplicateResourceException("khóa học", "slug", slug);
         }
 
+        String resolvedInstructorName = request.getInstructorName() != null && !request.getInstructorName().isBlank()
+                ? request.getInstructorName().trim()
+                : (instructorName != null && !instructorName.isBlank() ? instructorName.trim() : null);
+
         Course course = Course.builder()
                 .category(category)
-                .instructorId(request.getInstructorId())
-                .instructorName(request.getInstructorName() != null ? request.getInstructorName().trim() : null)
+                .instructorId(instructorId)
+                .instructorName(resolvedInstructorName)
                 .title(request.getTitle().trim())
                 .slug(slug)
                 .summary(request.getSummary() != null ? request.getSummary().trim() : null)
@@ -137,9 +172,14 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional
-    public CourseResponse updateCourse(Long id, UpdateCourseRequest request) {
+    public CourseResponse updateCourse(Long id, UpdateCourseRequest request, Long currentUserId, boolean isAdmin) {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("khóa học", "id", id));
+
+        if (!isAdmin && currentUserId != null && !course.getInstructorId().equals(currentUserId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN,
+                    "Bạn không có quyền chỉnh sửa khóa học của giảng viên khác");
+        }
 
         if (course.getStatus() == CourseStatus.ARCHIVED) {
             throw new BusinessException(ErrorCode.BUSINESS_RULE_VIOLATED,
@@ -167,15 +207,27 @@ public class CourseServiceImpl implements CourseService {
         course.setPrice(request.getPrice() != null ? request.getPrice() : BigDecimal.ZERO);
 
         Course updated = courseRepository.save(course);
-        return CourseResponse.from(updated);
+        Course savedCourse = updated != null ? updated : course;
+
+        if (savedCourse.getStatus() == CourseStatus.PUBLISHED) {
+            courseEventPublisher.publishCourseUpdated(savedCourse);
+        }
+
+        return CourseResponse.from(savedCourse);
     }
 
     @Override
     @Transactional
-    public CourseResponse changeCourseStatus(Long id, ChangeCourseStatusRequest request) {
+    public CourseResponse changeCourseStatus(Long id, ChangeCourseStatusRequest request, Long currentUserId, boolean isAdmin) {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("khóa học", "id", id));
 
+        if (!isAdmin && currentUserId != null && !course.getInstructorId().equals(currentUserId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN,
+                    "Bạn không có quyền thay đổi trạng thái khóa học của giảng viên khác");
+        }
+
+        CourseStatus oldStatus = course.getStatus();
         CourseStatus newStatus = request.getStatus();
 
         // Ghi nhận thời điểm xuất bản lần đầu
@@ -185,14 +237,26 @@ public class CourseServiceImpl implements CourseService {
 
         course.setStatus(newStatus);
         Course updated = courseRepository.save(course);
-        return CourseResponse.from(updated);
+        Course savedCourse = updated != null ? updated : course;
+
+        // Phát sự kiện nếu khóa học chuyển sang PUBLISHED hoặc từ PUBLISHED sang trạng thái khác
+        if (newStatus == CourseStatus.PUBLISHED || oldStatus == CourseStatus.PUBLISHED) {
+            courseEventPublisher.publishCourseUpdated(savedCourse);
+        }
+
+        return CourseResponse.from(savedCourse);
     }
 
     @Override
     @Transactional
-    public void deleteCourse(Long id) {
+    public void deleteCourse(Long id, Long currentUserId, boolean isAdmin) {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("khóa học", "id", id));
+
+        if (!isAdmin && currentUserId != null && !course.getInstructorId().equals(currentUserId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN,
+                    "Bạn không có quyền xóa khóa học của giảng viên khác");
+        }
 
         // Chỉ được xóa khóa học ở trạng thái DRAFT
         if (course.getStatus() != CourseStatus.DRAFT) {

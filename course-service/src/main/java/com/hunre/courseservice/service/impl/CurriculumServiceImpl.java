@@ -13,12 +13,16 @@ import com.hunre.courseservice.entity.Lesson;
 import com.hunre.courseservice.entity.LessonResource;
 import com.hunre.courseservice.entity.LessonType;
 import com.hunre.courseservice.entity.Section;
+import com.hunre.courseservice.event.CourseEventPublisher;
 import com.hunre.courseservice.repository.CourseRepository;
 import com.hunre.courseservice.repository.LessonRepository;
 import com.hunre.courseservice.repository.LessonResourceRepository;
 import com.hunre.courseservice.repository.SectionRepository;
 import com.hunre.courseservice.service.CurriculumService;
+import com.hunre.courseservice.entity.CourseStatus;
+import com.hunre.courseservice.security.CurrentUserProvider;
 import com.hunre.sharedcommon.exception.ResourceNotFoundException;
+import com.hunre.sharedcommon.security.Roles;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,10 +38,15 @@ public class CurriculumServiceImpl implements CurriculumService {
     private final SectionRepository sectionRepository;
     private final LessonRepository lessonRepository;
     private final LessonResourceRepository lessonResourceRepository;
+    private final CurrentUserProvider currentUserProvider;
+    private final CourseEventPublisher courseEventPublisher;
 
     @Override
     public List<SectionResponse> getCurriculumByCourseId(Long courseId) {
-        if (!courseRepository.existsById(courseId)) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("khóa học", "id", courseId));
+
+        if (!canViewCourse(course)) {
             throw new ResourceNotFoundException("khóa học", "id", courseId);
         }
 
@@ -93,7 +102,21 @@ public class CurriculumServiceImpl implements CurriculumService {
     public LessonResponse getLessonById(Long id) {
         Lesson lesson = lessonRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("bài học", "id", id));
+
+        if (!canViewCourse(lesson.getCourse())) {
+            throw new ResourceNotFoundException("bài học", "id", id);
+        }
+
         return LessonResponse.from(lesson);
+    }
+
+    private boolean canViewCourse(Course course) {
+        if (course.getStatus() == CourseStatus.PUBLISHED) {
+            return true;
+        }
+        return currentUserProvider.getCurrentUser()
+                .filter(u -> u.hasRole(Roles.ADMIN) || u.userId().equals(course.getInstructorId()))
+                .isPresent();
     }
 
     @Override
@@ -121,6 +144,10 @@ public class CurriculumServiceImpl implements CurriculumService {
         course.setTotalLessons(course.getTotalLessons() + 1);
         course.setTotalDurationSeconds(course.getTotalDurationSeconds() + duration);
         courseRepository.save(course);
+
+        if (course.getStatus() == CourseStatus.PUBLISHED) {
+            courseEventPublisher.publishCourseUpdated(course);
+        }
 
         return LessonResponse.from(saved);
     }
@@ -167,6 +194,10 @@ public class CurriculumServiceImpl implements CurriculumService {
         course.setTotalLessons(Math.max(0, course.getTotalLessons() - 1));
         course.setTotalDurationSeconds(Math.max(0, course.getTotalDurationSeconds() - duration));
         courseRepository.save(course);
+
+        if (course.getStatus() == CourseStatus.PUBLISHED) {
+            courseEventPublisher.publishCourseUpdated(course);
+        }
     }
 
     @Override
@@ -199,6 +230,9 @@ public class CurriculumServiceImpl implements CurriculumService {
             course.setTotalLessons(lessonRepository.countByCourseId(courseId));
             course.setTotalDurationSeconds(lessonRepository.sumDurationSecondsByCourseId(courseId));
             courseRepository.save(course);
+            if (course.getStatus() == CourseStatus.PUBLISHED) {
+                courseEventPublisher.publishCourseUpdated(course);
+            }
         });
     }
 }
