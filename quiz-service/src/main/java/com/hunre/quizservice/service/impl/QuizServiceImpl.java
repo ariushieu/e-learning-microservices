@@ -31,7 +31,7 @@ public class QuizServiceImpl implements QuizService {
 
     @Override
     @Transactional
-    public QuizResponse createQuiz(CreateQuizRequest request) {
+    public QuizResponse createQuiz(CreateQuizRequest request, Long createdBy) {
         log.info("Tạo bài kiểm tra mới cho courseId: {}, title: {}", request.getCourseId(), request.getTitle());
 
         Quiz quiz = Quiz.builder()
@@ -44,7 +44,7 @@ public class QuizServiceImpl implements QuizService {
                 .maxAttempts(request.getMaxAttempts() != null ? request.getMaxAttempts() : 3)
                 .shuffleQuestions(Boolean.TRUE.equals(request.getShuffleQuestions()))
                 .status(QuizStatus.DRAFT)
-                .createdBy(request.getCreatedBy())
+                .createdBy(createdBy)
                 .build();
 
         Quiz saved = quizRepository.save(quiz);
