@@ -1,6 +1,6 @@
 package com.hunre.apigateway.security;
 
-import com.hunre.sharedcommon.dto.ErrorResponse;
+import com.hunre.apigateway.error.ErrorResponseWriter;
 import com.hunre.sharedcommon.exception.BusinessException;
 import com.hunre.sharedcommon.exception.ErrorCode;
 import com.hunre.sharedcommon.security.AuthenticatedUser;
@@ -12,20 +12,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
-import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.http.server.PathContainer;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.json.JsonMapper;
 
-import java.nio.charset.StandardCharsets;
 
 /**
  * Chặn token hỏng ngay tại cổng vào, trước khi request kịp đi vào mạng nội bộ.
@@ -45,11 +39,17 @@ public class JwtAuthenticationGatewayFilter implements GlobalFilter, Ordered {
 
     private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationGatewayFilter.class);
 
+    /**
+     * Người dùng đã kiểm token xong, để các filter chạy sau dùng lại mà không phải giải mã
+     * token lần nữa. Chỉ có mặt trên request cần đăng nhập; đường dẫn công khai không có.
+     */
+    public static final String AUTHENTICATED_USER_ATTRIBUTE =
+            JwtAuthenticationGatewayFilter.class.getName() + ".user";
+
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtVerifier jwtVerifier;
     private final PublicPaths publicPaths;
-    private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     public JwtAuthenticationGatewayFilter(JwtSecurityProperties properties) {
         this.jwtVerifier = new JwtVerifier(properties.getJwtSecret());
@@ -79,6 +79,7 @@ public class JwtAuthenticationGatewayFilter implements GlobalFilter, Ordered {
             AuthenticatedUser user = jwtVerifier.verify(header.substring(BEARER_PREFIX.length()).trim());
             log.debug("Cho qua {} {} của người dùng {}",
                     request.getMethod(), request.getPath(), user.userId());
+            exchange.getAttributes().put(AUTHENTICATED_USER_ATTRIBUTE, user);
         } catch (BusinessException ex) {
             return reject(exchange, ex.getMessage());
         }
@@ -93,19 +94,9 @@ public class JwtAuthenticationGatewayFilter implements GlobalFilter, Ordered {
     }
 
     private Mono<Void> reject(ServerWebExchange exchange, String message) {
-        ServerHttpResponse response = exchange.getResponse();
-        String path = exchange.getRequest().getPath().value();
-
-        log.debug("Từ chối {} {}: {}", exchange.getRequest().getMethod(), path, message);
-
-        response.setStatusCode(ErrorCode.UNAUTHORIZED.httpStatus());
-        response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
-
-        byte[] body = objectMapper
-                .writeValueAsString(ErrorResponse.of(ErrorCode.UNAUTHORIZED.name(), message, path))
-                .getBytes(StandardCharsets.UTF_8);
-        DataBuffer buffer = response.bufferFactory().wrap(body);
-
-        return response.writeWith(Mono.just(buffer));
+        log.debug("Từ chối {} {}: {}", exchange.getRequest().getMethod(),
+                exchange.getRequest().getPath().value(), message);
+        return ErrorResponseWriter.write(exchange, ErrorCode.UNAUTHORIZED.httpStatus(),
+                ErrorCode.UNAUTHORIZED.name(), message);
     }
 }
