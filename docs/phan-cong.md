@@ -1,6 +1,6 @@
 # Bảng theo dõi công việc
 
-> **Cập nhật lần cuối:** 25/09/2026 — `main` ở `ccdfefa`
+> **Cập nhật lần cuối:** 03/10/2026 — `main` ở `85c4c7e`
 >
 > File này là nơi duy nhất ghi ai đang làm gì. Xong một việc thì nhóm trưởng cập nhật ngay
 > tại đây, nên **cứ `git pull` là biết việc tiếp theo của mình**, không phải hỏi ai.
@@ -21,9 +21,10 @@
 | duyd92689-debug | course-service | [Chủ sở hữu của chương và bài học](#duyd92689-debug--chủ-sở-hữu-của-chương-và-bài-học) | **Cao** — lỗ hổng | ~1h |
 | duyd92689-debug | course-service | [Trả nội dung bài học](#duyd92689-debug--trả-nội-dung-bài-học) | Trung bình | ~1h |
 | phamquyet19042005-netizen | enrollment-service | [Nạp `course_snapshots`](#phamquyet19042005-netizen--nạp-course_snapshots) | **Cao nhất** — mắt xích cuối của chuỗi ghi danh | ~1h |
-| hiepdeptrai0111 | quiz-service | [Chuyển phát sự kiện sang outbox](#hiepdeptrai0111--chuyển-phát-sự-kiện-sang-outbox) | Thấp — làm sau cùng | ~2h |
+| hiepdeptrai0111 | quiz-service | [Giữ nguyên điểm số trong sự kiện](#hiepdeptrai0111--giữ-nguyên-điểm-số-trong-sự-kiện) | Thấp | ~30 phút |
+| quocluibotre | cả 5 service | [Viết tình huống test cho đợt Postman](#quocluibotre--viết-tình-huống-test-cho-đợt-postman) | Trung bình — xong trước đợt test | ~3h |
 | Cả nhóm | mọi service | [Chuẩn hóa đường dẫn API](#cả-nhóm--chuẩn-hóa-đường-dẫn-api) | Trung bình — trước đợt test Postman | ~1h/người |
-| quocluibotre | — | Đã xong việc chính, chờ nhóm trưởng giao việc mới | — | — |
+| Hiếu | api-gateway | Giới hạn số request bằng Redis | Đang làm | — |
 
 **Việc gấp nhất là của phamquyet.** course-service đã phát `course.updated` (#31), enrollment
 đã gửi outbox lên Kafka (#29). Chỉ còn một mắt xích: nạp `course_snapshots` từ sự kiện đó là
@@ -99,7 +100,7 @@ Bốn trong năm quy tắc này sinh ra từ lỗi có thật trong repo, ghi r�
 ## Trạng thái hệ thống
 
 Năm service đã có code, database chạy tự động bằng Flyway, xác thực JWT hoạt động ở cả
-gateway lẫn từng service. Toàn bộ 264 test xanh. Cả hệ thống chạy được bằng một lệnh
+gateway lẫn từng service. Toàn bộ 269 test xanh. Cả hệ thống chạy được bằng một lệnh
 `docker compose --profile app up -d --build --wait`, xem
 [README](../README.md#cách-nhanh-nhất-chạy-cả-hệ-thống-bằng-docker).
 
@@ -109,6 +110,9 @@ gateway lẫn từng service. Toàn bộ 264 test xanh. Cả hệ thống chạy
 đăng nhập → làm bài kiểm tra → nộp bài → nhận thông báo trong ứng dụng
 admin cấp quyền giảng viên → tạo khóa học → xuất bản → sự kiện course.updated lên Kafka
 ```
+
+Nộp bài giờ đi qua outbox (#32): tắt Kafka rồi nộp bài thì bài làm vẫn lưu, sự kiện nằm chờ
+trong `outbox_events`, bật Kafka lại là thông báo tới — đã chạy thật ngày 03/10.
 
 **Chuỗi chưa chạy, và vì sao:**
 
@@ -245,38 +249,71 @@ Rồi:
 
 ---
 
-### hiepdeptrai0111 — chuyển phát sự kiện sang outbox
+### hiepdeptrai0111 — giữ nguyên điểm số trong sự kiện
 
-> Ưu tiên thấp. Ba việc ở trên chặn demo, việc này thì không — cứ làm sau khi nhóm thông
-> được chuỗi ghi danh. Nếu rảnh sớm thì báo nhóm trưởng.
+> Việc nhỏ phát hiện khi chạy thử #32. Không chặn demo.
 
-**Vấn đề.** `QuizAttemptServiceImpl.submitAttempt` gửi Kafka **bên trong transaction**, ngay
-sau khi lưu bài làm:
+**Vấn đề.** Cột `payload` của `quiz_db.outbox_events` có kiểu `JSON`. MySQL không lưu nguyên
+chuỗi mà phân tích rồi viết lại, nên số thập phân bị đổi dạng trước khi lên Kafka:
 
-```java
-QuizAttempt savedAttempt = quizAttemptRepository.save(attempt);   // dòng 204
-...
-quizEventPublisher.publishQuizGraded(event);                       // dòng 216, vẫn trong transaction
+```
+quiz-service tạo:   {"eventId": "...", "score": 100.00, ...}
+MySQL lưu và trả:   {"score": 100.0, "passed": true, ...}      ← mất số 0, đảo thứ tự khóa
+thông báo hiện:     "Bài kiểm tra ... của bạn đạt 100.0 điểm."
 ```
 
-Nếu transaction rollback sau dòng 216 thì sự kiện đã bay đi rồi, và học viên nhận thông báo
-về một điểm số không tồn tại trong database. Ngược lại, gửi Kafka hỏng thì bài làm vẫn được
-lưu nhưng không ai biết để gửi lại.
+Trước #32 thông báo hiện `100.00`. Điểm 85.50 giờ thành 85.5. Không sai dữ liệu, nhưng sự kiện
+lên Kafka không còn là thứ quiz-service đã tạo ra — đúng điều outbox phải đảm bảo.
 
-Đây là bài toán ghi hai nơi (dual write) mà mẫu outbox sinh ra để giải.
+**Cần làm.**
 
-**Cần làm.** Giống enrollment-service: thêm bảng `outbox_events` cho `quiz_db` bằng một
-migration mới, ghi sự kiện vào bảng đó trong cùng transaction với bài làm, rồi một
-`@Scheduled` riêng đọc và gửi lên Kafka.
+1. Migration mới `V3__store_outbox_payload_as_text.sql` đổi cột sang `LONGTEXT NOT NULL`.
+   **Không sửa V2** — V2 đã merge, CI sẽ chặn (xem [Nếu có sửa entity hoặc migration](#nếu-có-sửa-entity-hoặc-migration)).
+2. `OutboxEvent.payload` đổi `columnDefinition` cho khớp, nếu không job "Schema matches
+   entities" sẽ đỏ.
+3. Bỏ đoạn xử lý H2 trong `QuizOutboxIntegrationTest` (`if (payload.isTextual())`) — đổi kiểu
+   cột rồi thì không cần nữa.
+4. `OutboxPublisherWorker`: truyền cả `ex` vào `log.error` thay vì `ex.getMessage()`, để log
+   giữ được nguyên nhân gốc.
 
-Phần gửi bên enrollment-service đã xong (#29): chép `OutboxPublisherWorker` và
-`KafkaProducerConfig` của enrollment-service, để hai service không mỗi bên một kiểu. Worker đó
-đã được chạy thật — dừng cả đợt khi một sự kiện gửi hỏng để giữ thứ tự, và chỉ đánh dấu
-`published_at` sau khi Kafka xác nhận.
+enrollment-service cũng dùng cột `JSON` nhưng các sự kiện của nó không có số thập phân, nên
+chưa bị. Không cần sửa bên đó.
 
-**Tự kiểm.** Nộp bài khi **tắt Kafka** (`spring.kafka.enabled=false`): bài làm vẫn lưu, và
-có một dòng trong `outbox_events` với `published_at` là NULL. Bật Kafka lại thì dòng đó được
-gửi đi và thông báo xuất hiện.
+**Tự kiểm.** Tạo bài 2 câu, nộp đúng 1 câu. Thông báo phải hiện `50.00 điểm`, và
+`SELECT payload FROM quiz_db.outbox_events` phải giữ nguyên thứ tự khóa như lúc tạo.
+
+---
+
+### quocluibotre — viết tình huống test cho đợt Postman
+
+> Không đụng code, làm song song với mọi người được. Xong thì đợt test Postman chỉ còn việc
+> bấm, không ai phải nghĩ "test cái gì".
+
+**Cần làm.** Mỗi service một file trong `docs/test-cases/`: `auth.md`, `course.md`,
+`enrollment.md`, `quiz.md`, `notification.md`, cộng `gateway.md` cho các ca chung (thiếu token,
+token hết hạn, service chết trả 502). Mỗi endpoint một bảng:
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Đúng | giảng viên A | `POST /api/courses` + body mẫu | 201, `data.status` = `DRAFT` |
+| 2 | Không token | — | như trên | 401 |
+| 3 | Sai vai trò | học viên | như trên | 403 |
+| 4 | Sửa khóa của người khác | giảng viên B | `PUT /api/courses/{id của A}` | 403 |
+
+Mỗi endpoint ít nhất sáu ca theo [api-conventions.md mục E](api-conventions.md#e-tự-kiểm-trước-khi-mở-pull-request):
+đúng, không token, sai vai trò, không tồn tại, sai kiểu tham số, sắp xếp bằng trường bịa. Thêm
+ca riêng của từng nghiệp vụ, ví dụ ghi danh hai lần, nộp bài quá số lần cho phép, xem khóa
+`DRAFT` của người khác.
+
+**Lưu ý.**
+
+- Dùng năm tài khoản cố định: admin, giảng viên A, giảng viên B, học viên, không token. Ghi ở
+  đầu `gateway.md` cách tạo chúng (đăng ký rồi admin cấp quyền bằng `PATCH /api/users/{id}/roles`).
+- Đường dẫn sẽ đổi khi cả nhóm [chuẩn hóa](#cả-nhóm--chuẩn-hóa-đường-dẫn-api) — viết theo đường
+  dẫn mới trong bảng đó luôn, tình huống thì không đổi.
+- "Mong đợi" phải là mã HTTP cụ thể, không ghi "báo lỗi". 403 và 404 khác nhau và cả hai đều
+  có lúc đúng (khóa `DRAFT` của người khác trả 404 là cố ý, xem A3).
+- Mở pull request theo từng file cho dễ review, không cần đợi xong cả sáu.
 
 ---
 
@@ -322,6 +359,7 @@ Ai làm xong phần của mình thì mở một pull request riêng, đừng g�
 
 | Ngày | PR | Việc | Người |
 |---|---|---|---|
+| 03/10 | #32 | quiz-service gửi sự kiện chấm điểm qua outbox | hiepdeptrai0111 |
 | 25/09 | #29 | Gửi outbox của enrollment-service lên Kafka | phamquyet19042005-netizen |
 | 25/09 | #31 | Phân quyền course-service, ẩn khóa DRAFT, phát `course.updated` | duyd92689-debug |
 | 25/09 | #27 | API gán vai trò, admin đầu tiên, `/me` dùng `AuthenticatedUser` | quocluibotre |
