@@ -79,6 +79,33 @@ check "GET /api/notifications" 200 "${AUTH[@]}" "$GATEWAY/api/notifications"
 echo "xác thực"
 check "GET /api/notifications không token phải bị chặn" 401 "$GATEWAY/api/notifications"
 
+echo "giới hạn request (Redis)"
+# Gateway vẫn cho request qua khi Redis chết, nên mọi check ở trên vẫn xanh dù Redis hỏng.
+# Header X-RateLimit-Remaining mới cho biết Redis có thật sự đang đếm: -1 là không gọi được.
+REMAINING=$(curl -s -o /dev/null -D - --max-time 15 "${AUTH[@]}" "$GATEWAY/api/auth/me" \
+    | tr -d '\r' | sed -n 's/^[Xx]-[Rr]ate[Ll]imit-[Rr]emaining: *//p')
+if [ -n "$REMAINING" ] && [ "$REMAINING" -ge 0 ] 2>/dev/null; then
+    echo "  OK   X-RateLimit-Remaining=$REMAINING  Redis đang đếm"
+else
+    echo "  SAI  X-RateLimit-Remaining='${REMAINING}' — gateway không gọi được Redis"
+    FAILED=1
+fi
+
+# Bắn dồn bằng tài khoản thử vừa tạo, nên chỉ xô của tài khoản đó cạn; người khác và các lần
+# chạy sau không bị ảnh hưởng. Không thử bằng đăng nhập: xô đó tính theo IP, cạn thì chạy lại
+# script này trong vòng một phút sẽ không đăng nhập được.
+# Mỗi URL cần -o riêng: curl chỉ gắn một -o cho một URL, URL thiếu -o thì in body ra màn hình.
+BURST=()
+for _ in $(seq 1 60); do BURST+=(-o /dev/null "$GATEWAY/api/auth/me"); done
+CODES=$(curl -s --max-time 30 --parallel --parallel-max 30 "${AUTH[@]}" \
+    -w '%{http_code}\n' "${BURST[@]}")
+if echo "$CODES" | grep -qx 429; then
+    echo "  OK   429  gửi dồn 60 request thì bị chặn ($(echo "$CODES" | grep -cx 429) lần 429)"
+else
+    echo "  SAI  gửi dồn 60 request mà không lần nào bị chặn: $(echo "$CODES" | sort | uniq -c | tr '\n' ' ')"
+    FAILED=1
+fi
+
 rm -f /tmp/smoke-body.$$
 
 # Dọn tài khoản vừa tạo nếu MySQL chạy trong compose, để chạy nhiều lần không để lại rác trong

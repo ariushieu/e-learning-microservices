@@ -6,21 +6,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.webflux.error.ErrorWebExceptionHandler;
 import org.springframework.core.annotation.Order;
-import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.json.JsonMapper;
 
 import java.net.ConnectException;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Dựng response lỗi của gateway theo đúng hình dạng {@link ErrorResponse} như 5 service.
@@ -46,8 +41,6 @@ import java.nio.charset.StandardCharsets;
 public class GatewayErrorWebExceptionHandler implements ErrorWebExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GatewayErrorWebExceptionHandler.class);
-
-    private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     @Override
     public Mono<Void> handle(ServerWebExchange exchange, Throwable error) {
@@ -84,15 +77,7 @@ public class GatewayErrorWebExceptionHandler implements ErrorWebExceptionHandler
             log.error("Lỗi ngoài dự kiến tại gateway, đường dẫn {}", path, error);
         }
 
-        response.setStatusCode(status);
-        response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
-
-        byte[] body = objectMapper
-                .writeValueAsString(ErrorResponse.of(code, message, path))
-                .getBytes(StandardCharsets.UTF_8);
-        DataBuffer buffer = response.bufferFactory().wrap(body);
-
-        return response.writeWith(Mono.just(buffer));
+        return ErrorResponseWriter.write(exchange, status, code, message);
     }
 
     /**

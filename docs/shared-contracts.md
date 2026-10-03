@@ -110,6 +110,7 @@ if (course.getStatus() != CourseStatus.PUBLISHED) {
 | `DUPLICATE_RESOURCE` | 409 | Email trùng, slug trùng, ghi danh hai lần |
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | `Content-Type` không được hỗ trợ |
 | `BUSINESS_RULE_VIOLATED` | 422 | Hợp lệ về hình thức nhưng sai quy tắc nghiệp vụ |
+| `TOO_MANY_REQUESTS` | 429 | Gửi quá nhiều request, gateway chặn lại (kèm header `Retry-After`) |
 | `EXTERNAL_SERVICE_ERROR` | 502 | Gọi sang service khác bị lỗi |
 | `INTERNAL_ERROR` | 500 | Lỗi ngoài dự kiến |
 
