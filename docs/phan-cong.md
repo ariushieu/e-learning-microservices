@@ -1,6 +1,6 @@
 # Bảng theo dõi công việc
 
-> **Cập nhật lần cuối:** 03/10/2026 — `main` ở `85c4c7e`
+> **Cập nhật lần cuối:** 06/10/2026 — `main` ở `d8be737`
 >
 > File này là nơi duy nhất ghi ai đang làm gì. Xong một việc thì nhóm trưởng cập nhật ngay
 > tại đây, nên **cứ `git pull` là biết việc tiếp theo của mình**, không phải hỏi ai.
@@ -24,7 +24,6 @@
 | hiepdeptrai0111 | quiz-service | [Giữ nguyên điểm số trong sự kiện](#hiepdeptrai0111--giữ-nguyên-điểm-số-trong-sự-kiện) | Thấp | ~30 phút |
 | quocluibotre | cả 5 service | [Viết tình huống test cho đợt Postman](#quocluibotre--viết-tình-huống-test-cho-đợt-postman) | Trung bình — xong trước đợt test | ~3h |
 | Cả nhóm | mọi service | [Chuẩn hóa đường dẫn API](#cả-nhóm--chuẩn-hóa-đường-dẫn-api) | Trung bình — trước đợt test Postman | ~1h/người |
-| Hiếu | api-gateway | Giới hạn số request bằng Redis | Đang làm | — |
 
 **Việc gấp nhất là của phamquyet.** course-service đã phát `course.updated` (#31), enrollment
 đã gửi outbox lên Kafka (#29). Chỉ còn một mắt xích: nạp `course_snapshots` từ sự kiện đó là
@@ -61,12 +60,24 @@ làm lại hết.
 ```bash
 git pull
 docker compose --profile app up -d --build --wait
-bash scripts/smoke-test.sh        # 10 dòng OK là cả 6 service đã lên và thông database
+bash scripts/smoke-test.sh        # 12 dòng OK là cả 6 service đã lên, thông database và Redis
 ```
 
 Mọi request trong Postman đi qua **gateway `http://localhost:8080`**. Đừng gọi thẳng cổng
 8081–8085: trong Docker các cổng đó không mở ra ngoài, và gọi thẳng thì bỏ qua đúng hai thứ
 hay hỏng nhất là định tuyến và kiểm token ở vòng ngoài.
+
+**Gateway giới hạn số lần đăng nhập theo địa chỉ IP** (#34): 10 lần liền, sau đó 6 giây mới
+được thêm một lần. Mọi request từ máy mình vào Docker đều mang chung một IP, nên khi chạy
+Postman Runner hay nhiều người đăng nhập liên tục trên cùng một máy sẽ nhận **429**. Đó là
+gateway chặn đúng, không phải lỗi của service. Chờ một phút, hoặc tắt hẳn trong lúc test:
+
+```bash
+RATE_LIMIT_ENABLED=false docker compose --profile app up -d api-gateway
+```
+
+Bật lại bằng cùng lệnh, bỏ `RATE_LIMIT_ENABLED=false`. Chi tiết ở
+[README](../README.md#giới-hạn-request).
 
 **Hai collection cũ trong `docs/postman/` không dùng lại được.** Collection của course-service
 gọi thẳng `localhost:8082` và không request nào gửi token — viết trước khi có JWT, nên giờ mọi
@@ -100,7 +111,7 @@ Bốn trong năm quy tắc này sinh ra từ lỗi có thật trong repo, ghi r�
 ## Trạng thái hệ thống
 
 Năm service đã có code, database chạy tự động bằng Flyway, xác thực JWT hoạt động ở cả
-gateway lẫn từng service. Toàn bộ 269 test xanh. Cả hệ thống chạy được bằng một lệnh
+gateway lẫn từng service. Gateway giới hạn số request bằng Redis. Toàn bộ 277 test xanh. Cả hệ thống chạy được bằng một lệnh
 `docker compose --profile app up -d --build --wait`, xem
 [README](../README.md#cách-nhanh-nhất-chạy-cả-hệ-thống-bằng-docker).
 
@@ -359,6 +370,7 @@ Ai làm xong phần của mình thì mở một pull request riêng, đừng g�
 
 | Ngày | PR | Việc | Người |
 |---|---|---|---|
+| 03/10 | #34 | Gateway giới hạn số request bằng Redis: chống dò mật khẩu, Redis chết thì vẫn cho qua | Hiếu |
 | 03/10 | #32 | quiz-service gửi sự kiện chấm điểm qua outbox | hiepdeptrai0111 |
 | 25/09 | #29 | Gửi outbox của enrollment-service lên Kafka | phamquyet19042005-netizen |
 | 25/09 | #31 | Phân quyền course-service, ẩn khóa DRAFT, phát `course.updated` | duyd92689-debug |
