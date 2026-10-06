@@ -88,7 +88,7 @@ class QuestionControllerTest {
     @Test
     @DisplayName("GET /api/quizzes/{quizId}/questions: Giảng viên được xem câu hỏi kèm đáp án")
     void getQuestions_successForInstructor() throws Exception {
-        when(questionService.getQuestionsByQuiz(1L)).thenReturn(questionResponses());
+        when(questionService.getQuestionsByQuiz(1L, instructor.userId(), false)).thenReturn(questionResponses());
 
         mockMvc.perform(get("/api/quizzes/1/questions")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor))
@@ -103,7 +103,7 @@ class QuestionControllerTest {
     void getQuestions_successForAdmin() throws Exception {
         AuthenticatedUser admin = new AuthenticatedUser(
                 2L, "admin@hunre.edu.vn", "Admin", Set.of(Roles.ADMIN));
-        when(questionService.getQuestionsByQuiz(1L)).thenReturn(questionResponses());
+        when(questionService.getQuestionsByQuiz(1L, 2L, true)).thenReturn(questionResponses());
 
         mockMvc.perform(get("/api/quizzes/1/questions")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, admin))

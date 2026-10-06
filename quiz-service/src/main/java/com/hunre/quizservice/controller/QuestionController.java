@@ -38,7 +38,7 @@ public class QuestionController {
             @Valid @RequestBody CreateQuestionRequest request,
             AuthenticatedUser user) {
         requireQuizManager(user);
-        return ApiResponse.ok(questionService.addQuestion(quizId, request), "Thêm câu hỏi thành công");
+        return ApiResponse.ok(questionService.addQuestion(quizId, request, user.userId(), user.hasRole(Roles.ADMIN)), "Thêm câu hỏi thành công");
     }
 
     @PutMapping("/{questionId}")
@@ -48,7 +48,7 @@ public class QuestionController {
             @Valid @RequestBody UpdateQuestionRequest request,
             AuthenticatedUser user) {
         requireQuizManager(user);
-        return ApiResponse.ok(questionService.updateQuestion(quizId, questionId, request), "Cập nhật câu hỏi thành công");
+        return ApiResponse.ok(questionService.updateQuestion(quizId, questionId, request, user.userId(), user.hasRole(Roles.ADMIN)), "Cập nhật câu hỏi thành công");
     }
 
     @DeleteMapping("/{questionId}")
@@ -57,7 +57,7 @@ public class QuestionController {
             @PathVariable Long questionId,
             AuthenticatedUser user) {
         requireQuizManager(user);
-        questionService.deleteQuestion(quizId, questionId);
+        questionService.deleteQuestion(quizId, questionId, user.userId(), user.hasRole(Roles.ADMIN));
         return ApiResponse.message("Đã xóa câu hỏi");
     }
 
@@ -66,7 +66,7 @@ public class QuestionController {
             @PathVariable Long quizId,
             AuthenticatedUser user) {
         requireQuizManager(user);
-        return ApiResponse.ok(questionService.getQuestionsByQuiz(quizId));
+        return ApiResponse.ok(questionService.getQuestionsByQuiz(quizId, user.userId(), user.hasRole(Roles.ADMIN)));
     }
 
     private void requireQuizManager(AuthenticatedUser user) {

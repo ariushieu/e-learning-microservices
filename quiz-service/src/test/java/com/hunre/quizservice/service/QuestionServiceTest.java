@@ -48,7 +48,7 @@ class QuestionServiceTest {
     @BeforeEach
     void setUp() {
         quiz = Quiz.builder()
-                .id(1L)
+                .id(1L).createdBy(100L)
                 .title("Quiz 1")
                 .questions(new ArrayList<>())
                 .build();
@@ -74,7 +74,7 @@ class QuestionServiceTest {
                 ))
                 .build();
 
-        QuestionResponse response = questionService.addQuestion(1L, request);
+        QuestionResponse response = questionService.addQuestion(1L, request, 100L, false);
 
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(10L);
@@ -95,7 +95,7 @@ class QuestionServiceTest {
                 ))
                 .build();
 
-        assertThatThrownBy(() -> questionService.addQuestion(1L, request))
+        assertThatThrownBy(() -> questionService.addQuestion(1L, request, 100L, false))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("phải có đúng 1 đáp án chính xác");
     }
@@ -106,7 +106,7 @@ class QuestionServiceTest {
         Question question = Question.builder().id(10L).quiz(quiz).build();
         when(questionRepository.findById(10L)).thenReturn(Optional.of(question));
 
-        questionService.deleteQuestion(1L, 10L);
+        questionService.deleteQuestion(1L, 10L, 100L, false);
 
         verify(questionRepository).delete(question);
     }

@@ -1,5 +1,7 @@
 package com.hunre.quizservice.service.impl;
 
+import com.hunre.quizservice.client.CourseOwnershipClient;
+import com.hunre.quizservice.security.QuizOwnership;
 import com.hunre.quizservice.dto.CreateQuizRequest;
 import com.hunre.quizservice.dto.QuestionResponse;
 import com.hunre.quizservice.dto.QuizDetailResponse;
@@ -28,11 +30,14 @@ import java.util.List;
 public class QuizServiceImpl implements QuizService {
 
     private final QuizRepository quizRepository;
+    private final CourseOwnershipClient courseOwnershipClient;
 
     @Override
     @Transactional
-    public QuizResponse createQuiz(CreateQuizRequest request, Long createdBy) {
+    public QuizResponse createQuiz(CreateQuizRequest request, Long createdBy, boolean isAdmin, String authorization) {
         log.info("Tạo bài kiểm tra mới cho courseId: {}, title: {}", request.getCourseId(), request.getTitle());
+
+        courseOwnershipClient.requireCourseOwner(request.getCourseId(), createdBy, isAdmin, authorization);
 
         Quiz quiz = Quiz.builder()
                 .courseId(request.getCourseId())
@@ -53,9 +58,10 @@ public class QuizServiceImpl implements QuizService {
 
     @Override
     @Transactional
-    public QuizResponse updateQuiz(Long id, UpdateQuizRequest request) {
+    public QuizResponse updateQuiz(Long id, UpdateQuizRequest request, Long currentUserId, boolean isAdmin) {
         log.info("Cập nhật bài kiểm tra id: {}", id);
         Quiz quiz = findQuizOrThrow(id);
+        QuizOwnership.requireOwner(quiz, currentUserId, isAdmin);
 
         if (quiz.getStatus() == QuizStatus.ARCHIVED) {
             throw new BusinessException(ErrorCode.BUSINESS_RULE_VIOLATED,
@@ -80,9 +86,10 @@ public class QuizServiceImpl implements QuizService {
 
     @Override
     @Transactional
-    public QuizResponse publishQuiz(Long id) {
+    public QuizResponse publishQuiz(Long id, Long currentUserId, boolean isAdmin) {
         log.info("Xuất bản bài kiểm tra id: {}", id);
         Quiz quiz = findQuizOrThrow(id);
+        QuizOwnership.requireOwner(quiz, currentUserId, isAdmin);
 
         if (quiz.getQuestions() == null || quiz.getQuestions().isEmpty()) {
             throw new BusinessException(ErrorCode.BUSINESS_RULE_VIOLATED,
@@ -96,9 +103,10 @@ public class QuizServiceImpl implements QuizService {
 
     @Override
     @Transactional
-    public QuizResponse archiveQuiz(Long id) {
+    public QuizResponse archiveQuiz(Long id, Long currentUserId, boolean isAdmin) {
         log.info("Lưu trữ bài kiểm tra id: {}", id);
         Quiz quiz = findQuizOrThrow(id);
+        QuizOwnership.requireOwner(quiz, currentUserId, isAdmin);
         quiz.setStatus(QuizStatus.ARCHIVED);
         Quiz saved = quizRepository.save(quiz);
         return QuizResponse.from(saved);
@@ -106,8 +114,9 @@ public class QuizServiceImpl implements QuizService {
 
     @Override
     @Transactional(readOnly = true)
-    public QuizDetailResponse getQuizDetail(Long id) {
+    public QuizDetailResponse getQuizDetail(Long id, Long currentUserId, boolean isAdmin) {
         Quiz quiz = findQuizOrThrow(id);
+        QuizOwnership.requireOwner(quiz, currentUserId, isAdmin);
         return QuizDetailResponse.from(quiz, true);
     }
 
@@ -131,17 +140,20 @@ public class QuizServiceImpl implements QuizService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<QuizResponse> getQuizzesByCourse(Long courseId) {
-        return quizRepository.findByCourseId(courseId).stream()
+    public List<QuizResponse> getQuizzesByCourse(Long courseId, Long currentUserId, boolean isAdmin) {
+        return (isAdmin && currentUserId != null
+                ? quizRepository.findByCourseId(courseId)
+                : quizRepository.findVisibleByCourseId(courseId, currentUserId, QuizStatus.PUBLISHED)).stream()
                 .map(QuizResponse::from)
                 .toList();
     }
 
     @Override
     @Transactional
-    public void deleteQuiz(Long id) {
+    public void deleteQuiz(Long id, Long currentUserId, boolean isAdmin) {
         log.info("Xóa bài kiểm tra id: {}", id);
         Quiz quiz = findQuizOrThrow(id);
+        QuizOwnership.requireOwner(quiz, currentUserId, isAdmin);
         quizRepository.delete(quiz);
     }
 
