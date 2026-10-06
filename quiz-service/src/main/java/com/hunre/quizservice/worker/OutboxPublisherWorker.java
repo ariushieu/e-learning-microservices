@@ -59,7 +59,7 @@ public class OutboxPublisherWorker {
             log.error("Interrupted while publishing quiz outbox event id={}", event.getId(), ex);
             return false;
         } catch (Exception ex) {
-            log.error("Could not publish quiz outbox event id={}: {}", event.getId(), ex.getMessage());
+            log.error("Could not publish quiz outbox event id={}", event.getId(), ex);
             return false;
         }
     }
