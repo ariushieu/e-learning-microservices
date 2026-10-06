@@ -183,16 +183,22 @@ class EventProcessorTest {
         assertThat(processedEventRepository.findById(event.eventId())).isPresent();
     }
 
+    /**
+     * Dùng đúng sự kiện course-service sẽ phát: service này nghe cả topic khóa học nhưng
+     * không tạo thông báo nào từ đó, nên phải bỏ qua êm chứ không được ném lỗi.
+     */
     @Test
     @DisplayName("loại sự kiện chưa có xử lý vẫn được ghi sổ chứ không làm hỏng consumer")
     void suKienLaKhongLamHong() {
         String payload = """
                 {"eventId":"11111111-2222-3333-4444-555555555555",
-                 "eventType":"course.published","courseId":9}
+                 "eventType":"course.updated","occurredAt":"2026-09-25T03:04:05Z",
+                 "courseId":9,"title":"Khóa học","slug":"khoa-hoc","thumbnailUrl":null,
+                 "instructorId":7,"instructorName":null,"totalLessons":12,"status":"PUBLISHED"}
                 """;
 
         eventProcessor.process("11111111-2222-3333-4444-555555555555",
-                "course.published", KafkaTopics.COURSE_EVENTS, payload);
+                EventTypes.COURSE_UPDATED, KafkaTopics.COURSE_EVENTS, payload);
 
         assertThat(notificationRepository.findAll()).isEmpty();
         assertThat(processedEventRepository.findById("11111111-2222-3333-4444-555555555555"))

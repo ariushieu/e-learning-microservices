@@ -18,11 +18,12 @@ commit dòng code đầu tiên.
 | JDK 17 trở lên   | Có       | Không cần cài Maven, dự án dùng Maven Wrapper                 |
 | Git              | Có       | Trên Windows nên dùng Git for Windows, có sẵn Git Bash        |
 | IntelliJ IDEA    | Khuyến nghị | Community Edition là đủ                                    |
-| Docker Desktop   | **Không** ở giai đoạn hiện tại | Xem [mục 7](#7-làm-việc-với-database) |
+| Docker Desktop   | Có       | Chạy MySQL và Kafka, xem [mục 7](#7-làm-việc-với-database) |
 
-Hiện tại chưa service nào kết nối database, nên **không có Docker vẫn clone về build và
-chạy được bình thường**. Khi nào bước cấu hình Spring Data JPA hoàn tất thì mới cần một
-MySQL, lúc đó tài liệu này sẽ được cập nhật.
+`./mvnw clean verify` chạy được mà không cần Docker — test dùng H2 trong bộ nhớ. Nhưng **chạy
+service thì phải có MySQL**: cả 5 service kết nối database lúc khởi động và dừng ngay nếu
+không có. Cách nhanh nhất là `docker compose up -d mysql`, hoặc chạy luôn cả hệ thống bằng
+một lệnh như README hướng dẫn ở mục "Cách nhanh nhất: chạy cả hệ thống bằng Docker".
 
 ## 2. Clone và thiết lập
 
@@ -101,12 +102,17 @@ Cách tránh, làm **ngay sau khi pull request của bạn được merge**:
 ```bash
 git checkout <nhánh của bạn>
 git fetch origin
-git reset --hard origin/main        # nhánh trở về đúng bằng main
-git push --force-with-lease         # đồng bộ lên GitHub
+git reset --hard origin/main                          # nhánh trở về đúng bằng main
+git push --force-with-lease origin <nhánh của bạn>    # đồng bộ lên GitHub
 ```
 
 Nhánh vẫn còn nguyên và bạn làm tiếp trên đó như bình thường, chỉ là điểm xuất phát được
 đưa về trùng với `main`. Từ đó `git merge main` sẽ sạch.
+
+**Lệnh push luôn ghi tên nhánh.** `git push --force-with-lease` trống trơn sẽ đẩy nhánh
+*đang đứng*, nên lỡ `checkout` nhầm là ghi đè nhánh của người khác. Chuyện này đã xảy ra
+một lần với `auth-service`. GitHub không chặn được việc đó — repo cá nhân không cho giới hạn
+từng người chỉ được đẩy nhánh nào — nên chỗ chặn duy nhất là chính câu lệnh.
 
 **Chỉ chạy `reset --hard` khi nhánh của bạn không còn gì chưa merge.** Lệnh này xóa sạch
 commit chưa vào `main`. Kiểm tra trước bằng:
@@ -399,13 +405,62 @@ if (!user.hasRole(Roles.INSTRUCTOR)) {
 
 Hai cách, chọn một:
 
-1. Lấy token thật: gọi `POST /api/auth/login`, copy `accessToken`, đính vào header
-   `Authorization: Bearer <token>` cho mọi request sau đó.
-2. Tắt xác thực khi chạy máy mình: thêm `elearning.security.enabled=false` vào
-   `application-local.properties`. Mọi request sẽ được coi là một người dùng giả lập có đủ
-   ba vai trò.
+1. **Lấy token thật** (nên dùng): gọi `POST /api/auth/login`, copy `accessToken`, đính vào
+   header `Authorization: Bearer <token>` cho mọi request sau đó. Cần tài khoản giảng viên
+   thì dùng API gán vai trò `PATCH /api/users/{id}/roles` bằng tài khoản admin tạo sẵn —
+   cả hai đến từ PR #27; trước khi PR đó vào `main` thì vẫn phải gán vai trò bằng SQL.
+2. **Tắt xác thực trên máy mình.** Phải làm đủ **hai** bước — bản cũ của tài liệu này chỉ
+   ghi bước a, và làm mỗi bước a thì không có tác dụng gì:
 
-Đừng commit cách 2 vào `application.properties`.
+   a. Tạo file `<service>/src/main/resources/application-local.properties` (đã được
+      `.gitignore`, không bao giờ bị commit) với một dòng:
+
+      ```properties
+      elearning.security.enabled=false
+      ```
+
+   b. **Bật profile `local`** khi chạy service. Spring chỉ đọc
+      `application-local.properties` khi profile đó đang bật; không bật thì file bị bỏ qua
+      và service vẫn đòi token.
+
+      - IntelliJ: **Run > Edit Configurations**, chọn cấu hình chạy service, thêm biến môi
+        trường `SPRING_PROFILES_ACTIVE=local`. Bản Ultimate có sẵn ô **Active profiles**,
+        điền `local`.
+      - Dòng lệnh: `SPRING_PROFILES_ACTIVE=local ./mvnw -pl enrollment-service -am spring-boot:run`
+
+   Kiểm tra: gọi một endpoint cần đăng nhập mà không gửi token. Nhận 200 là đã tắt, nhận 401
+   là profile chưa bật.
+
+   Khi tắt, **mọi request được coi là cùng một người dùng giả lập** (id 1, đủ ba vai trò).
+   Không test được những gì phụ thuộc danh tính — hai học viên khác nhau sẽ thành một người.
+
+**Không bao giờ đặt cách 2 vào `application.properties`.** Service vẫn chạy, mọi endpoint
+vẫn trả 200, nhưng dữ liệu của mọi người dồn về một tài khoản — lỗi này không làm hỏng test
+nào. CI có job "Security enabled in committed config" chặn việc đó: pull request nào tắt xác
+thực trong file cấu hình được commit sẽ đỏ.
 
 Chi tiết đầy đủ — đường dẫn công khai, phân quyền, cấu hình khóa ký — ở
 [docs/authentication.md](docs/authentication.md).
+
+
+## 9. Viết endpoint mới
+
+Luật chung cho cả 5 service ở [docs/api-conventions.md](docs/api-conventions.md). Mỗi quy
+tắc có số hiệu, nên lúc review chỉ cần ghi *"vi phạm A2"* là người kia biết tra ở đâu.
+
+Năm điều bắt buộc, sai là pull request bị trả lại:
+
+| Mã | Quy tắc |
+|---|---|
+| A1 | Danh tính lấy từ token, không nhận `userId`/`instructorId`/`createdBy` từ client |
+| A2 | Mọi endpoint ghi phải kiểm vai trò |
+| A3 | Endpoint công khai phải tự lọc trạng thái, không trả dữ liệu chưa xuất bản |
+| A4 | Thêm controller mới thì khai route ở gateway |
+| A5 | Dùng `ApiResponse` và `ErrorCode`, không tự chế hình dạng response |
+
+A4 là cái hay quên nhất và khó đoán nhất: quên khai route thì gọi qua gateway nhận **404
+dù service chạy hoàn toàn bình thường**, còn gọi thẳng cổng nội bộ thì vẫn đúng — rất dễ
+tưởng là lỗi của frontend. CI có `GatewayRouteCoverageTest` bắt việc này.
+
+Vì vậy khi thử endpoint mới, **gọi qua gateway cổng 8080** chứ đừng gọi thẳng cổng của
+service. Danh sách lệnh tự kiểm ở cuối [api-conventions.md](docs/api-conventions.md).

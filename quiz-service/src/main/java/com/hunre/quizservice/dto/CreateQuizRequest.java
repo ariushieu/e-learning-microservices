@@ -46,6 +46,4 @@ public class CreateQuizRequest {
     @Builder.Default
     private Boolean shuffleQuestions = false;
 
-    @NotNull(message = "createdBy không được để trống")
-    private Long createdBy;
 }

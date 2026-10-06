@@ -4,26 +4,38 @@ import com.hunre.courseservice.dto.request.ChangeCourseStatusRequest;
 import com.hunre.courseservice.dto.request.CreateCourseRequest;
 import com.hunre.courseservice.dto.request.UpdateCourseRequest;
 import com.hunre.courseservice.dto.response.CourseResponse;
+import com.hunre.courseservice.dto.response.CourseSummaryResponse;
 import com.hunre.courseservice.entity.Category;
 import com.hunre.courseservice.entity.Course;
 import com.hunre.courseservice.entity.CourseLevel;
 import com.hunre.courseservice.entity.CourseStatus;
 import com.hunre.courseservice.repository.CategoryRepository;
 import com.hunre.courseservice.repository.CourseRepository;
+import com.hunre.courseservice.security.CurrentUserProvider;
 import com.hunre.courseservice.service.impl.CourseServiceImpl;
+import com.hunre.sharedcommon.dto.PageResponse;
 import com.hunre.sharedcommon.exception.BusinessException;
 import com.hunre.sharedcommon.exception.DuplicateResourceException;
 import com.hunre.sharedcommon.exception.ResourceNotFoundException;
+import com.hunre.sharedcommon.security.AuthenticatedUser;
+import com.hunre.sharedcommon.security.Roles;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import com.hunre.courseservice.event.CourseEventPublisher;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -41,6 +53,12 @@ class CourseServiceTest {
     @Mock
     private CategoryRepository categoryRepository;
 
+    @Mock
+    private CurrentUserProvider currentUserProvider;
+
+    @Mock
+    private CourseEventPublisher courseEventPublisher;
+
     @InjectMocks
     private CourseServiceImpl courseService;
 
@@ -50,7 +68,6 @@ class CourseServiceTest {
         Category category = Category.builder().id(1L).name("CNTT").build();
         CreateCourseRequest request = CreateCourseRequest.builder()
                 .categoryId(1L)
-                .instructorId(100L)
                 .instructorName("Thầy Tuấn")
                 .title("Lập trình Microservices với Spring Boot")
                 .summary("Khóa học Microservices thực chiến")
@@ -68,7 +85,7 @@ class CourseServiceTest {
             return c;
         });
 
-        CourseResponse response = courseService.createCourse(request);
+        CourseResponse response = courseService.createCourse(request, 100L, "Thầy Tuấn");
 
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(10L);
@@ -85,7 +102,6 @@ class CourseServiceTest {
         Category category = Category.builder().id(1L).name("CNTT").build();
         CreateCourseRequest request = CreateCourseRequest.builder()
                 .categoryId(1L)
-                .instructorId(100L)
                 .title("Java Cơ Bản")
                 .slug("java-co-ban")
                 .build();
@@ -93,7 +109,7 @@ class CourseServiceTest {
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
         when(courseRepository.existsBySlug("java-co-ban")).thenReturn(true);
 
-        assertThatThrownBy(() -> courseService.createCourse(request))
+        assertThatThrownBy(() -> courseService.createCourse(request, 100L))
                 .isInstanceOf(DuplicateResourceException.class)
                 .hasMessageContaining("java-co-ban");
 
@@ -105,15 +121,136 @@ class CourseServiceTest {
     void createCourse_categoryNotFound_throwsResourceNotFoundException() {
         CreateCourseRequest request = CreateCourseRequest.builder()
                 .categoryId(999L)
-                .instructorId(100L)
                 .title("Java")
                 .build();
 
         when(categoryRepository.findById(999L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> courseService.createCourse(request))
+        assertThatThrownBy(() -> courseService.createCourse(request, 100L))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("999");
+    }
+
+    @Test
+    @DisplayName("Xem khóa học DRAFT khi là khách chưa đăng nhập trả về 404")
+    void getCourseById_draft_whenGuest_throwsNotFound() {
+        Course course = Course.builder()
+                .id(1L)
+                .instructorId(50L)
+                .status(CourseStatus.DRAFT)
+                .build();
+
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(currentUserProvider.getCurrentUser()).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> courseService.getCourseById(1L))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("Xem khóa học DRAFT khi là chủ khóa học trả về thành công")
+    void getCourseById_draft_whenOwnerInstructor_success() {
+        Course course = Course.builder()
+                .id(1L)
+                .instructorId(50L)
+                .status(CourseStatus.DRAFT)
+                .title("Spring Boot")
+                .slug("spring-boot")
+                .build();
+
+        AuthenticatedUser owner = new AuthenticatedUser(50L, "gv@hunre.edu.vn", "Giang Vien", Set.of(Roles.INSTRUCTOR));
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(currentUserProvider.getCurrentUser()).thenReturn(Optional.of(owner));
+
+        CourseResponse response = courseService.getCourseById(1L);
+        assertThat(response).isNotNull();
+        assertThat(response.getId()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("Xem khóa học DRAFT khi là admin trả về thành công")
+    void getCourseById_draft_whenAdmin_success() {
+        Course course = Course.builder()
+                .id(1L)
+                .instructorId(50L)
+                .status(CourseStatus.DRAFT)
+                .title("Spring Boot")
+                .slug("spring-boot")
+                .build();
+
+        AuthenticatedUser admin = new AuthenticatedUser(99L, "admin@hunre.edu.vn", "Admin", Set.of(Roles.ADMIN));
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(currentUserProvider.getCurrentUser()).thenReturn(Optional.of(admin));
+
+        CourseResponse response = courseService.getCourseById(1L);
+        assertThat(response).isNotNull();
+        assertThat(response.getId()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("Xem khóa học PUBLISHED thành công kể cả khách chưa đăng nhập")
+    void getCourseById_published_whenGuest_success() {
+        Course course = Course.builder()
+                .id(1L)
+                .instructorId(50L)
+                .status(CourseStatus.PUBLISHED)
+                .title("Spring Boot")
+                .slug("spring-boot")
+                .build();
+
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+
+        CourseResponse response = courseService.getCourseById(1L);
+        assertThat(response).isNotNull();
+        assertThat(response.getId()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("Khách gọi danh sách khóa học của giảng viên chỉ thấy khóa PUBLISHED")
+    void getInstructorCourses_whenGuest_returnsOnlyPublished() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Course course = Course.builder().id(1L).instructorId(50L).status(CourseStatus.PUBLISHED).title("Spring Boot").build();
+        Page<Course> page = new PageImpl<>(List.of(course), pageable, 1);
+
+        when(currentUserProvider.getCurrentUser()).thenReturn(Optional.empty());
+        when(courseRepository.findByInstructorIdAndStatus(50L, CourseStatus.PUBLISHED, pageable)).thenReturn(page);
+
+        PageResponse<CourseSummaryResponse> result = courseService.getInstructorCourses(50L, pageable);
+        assertThat(result.content()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("Giảng viên khác sửa khóa học bị chặn 403 Forbidden")
+    void updateCourse_notOwner_throwsForbidden() {
+        Course course = Course.builder()
+                .id(1L)
+                .instructorId(50L)
+                .status(CourseStatus.DRAFT)
+                .build();
+
+        UpdateCourseRequest request = UpdateCourseRequest.builder().categoryId(1L).title("New").build();
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+
+        assertThatThrownBy(() -> courseService.updateCourse(1L, request, 999L, false))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("không có quyền");
+    }
+
+    @Test
+    @DisplayName("Giảng viên khác xóa khóa học bị chặn 403 Forbidden")
+    void deleteCourse_notOwner_throwsForbidden() {
+        Course course = Course.builder()
+                .id(1L)
+                .instructorId(50L)
+                .status(CourseStatus.DRAFT)
+                .studentCount(0)
+                .build();
+
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+
+        assertThatThrownBy(() -> courseService.deleteCourse(1L, 999L, false))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("không có quyền");
     }
 
     @Test
@@ -121,6 +258,7 @@ class CourseServiceTest {
     void updateCourse_archived_throwsBusinessException() {
         Course course = Course.builder()
                 .id(1L)
+                .instructorId(50L)
                 .status(CourseStatus.ARCHIVED)
                 .build();
 
@@ -131,7 +269,7 @@ class CourseServiceTest {
 
         when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
 
-        assertThatThrownBy(() -> courseService.updateCourse(1L, request))
+        assertThatThrownBy(() -> courseService.updateCourse(1L, request, 50L, false))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("ARCHIVED");
     }
@@ -141,6 +279,7 @@ class CourseServiceTest {
     void changeCourseStatus_published_setsPublishedAt() {
         Course course = Course.builder()
                 .id(1L)
+                .instructorId(50L)
                 .status(CourseStatus.DRAFT)
                 .publishedAt(null)
                 .build();
@@ -152,7 +291,7 @@ class CourseServiceTest {
         when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
         when(courseRepository.save(any(Course.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        CourseResponse response = courseService.changeCourseStatus(1L, request);
+        CourseResponse response = courseService.changeCourseStatus(1L, request, 50L, false);
 
         assertThat(response.getStatus()).isEqualTo(CourseStatus.PUBLISHED);
         assertThat(course.getPublishedAt()).isNotNull();
@@ -163,12 +302,13 @@ class CourseServiceTest {
     void deleteCourse_notDraft_throwsBusinessException() {
         Course course = Course.builder()
                 .id(1L)
+                .instructorId(50L)
                 .status(CourseStatus.PUBLISHED)
                 .build();
 
         when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
 
-        assertThatThrownBy(() -> courseService.deleteCourse(1L))
+        assertThatThrownBy(() -> courseService.deleteCourse(1L, 50L, false))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("DRAFT");
 
@@ -180,13 +320,14 @@ class CourseServiceTest {
     void deleteCourse_hasStudents_throwsBusinessException() {
         Course course = Course.builder()
                 .id(1L)
+                .instructorId(50L)
                 .status(CourseStatus.DRAFT)
                 .studentCount(5)
                 .build();
 
         when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
 
-        assertThatThrownBy(() -> courseService.deleteCourse(1L))
+        assertThatThrownBy(() -> courseService.deleteCourse(1L, 50L, false))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("đã có học viên đăng ký");
 
@@ -198,14 +339,141 @@ class CourseServiceTest {
     void deleteCourse_success() {
         Course course = Course.builder()
                 .id(1L)
+                .instructorId(50L)
                 .status(CourseStatus.DRAFT)
                 .studentCount(0)
                 .build();
 
         when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
 
-        courseService.deleteCourse(1L);
+        courseService.deleteCourse(1L, 50L, false);
 
         verify(courseRepository).delete(course);
+    }
+
+    @Test
+    @DisplayName("changeCourseStatus sang PUBLISHED phải phát sự kiện CourseUpdatedEvent")
+    void changeCourseStatus_sangPublished_phatSuKien() {
+        Course course = Course.builder()
+                .id(1L)
+                .title("Khóa học Java")
+                .instructorId(10L)
+                .status(CourseStatus.DRAFT)
+                .totalLessons(5)
+                .build();
+
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.save(any(Course.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ChangeCourseStatusRequest request = new ChangeCourseStatusRequest();
+        request.setStatus(CourseStatus.PUBLISHED);
+
+        courseService.changeCourseStatus(1L, request, 10L, false);
+
+        verify(courseEventPublisher).publishCourseUpdated(any(Course.class));
+    }
+
+    @Test
+    @DisplayName("changeCourseStatus từ PUBLISHED sang ARCHIVED phải phát sự kiện CourseUpdatedEvent")
+    void changeCourseStatus_tuPublishedSangArchived_phatSuKien() {
+        Course course = Course.builder()
+                .id(1L)
+                .title("Khóa học Java")
+                .instructorId(10L)
+                .status(CourseStatus.PUBLISHED)
+                .totalLessons(5)
+                .build();
+
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.save(any(Course.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ChangeCourseStatusRequest request = new ChangeCourseStatusRequest();
+        request.setStatus(CourseStatus.ARCHIVED);
+
+        courseService.changeCourseStatus(1L, request, 10L, false);
+
+        verify(courseEventPublisher).publishCourseUpdated(any(Course.class));
+    }
+
+    @Test
+    @DisplayName("changeCourseStatus từ DRAFT sang ARCHIVED (chưa từng published) không phát sự kiện")
+    void changeCourseStatus_tuDraftSangArchived_khongPhatSuKien() {
+        Course course = Course.builder()
+                .id(1L)
+                .title("Khóa học Java")
+                .instructorId(10L)
+                .status(CourseStatus.DRAFT)
+                .totalLessons(5)
+                .build();
+
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.save(any(Course.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ChangeCourseStatusRequest request = new ChangeCourseStatusRequest();
+        request.setStatus(CourseStatus.ARCHIVED);
+
+        courseService.changeCourseStatus(1L, request, 10L, false);
+
+        verify(courseEventPublisher, never()).publishCourseUpdated(any(Course.class));
+    }
+
+    @Test
+    @DisplayName("updateCourse trên khóa học đang PUBLISHED phải phát sự kiện CourseUpdatedEvent")
+    void updateCourse_khoaPublished_phatSuKien() {
+        Category category = Category.builder().id(1L).name("CNTT").build();
+        Course course = Course.builder()
+                .id(1L)
+                .category(category)
+                .instructorId(10L)
+                .title("Tên cũ")
+                .slug("ten-cu")
+                .status(CourseStatus.PUBLISHED)
+                .totalLessons(10)
+                .build();
+
+        UpdateCourseRequest request = UpdateCourseRequest.builder()
+                .categoryId(1L)
+                .title("Tên mới")
+                .slug("ten-moi")
+                .build();
+
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+        when(courseRepository.existsBySlugAndIdNot("ten-moi", 1L)).thenReturn(false);
+        when(courseRepository.save(any(Course.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        courseService.updateCourse(1L, request, 10L, false);
+
+        verify(courseEventPublisher).publishCourseUpdated(any(Course.class));
+    }
+
+    @Test
+    @DisplayName("updateCourse trên khóa học DRAFT không phát sự kiện CourseUpdatedEvent")
+    void updateCourse_khoaDraft_khongPhatSuKien() {
+        Category category = Category.builder().id(1L).name("CNTT").build();
+        Course course = Course.builder()
+                .id(1L)
+                .category(category)
+                .instructorId(10L)
+                .title("Tên cũ")
+                .slug("ten-cu")
+                .status(CourseStatus.DRAFT)
+                .totalLessons(10)
+                .build();
+
+        UpdateCourseRequest request = UpdateCourseRequest.builder()
+                .categoryId(1L)
+                .title("Tên mới")
+                .slug("ten-moi")
+                .build();
+
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+        when(courseRepository.existsBySlugAndIdNot("ten-moi", 1L)).thenReturn(false);
+        when(courseRepository.save(any(Course.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        courseService.updateCourse(1L, request, 10L, false);
+
+        verify(courseEventPublisher, never()).publishCourseUpdated(any(Course.class));
     }
 }

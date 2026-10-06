@@ -16,6 +16,7 @@ Hệ thống website học trực tuyến (E-Learning) được xây dựng theo
 - [Hạ tầng](#hạ-tầng)
 - [Thiết kế database](#thiết-kế-database)
 - [Hợp đồng dùng chung](#hợp-đồng-dùng-chung)
+- [Giới hạn request](#giới-hạn-request)
 - [Công nghệ sử dụng](#công-nghệ-sử-dụng)
 - [Cấu trúc thư mục](#cấu-trúc-thư-mục)
 - [Yêu cầu môi trường](#yêu-cầu-môi-trường)
@@ -40,13 +41,14 @@ Hệ thống website học trực tuyến (E-Learning) được xây dựng theo
   auth_db     course_db    enrollment_db    quiz_db    notification_db
      └────────────┴──────────────┼──────────────┴──────────────┘
                                  │
-                  ┌──────────────┴──────────────┐
-                  │  MySQL :3306   Kafka :9092  │   (Docker Compose)
-                  └─────────────────────────────┘
+                  ┌──────────────┴────────────────────────┐
+                  │ MySQL :3306  Kafka :9092  Redis :6379 │   (Docker Compose)
+                  └───────────────────────────────────────┘
 ```
 
 - Mỗi service là một ứng dụng Spring Boot độc lập, sở hữu **một database riêng** (database-per-service).
 - Mọi request từ client đi qua **API Gateway** trước khi được điều hướng tới service tương ứng.
+- Gateway giới hạn số request của mỗi người bằng **Redis**: đăng nhập sai liên tục hay gửi dồn dập thì nhận mã 429 (xem [Giới hạn request](#giới-hạn-request)).
 - Các service giao tiếp bất đồng bộ qua **Apache Kafka** (ví dụ: ghi danh thành công thì phát sự kiện để notification-service gửi thông báo).
 - `shared-common` là thư viện dùng chung (DTO, exception, tiện ích), được các service import.
 
@@ -73,6 +75,7 @@ Hạ tầng dev chạy bằng Docker Compose (file `docker-compose.yml` ở gố
 | MySQL      | `mysql:8.4`               | 3306          | Tự tạo 5 database khi khởi tạo lần đầu                       |
 | Kafka      | `apache/kafka:4.3.1`      | 9092          | Chế độ KRaft, một node, không cần ZooKeeper                  |
 | Kafka UI   | `ghcr.io/kafbat/kafka-ui` | 8090          | Xem topic, message, consumer group tại http://localhost:8090 |
+| Redis      | `redis:7.4-alpine`        | 6379          | Bộ đếm giới hạn request của gateway, không lưu xuống đĩa      |
 
 Tài khoản MySQL mặc định: user `elearning` / mật khẩu `elearning`, root `root`. Đổi bằng cách sao chép `.env.example` thành `.env`.
 
@@ -134,8 +137,12 @@ dùng và lý do từng quyết định ở **[docs/shared-contracts.md](docs/sh
 |------|-----|---------|
 | Response | `ApiResponse<T>`, `PageResponse<T>` | Vỏ bọc và phân trang thống nhất cho mọi API |
 | Lỗi | `ErrorCode`, `ErrorResponse`, `BusinessException`, `GlobalExceptionHandler` | 5 service trả lỗi cùng một hình dạng, frontend chỉ xử lý một chỗ |
-| Sự kiện | `EnrollmentCreatedEvent`, `EnrollmentCompletedEvent`, `CertificateIssuedEvent`, `QuizGradedEvent`, `KafkaTopics`, `EventTypes` | Hợp đồng Kafka giữa service phát và service nhận |
+| Sự kiện | `EnrollmentCreatedEvent`, `EnrollmentCompletedEvent`, `CertificateIssuedEvent`, `QuizGradedEvent`, `CourseUpdatedEvent`, `KafkaTopics`, `EventTypes` | Hợp đồng Kafka giữa service phát và service nhận |
 | Xác thực | `AuthenticatedUser`, `JwtVerifier`, `Roles`, `JwtAuthenticationFilter` | Kiểm JWT và lấy danh tính người gọi, xem [docs/authentication.md](docs/authentication.md) |
+
+Luật viết endpoint — đặt đường dẫn, chọn mã trạng thái, chặn theo vai trò — ở
+**[docs/api-conventions.md](docs/api-conventions.md)**. Mỗi quy tắc có số hiệu để review
+pull request chỉ cần dẫn số.
 
 `GlobalExceptionHandler` được đăng ký **tự động** qua auto-configuration, service không
 phải khai báo `@ComponentScan` hay tạo bean. Service muốn xử lý riêng thì tự tạo bean cùng
@@ -144,6 +151,42 @@ kiểu, bản mặc định tự nhường chỗ.
 Ranh giới quan trọng: **DTO request/response riêng của một service thì để trong service đó**,
 và **không bao giờ đưa JPA entity vào `shared-common`** — làm vậy là 5 service chung một mô
 hình dữ liệu, phá vỡ database-per-service.
+
+## Giới hạn request
+
+Gateway đếm số request của từng người trong Redis và trả **429 Too Many Requests** khi vượt
+ngưỡng. Mã ở `api-gateway/.../ratelimit/`, ngưỡng chỉnh trong `application.properties` của
+gateway (`elearning.rate-limit.*`).
+
+| Đường dẫn | Đếm theo | Ngưỡng | Để chống |
+|---|---|---|---|
+| `POST /api/auth/login`, `/register`, `/refresh-token` | địa chỉ IP | 10 lần liền, sau đó 1 lần mỗi 6 giây | Dò mật khẩu, tạo tài khoản rác hàng loạt |
+| Mọi đường dẫn khác | người dùng (chưa đăng nhập thì IP) | 20 request/giây, dồn tối đa 40 | Một người gửi dồn dập làm chậm cả hệ thống |
+
+Response 429 có cùng hình dạng lỗi với mọi API khác (`code: TOO_MANY_REQUESTS`) và header
+`Retry-After` cho biết bao nhiêu giây nữa thì gửi lại được. Mọi response đều kèm
+`X-RateLimit-Remaining` — số request còn được gửi ngay.
+
+**Redis chết thì gateway cho request qua hết** thay vì chặn hết: mất giới hạn một lúc còn
+hơn cả hệ thống ngừng phục vụ vì một thành phần phụ. Lúc đó `X-RateLimit-Remaining` bằng -1
+và mỗi request chậm thêm khoảng nửa giây (thời gian chờ Redis). Bật Redis lại là tự đếm tiếp.
+
+Thử nhanh: đăng nhập sai mật khẩu 11 lần liền, lần thứ 11 nhận 429.
+
+```bash
+for i in $(seq 1 11); do
+  curl -s -o /dev/null -w "%{http_code} " -X POST localhost:8080/api/auth/login     -H "Content-Type: application/json" -d '{"email":"a@b.c","password":"sai"}'
+done
+```
+
+Khi gateway chạy trong Docker, mọi request từ máy host đều mang cùng một IP (của mạng
+Docker), nên cả nhóm test trên **một máy** dùng chung xô đăng nhập. Test đăng nhập nhiều
+mà bị 429 thì chờ một phút, hoặc tạm tắt:
+
+```bash
+RATE_LIMIT_ENABLED=false docker compose --profile app up -d api-gateway   # tắt
+docker compose --profile app up -d api-gateway                            # bật lại
+```
 
 ## Công nghệ sử dụng
 
@@ -155,19 +198,22 @@ hình dữ liệu, phá vỡ database-per-service.
 | REST API          | Spring Web MVC, Bean Validation                        |
 | Database          | MySQL 8.4 (database-per-service)                       |
 | Message broker    | Apache Kafka 4.3 (KRaft)                               |
+| Giới hạn request  | Redis 7.4 + `RedisRateLimiter` của Spring Cloud Gateway |
 | Giám sát          | Spring Boot Actuator                                   |
 | Tiện ích          | Lombok                                                 |
 | Build             | Maven multi-module (parent POM ở thư mục gốc)         |
 | Hạ tầng dev       | Docker Compose                                         |
 
-**Dự kiến bổ sung:** Spring Security + JWT, Spring Data JPA, Flyway, Spring for Apache Kafka, Swagger/OpenAPI, Dockerfile cho từng service, frontend Next.js.
+**Dự kiến bổ sung:** Swagger/OpenAPI, frontend Next.js.
 
 ## Cấu trúc thư mục
 
 ```
 e-learning-microservices/
 ├── pom.xml                 # Parent POM: khai báo module, quản lý version chung
-├── docker-compose.yml      # MySQL + Kafka + Kafka UI
+├── docker-compose.yml      # MySQL + Kafka + Kafka UI; thêm 6 service khi dùng --profile app
+├── Dockerfile              # Một Dockerfile dùng chung, chọn service bằng build arg SERVICE
+├── .dockerignore           # Không gửi target/, .git, .env vào lúc build image
 ├── .env.example            # Mẫu biến môi trường cho docker compose
 ├── CONTRIBUTING.md         # Quy ước nhánh, commit, pull request cho cả nhóm
 ├── .editorconfig           # Thống nhất encoding và định dạng giữa các IDE
@@ -176,9 +222,11 @@ e-learning-microservices/
 ├── scripts/
 │   └── check-commit-subject.sh  # Bộ kiểm tra dùng chung cho hook và CI
 ├── docs/
+│   ├── api-conventions.md  # Luật viết API: đường dẫn, mã lỗi, phân quyền
 │   ├── authentication.md   # Xác thực JWT, phân quyền, đường dẫn công khai
 │   ├── notifications.md    # Luồng sự kiện Kafka và cách dựng thông báo
 │   ├── database-design.md  # Sơ đồ và thuyết minh thiết kế database
+│   ├── phan-cong.md        # Bảng theo dõi ai đang làm việc gì
 │   └── shared-contracts.md # Hợp đồng dùng chung giữa các service
 ├── infra/
 │   └── mysql/
@@ -221,15 +269,45 @@ Mỗi service có cấu trúc chuẩn Spring Boot:
 | JDK 17 trở lên | Có       | Đã kiểm thử build với JDK 26                                |
 | Git            | Có       | Windows nên dùng Git for Windows, có sẵn Git Bash           |
 | IntelliJ IDEA  | Khuyến nghị | Community Edition là đủ, hoặc VS Code                    |
-| Docker Desktop | Chưa cần | Chỉ cần khi muốn chạy MySQL và Kafka ở mục [Hạ tầng](#hạ-tầng) |
+| Docker Desktop | Có       | Chạy MySQL và Kafka; hoặc chạy luôn cả hệ thống, xem [cách nhanh nhất](#cách-nhanh-nhất-chạy-cả-hệ-thống-bằng-docker) |
 
 Không cần cài Maven, dự án dùng Maven Wrapper (`mvnw`).
 
-Hiện chưa service nào kết nối database hay Kafka, nên **không có Docker vẫn build và chạy
-được toàn bộ service**. Đã kiểm chứng: clone sạch, tắt hết container, `./mvnw clean verify`
-thành công cả 7 module, `auth-service` và `api-gateway` khởi động và trả `{"status":"UP"}`.
+`./mvnw clean verify` chạy được mà **không cần Docker** — test dùng H2 trong bộ nhớ. Nhưng
+**chạy service thì phải có MySQL**: cả 5 service backend đều kết nối database lúc khởi động
+và dừng ngay nếu không có.
 
 ## Hướng dẫn chạy
+
+### Cách nhanh nhất: chạy cả hệ thống bằng Docker
+
+Chỉ cần Docker Desktop, không cần JDK hay IntelliJ:
+
+```bash
+git clone https://github.com/ariushieu/e-learning-microservices.git
+cd e-learning-microservices
+docker compose --profile app up -d --build --wait
+```
+
+Lệnh build 6 image từ mã nguồn rồi bật MySQL, Kafka, Kafka UI, Redis và cả 6 service. `--wait`
+giữ lệnh lại cho tới khi mọi healthcheck xanh. Lần đầu mất vài phút vì phải tải thư viện
+Maven; các lần sau chỉ build lại phần mã đã sửa.
+
+Mọi API đi qua gateway ở **http://localhost:8080** — đây là cổng duy nhất mở ra máy host,
+đúng như sơ đồ kiến trúc ở trên. Kafka UI ở http://localhost:8090.
+
+```bash
+curl http://localhost:8080/api/courses          # công khai, không cần token
+docker compose --profile app ps                 # trạng thái từng container
+docker compose logs -f quiz-service             # log một service
+docker compose --profile app down               # dừng, GIỮ dữ liệu
+```
+
+Sửa code xong muốn chạy lại một service: `docker compose up -d --build quiz-service`.
+
+Cách này dùng để demo và để kiểm tra các service nói chuyện được với nhau. Khi đang viết
+code thì chạy service trong IntelliJ như các bước dưới đây sẽ nhanh hơn — không phải build
+lại image mỗi lần sửa, và đặt được breakpoint.
 
 ### 1. Clone repository
 
@@ -238,15 +316,18 @@ git clone https://github.com/ariushieu/e-learning-microservices.git
 cd e-learning-microservices
 ```
 
-### 2. Khởi động hạ tầng (MySQL, Kafka)
+### 2. Khởi động hạ tầng (MySQL, Kafka, Redis)
 
-> Bước này **có thể bỏ qua ở giai đoạn hiện tại**, vì chưa service nào kết nối database
-> hay Kafka. Chỉ cần khi bạn muốn xem thử database hoặc nghịch Kafka UI.
+**Bắt buộc** trước khi chạy bất kỳ service nào. Lệnh này chỉ bật hạ tầng, không bật 6
+service ứng dụng (chúng nằm trong profile `app`), nên không chiếm cổng của service đang
+chạy trong IntelliJ:
 
 ```bash
 docker compose up -d
 docker compose ps        # đợi cột STATUS hiện "healthy"
 ```
+
+Bảng trong database do Flyway tự tạo khi service khởi động lần đầu, không phải chạy gì thêm.
 
 Kiểm tra nhanh:
 
@@ -308,7 +389,7 @@ curl http://localhost:8081/actuator/health
 - [x] Thiết kế schema cho 5 database, viết migration theo chuẩn Flyway ([tài liệu](docs/database-design.md))
 - [x] Tài liệu và công cụ cho nhóm: quy ước commit, git hook và CI kiểm tra ([CONTRIBUTING.md](CONTRIBUTING.md))
 - [x] Hợp đồng dùng chung trong `shared-common`: vỏ response, xử lý lỗi, sự kiện Kafka ([tài liệu](docs/shared-contracts.md))
-- [x] Kết nối database: Spring Data JPA + Flyway + MySQL (auth, course, quiz; còn enrollment và notification)
+- [x] Kết nối database: Spring Data JPA + Flyway + MySQL cho cả 5 service
 - [x] Cấu hình route cho API Gateway tới các service
 - [x] Auth Service: đăng ký / đăng nhập, phát hành JWT
 - [x] Xác thực JWT ở gateway và ở từng service ([tài liệu](docs/authentication.md))
@@ -318,7 +399,8 @@ curl http://localhost:8081/actuator/health
 - [ ] Phân quyền theo vai trò trong từng service
 - [x] Notification Service: consume sự kiện Kafka, dựng thông báo trong ứng dụng ([tài liệu](docs/notifications.md))
 - [ ] Frontend Next.js (pnpm)
-- [ ] Dockerfile cho từng service, chạy toàn bộ hệ thống bằng Docker Compose
+- [x] Image Docker cho từng service, chạy toàn bộ hệ thống bằng một lệnh `docker compose`
+- [x] Giới hạn request ở gateway bằng Redis, chống dò mật khẩu
 - [ ] Tài liệu API (Swagger / OpenAPI)
 
 ## Tác giả

@@ -69,6 +69,49 @@ class DomainEventSerializationTest {
     }
 
     @Test
+    @DisplayName("CourseUpdatedEvent giữ nguyên bộ tên trường đã thống nhất")
+    void hopDongCourseUpdated() {
+        CourseUpdatedEvent event = CourseUpdatedEvent.of(
+                1L, "Kiến trúc Microservices", "kien-truc-microservices",
+                "https://example.test/anh.png", 7L, "Nguyễn Văn A", 12, "PUBLISHED");
+
+        assertThat(fieldNamesOf(event)).containsExactlyInAnyOrder(
+                "eventId", "eventType", "occurredAt", "courseId", "title", "slug",
+                "thumbnailUrl", "instructorId", "instructorName", "totalLessons", "status");
+    }
+
+    /**
+     * Mỗi trường của sự kiện đổ vào đúng một cột của {@code course_snapshots}. Test này bắt
+     * trường hợp ai đó thêm cột vào bảng mà quên thêm trường vào sự kiện, hoặc ngược lại —
+     * lệch nhau thì cột đó sẽ luôn rỗng mà không báo lỗi gì.
+     */
+    @Test
+    @DisplayName("CourseUpdatedEvent mang đủ dữ liệu cho mọi cột nghiệp vụ của course_snapshots")
+    void duDuLieuChoCourseSnapshots() {
+        CourseUpdatedEvent event = CourseUpdatedEvent.of(
+                1L, "Tên", "ten", null, 7L, "Giảng viên", 12, "ARCHIVED");
+
+        // synced_at do database tự điền nên không có trong sự kiện
+        List<String> cotCuaCourseSnapshots = List.of(
+                "courseId", "title", "slug", "thumbnailUrl",
+                "instructorId", "instructorName", "totalLessons", "status");
+
+        assertThat(fieldNamesOf(event)).containsAll(cotCuaCourseSnapshots);
+    }
+
+    @Test
+    @DisplayName("CourseUpdatedEvent ghi ra rồi đọc lại không mất dữ liệu, kể cả trường null")
+    void courseUpdatedGuiDiDocLai() {
+        CourseUpdatedEvent goc = CourseUpdatedEvent.of(
+                30L, "Tiếng Việt có dấu", "tieng-viet-co-dau", null, 7L, null, 0, "PUBLISHED");
+
+        CourseUpdatedEvent docLai = mapper.readValue(
+                mapper.writeValueAsString(goc), CourseUpdatedEvent.class);
+
+        assertThat(docLai).isEqualTo(goc);
+    }
+
+    @Test
     @DisplayName("eventType nằm trong JSON để consumer định tuyến được")
     void eventTypeCoTrongJson() {
         String json = mapper.writeValueAsString(
@@ -145,6 +188,8 @@ class DomainEventSerializationTest {
                 .isEqualTo(EventTypes.CERTIFICATE_ISSUED);
         assertThat(QuizGradedEvent.of(1L, 1L, 1L, 1L, "x", BigDecimal.ONE, true).eventType())
                 .isEqualTo(EventTypes.QUIZ_GRADED);
+        assertThat(CourseUpdatedEvent.of(1L, "x", "x", null, 1L, null, 0, "PUBLISHED").eventType())
+                .isEqualTo(EventTypes.COURSE_UPDATED);
     }
 
     private List<String> fieldNamesOf(DomainEvent event) {

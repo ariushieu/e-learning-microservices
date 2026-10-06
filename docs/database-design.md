@@ -413,9 +413,12 @@ vào `processed_events` trước khi xử lý; trùng khóa chính nghĩa là đ
 Màn hình "khóa học của tôi" cần tên và ảnh bìa khóa học. Gọi sang course-service cho từng
 dòng là bài toán N+1 qua mạng, và enrollment-service sẽ sập theo mỗi khi course-service sập.
 
-Cách xử lý: enrollment-service nghe sự kiện `course.created` / `course.updated` và giữ một
-bản sao tối giản, chỉ đọc. Đánh đổi là dữ liệu trễ vài giây — chấp nhận được với tên khóa học.
-Nguồn sự thật vẫn luôn là `course_db`.
+Cách xử lý: enrollment-service nghe sự kiện `course.updated` (`CourseUpdatedEvent`) và giữ
+một bản sao tối giản, chỉ đọc. Mỗi sự kiện mang ảnh chụp đủ mọi cột của bảng này, kể cả
+`status`, nên consumer chỉ việc ghi đè cả dòng — xem
+[shared-contracts.md](shared-contracts.md#courseupdatedevent-khác-các-sự-kiện-còn-lại) về lý
+do không tách riêng sự kiện "đã xuất bản". Đánh đổi là dữ liệu trễ vài giây — chấp nhận được
+với tên khóa học. Nguồn sự thật vẫn luôn là `course_db`.
 
 ### `position` không đặt `UNIQUE`
 

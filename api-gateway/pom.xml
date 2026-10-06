@@ -35,6 +35,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <!-- Redis giữ bộ đếm giới hạn request (ratelimit/). Bản reactive vì gateway chạy
+             WebFlux; bản thường sẽ chặn luồng xử lý trong lúc chờ Redis trả lời. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>

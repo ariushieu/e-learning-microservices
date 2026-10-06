@@ -44,6 +44,18 @@
         </dependency>
 
         <!--
+            Chỉ dùng cho SortPropertyExceptionHandler: bắt PropertyReferenceException khi
+            client gửi ?sort= sai tên trường. optional = true vì shared-common không được
+            ép mọi module phải có Spring Data - api-gateway không có, và handler đó được
+            bọc @ConditionalOnClass nên vắng thư viện thì chỉ đơn giản là không đăng ký.
+        -->
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-commons</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!--
             Kiểm chữ ký JWT. Cùng thư viện và cùng phiên bản với auth-service (bên ký token)
             để không gặp khác biệt khi đọc claim. Phiên bản khai ở pom cha.
         -->
@@ -63,6 +75,16 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!--
+            MockMvc và @AutoConfigureMockMvc. Spring Boot 4 tách phần này ra khỏi
+            spring-boot-starter-test, và annotation cũng đổi gói:
+            org.springframework.boot.test.autoconfigure.web.servlet → ...boot.webmvc.test.autoconfigure.
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

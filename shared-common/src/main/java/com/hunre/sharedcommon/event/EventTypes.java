@@ -22,6 +22,12 @@ public final class EventTypes {
     /** Một lượt làm bài kiểm tra đã được chấm xong. Phát bởi quiz-service. */
     public static final String QUIZ_GRADED = "quiz.graded";
 
+    /**
+     * Ảnh chụp trạng thái hiện tại của một khóa học đã từng xuất bản. Phát bởi course-service.
+     * Xem {@link CourseUpdatedEvent} về lý do không tách riêng {@code course.published}.
+     */
+    public static final String COURSE_UPDATED = "course.updated";
+
     private EventTypes() {
         throw new AssertionError("Lớp hằng số, không tạo thể hiện");
     }

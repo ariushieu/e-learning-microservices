@@ -1,11 +1,13 @@
 # Bảng theo dõi công việc
 
-> **Cập nhật lần cuối:** 19/09/2026 22:05 — `main` ở `caffb94`
+> **Cập nhật lần cuối:** 06/10/2026 — `main` ở `d8be737`
 >
 > File này là nơi duy nhất ghi ai đang làm gì. Xong một việc thì nhóm trưởng cập nhật ngay
 > tại đây, nên **cứ `git pull` là biết việc tiếp theo của mình**, không phải hỏi ai.
 
 - [Việc của bạn](#việc-của-bạn)
+- [Khi nào test toàn bộ API bằng Postman](#khi-nào-test-toàn-bộ-api-bằng-postman)
+- [Quy tắc viết API](#quy-tắc-viết-api)
 - [Trạng thái hệ thống](#trạng-thái-hệ-thống)
 - [Chi tiết từng việc](#chi-tiết-từng-việc)
 - [Đã xong](#đã-xong)
@@ -16,210 +18,351 @@
 
 | Người | Service | Việc đang mở | Ưu tiên | Cỡ |
 |---|---|---|---|---|
-| quocluibotre | auth-service | [API gán vai trò + admin đầu tiên](#quocluibotre--api-gán-vai-trò) | **Cao nhất** — chặn cả nhóm | ~2h |
-| duyd92689-debug | course-service | [Phát `course.published`](#duyd92689-debug--phát-sự-kiện-coursepublished) + [bỏ `instructorId` khỏi body](#duyd92689-debug--bỏ-instructorid-khỏi-request-body) | Cao — chặn phamquyet | ~2h |
-| phamquyet19042005-netizen | enrollment-service | [Gửi outbox](#phamquyet19042005-netizen--gửi-outbox-lên-kafka) + [nạp snapshot](#phamquyet19042005-netizen--nạp-course_snapshots) | Cao | ~3h |
-| hiepdeptrai0111 | quiz-service | [Chuyển phát sự kiện sang outbox](#hiepdeptrai0111--chuyển-phát-sự-kiện-sang-outbox) | Thấp — làm sau cùng | ~2h |
-| Hiếu (nhóm trưởng) | shared-common | `CoursePublishedEvent` | Cao — chặn 2 người | 30 phút |
+| duyd92689-debug | course-service | [Chủ sở hữu của chương và bài học](#duyd92689-debug--chủ-sở-hữu-của-chương-và-bài-học) | **Cao** — lỗ hổng | ~1h |
+| duyd92689-debug | course-service | [Trả nội dung bài học](#duyd92689-debug--trả-nội-dung-bài-học) | Trung bình | ~1h |
+| phamquyet19042005-netizen | enrollment-service | [Nạp `course_snapshots`](#phamquyet19042005-netizen--nạp-course_snapshots) | **Cao nhất** — mắt xích cuối của chuỗi ghi danh | ~1h |
+| hiepdeptrai0111 | quiz-service | [Giữ nguyên điểm số trong sự kiện](#hiepdeptrai0111--giữ-nguyên-điểm-số-trong-sự-kiện) | Thấp | ~30 phút |
+| quocluibotre | cả 5 service | [Viết tình huống test cho đợt Postman](#quocluibotre--viết-tình-huống-test-cho-đợt-postman) | Trung bình — xong trước đợt test | ~3h |
+| Cả nhóm | mọi service | [Chuẩn hóa đường dẫn API](#cả-nhóm--chuẩn-hóa-đường-dẫn-api) | Trung bình — trước đợt test Postman | ~1h/người |
 
-**Thứ tự.** quocluibotre làm trước vì không có tài khoản giảng viên thì cả nhóm không test
-được phần tạo bài kiểm tra. `CoursePublishedEvent` làm song song vì nó chặn hai người. Ba
-việc còn lại chạy song song sau đó.
+**Việc gấp nhất là của phamquyet.** course-service đã phát `course.updated` (#31), enrollment
+đã gửi outbox lên Kafka (#29). Chỉ còn một mắt xích: nạp `course_snapshots` từ sự kiện đó là
+chuỗi đăng ký → ghi danh → thông báo chạy thông trọn vẹn lần đầu tiên.
+
+**Tài khoản giảng viên và admin giờ tạo được bằng API** (#27), không cần SQL nữa:
+
+```
+Admin có sẵn: admin@elearning.hunre.edu.vn / Admin@123456   (tài khoản dev — đổi khi triển khai thật)
+Cấp quyền:    PATCH /api/users/{id}/roles   {"roles": ["ROLE_STUDENT", "ROLE_INSTRUCTOR"]}
+```
+
+Người được cấp quyền phải **đăng nhập lại** mới nhận vai trò mới — token cũ vẫn mang vai trò
+cũ tới khi hết hạn.
+
+Việc chuẩn hóa đường dẫn để cuối cùng, nhưng **phải xong trước đợt test Postman và trước khi
+bắt đầu frontend** — đổi đường dẫn sau khi đã viết collection hay đã có frontend gọi là phải
+làm lại hết.
+
+## Khi nào test toàn bộ API bằng Postman
+
+**Chưa sẵn sàng — xong 1/4, điều kiện 2 gần xong.** Môi trường test thì đã có (xem dưới).
+Đủ bốn điều kiện sau thì nhóm trưởng báo cả nhóm vào test:
+
+| # | Điều kiện | Nếu test trước khi có | Tình trạng |
+|---|---|---|---|
+| 1 | API gán vai trò | Người test phải sửa database bằng SQL mới có tài khoản giảng viên | **Xong** (#27) |
+| 2 | Phân quyền course-service, lọc khóa `DRAFT` | "Học viên tạo được khóa học" sẽ bị ghi nhận là chạy đúng | Gần xong (#31) — còn [chủ sở hữu chương/bài học](#duyd92689-debug--chủ-sở-hữu-của-chương-và-bài-học) |
+| 3 | Ghi danh chạy thông (`course.updated` + nạp snapshot + gửi outbox) | Ghi danh, tiến độ, chứng chỉ, thông báo ghi danh đều 404 — nửa hệ thống không test được | Phát sự kiện xong (#31), gửi outbox xong (#29) — chỉ còn nạp snapshot |
+| 4 | Chuẩn hóa đường dẫn | Viết collection xong, đổi đường dẫn là viết lại | Chưa bắt đầu |
+
+**Môi trường test đã sẵn.** Không ai phải tự bật 6 service trong IntelliJ:
+
+```bash
+git pull
+docker compose --profile app up -d --build --wait
+bash scripts/smoke-test.sh        # 12 dòng OK là cả 6 service đã lên, thông database và Redis
+```
+
+Mọi request trong Postman đi qua **gateway `http://localhost:8080`**. Đừng gọi thẳng cổng
+8081–8085: trong Docker các cổng đó không mở ra ngoài, và gọi thẳng thì bỏ qua đúng hai thứ
+hay hỏng nhất là định tuyến và kiểm token ở vòng ngoài.
+
+**Gateway giới hạn số lần đăng nhập theo địa chỉ IP** (#34): 10 lần liền, sau đó 6 giây mới
+được thêm một lần. Mọi request từ máy mình vào Docker đều mang chung một IP, nên khi chạy
+Postman Runner hay nhiều người đăng nhập liên tục trên cùng một máy sẽ nhận **429**. Đó là
+gateway chặn đúng, không phải lỗi của service. Chờ một phút, hoặc tắt hẳn trong lúc test:
+
+```bash
+RATE_LIMIT_ENABLED=false docker compose --profile app up -d api-gateway
+```
+
+Bật lại bằng cùng lệnh, bỏ `RATE_LIMIT_ENABLED=false`. Chi tiết ở
+[README](../README.md#giới-hạn-request).
+
+**Hai collection cũ trong `docs/postman/` không dùng lại được.** Collection của course-service
+gọi thẳng `localhost:8082` và không request nào gửi token — viết trước khi có JWT, nên giờ mọi
+lệnh ghi đều nhận 401. Collection của enrollment-service dùng đường dẫn sẽ đổi ở điều kiện 4.
+Đủ điều kiện thì nhóm trưởng dựng một collection chung đi qua gateway, có sẵn bước đăng nhập tự
+lưu token; người test chỉ việc thêm request.
+
+**Trong lúc chờ,** người được giao test viết trước **danh sách tình huống**: gọi gì, bằng tài
+khoản nào, mong nhận mã gì. Chưa cần mở Postman. Khung sẵn có ở
+[api-conventions.md mục E](api-conventions.md#e-tự-kiểm-trước-khi-mở-pull-request) — mỗi
+endpoint ít nhất sáu ca: đúng, không token, sai vai trò, không tồn tại, sai kiểu tham số, sắp
+xếp bằng trường bịa.
+
+## Quy tắc viết API
+
+Mới thêm: **[docs/api-conventions.md](api-conventions.md)** — luật chung cho cả 5 service,
+mỗi quy tắc có số hiệu để review chỉ cần ghi *"vi phạm A2"*.
+
+Đọc trước khi viết endpoint mới. Tóm tắt phần bắt buộc:
+
+| Mã | Quy tắc |
+|---|---|
+| A1 | Danh tính lấy từ token, không nhận `userId`/`instructorId`/`createdBy` từ client |
+| A2 | Mọi endpoint ghi phải kiểm vai trò |
+| A3 | Endpoint công khai phải tự lọc trạng thái, không trả dữ liệu chưa xuất bản |
+| A4 | Thêm controller mới thì khai route ở gateway (CI kiểm) |
+| A5 | Dùng `ApiResponse` và `ErrorCode`, không tự chế hình dạng response |
+
+Bốn trong năm quy tắc này sinh ra từ lỗi có thật trong repo, ghi rõ trong tài liệu.
 
 ## Trạng thái hệ thống
 
 Năm service đã có code, database chạy tự động bằng Flyway, xác thực JWT hoạt động ở cả
-gateway lẫn từng service.
+gateway lẫn từng service. Gateway giới hạn số request bằng Redis. Toàn bộ 277 test xanh. Cả hệ thống chạy được bằng một lệnh
+`docker compose --profile app up -d --build --wait`, xem
+[README](../README.md#cách-nhanh-nhất-chạy-cả-hệ-thống-bằng-docker).
 
 **Chuỗi đã chạy thông:**
 
 ```
 đăng nhập → làm bài kiểm tra → nộp bài → nhận thông báo trong ứng dụng
+admin cấp quyền giảng viên → tạo khóa học → xuất bản → sự kiện course.updated lên Kafka
 ```
+
+Nộp bài giờ đi qua outbox (#32): tắt Kafka rồi nộp bài thì bài làm vẫn lưu, sự kiện nằm chờ
+trong `outbox_events`, bật Kafka lại là thông báo tới — đã chạy thật ngày 03/10.
 
 **Chuỗi chưa chạy, và vì sao:**
 
 | Không làm được | Nguyên nhân | Ai sửa |
 |---|---|---|
-| Tạo bài kiểm tra, thêm câu hỏi | Không tài khoản nào có `ROLE_INSTRUCTOR` được | quocluibotre |
-| Ghi danh khóa học | `course_snapshots` rỗng, không ai đổ dữ liệu vào | duyd + phamquyet |
-| Thông báo khi ghi danh | Outbox ghi rồi nhưng không ai gửi lên Kafka | phamquyet |
+| Ghi danh khóa học | Sự kiện `course.updated` đã lên Kafka nhưng chưa ai nạp vào `course_snapshots` | phamquyet |
+| Xem nội dung bài học | `LessonResponse` không có trường `content` | duyd |
 
-Ba việc đó xong là demo chạy trọn vẹn: đăng ký → ghi danh → học → làm bài → nhận thông báo
-→ chứng chỉ.
+**Lỗ hổng đang mở:**
+
+| Lỗ hổng | Mức độ | Ai sửa |
+|---|---|---|
+| Giảng viên thêm/sửa/xóa được chương và bài học trong khóa của giảng viên khác | Vừa | duyd |
+
+Việc đó của phamquyet xong là demo chạy trọn vẹn: đăng ký → ghi danh → học → làm bài → nhận
+thông báo → chứng chỉ.
 
 ---
 
 ## Chi tiết từng việc
 
-### quocluibotre — API gán vai trò
+### duyd92689-debug — chủ sở hữu của chương và bài học
 
-**Vấn đề.** Hiện không tài khoản nào có thể trở thành giảng viên.
-`AuthServiceImpl.register()` gán cứng `ROLE_STUDENT`, và auth-service chỉ có bốn endpoint:
-register, login, refresh-token, logout. Không có chỗ nào đổi vai trò.
+> Phần còn lại của việc phân quyền. PR #31 đã chặn đúng những gì bảng phân công yêu cầu — chỉ
+> chủ khóa học mới sửa, đổi trạng thái, xóa được khóa học. Đề bài thiếu phần chương và bài
+> học; lỗi đó là của nhóm trưởng.
 
-`ROLE_INSTRUCTOR` và `ROLE_ADMIN` có trong enum `RoleCode`, có sẵn trong bảng `roles`
-(migration `V2__seed_roles.sql` đã nạp), nhưng không ai giữ được.
+**Vấn đề.** Các endpoint ghi của chương, bài học và tài liệu đính kèm chỉ kiểm vai trò, không
+kiểm ai là chủ. Chạy thật qua gateway với hai giảng viên A và B:
 
-Hệ quả: chín chỗ kiểm quyền `requireQuizManager` trong quiz-service **không ai vượt qua
-được**. Không thể tạo bài kiểm tra, thêm câu hỏi, xuất bản hay xem đáp án.
+```
+B tạo chương trong khóa của A      → 201
+B tạo bài học trong chương của A   → 201
+B đổi tên chương của A             → 200
+```
 
-**Cần làm.**
+Bài học B chèn vào còn được tính vào `totalLessons` và đi theo sự kiện `course.updated` sang
+enrollment-service, nên phần trăm tiến độ của mọi học viên trong khóa đó bị tính sai.
 
-1. `PATCH /api/users/{id}/roles` — gán và gỡ vai trò cho một tài khoản. Chỉ `ROLE_ADMIN`
-   gọi được:
-
-   ```java
-   if (!user.hasRole(Roles.ADMIN)) {
-       throw new BusinessException(ErrorCode.FORBIDDEN, "Chỉ quản trị viên mới được đổi vai trò");
-   }
-   ```
-
-   Xem `QuizController.requireQuizManager` làm mẫu.
-
-2. **Tài khoản admin đầu tiên.** Đây là bài toán con gà quả trứng: cần admin mới gán được
-   admin. Gợi ý một migration `V3__seed_admin.sql` tạo sẵn một tài khoản admin với mật khẩu
-   đã băm BCrypt, ghi rõ trong tài liệu rằng đây là tài khoản dev và phải đổi khi triển khai
-   thật.
-
-   Đừng làm kiểu "email này trong biến môi trường thì tự lên admin lúc khởi động" — dễ quên
-   tắt, và quên thì ai biết email đó đều thành admin.
-
-**Tự kiểm.** Đăng nhập bằng admin, gán `ROLE_INSTRUCTOR` cho một tài khoản khác, rồi tài
-khoản đó gọi `POST /api/quizzes` phải thành công. Học viên thường gọi vẫn phải nhận 403.
-
-**Tiện thể.** `/api/auth/me` đang tự đọc và kiểm token thủ công ngay trong controller. Filter
-của shared-common đã làm việc đó trước khi request tới nơi rồi, nên đổi sang nhận
-`AuthenticatedUser user` là bỏ được cả đoạn.
-
----
-
-### duyd92689-debug — phát sự kiện `course.published`
-
-**Vấn đề.** enrollment-service cần biết khóa học nào tồn tại và đã xuất bản, nhưng nó không
-được phép đọc `course_db` — đó là nguyên tắc database-per-service. Nó giữ một bản sao trong
-bảng `course_snapshots`, và bản sao đó phải do course-service báo sang qua Kafka.
-
-Hiện bảng đó rỗng và không có gì đổ vào, nên `POST /api/enrollments` luôn trả 404.
-
-**Cần làm.** Khi `changeCourseStatus` chuyển khóa học sang `PUBLISHED`, và khi `updateCourse`
-sửa một khóa đã xuất bản, phát sự kiện `course.published` lên topic
-`elearning.course.events`.
-
-Nhóm trưởng sẽ thêm `CoursePublishedEvent` vào shared-common trước, bạn chỉ việc dùng.
-
-Đọc [Hai cái bẫy của Spring Boot 4](#hai-cái-bẫy-của-spring-boot-4) trước khi bắt đầu —
-đã có hai người vấp rồi.
-
-**Tự kiểm.** Chạy kèm notification-service (nó nghe cả ba topic), xuất bản một khóa học, xem
-log notification-service thấy dòng `Bỏ qua sự kiện loại course.published` — nghĩa là message
-đã tới nơi.
-
----
-
-### duyd92689-debug — bỏ `instructorId` khỏi request body
-
-**Vấn đề.** `CreateCourseRequest` có trường `instructorId` do client tự khai, và
-`CourseServiceImpl` ghi thẳng vào khóa học:
+**Cần làm.** Trong `CurriculumServiceImpl`, mọi hàm ghi (`createSection`, `updateSection`,
+`deleteSection`, `createLesson`, `updateLesson`, `deleteLesson`, `addResource`, `deleteResource`)
+lấy khóa học cha ra rồi kiểm đúng như bạn đã làm cho khóa học:
 
 ```java
-.instructorId(request.getInstructorId())
+if (!isAdmin && !course.getInstructorId().equals(currentUserId)) {
+    throw new BusinessException(ErrorCode.FORBIDDEN,
+            "Bạn không có quyền chỉnh sửa khóa học của giảng viên khác");
+}
 ```
 
-Nên ai cũng tạo được khóa học đứng tên giảng viên khác.
+Controller truyền `user.userId()` và `user.hasRole(Roles.ADMIN)` xuống, giống `CourseController`.
 
-Cùng họ với lỗi `?userId=` vừa vá ở quiz-service và enrollment-service, chỉ khác là nó nằm
-trong body chứ không phải query param.
+Tiện thể bỏ vế `currentUserId != null &&` trong các kiểm tra chủ sở hữu hiện có: lỡ id là null
+thì phải chặn chứ không được mở.
 
-**Cần làm.** Bỏ `instructorId` khỏi `CreateCourseRequest`, thêm `AuthenticatedUser user` vào
-controller, dùng `user.userId()`. Nhân tiện chặn luôn theo vai trò: chỉ `ROLE_INSTRUCTOR`
-hoặc `ROLE_ADMIN` mới được tạo, sửa, xóa khóa học và danh mục.
-
-`QuizController.requireQuizManager` là bản mẫu gọn nhất.
-
-**Tự kiểm.** Học viên thường gọi `POST /api/courses` phải nhận 403. Giảng viên tạo khóa học
-thì `instructor_id` trong database phải là id của chính họ, kể cả khi body có gửi kèm id
-khác.
+**Tự kiểm.** Giảng viên B tạo chương, tạo bài học, sửa, xóa trong khóa của A: cả bốn phải 403.
+A làm những việc đó trong khóa của mình vẫn 201/200. Admin làm được ở mọi khóa.
 
 ---
 
-### phamquyet19042005-netizen — gửi outbox lên Kafka
+### duyd92689-debug — trả nội dung bài học
 
-**Vấn đề.** Bảng `outbox_events` đang được ghi đúng trong cùng transaction với nghiệp vụ,
-nhưng không ai đọc nó. `published_at` của mọi dòng đều là NULL.
+**Vấn đề.** `LessonResponse` có `title`, `type`, `durationSeconds`, `position`,
+`isPreview`, `resources` — nhưng **không có `content` lẫn `contentUrl`**. Hai cột đó có
+trong bảng `lessons`, có trong entity, và không một chỗ nào trong course-service map chúng
+ra response.
 
-**Cần làm.** Một `@Scheduled` chạy mỗi vài giây:
+Nghĩa là một website học trực tuyến hiện không có đường nào để xem bài học.
 
-```java
-List<OutboxEvent> chuaGui = outboxEventRepository.findTop50ByPublishedAtIsNullOrderByCreatedAtAsc();
-// gửi lên KafkaTopics.ENROLLMENT_EVENTS, gửi xong thì set published_at
-```
+**Cần làm.** Thêm `content` và `contentUrl` vào `LessonResponse`, nhưng **không trả cho
+mọi người** — đây là phần đáng tiền của khóa học:
 
-Trường `payload` đã là chuỗi JSON sẵn nên gửi thẳng được, không phải chuyển đổi lại.
+- Bài có `isPreview = true`: ai cũng xem được, kể cả khách chưa đăng nhập.
+- Bài thường: chỉ trả khi người gọi là chủ khóa học, là admin, hoặc đã ghi danh.
 
-**Tự kiểm — lần đầu tiên nhìn thấy kết quả thật.** Chạy kèm notification-service, ghi danh
-một khóa học, rồi gọi bằng token của chính học viên đó:
+Phần "đã ghi danh" phải hỏi enrollment-service, mà course-service chưa gọi sang service nào
+bao giờ. Làm sau cùng và hỏi nhóm trưởng trước khi bắt đầu — có thể để tạm mức "đã đăng
+nhập" rồi siết sau, miễn là ghi rõ `// TODO` kèm lý do.
 
-```bash
-curl -H "Authorization: Bearer <token>" localhost:8085/api/notifications
-```
-
-Phải thấy *"Bạn đã ghi danh khóa học ..."*. Đây là chuỗi hoàn chỉnh đầu tiên đi qua ba
-service của hệ thống.
+**Tự kiểm.** Bài `isPreview = true` gọi không token phải thấy `content`. Bài thường gọi
+bằng token người lạ không được thấy.
 
 ---
 
 ### phamquyet19042005-netizen — nạp `course_snapshots`
 
-**Cần làm.** Nghe `course.published` trên topic `elearning.course.events`, ghi hoặc cập nhật
-một dòng trong `course_snapshots`. Phụ thuộc vào việc của duyd92689-debug.
+**Sự kiện đã có sẵn:** `CourseUpdatedEvent` (loại `course.updated`) trong shared-common.
+Tên cũ trong bảng này là `course.published` — đã đổi, lý do ở
+[shared-contracts.md](shared-contracts.md#courseupdatedevent-khác-các-sự-kiện-còn-lại).
 
-**Phải khử trùng lặp.** Kafka bảo đảm at-least-once nên một sự kiện có thể tới nhiều lần.
-notification-service đã làm sẵn bằng bảng `processed_events` với khóa chính là `event_id`,
-copy cách đó là được.
+Dependency Kafka (`spring-kafka` + `spring-boot-kafka`) đã có trong `enrollment-service/pom.xml`
+từ #29 — không phải thêm gì, chỉ việc viết consumer.
 
-Có một bẫy JPA ghi rõ trong [docs/notifications.md](notifications.md): **không dùng `save()`**
-để ghi sổ khử trùng lặp. `save()` chọn INSERT hay UPDATE dựa vào `@Id` có null không, mà
-khóa ở đây là UUID do bên gửi sinh ra nên luôn khác null — thành ra nó UPDATE đè lên dòng cũ,
-không hề có lỗi trùng khóa, và cơ chế chống trùng im lặng mất tác dụng. Dùng câu INSERT
-tường minh.
+**Cần làm.** Nghe topic `KafkaTopics.COURSE_EVENTS`, lọc `eventType` bằng
+`EventTypes.COURSE_UPDATED`, rồi **ghi đè cả dòng** trong `course_snapshots` theo `courseId`.
+Mỗi trường của sự kiện khớp đúng một cột của bảng.
 
-**Tự kiểm.** Xuất bản một khóa học bên course-service, kiểm tra
-`SELECT * FROM course_snapshots` trong `enrollment_db` thấy dòng tương ứng, rồi ghi danh
-khóa đó phải thành công thay vì 404.
+course-service đã phát sự kiện thật từ #31: xuất bản một khóa học là có message trên topic.
+Vẫn có thể tự tạo message mẫu bằng Kafka UI như phần Tự kiểm bên dưới.
+
+Đọc String rồi tự phân tích bằng `tools.jackson.databind.ObjectMapper`, đừng dùng
+`JsonDeserializer`. Chép `KafkaEventConsumer` trong notification-service — xem
+[bẫy số 2](#2-spring-kafka-vẫn-dùng-jackson-2-boot-4-đã-sang-jackson-3).
+
+**Không cần bảng `processed_events` ở đây** — khác với phần outbox và khác với
+notification-service. Sự kiện này là ảnh chụp, không phải "một việc vừa xảy ra": nhận trùng
+hai lần thì ghi đè hai lần cùng một giá trị, kết quả vẫn đúng. Khử trùng lặp chỉ cần khi xử
+lý hai lần gây ra hậu quả hai lần, như gửi hai email.
+
+Cũng vì thế mà ở đây **dùng `save()` là đúng**, dù [notifications.md](notifications.md) dặn
+đừng dùng cho bảng khử trùng lặp. `save()` với `@Id` khác null sẽ tìm dòng cũ, có thì UPDATE,
+không có thì INSERT — đúng thứ cần cho một bản sao. Cái bẫy bên kia là do ở đó cần *lỗi* khi
+trùng; ở đây thì không.
+
+Nhớ gán `syncedAt = Instant.now()` mỗi lần ghi đè. `CourseSnapshot` chỉ điền trường này
+trong `@PrePersist`, nên lúc cập nhật Hibernate ghi lại giá trị cũ, và
+`ON UPDATE CURRENT_TIMESTAMP` của MySQL không chạy vì cột đã được gán tường minh.
+
+**Tự kiểm.** Không cần đợi course-service. Bật Kafka và Kafka UI:
+
+```bash
+docker compose up -d kafka kafka-ui
+```
+
+Mở http://localhost:8090 → Topics → `elearning.course.events` → Produce Message, key là
+`3`, value dán ví dụ JSON trong
+[shared-contracts.md](shared-contracts.md#courseupdatedevent-khác-các-sự-kiện-còn-lại).
+Rồi:
+
+1. `SELECT * FROM course_snapshots` trong `enrollment_db` thấy dòng `course_id = 3`.
+2. Ghi danh khóa 3 qua gateway phải thành công thay vì 404.
+3. Gửi lại đúng message đó lần nữa: vẫn một dòng, không lỗi.
+4. Gửi bản có `"status": "ARCHIVED"`: ghi danh khóa 3 phải bị từ chối.
 
 ---
 
-### hiepdeptrai0111 — chuyển phát sự kiện sang outbox
+### hiepdeptrai0111 — giữ nguyên điểm số trong sự kiện
 
-> Ưu tiên thấp. Ba việc ở trên chặn demo, việc này thì không — cứ làm sau khi nhóm thông
-> được chuỗi ghi danh. Nếu rảnh sớm thì báo nhóm trưởng.
+> Việc nhỏ phát hiện khi chạy thử #32. Không chặn demo.
 
-**Vấn đề.** `QuizAttemptServiceImpl.submitAttempt` gửi Kafka **bên trong transaction**, ngay
-sau khi lưu bài làm:
+**Vấn đề.** Cột `payload` của `quiz_db.outbox_events` có kiểu `JSON`. MySQL không lưu nguyên
+chuỗi mà phân tích rồi viết lại, nên số thập phân bị đổi dạng trước khi lên Kafka:
 
-```java
-QuizAttempt savedAttempt = quizAttemptRepository.save(attempt);   // dòng 204
-...
-quizEventPublisher.publishQuizGraded(event);                       // dòng 216, vẫn trong transaction
+```
+quiz-service tạo:   {"eventId": "...", "score": 100.00, ...}
+MySQL lưu và trả:   {"score": 100.0, "passed": true, ...}      ← mất số 0, đảo thứ tự khóa
+thông báo hiện:     "Bài kiểm tra ... của bạn đạt 100.0 điểm."
 ```
 
-Nếu transaction rollback sau dòng 216 thì sự kiện đã bay đi rồi, và học viên nhận thông báo
-về một điểm số không tồn tại trong database. Ngược lại, gửi Kafka hỏng thì bài làm vẫn được
-lưu nhưng không ai biết để gửi lại.
+Trước #32 thông báo hiện `100.00`. Điểm 85.50 giờ thành 85.5. Không sai dữ liệu, nhưng sự kiện
+lên Kafka không còn là thứ quiz-service đã tạo ra — đúng điều outbox phải đảm bảo.
 
-Đây là bài toán ghi hai nơi (dual write) mà mẫu outbox sinh ra để giải.
+**Cần làm.**
 
-**Cần làm.** Giống enrollment-service: thêm bảng `outbox_events` cho `quiz_db` bằng một
-migration mới, ghi sự kiện vào bảng đó trong cùng transaction với bài làm, rồi một
-`@Scheduled` riêng đọc và gửi lên Kafka.
+1. Migration mới `V3__store_outbox_payload_as_text.sql` đổi cột sang `LONGTEXT NOT NULL`.
+   **Không sửa V2** — V2 đã merge, CI sẽ chặn (xem [Nếu có sửa entity hoặc migration](#nếu-có-sửa-entity-hoặc-migration)).
+2. `OutboxEvent.payload` đổi `columnDefinition` cho khớp, nếu không job "Schema matches
+   entities" sẽ đỏ.
+3. Bỏ đoạn xử lý H2 trong `QuizOutboxIntegrationTest` (`if (payload.isTextual())`) — đổi kiểu
+   cột rồi thì không cần nữa.
+4. `OutboxPublisherWorker`: truyền cả `ex` vào `log.error` thay vì `ex.getMessage()`, để log
+   giữ được nguyên nhân gốc.
 
-Đợi phamquyet19042005-netizen làm xong phần gửi bên enrollment-service rồi copy cách làm,
-để hai service không mỗi bên một kiểu.
+enrollment-service cũng dùng cột `JSON` nhưng các sự kiện của nó không có số thập phân, nên
+chưa bị. Không cần sửa bên đó.
 
-**Tự kiểm.** Nộp bài khi **tắt Kafka** (`spring.kafka.enabled=false`): bài làm vẫn lưu, và
-có một dòng trong `outbox_events` với `published_at` là NULL. Bật Kafka lại thì dòng đó được
-gửi đi và thông báo xuất hiện.
+**Tự kiểm.** Tạo bài 2 câu, nộp đúng 1 câu. Thông báo phải hiện `50.00 điểm`, và
+`SELECT payload FROM quiz_db.outbox_events` phải giữ nguyên thứ tự khóa như lúc tạo.
+
+---
+
+### quocluibotre — viết tình huống test cho đợt Postman
+
+> Không đụng code, làm song song với mọi người được. Xong thì đợt test Postman chỉ còn việc
+> bấm, không ai phải nghĩ "test cái gì".
+
+**Cần làm.** Mỗi service một file trong `docs/test-cases/`: `auth.md`, `course.md`,
+`enrollment.md`, `quiz.md`, `notification.md`, cộng `gateway.md` cho các ca chung (thiếu token,
+token hết hạn, service chết trả 502). Mỗi endpoint một bảng:
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Đúng | giảng viên A | `POST /api/courses` + body mẫu | 201, `data.status` = `DRAFT` |
+| 2 | Không token | — | như trên | 401 |
+| 3 | Sai vai trò | học viên | như trên | 403 |
+| 4 | Sửa khóa của người khác | giảng viên B | `PUT /api/courses/{id của A}` | 403 |
+
+Mỗi endpoint ít nhất sáu ca theo [api-conventions.md mục E](api-conventions.md#e-tự-kiểm-trước-khi-mở-pull-request):
+đúng, không token, sai vai trò, không tồn tại, sai kiểu tham số, sắp xếp bằng trường bịa. Thêm
+ca riêng của từng nghiệp vụ, ví dụ ghi danh hai lần, nộp bài quá số lần cho phép, xem khóa
+`DRAFT` của người khác.
+
+**Lưu ý.**
+
+- Dùng năm tài khoản cố định: admin, giảng viên A, giảng viên B, học viên, không token. Ghi ở
+  đầu `gateway.md` cách tạo chúng (đăng ký rồi admin cấp quyền bằng `PATCH /api/users/{id}/roles`).
+- Đường dẫn sẽ đổi khi cả nhóm [chuẩn hóa](#cả-nhóm--chuẩn-hóa-đường-dẫn-api) — viết theo đường
+  dẫn mới trong bảng đó luôn, tình huống thì không đổi.
+- "Mong đợi" phải là mã HTTP cụ thể, không ghi "báo lỗi". 403 và 404 khác nhau và cả hai đều
+  có lúc đúng (khóa `DRAFT` của người khác trả 404 là cố ý, xem A3).
+- Mở pull request theo từng file cho dễ review, không cần đợi xong cả sáu.
+
+---
+
+### Cả nhóm — chuẩn hóa đường dẫn API
+
+> **Có hạn chót**: phải xong trước [đợt test Postman](#khi-nào-test-toàn-bộ-api-bằng-postman)
+> và trước khi ai đó bắt đầu viết frontend. Đổi đường dẫn sau khi đã có collection hay
+> frontend gọi thì gãy hết và không ai muốn sửa nữa.
+
+**Vấn đề.** Năm service đang đặt đường dẫn theo năm kiểu khác nhau. Không sai về chức năng,
+nhưng người viết frontend sẽ phải nhớ mỗi service một quy ước, và đây là thứ dễ mất điểm
+nhất khi chấm.
+
+Luật đã viết ở [api-conventions.md](api-conventions.md), phần B. Mỗi người sửa service của
+mình:
+
+| Người | Đang là | Đổi thành | Quy tắc |
+|---|---|---|---|
+| duyd | `GET /api/courses/instructor/{id}` | `GET /api/courses?instructorId={id}` | B2 |
+| duyd | `DELETE /api/lessons/resources/{id}` | `DELETE /api/lessons/{lessonId}/resources/{id}` | B3 |
+| duyd | `POST /api/sections` (courseId trong body) | `POST /api/courses/{courseId}/sections` | B3 |
+| duyd | `POST /api/lessons` (sectionId trong body) | `POST /api/sections/{sectionId}/lessons` | B3 |
+| hiepdeptrai | `GET /api/quizzes/course/{id}` | `GET /api/quizzes?courseId={id}` | B2 |
+| hiepdeptrai | `PATCH /api/quizzes/{id}/publish` và `/archive` | `PATCH /api/quizzes/{id}/status` + body | B4 |
+| hiepdeptrai | `GET /api/quizzes/{id}/attempts/history` | `GET /api/quizzes/{id}/attempts` | B5 |
+| hiepdeptrai | `GET /api/quizzes/attempts/{attemptId}` | `GET /api/attempts/{attemptId}` | B7 |
+| phamquyet | `GET /api/enrollments/my-courses` | `GET /api/enrollments` | B6 |
+| phamquyet | `DELETE /api/enrollments/course/{id}` | `DELETE /api/enrollments?courseId={id}` | B2 |
+| phamquyet | `PATCH /api/enrollments/{id}/cancel` | `PATCH /api/enrollments/{id}/status` + body | B4 |
+| phamquyet | `POST /api/progress/lesson` | `PUT /api/lessons/{lessonId}/progress` | B1, B2 |
+| phamquyet | `GET /api/progress/course/{id}` | `GET /api/progress?courseId={id}` | B2 |
+
+**Lưu ý.** Đổi đường dẫn là đổi cả route ở gateway (A4) và `public-paths` nếu endpoint đó
+công khai. Đổi `/api/progress` thành `/api/lessons/{id}/progress` thì đường dẫn đó rơi sang
+route của course-service — báo nhóm trưởng trước, đừng tự đổi.
+
+Ai làm xong phần của mình thì mở một pull request riêng, đừng gộp chung với việc khác:
+đường dẫn đổi là frontend phải sửa theo, cần nhìn thấy rõ trong lịch sử.
 
 ---
 
@@ -227,6 +370,18 @@ gửi đi và thông báo xuất hiện.
 
 | Ngày | PR | Việc | Người |
 |---|---|---|---|
+| 03/10 | #34 | Gateway giới hạn số request bằng Redis: chống dò mật khẩu, Redis chết thì vẫn cho qua | Hiếu |
+| 03/10 | #32 | quiz-service gửi sự kiện chấm điểm qua outbox | hiepdeptrai0111 |
+| 25/09 | #29 | Gửi outbox của enrollment-service lên Kafka | phamquyet19042005-netizen |
+| 25/09 | #31 | Phân quyền course-service, ẩn khóa DRAFT, phát `course.updated` | duyd92689-debug |
+| 25/09 | #27 | API gán vai trò, admin đầu tiên, `/me` dùng `AuthenticatedUser` | quocluibotre |
+| 25/09 | #30 | CI chặn cấu hình tắt xác thực; sửa hướng dẫn tắt xác thực trên máy (thiếu bước bật profile) | Hiếu |
+| 25/09 | #28 | Chạy cả hệ thống bằng Docker; gateway trả 502 sau tối đa 3 giây khi một service chết | Hiếu |
+| 25/09 | #26 | Lệnh đồng bộ nhánh ghi rõ tên nhánh | Hiếu |
+| 25/09 | #25 | Bỏ `createdBy` khỏi body, người tạo bài kiểm tra lấy từ token | hiepdeptrai0111 |
+| 25/09 | #24 | `CourseUpdatedEvent`: hợp đồng sự kiện khóa học cho `course_snapshots` | Hiếu |
+| 25/09 | #23 | Sửa route `/api/progress` bị sót ở gateway, `?sort=` sai trả 400, quy tắc viết API | Hiếu |
+| 19/09 | #22 | Biến danh sách phân công thành bảng theo dõi sống | Hiếu |
 | 19/09 | #21 | Bỏ `?userId=` ở 4 endpoint làm bài | hiepdeptrai0111 |
 | 19/09 | #20 | Bảng theo dõi công việc | Hiếu |
 | 19/09 | #13 | Chặn xem đáp án và quản lý bài kiểm tra theo vai trò, nối Flyway | hiepdeptrai0111 |
@@ -256,12 +411,21 @@ Spring Boot 4 tách auto-configuration ra khỏi thư viện gốc. Khai thư vi
 |---|---|
 | Flyway | `org.springframework.boot:spring-boot-flyway` |
 | Kafka | `org.springframework.boot:spring-boot-kafka` |
+| MockMvc trong test | `org.springframework.boot:spring-boot-starter-webmvc-test` |
 
 Thiếu module này thì `@KafkaListener` không được đăng ký, hoặc migration không chạy — và
 **log không có lấy một dòng nào nhắc tới Kafka hay Flyway**. Service khởi động sạch sẽ, health
 báo UP, mọi thứ trông bình thường.
 
 Ở Spring Boot 3 thì chỉ cần thư viện gốc, nên mọi hướng dẫn trên mạng đều thiếu dòng này.
+
+Kèm theo đó là vài lớp bị đổi gói, tìm theo tên cũ sẽ không ra:
+
+| Lớp | Gói cũ (Boot 3) | Gói mới (Boot 4) |
+|---|---|---|
+| `AutoConfigureMockMvc` | `...boot.test.autoconfigure.web.servlet` | `...boot.webmvc.test.autoconfigure` |
+| `ErrorWebExceptionHandler` | `...boot.web.reactive.error` | `...boot.webflux.error` |
+| `PropertyReferenceException` | `...data.mapping` | `...data.core` |
 
 ### 2. Spring Kafka vẫn dùng Jackson 2, Boot 4 đã sang Jackson 3
 
@@ -290,13 +454,22 @@ bên gửi không làm hỏng bên nhận. Consumer định tuyến theo trườ
 ### Đồng bộ nhánh
 
 Tất cả các PR đều merge kiểu squash, nên nhánh cũ sẽ xung đột với chính code mình vừa được
-merge. Chạy một lần trước khi bắt đầu:
+merge. Chạy một lần trước khi bắt đầu, **thay `quiz-service` bằng tên nhánh của bạn ở cả ba
+chỗ**:
 
 ```bash
 git fetch origin
+git checkout quiz-service
+git log --oneline origin/main..quiz-service     # in ra dòng nào là còn việc chưa merge: DỪNG, hỏi nhóm trưởng
 git reset --hard origin/main
-git push --force-with-lease
+git push --force-with-lease origin quiz-service
 ```
+
+**Lệnh push phải ghi tên nhánh.** Bản cũ trong file này viết `git push --force-with-lease`
+trống trơn và thiếu cả `git checkout`, nên đang đứng ở nhánh nào là đè lên nhánh đó — ngày
+25/09 nhánh `auth-service` đã bị đẩy từ máy của một người không phụ trách nó. Lần đó may là
+nhánh không có gì chưa merge nên không mất code, nhưng lần sau thì chưa chắc. Ghi rõ
+`origin quiz-service` thì dù lỡ đứng nhầm nhánh, lệnh cũng chỉ đụng đúng nhánh của bạn.
 
 ### Nếu có sửa entity hoặc migration
 
@@ -313,16 +486,26 @@ Và **đừng sửa file migration đã vào main**. Flyway lưu checksum, sửa
 sẽ không khởi động được, máy nào chưa chạy thì nhận schema khác. Đổi schema thì thêm file mới
 `V<n>__*.sql` với câu `ALTER TABLE`. CI có job kiểm việc này.
 
+### Nếu có thêm hoặc sửa endpoint
+
+Đọc [api-conventions.md](api-conventions.md) và chạy phần tự kiểm ở cuối tài liệu đó. Hai
+việc hay quên nhất:
+
+- Khai route ở gateway cho tiền tố mới (A4) — CI có `GatewayRouteCoverageTest` kiểm.
+- Gọi thử **qua gateway cổng 8080**, không gọi thẳng cổng của service. Gọi thẳng thì bỏ qua
+  cả định tuyến lẫn lớp kiểm token vòng ngoài, đúng hai thứ hay hỏng nhất.
+
 ### Lấy danh tính người gọi
 
-Không controller nào được nhận `userId` hay `instructorId` từ client, dù qua query param hay
-qua body. Nhận `AuthenticatedUser user` rồi dùng `user.userId()`. Chi tiết ở
+Không controller nào được nhận `userId`, `instructorId` hay `createdBy` từ client, dù qua
+query param hay qua body. Nhận `AuthenticatedUser user` rồi dùng `user.userId()`. Chi tiết ở
 [authentication.md](authentication.md).
 
 ### Tài liệu nên đọc
 
 | Làm phần nào | Đọc gì |
 |---|---|
+| Bất cứ endpoint nào | [api-conventions.md](api-conventions.md) — luật đặt đường dẫn, mã lỗi, phân quyền |
 | Bất cứ endpoint nào | [authentication.md](authentication.md) — lấy danh tính, chặn theo vai trò |
 | Kafka, sự kiện | [notifications.md](notifications.md), [shared-contracts.md](shared-contracts.md) |
 | Entity, migration | [database-design.md](database-design.md) |

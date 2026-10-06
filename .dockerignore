@@ -1,0 +1,31 @@
+# Những gì KHÔNG gửi vào Docker khi build image.
+#
+# Build context là cả thư mục gốc repo (Dockerfile cần pom cha và shared-common), nên
+# thiếu file này thì mỗi lần build Docker phải gửi đi cả .git lẫn thư mục target/ của 7
+# module. Chậm, và tệ hơn: jar cũ trong target/ trên máy có thể lọt vào image thay cho
+# bản vừa build trong container.
+
+.git
+.github
+.githooks
+.idea
+.vscode
+*.iml
+
+# Kết quả build trên máy. Image tự build lại từ mã nguồn bên trong container.
+**/target
+
+# Biến môi trường thật của từng người, có thể chứa mật khẩu. Compose tự đọc .env ở máy
+# host rồi truyền vào container qua environment, không cần đưa file vào image.
+.env
+
+# Cấu hình riêng trên máy từng người, thường dùng để tắt xác thực khi test (CONTRIBUTING
+# mục 8). File nằm ngay trong src/main/resources nên nếu không chặn ở đây thì build image
+# trên máy ai có file này là nó lọt vào image cùng mã nguồn.
+**/application-local.properties
+**/application-local.yml
+
+docs
+infra
+scripts
+*.md
