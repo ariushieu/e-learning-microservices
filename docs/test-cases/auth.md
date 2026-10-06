@@ -113,6 +113,43 @@ khi phát token cần fixture quản trị riêng (chưa có API xóa user), kh�
 Ca 12 dùng quiz test riêng và xóa sau thử bằng A/ADM. Đây là giới hạn token được tài liệu hóa,
 không được đánh đồng với việc refresh vẫn cấp quyền đã gỡ.
 
+## AUTH-07 — PUT /api/auth/me
+
+Body hợp lệ: `{"fullName":"Nguyễn Văn Quốc","phone":"0901234567"}`. Dùng tài khoản S
+đã chuẩn bị; lưu hồ sơ gốc để phục hồi sau ca test. Mọi request đi qua gateway cổng 8080.
+
+| # | Tình huống | Token | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Sửa hồ sơ hợp lệ | S | PUT /api/auth/me + body hợp lệ | 200; data.id của S, tên và số điện thoại mới; GET /api/auth/me phản ánh dữ liệu mới |
+| 2 | Chưa đăng nhập | — | Body hợp lệ | 401 |
+| 3 | Token hỏng | Token sai chữ ký | Body hợp lệ | 401 |
+| 4 | Thiếu hoặc trắng họ tên | S | Bỏ fullName hoặc fullName="   " | 400 VALIDATION_FAILED; fieldErrors có fullName; dữ liệu không đổi |
+| 5 | Họ tên quá dài | S | fullName dài 151 ký tự | 400 VALIDATION_FAILED; fieldErrors có fullName |
+| 6 | Số điện thoại quá dài | S | phone dài 21 ký tự | 400 VALIDATION_FAILED; fieldErrors có phone |
+| 7 | Xóa số điện thoại | S | Lần lượt bỏ phone, phone=null hoặc phone="   " | 200; số điện thoại được xóa |
+| 8 | Giả danh và nâng quyền qua body | S | Thêm userId=adminId, roles=[ROLE_ADMIN], email và status khác; query ?userId=adminId | 200; chỉ tên/điện thoại của S đổi; admin, email, roles và status không đổi |
+| 9 | Chuẩn hóa khoảng trắng | S | fullName="  Quốc  ", phone=" 0901234567 " | 200; trả "Quốc" và "0901234567" |
+| 10 | Người gọi không còn tồn tại | JWT hợp lệ của tài khoản đã xóa trong môi trường riêng | Body hợp lệ | 404 RESOURCE_NOT_FOUND |
+
+## AUTH-08 — POST /api/auth/change-password
+
+Tạo tài khoản riêng cho nhóm ca này để không làm hỏng tài khoản cố định của các service khác.
+Đăng nhập hai lần để có hai refresh token riêng. Body: `{currentPassword, newPassword}`.
+
+| # | Tình huống | Token | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Đổi mật khẩu hợp lệ | Tài khoản test | Mật khẩu hiện tại đúng, mật khẩu mới hợp lệ | 200; login mật khẩu cũ 401, mật khẩu mới 200 |
+| 2 | Thu hồi tất cả phiên | Tài khoản test | Sau ca 1, refresh từng token từ hai lần login trước | 401 cho cả hai; login mới và refresh token mới vẫn 200 |
+| 3 | Không ảnh hưởng người khác | Tài khoản test | Đổi mật khẩu rồi refresh bằng token của tài khoản khác | 200 khi refresh tài khoản khác |
+| 4 | Sai mật khẩu hiện tại | Tài khoản test | currentPassword sai | 400 VALIDATION_FAILED; fieldErrors.currentPassword; mật khẩu và các phiên cũ vẫn dùng được |
+| 5 | Thiếu/trắng mật khẩu hiện tại | Tài khoản test | Bỏ currentPassword hoặc gửi chuỗi trắng | 400 VALIDATION_FAILED; fieldErrors có currentPassword |
+| 6 | Thiếu/trắng mật khẩu mới | Tài khoản test | Bỏ newPassword hoặc gửi chuỗi trắng | 400 VALIDATION_FAILED; fieldErrors có newPassword |
+| 7 | Mật khẩu mới ngoài giới hạn | Tài khoản test | newPassword dài 5 hoặc 51 ký tự | 400 VALIDATION_FAILED; không thu hồi token |
+| 8 | Chưa đăng nhập | — | Body hợp lệ | 401 |
+| 9 | Token hỏng | Token sai chữ ký | Body hợp lệ | 401 |
+| 10 | Giả danh qua userId | Tài khoản test | Thêm userId của người khác vào body/query | 200; chỉ mật khẩu của người gọi đổi, tài khoản khác không bị ảnh hưởng |
+| 11 | Access token đã phát | Access token trước khi đổi | GET /api/auth/me sau đổi, trước khi access token hết hạn | 200; cơ chế hiện tại thu hồi refresh token, access token còn sống tới exp |
+
 ## Truy vết nguồn
 
 - [AuthController](../../auth-service/src/main/java/com/hunre/authservice/controller/AuthController.java),

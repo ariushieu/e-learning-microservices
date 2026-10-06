@@ -61,6 +61,21 @@ public class AuthController {
         return ApiResponse.ok(authService.getUserById(user.userId()));
     }
 
+    /** Mọi người dùng đã xác thực đều được sửa hồ sơ của chính mình. */
+    @PutMapping("/me")
+    public ApiResponse<UserResponse> updateProfile(
+            AuthenticatedUser user, @Valid @RequestBody UpdateProfileRequest request) {
+        return ApiResponse.ok(authService.updateProfile(user.userId(), request), "Cập nhật hồ sơ thành công");
+    }
+
+    /** Mọi người dùng đã xác thực đều được đổi mật khẩu của chính mình. */
+    @PostMapping("/change-password")
+    public ApiResponse<Void> changePassword(
+            AuthenticatedUser user, @Valid @RequestBody ChangePasswordRequest request) {
+        authService.changePassword(user.userId(), request);
+        return ApiResponse.message("Đổi mật khẩu thành công, vui lòng đăng nhập lại");
+    }
+
     private String getClientIp(HttpServletRequest request) {
         String xf = request.getHeader("X-Forwarded-For");
         if (xf != null && !xf.isBlank()) {
