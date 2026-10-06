@@ -6,8 +6,9 @@
 #      docker compose up -d                 # MySQL + Kafka + Kafka UI + Redis
 #      docker compose up -d mysql           # hoặc chỉ những gì cần
 #
-# 2. Chạy toàn bộ hệ thống — cả 6 service cũng chạy trong Docker, chỉ gateway mở ra ngoài
-#    ở cổng 8080. Dùng để demo hoặc kiểm tra các service nói chuyện được với nhau:
+# 2. Chạy toàn bộ hệ thống — cả 6 service và frontend cũng chạy trong Docker. Web ở
+#    http://localhost:3000, gateway ở cổng 8080. Dùng để demo hoặc kiểm tra các service nói
+#    chuyện được với nhau:
 #
 #      docker compose --profile app up -d --build --wait
 #      docker compose --profile app down    # dừng, GIỮ dữ liệu
@@ -280,6 +281,28 @@ services:
     healthcheck:
       <<: *healthcheck-timing
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+
+  # ---------------------------------------------------------------- Frontend
+  # Next.js gọi gateway từ phía server qua mạng nội bộ (api-gateway:8080), trình duyệt chỉ nói
+  # chuyện với cổng 3000. Token nằm trong cookie httpOnly của Next.js, không lộ ra JavaScript.
+  frontend:
+    <<: *app
+    build: { context: ./frontend }
+    image: elearning/frontend
+    container_name: elearning-frontend
+    mem_limit: 384m
+    ports:
+      - "3000:3000"
+    environment:
+      GATEWAY_URL: http://api-gateway:8080
+      # Chạy sau HTTPS thì đặt true, nếu không cookie đăng nhập không an toàn.
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    depends_on:
+      api-gateway: { condition: service_started }
+    healthcheck:
+      <<: *healthcheck-timing
+      start_period: 20s
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/healthz"]
 
 volumes:
   mysql_data:
