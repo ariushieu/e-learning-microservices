@@ -51,6 +51,8 @@ class EnrollmentEventKafkaIntegrationTest {
         var course = courses.save(Course.builder().title("Kafka students").slug(UUID.randomUUID().toString()).instructorId(1L).build());
         var first = EnrollmentCreatedEvent.of(1L, 1L, course.getId(), course.getTitle());
         var second = EnrollmentCreatedEvent.of(2L, 2L, course.getId(), course.getTitle());
+        var reactivated = EnrollmentCreatedEvent.of(1L, 1L, course.getId(), course.getTitle());
+        var recreated = EnrollmentCreatedEvent.of(4L, 1L, course.getId(), course.getTitle());
         var exhausted = EnrollmentCreatedEvent.of(3L, 3L, course.getId(), course.getTitle());
         doThrow(new CannotCreateTransactionException("temporary database outage"))
                 .doCallRealMethod().when(processor).process(first);
@@ -69,10 +71,14 @@ class EnrollmentEventKafkaIntegrationTest {
             send(mapper.writeValueAsString(first));
             send(mapper.writeValueAsString(first));
             send(mapper.writeValueAsString(exhausted));
+            send(mapper.writeValueAsString(reactivated));
+            send(mapper.writeValueAsString(recreated));
             send(mapper.writeValueAsString(second));
             await().atMost(Duration.ofSeconds(25)).untilAsserted(() -> {
                 assertThat(courses.findById(course.getId()).orElseThrow().getStudentCount()).isEqualTo(2);
                 assertThat(processed.existsById(second.eventId())).isTrue();
+                assertThat(processed.existsById(reactivated.eventId())).isTrue();
+                assertThat(processed.existsById(recreated.eventId())).isTrue();
             });
             assertThat(processed.existsById(exhausted.eventId())).isFalse();
             verify(processor, atLeast(3)).process(first);

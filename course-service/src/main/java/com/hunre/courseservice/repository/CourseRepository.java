@@ -16,6 +16,10 @@ import java.util.Optional;
 @Repository
 public interface CourseRepository extends JpaRepository<Course, Long>, JpaSpecificationExecutor<Course> {
 
+    // Giữ khóa tồn tại cho đến khi ghi sổ học viên và cập nhật số đếm xong.
+    @Query(value = "SELECT id FROM courses WHERE id = :id FOR UPDATE", nativeQuery = true)
+    Optional<Long> lockForLearnerUpdate(@Param("id") Long id);
+
     @Modifying
     @Query(value = "UPDATE courses SET student_count = student_count + 1 WHERE id = :id", nativeQuery = true)
     int incrementStudentCount(@Param("id") Long id);

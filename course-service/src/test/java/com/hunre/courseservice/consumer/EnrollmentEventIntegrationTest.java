@@ -40,6 +40,56 @@ class EnrollmentEventIntegrationTest {
     }
 
     @Test
+    void sameStudentReactivatedAndRecreatedEnrollmentStillCountsOnce() {
+        var course = course();
+        var original = EnrollmentCreatedEvent.of(101L, 7L, course.getId(), "Original");
+        var reactivated = EnrollmentCreatedEvent.of(101L, 7L, course.getId(), "Reactivated");
+        var recreated = EnrollmentCreatedEvent.of(102L, 7L, course.getId(), "Recreated");
+        for (var event : List.of(original, reactivated, recreated)) {
+            consumer.onMessage(mapper.writeValueAsString(event));
+            assertThat(courses.findById(course.getId()).orElseThrow().getStudentCount()).isEqualTo(1);
+            assertThat(processed.existsById(event.eventId())).isTrue();
+        }
+        assertThat(learnerCount(course.getId())).isEqualTo(1);
+    }
+
+    int learnerCount(Long courseId) {
+        return jdbc.queryForObject("SELECT COUNT(*) FROM course_learners WHERE course_id = ?", Integer.class, courseId);
+    }
+
+    @Test
+    void sameStudentCountsIndependentlyInDifferentCourses() {
+        var first = course();
+        var second = course();
+        consumer.onMessage(event(first.getId(), 7L));
+        consumer.onMessage(event(second.getId(), 7L));
+        consumer.onMessage(event(first.getId(), 7L));
+        for (var course : List.of(first, second)) {
+            assertThat(courses.findById(course.getId()).orElseThrow().getStudentCount()).isEqualTo(1);
+            assertThat(learnerCount(course.getId())).isEqualTo(1);
+        }
+    }
+
+    @Test
+    void concurrentDistinctEventsForSameStudentsCountEachPersonOnce() throws Exception {
+        var course = course();
+        List<EnrollmentCreatedEvent> events = new ArrayList<>();
+        List<Callable<Void>> tasks = new ArrayList<>();
+        for (int i = 1; i <= 24; i++) {
+            var event = EnrollmentCreatedEvent.of((long) i, (long) (i % 3 + 1), course.getId(), "Re-enrollment");
+            events.add(event);
+            tasks.add(() -> { consumer.onMessage(mapper.writeValueAsString(event)); return null; });
+        }
+        var pool = Executors.newFixedThreadPool(6);
+        try {
+            for (var result : pool.invokeAll(tasks)) result.get(10, TimeUnit.SECONDS);
+        } finally { pool.shutdownNow(); }
+        assertThat(courses.findById(course.getId()).orElseThrow().getStudentCount()).isEqualTo(3);
+        assertThat(learnerCount(course.getId())).isEqualTo(3);
+        for (var event : events) assertThat(processed.existsById(event.eventId())).isTrue();
+    }
+
+    @Test
     void countsTwoStudentsAndIgnoresReplayInApiResponse() {
         var course = course();
         var first = event(course.getId(), 1L);
@@ -71,6 +121,7 @@ class EnrollmentEventIntegrationTest {
         assertThatThrownBy(() -> consumer.onMessage(mapper.writeValueAsString(event)))
                 .isInstanceOf(InvalidEventException.class);
         assertThat(processed.existsById(event.eventId())).isFalse();
+        assertThat(learnerCount(missing)).isZero();
         var repaired = new EnrollmentCreatedEvent(event.eventId(), event.occurredAt(), 1L, 1L, course.getId(), "Repaired");
         consumer.onMessage(mapper.writeValueAsString(repaired));
         assertThat(courses.findById(course.getId()).orElseThrow().getStudentCount()).isEqualTo(1);
@@ -84,9 +135,11 @@ class EnrollmentEventIntegrationTest {
         assertThatThrownBy(() -> consumer.onMessage(mapper.writeValueAsString(event))).isInstanceOf(InvalidEventException.class);
         assertThat(processed.existsById(event.eventId())).isFalse();
         assertThat(courses.findById(course.getId()).orElseThrow().getStudentCount()).isEqualTo(Integer.MAX_VALUE);
+        assertThat(learnerCount(course.getId())).isZero();
         jdbc.update("UPDATE courses SET student_count = 0 WHERE id = ?", course.getId());
         consumer.onMessage(mapper.writeValueAsString(event));
         assertThat(courses.findById(course.getId()).orElseThrow().getStudentCount()).isEqualTo(1);
+        assertThat(learnerCount(course.getId())).isEqualTo(1);
     }
 
     @Test
