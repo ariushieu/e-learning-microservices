@@ -224,6 +224,7 @@ services:
     container_name: elearning-quiz-service
     environment:
       <<: *backend-env
+      COURSE_SERVICE_URL: http://course-service:8082
       # quiz-service đọc cả chuỗi kết nối thay vì DB_HOST như bốn service kia, nên phải
       # truyền nguyên URL. DB_HOST ở trên vô hại với nó.
       SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/quiz_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8"
