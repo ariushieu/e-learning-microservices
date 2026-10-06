@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-be-vietnam), ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+/* Nội dung bài học do giảng viên nhập dạng văn bản nhiều dòng. */
+.lesson-content {
+  white-space: pre-wrap;
+  line-height: 1.75;
+}

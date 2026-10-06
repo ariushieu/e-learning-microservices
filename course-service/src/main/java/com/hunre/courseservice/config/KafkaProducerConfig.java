@@ -20,8 +20,14 @@ public class KafkaProducerConfig {
     @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
     private String bootstrapServers;
 
-    @Value("${spring.kafka.producer.max-block-ms:5000}")
+    @Value("${spring.kafka.producer.max-block-ms:${spring.kafka.producer.properties.max.block.ms:2000}}")
     private int maxBlockMs;
+
+    @Value("${spring.kafka.producer.properties.request.timeout.ms:5000}")
+    private int requestTimeoutMs;
+
+    @Value("${spring.kafka.producer.properties.delivery.timeout.ms:10000}")
+    private int deliveryTimeoutMs;
 
     @Bean
     public ProducerFactory<String, String> producerFactory() {
@@ -32,6 +38,10 @@ public class KafkaProducerConfig {
         // trong khi JsonSerializer cua Spring Kafka chay tren com.fasterxml.jackson (Jackson 2).
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configProps.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, maxBlockMs);
+        configProps.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, requestTimeoutMs);
+        configProps.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, deliveryTimeoutMs);
+        configProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
+        configProps.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 1);
         return new DefaultKafkaProducerFactory<>(configProps);
     }
 

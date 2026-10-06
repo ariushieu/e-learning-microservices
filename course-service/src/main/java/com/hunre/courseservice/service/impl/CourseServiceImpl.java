@@ -1,5 +1,6 @@
 package com.hunre.courseservice.service.impl;
 
+import com.hunre.courseservice.client.EnrollmentAccessClient;
 import com.hunre.courseservice.dto.request.ChangeCourseStatusRequest;
 import com.hunre.courseservice.dto.request.CreateCourseRequest;
 import com.hunre.courseservice.dto.request.UpdateCourseRequest;
@@ -22,6 +23,7 @@ import com.hunre.courseservice.security.CurrentUserProvider;
 import com.hunre.sharedcommon.security.Roles;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -35,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class CourseServiceImpl implements CourseService {
@@ -43,6 +46,7 @@ public class CourseServiceImpl implements CourseService {
     private final CategoryRepository categoryRepository;
     private final CurrentUserProvider currentUserProvider;
     private final CourseEventPublisher courseEventPublisher;
+    private final EnrollmentAccessClient enrollmentAccessClient;
 
     @Override
     public PageResponse<CourseSummaryResponse> getCourses(
@@ -115,9 +119,24 @@ public class CourseServiceImpl implements CourseService {
         if (course.getStatus() == CourseStatus.PUBLISHED) {
             return true;
         }
-        return currentUserProvider.getCurrentUser()
-                .filter(u -> u.hasRole(Roles.ADMIN) || u.userId().equals(course.getInstructorId()))
-                .isPresent();
+        return currentUserProvider.getCurrentUser().map(user -> {
+            if (user.hasRole(Roles.ADMIN) || user.userId().equals(course.getInstructorId())) {
+                return true;
+            }
+            if (course.getStatus() != CourseStatus.ARCHIVED) {
+                return false;
+            }
+            try {
+                return enrollmentAccessClient.hasEnrollment(course.getId(), user.userId());
+            } catch (BusinessException exception) {
+                if (exception.errorCode() != ErrorCode.EXTERNAL_SERVICE_ERROR) {
+                    throw exception;
+                }
+                log.warn("Không thể kiểm tra ghi danh cho khóa học lưu trữ {}; từ chối quyền đọc",
+                        course.getId());
+                return false;
+            }
+        }).orElse(false);
     }
 
     @Override

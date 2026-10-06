@@ -10,10 +10,14 @@ gateway `http://localhost:8080`; service chạy nội bộ ở cổng `8082`.
 - Giảng viên chỉ được ghi trong khóa học do mình sở hữu. Admin được quản lý mọi khóa.
   Service kiểm tra quyền trước khi cập nhật dữ liệu hoặc phát sự kiện; user ID null
   không được bỏ qua bước kiểm tra.
-- Khóa chưa `PUBLISHED`, kể cả bài preview bên trong, chỉ chủ khóa học và admin đọc
-  được. Người khác nhận `404`.
+- Khóa `DRAFT`, kể cả bài preview bên trong, chỉ chủ khóa học và admin đọc được.
+  Người khác nhận `404`, dù đã từng ghi danh.
+- Khóa `ARCHIVED`: chủ khóa, admin và học viên có ghi danh `ACTIVE`/`COMPLETED`
+  được đọc chi tiết khóa (theo ID hoặc slug), đề cương và nội dung/tài liệu bài học.
+  Khách, người chưa ghi danh hoặc đã hủy ghi danh nhận `404`, kể cả bài preview.
+  Danh sách công khai vẫn chỉ trả khóa `PUBLISHED`; quyền đọc không cấp quyền sửa.
 - Bài preview thuộc khóa `PUBLISHED`: khách được đọc nội dung và tài liệu.
-- Bài thường: chỉ chủ khóa học, admin hoặc người có ghi danh `ACTIVE`/`COMPLETED`
+- Bài thường thuộc khóa `PUBLISHED`: chỉ chủ khóa học, admin hoặc người có ghi danh `ACTIVE`/`COMPLETED`
   được nhận `content`, `contentUrl` và `resources`. Người chưa có quyền vẫn nhận
   metadata bài học với nội dung null và danh sách tài liệu rỗng. Quy tắc áp dụng
   cả `GET /api/lessons/{id}` và `GET /api/courses/{courseId}/curriculum`.
@@ -81,19 +85,47 @@ và không cache quyền. Ghi danh bị hủy sẽ không còn được mở n�
 Không đăng nhập/không ghi danh/token bị enrollment-service từ chối: không mở nội
 dung. Nếu service đích lỗi, phản hồi sai cấu trúc hoặc timeout:
 
-- Đọc đề cương `GET /api/courses/{courseId}/curriculum`: ghi log cảnh báo và vẫn
+- Với khóa `ARCHIVED`: không xác minh được ghi danh thì trả `404` cho học viên,
+  không tiết lộ cả metadata. Chủ khóa và admin vẫn đọc được mà không cần enrollment-service.
+- Đọc đề cương khóa `PUBLISHED` tại `GET /api/courses/{courseId}/curriculum`: ghi log cảnh báo và vẫn
   trả `200`, giữ metadata của tất cả bài học và nội dung/tài liệu bài preview;
   bài thường có `content`, `contentUrl` null và `resources` rỗng.
-- Mở trực tiếp bài thường `GET /api/lessons/{id}`: vẫn trả
+- Mở trực tiếp bài thường của khóa `PUBLISHED` tại `GET /api/lessons/{id}`: vẫn trả
   `502 EXTERNAL_SERVICE_ERROR` để người học biết chưa thể kiểm tra quyền truy cập.
 
-Chỉ lỗi `EXTERNAL_SERVICE_ERROR` được xử lý như trên khi đọc đề cương. Các lỗi
-nghiệp vụ khác vẫn được trả về; chủ khóa học và admin không cần gọi kiểm tra ghi danh.
+Chỉ lỗi `EXTERNAL_SERVICE_ERROR` được xử lý theo các quy tắc trên. Các lỗi nghiệp vụ
+khác vẫn được trả về; chủ khóa học và admin không cần gọi kiểm tra ghi danh.
 
 Triển khai course-service cùng enrollment-service và gateway có API chuẩn hóa.
 Nếu môi trường đang ghi đè đường dẫn cũ, đổi `ENROLLMENT_LIST_PATH=/api/enrollments`
 hoặc bỏ biến này để dùng mặc định mới.
 Không tự chuyển sang đường dẫn khác khi gặp 404 để tránh che lỗi cấu hình.
+
+### Lưu ý khi cập nhật tiến độ khóa lưu trữ
+
+Quyền đọc khóa `ARCHIVED` cần token của học viên đã ghi danh.
+`CourseLessonClient.validateLesson` bên enrollment-service chuyển tiếp nguyên
+`Authorization` khi gọi `GET /api/lessons/{id}`. Nhờ đó học viên còn quyền học
+cập nhật được tiến độ; không mở quyền đọc khóa lưu trữ cho khách.
+
+## Gửi sự kiện khi Kafka gián đoạn
+
+Migration `V2__add_course_outbox.sql` thêm `outbox_events` và hàng khóa worker.
+Thay đổi khóa học và ghi sự kiện chạy trong cùng giao dịch: ghi outbox thất bại
+thì thay đổi khóa cũng rollback. Kafka không tham gia giao dịch ghi khóa.
+Worker đọc hàng đã commit theo ID, gửi nguyên payload với key `courseId`, chờ
+broker xác nhận rồi mới ghi `published_at`. Gặp lỗi thì dừng lượt gửi và thử lại
+sau 3 giây. Khóa database ngăn nhiều instance gửi cùng lúc. Khi mất xác nhận hoặc
+process chết, sự kiện có thể được gửi lại; consumer snapshot phải chịu được bản trùng.
+
+`COURSE_OUTBOX_ENABLED=false` chỉ tắt lịch gửi, không tắt việc lưu sự kiện.
+Không xóa hàng chưa có `published_at`. Sự kiện đã mất trước khi triển khai outbox
+không tự phục hồi; cần phát lại snapshot từ nguồn nếu có dữ liệu lệch cũ.
+
+Trong lúc snapshot đang chờ đồng bộ, enrollment-service kiểm tra trực tiếp
+`GET /api/courses/{id}` trước khi tạo hoặc kích hoạt lại ghi danh. Khóa không
+`PUBLISHED` trả 404; không kiểm tra được nguồn thì 502, không ghi thêm dữ liệu.
+Đây là kiểm tra tại thời điểm gọi, không phải giao dịch phân tán khóa cả hai database.
 
 ## Kiểm tra
 

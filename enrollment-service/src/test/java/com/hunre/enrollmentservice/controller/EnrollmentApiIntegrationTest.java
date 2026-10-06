@@ -72,6 +72,39 @@ class EnrollmentApiIntegrationTest {
         assertThat(progress.count()).isZero();
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void stalePublishedSnapshotCannotCreateOrReactivateEnrollment(boolean cancelled) throws Exception {
+        if (cancelled) {
+            long id = enroll(1);
+            mvc.perform(patch("/api/enrollments/{id}/status", id).header("Authorization", token(1))
+                            .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"CANCELLED\"}"))
+                    .andExpect(status().isOk());
+        }
+        long before = outbox.count();
+        doThrow(new com.hunre.sharedcommon.exception.ResourceNotFoundException("khóa học", "id", 10L))
+                .when(lessons).requirePublishedCourse(10L);
+        mvc.perform(post("/api/enrollments").header("Authorization", token(1))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"courseId\":10}"))
+                .andExpect(status().isNotFound());
+        assertThat(outbox.count()).isEqualTo(before);
+        if (cancelled) assertThat(enrollments.findAll()).singleElement()
+                .satisfies(row -> assertThat(row.getStatus().name()).isEqualTo("CANCELLED"));
+        else assertThat(enrollments.count()).isZero();
+    }
+
+    @Test
+    void courseOutageDoesNotCreateEnrollmentOrOutbox() throws Exception {
+        doThrow(new com.hunre.sharedcommon.exception.BusinessException(
+                com.hunre.sharedcommon.exception.ErrorCode.EXTERNAL_SERVICE_ERROR, "Course unavailable"))
+                .when(lessons).requirePublishedCourse(10L);
+        mvc.perform(post("/api/enrollments").header("Authorization", token(1))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"courseId\":10}"))
+                .andExpect(status().isBadGateway());
+        assertThat(enrollments.count()).isZero();
+        assertThat(outbox.count()).isZero();
+    }
+
     @Test
     void ownershipAndCompletionCannotBeForged() throws Exception {
         long id = enroll(1);

@@ -141,7 +141,7 @@ Có thể produce message mẫu khi chưa chạy course-service (đổi ID phù 
 }
 ```
 
-Snapshot mẫu chỉ đủ test ghi danh; test tiến độ vẫn cần bài học thật ở course-service.
+Snapshot mẫu phải khớp với khóa học PUBLISHED thật ở course-service để test ghi danh; test tiến độ cần bài học thật thuộc khóa đó.
 
 ## 5. Postman
 
@@ -210,3 +210,10 @@ Collection Postman có 17 request, đã kiểm tra JSON và đường dẫn; ch�
 trên hệ thống Docker. Môi trường thực hiện không có lệnh Docker nên chưa xác nhận toàn
 chuỗi với MySQL/Kafka/notification chạy qua Docker Compose. Test Kafka dùng broker thật
 trong JVM; test gateway dùng HTTP thật với backend giả lập; test database dùng H2.
+
+## Xác minh nguồn trước khi ghi dữ liệu
+
+- `CourseLessonClient` chuyển tiếp Bearer token người gọi khi xác minh bài học. Học viên đã ghi danh vẫn cập nhật được tiến độ khi khóa ARCHIVED; không gửi request ẩn danh hay đi theo redirect.
+- Trước khi tạo/kích hoạt lại ghi danh, kiểm tra cả snapshot và trạng thái hiện tại qua `GET /api/courses/{id}`. Snapshot PUBLISHED cũ không đủ để ghi danh vào khóa đã ARCHIVED/DRAFT.
+- Nguồn không tìm thấy hoặc không PUBLISHED: 404. Nguồn timeout/lỗi/phản hồi sai: 502, không lưu lượt ghi danh hoặc outbox. Cần triển khai cùng bản course-service giữ quyền đọc ARCHIVED.
+- Sự kiện course-service được lưu bằng outbox để gửi bù sau lỗi Kafka. Ghi danh mới vẫn phụ thuộc khả năng truy cập course-service; đọc danh sách ghi danh không gọi lại bước xác minh này.

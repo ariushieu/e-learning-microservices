@@ -47,6 +47,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     private final CertificateRepository certificateRepository;
     private final OutboxEventRepository outboxEventRepository;
     private final CourseClient courseClient;
+    private final com.hunre.enrollmentservice.client.CourseLessonClient courseLessonClient;
 
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
@@ -66,6 +67,9 @@ public class EnrollmentServiceImpl implements EnrollmentService {
             throw new BusinessException(ErrorCode.BUSINESS_RULE_VIOLATED,
                     "Khóa học chưa được xuất bản nên không thể ghi danh");
         }
+
+        // Không cho snapshot cũ cấp quyền ghi danh khi nguồn đã ngừng nhận học viên.
+        courseLessonClient.requirePublishedCourse(courseId);
 
         // 2. Kiểm tra học viên đã đăng ký khóa học này chưa (hoặc đã bị hủy)
         Optional<Enrollment> existingOpt = enrollmentRepository.findByUserIdAndCourseId(currentUserId, courseId);
