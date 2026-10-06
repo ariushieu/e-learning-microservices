@@ -30,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Isolation;
 
 import java.util.List;
 
@@ -79,11 +80,9 @@ public class CurriculumServiceImpl implements CurriculumService {
     }
 
     @Override
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public SectionResponse createSection(Long courseId, CreateSectionRequest request, Long currentUserId, boolean isAdmin) {
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("khóa học", "id", courseId));
-        requireOwner(course, currentUserId, isAdmin);
+        Course course = lockCourse(courseId, currentUserId, isAdmin);
 
         Section section = Section.builder()
                 .course(course)
@@ -96,8 +95,9 @@ public class CurriculumServiceImpl implements CurriculumService {
     }
 
     @Override
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public SectionResponse updateSection(Long id, UpdateSectionRequest request, Long currentUserId, boolean isAdmin) {
+        lockSectionCourse(id, currentUserId, isAdmin);
         Section section = sectionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("chương học", "id", id));
         requireOwner(section.getCourse(), currentUserId, isAdmin);
@@ -110,8 +110,9 @@ public class CurriculumServiceImpl implements CurriculumService {
     }
 
     @Override
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void deleteSection(Long id, Long currentUserId, boolean isAdmin) {
+        lockSectionCourse(id, currentUserId, isAdmin);
         Section section = sectionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("chương học", "id", id));
         requireOwner(section.getCourse(), currentUserId, isAdmin);
@@ -169,8 +170,9 @@ public class CurriculumServiceImpl implements CurriculumService {
     }
 
     @Override
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public LessonResponse createLesson(Long sectionId, CreateLessonRequest request, Long currentUserId, boolean isAdmin) {
+        lockSectionCourse(sectionId, currentUserId, isAdmin);
         Section section = sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new ResourceNotFoundException("chương học", "id", sectionId));
         requireOwner(section.getCourse(), currentUserId, isAdmin);
@@ -205,8 +207,9 @@ public class CurriculumServiceImpl implements CurriculumService {
     }
 
     @Override
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public LessonResponse updateLesson(Long id, UpdateLessonRequest request, Long currentUserId, boolean isAdmin) {
+        lockLessonCourse(id, currentUserId, isAdmin);
         Lesson lesson = lessonRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("bài học", "id", id));
         requireOwner(lesson.getCourse(), currentUserId, isAdmin);
@@ -235,8 +238,9 @@ public class CurriculumServiceImpl implements CurriculumService {
     }
 
     @Override
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void deleteLesson(Long id, Long currentUserId, boolean isAdmin) {
+        lockLessonCourse(id, currentUserId, isAdmin);
         Lesson lesson = lessonRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("bài học", "id", id));
         requireOwner(lesson.getCourse(), currentUserId, isAdmin);
@@ -291,6 +295,27 @@ public class CurriculumServiceImpl implements CurriculumService {
             throw new BusinessException(ErrorCode.FORBIDDEN,
                     "Bạn không có quyền chỉnh sửa khóa học của giảng viên khác");
         }
+    }
+
+    private Course lockCourse(Long id, Long currentUserId, boolean isAdmin) {
+        // Khóa cha trước khi đọc/sửa bài; READ_COMMITTED giúp lần đọc sau khi chờ khóa
+        // thấy dữ liệu mới nhất, không giữ snapshot từ truy vấn tìm courseId trước đó.
+        Course course = courseRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException("khóa học", "id", id));
+        requireOwner(course, currentUserId, isAdmin);
+        return course;
+    }
+
+    private void lockSectionCourse(Long id, Long currentUserId, boolean isAdmin) {
+        Long courseId = sectionRepository.findCourseIdById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("chương học", "id", id));
+        lockCourse(courseId, currentUserId, isAdmin);
+    }
+
+    private void lockLessonCourse(Long id, Long currentUserId, boolean isAdmin) {
+        Long courseId = lessonRepository.findCourseIdById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("bài học", "id", id));
+        lockCourse(courseId, currentUserId, isAdmin);
     }
 
     private void updateCourseStats(Long courseId) {

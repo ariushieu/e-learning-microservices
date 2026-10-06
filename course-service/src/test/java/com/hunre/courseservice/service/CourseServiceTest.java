@@ -233,7 +233,7 @@ class CourseServiceTest {
                 .build();
 
         UpdateCourseRequest request = UpdateCourseRequest.builder().categoryId(1L).title("New").build();
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(course));
 
         assertThatThrownBy(() -> courseService.updateCourse(1L, request, 999L, false))
                 .isInstanceOf(BusinessException.class)
@@ -250,7 +250,7 @@ class CourseServiceTest {
                 .studentCount(0)
                 .build();
 
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(course));
 
         assertThatThrownBy(() -> courseService.deleteCourse(1L, 999L, false))
                 .isInstanceOf(BusinessException.class)
@@ -271,7 +271,7 @@ class CourseServiceTest {
                 .title("New Title")
                 .build();
 
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(course));
 
         assertThatThrownBy(() -> courseService.updateCourse(1L, request, 50L, false))
                 .isInstanceOf(BusinessException.class)
@@ -292,7 +292,7 @@ class CourseServiceTest {
                 .status(CourseStatus.PUBLISHED)
                 .build();
 
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(course));
         when(courseRepository.save(any(Course.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         CourseResponse response = courseService.changeCourseStatus(1L, request, 50L, false);
@@ -310,7 +310,7 @@ class CourseServiceTest {
                 .status(CourseStatus.PUBLISHED)
                 .build();
 
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(course));
 
         assertThatThrownBy(() -> courseService.deleteCourse(1L, 50L, false))
                 .isInstanceOf(BusinessException.class)
@@ -329,7 +329,7 @@ class CourseServiceTest {
                 .studentCount(5)
                 .build();
 
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(course));
 
         assertThatThrownBy(() -> courseService.deleteCourse(1L, 50L, false))
                 .isInstanceOf(BusinessException.class)
@@ -348,7 +348,7 @@ class CourseServiceTest {
                 .studentCount(0)
                 .build();
 
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(course));
         when(courseRepository.deleteEmptyDraft(1L)).thenReturn(1);
 
         courseService.deleteCourse(1L, 50L, false);
@@ -367,7 +367,7 @@ class CourseServiceTest {
                 .totalLessons(5)
                 .build();
 
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(course));
         when(courseRepository.save(any(Course.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         ChangeCourseStatusRequest request = new ChangeCourseStatusRequest();
@@ -389,7 +389,7 @@ class CourseServiceTest {
                 .totalLessons(5)
                 .build();
 
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(course));
         when(courseRepository.save(any(Course.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         ChangeCourseStatusRequest request = new ChangeCourseStatusRequest();
@@ -411,7 +411,7 @@ class CourseServiceTest {
                 .totalLessons(5)
                 .build();
 
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(course));
         when(courseRepository.save(any(Course.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         ChangeCourseStatusRequest request = new ChangeCourseStatusRequest();
@@ -442,7 +442,7 @@ class CourseServiceTest {
                 .slug("ten-moi")
                 .build();
 
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(course));
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
         when(courseRepository.existsBySlugAndIdNot("ten-moi", 1L)).thenReturn(false);
         when(courseRepository.save(any(Course.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -472,7 +472,7 @@ class CourseServiceTest {
                 .slug("ten-moi")
                 .build();
 
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(course));
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
         when(courseRepository.existsBySlugAndIdNot("ten-moi", 1L)).thenReturn(false);
         when(courseRepository.save(any(Course.class))).thenAnswer(invocation -> invocation.getArgument(0));

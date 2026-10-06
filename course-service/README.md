@@ -191,6 +191,13 @@ thấy khóa được giữ ở `elearning.enrollment.events.DLT`; không ghi s�
 
 ## Kiểm tra
 
+Các thao tác sửa khóa học, đổi trạng thái và sửa chương/bài khóa hàng `courses`
+trước khi ghi dữ liệu. Khi nhiều request cùng thêm/xóa/sửa bài, mỗi request đọc lại
+số bài và thời lượng sau khi lấy được khóa, tránh ghi đè số liệu và tránh deadlock
+do cùng chèn bài rồi mới nâng khóa ngoại lên khóa ghi. Giao dịch ghi giáo trình dùng
+`READ_COMMITTED` để truy vấn bài và tính tổng không dùng snapshot cũ từ bước tìm
+courseId. Sự kiện outbox được lưu trong cùng giao dịch với số liệu đã cập nhật.
+
 ```powershell
 .\mvnw.cmd -pl course-service -am test
 .\mvnw.cmd clean verify
@@ -205,6 +212,11 @@ bộ để kiểm tra phân trang, token, ghi danh hủy, timeout, redirect và 
 enrollment backend giả lập để kiểm tra đường dẫn cấu hình, chuyển tiếp token và
 quyền đọc bài học/đề cương của ghi danh ACTIVE, COMPLETED, CANCELLED hoặc chưa ghi danh.
 Test cũng đối chiếu đường dẫn mặc định production với cấu hình đã kiểm thử.
+
+`CurriculumConcurrencyIntegrationTest` kiểm tra tạo bài đồng thời với sửa khóa,
+sửa thời lượng cùng một bài, xóa nhiều bài, xóa chương đồng thời với thêm bài ở
+chương khác và nhận sự kiện ghi danh trong lúc tạo bài. Đối chiếu số liệu trên
+khóa với dữ liệu bài thực tế và snapshot outbox.
 
 `EnrollmentEventIntegrationTest` kiểm tra số đếm, rollback cả sổ học viên, gửi trùng đồng thời,
 khác eventId/enrollmentId nhưng cùng người, cùng người ở hai khóa,

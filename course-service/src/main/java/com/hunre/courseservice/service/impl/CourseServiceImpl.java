@@ -182,7 +182,7 @@ public class CourseServiceImpl implements CourseService {
     @Override
     @Transactional
     public CourseResponse updateCourse(Long id, UpdateCourseRequest request, Long currentUserId, boolean isAdmin) {
-        Course course = courseRepository.findById(id)
+        Course course = courseRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResourceNotFoundException("khóa học", "id", id));
 
         if (currentUserId == null || (!isAdmin && !currentUserId.equals(course.getInstructorId()))) {
@@ -228,7 +228,7 @@ public class CourseServiceImpl implements CourseService {
     @Override
     @Transactional
     public CourseResponse changeCourseStatus(Long id, ChangeCourseStatusRequest request, Long currentUserId, boolean isAdmin) {
-        Course course = courseRepository.findById(id)
+        Course course = courseRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResourceNotFoundException("khóa học", "id", id));
 
         if (currentUserId == null || (!isAdmin && !currentUserId.equals(course.getInstructorId()))) {
@@ -259,7 +259,7 @@ public class CourseServiceImpl implements CourseService {
     @Override
     @Transactional
     public void deleteCourse(Long id, Long currentUserId, boolean isAdmin) {
-        Course course = courseRepository.findById(id)
+        Course course = courseRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResourceNotFoundException("khóa học", "id", id));
 
         if (currentUserId == null || (!isAdmin && !currentUserId.equals(course.getInstructorId()))) {
