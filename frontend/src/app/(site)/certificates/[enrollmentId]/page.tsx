@@ -19,7 +19,7 @@ const printCss = `
 @media print {
   body header, body footer { display: none !important; }
   body main { padding: 0 !important; max-width: none !important; }
-  body { background: #fff !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  body { background: white !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 }
 `;
 
@@ -50,6 +50,7 @@ export default async function CertificatePage({ params }: PageProps<"/certificat
       <style>{printCss}</style>
       <div className="print:hidden">
         <PageHeader
+          crumbs={[{ href: "/my-courses", label: "Khóa học của tôi" }, { label: "Chứng chỉ" }]}
           eyebrow="Chứng chỉ"
           title={certificate.courseTitle}
           description="Chứng chỉ hoàn thành khóa học của bạn. Bấm “In chứng chỉ” để in hoặc lưu thành PDF."

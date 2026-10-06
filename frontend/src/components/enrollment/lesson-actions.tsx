@@ -64,8 +64,8 @@ export function LessonActions({
 
   if (status === "COMPLETED") {
     return (
-      <span className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-emerald-50 px-4 text-sm font-medium text-emerald-700 sm:w-auto dark:bg-emerald-500/10 dark:text-emerald-400">
-        <CircleCheckIcon className="size-4" /> Đã hoàn thành
+      <span className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-achievement-soft px-4 text-sm font-medium text-achievement-strong sm:w-auto">
+        <CircleCheckIcon className="size-4 text-achievement" aria-hidden /> Đã hoàn thành
       </span>
     );
   }

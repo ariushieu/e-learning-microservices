@@ -1,5 +1,6 @@
-import { DownloadIcon, ExternalLinkIcon, FileDownIcon, InfoIcon, PaperclipIcon } from "lucide-react";
+import { CirclePlayIcon, DownloadIcon, ExternalLinkIcon, FileDownIcon, InfoIcon, PaperclipIcon } from "lucide-react";
 import type { ReactNode } from "react";
+import { IconTile } from "@/components/common/icon-tile";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import type { Lesson } from "@/lib/types";
@@ -48,7 +49,7 @@ function VideoPlayer({ url, title }: { url: string; title: string }) {
   const yt = youtubeId(url);
   if (yt) {
     return (
-      <div className="aspect-video w-full overflow-hidden rounded-xl bg-black">
+      <div className="aspect-video w-full overflow-hidden rounded-xl bg-sidebar shadow-card ring-1 ring-border">
         <iframe
           src={`https://www.youtube-nocookie.com/embed/${yt}`}
           title={title}
@@ -61,10 +62,11 @@ function VideoPlayer({ url, title }: { url: string; title: string }) {
     );
   }
   if (/\.(mp4|webm)([?#].*)?$/i.test(url)) {
-    return <video key={url} src={url} controls className="aspect-video w-full rounded-xl bg-black" />;
+    return <video key={url} src={url} controls className="aspect-video w-full rounded-xl bg-sidebar shadow-card ring-1 ring-border" />;
   }
   return (
-    <div className="flex aspect-video w-full flex-col items-center justify-center gap-4 rounded-xl border bg-muted/40 px-6 text-center">
+    <div className="flex aspect-video w-full flex-col items-center justify-center gap-4 rounded-xl bg-muted px-6 text-center ring-1 ring-border">
+      <IconTile icon={CirclePlayIcon} size="lg" />
       <p className="text-sm text-muted-foreground">Video được lưu trên trang ngoài.</p>
       <ExternalButton href={url}>Mở video</ExternalButton>
     </div>
@@ -73,12 +75,10 @@ function VideoPlayer({ url, title }: { url: string; title: string }) {
 
 function FileCard({ href, title }: { href: string; title: string }) {
   return (
-    <div className="flex flex-wrap items-center gap-4 rounded-xl border bg-card p-4">
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-        <FileDownIcon className="size-5" />
-      </div>
+    <div className="flex flex-wrap items-center gap-4 rounded-xl bg-card p-4 shadow-card ring-1 ring-border">
+      <IconTile icon={FileDownIcon} />
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium">{title}</p>
+        <p className="truncate text-subheading">{title}</p>
         <p className="text-sm text-muted-foreground">Tài liệu của bài học</p>
       </div>
       <Button asChild>
@@ -116,16 +116,16 @@ export function LessonContent({ lesson }: { lesson: Lesson }) {
           <ExternalButton href={url}>Mở liên kết</ExternalButton>
         </div>
       )}
-      {lesson.content && <div className="lesson-content max-w-3xl text-[15px] text-foreground/90">{lesson.content}</div>}
+      {lesson.content && <div className="lesson-content max-w-prose text-base text-foreground/90">{lesson.content}</div>}
       {lesson.resources.length > 0 && (
         <section className="space-y-3">
-          <h3 className="text-sm font-semibold">Tài liệu đính kèm</h3>
+          <h3 className="text-subheading">Tài liệu đính kèm</h3>
           <ul className="grid gap-2 sm:grid-cols-2">
             {lesson.resources.map((r) => {
               const href = safeUrl(r.fileUrl);
               return (
-                <li key={r.id} className="flex items-center gap-3 rounded-lg border bg-card px-3 py-2.5 text-sm">
-                  <PaperclipIcon className="size-4 shrink-0 text-muted-foreground" />
+                <li key={r.id} className="flex items-center gap-3 rounded-lg bg-card px-3 py-2.5 text-sm ring-1 ring-border">
+                  <PaperclipIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                   <span className="min-w-0 flex-1 truncate">{r.name}</span>
                   {href && (
                     <a
