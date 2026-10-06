@@ -1,5 +1,6 @@
 package com.hunre.notificationservice.consumer;
 
+import com.hunre.notificationservice.repository.ProcessedEventRepository;
 import com.hunre.sharedcommon.event.KafkaTopics;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -7,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
@@ -20,8 +22,11 @@ import tools.jackson.databind.ObjectMapper;
  * chính nội dung message — thứ đã được
  * {@code DomainEventSerializationTest} bên shared-common khóa lại.
  *
- * <p>Message hỏng không được ném ra ngoài: ném thì Kafka gửi lại mãi và consumer đứng yên
- * tại chỗ đó, không nhận được sự kiện nào sau nó nữa.
+ * <p><b>Lỗi thì ném ra, không nuốt.</b> Bản trước bắt mọi exception, ghi log rồi đi tiếp —
+ * MySQL chập chờn vài giây là sự kiện trong khoảng đó mất hẳn, vì Kafka coi như đã nhận
+ * xong. Giờ exception đi lên {@code DefaultErrorHandler} trong
+ * {@code KafkaErrorHandlingConfig}: lỗi tạm thời thì thử lại, message hỏng thì sang topic
+ * {@code .DLT}. Consumer vẫn không bị kẹt, vì message hỏng chỉ đi qua một lần.
  */
 @Component
 @RequiredArgsConstructor
@@ -30,6 +35,7 @@ public class KafkaEventConsumer {
     private static final Logger log = LoggerFactory.getLogger(KafkaEventConsumer.class);
 
     private final EventProcessor eventProcessor;
+    private final ProcessedEventRepository processedEventRepository;
     private final ObjectMapper objectMapper;
 
     @KafkaListener(
@@ -46,22 +52,17 @@ public class KafkaEventConsumer {
                           @org.springframework.messaging.handler.annotation.Header(
                                   name = "kafka_receivedTopic", required = false) String topic) {
 
-        String eventId;
-        String eventType;
-
+        JsonNode node;
         try {
-            JsonNode node = objectMapper.readTree(payload);
-            eventId = text(node, "eventId");
-            eventType = text(node, "eventType");
-        } catch (RuntimeException ex) {
-            log.error("Message trên topic {} không phải JSON hợp lệ, bỏ qua: {}",
-                    topic, ex.getMessage());
-            return;
+            node = objectMapper.readTree(payload);
+        } catch (JacksonException ex) {
+            throw new InvalidEventException("Message trên topic " + topic + " không phải JSON hợp lệ", ex);
         }
 
+        String eventId = text(node, "eventId");
+        String eventType = text(node, "eventType");
         if (eventId == null || eventType == null) {
-            log.error("Message trên topic {} thiếu eventId hoặc eventType, bỏ qua", topic);
-            return;
+            throw new InvalidEventException("Message trên topic " + topic + " thiếu eventId hoặc eventType");
         }
 
         try {
@@ -69,12 +70,16 @@ public class KafkaEventConsumer {
         } catch (DataIntegrityViolationException ex) {
             // Kafka bảo đảm at-least-once nên nhận lại một sự kiện đã xử lý là chuyện
             // bình thường, không phải lỗi. Đây chính là lúc bảng processed_events làm việc.
-            log.debug("Sự kiện {} đã xử lý trước đó, bỏ qua", eventId);
-        } catch (RuntimeException ex) {
-            // Không ném tiếp: ném thì Kafka gửi lại đúng message này mãi và mọi sự kiện
-            // phía sau bị chặn lại. Ghi log để còn lần ra, rồi đi tiếp.
-            log.error("Lỗi khi xử lý sự kiện {} loại {} trên topic {}",
-                    eventId, eventType, topic, ex);
+            //
+            // Nhưng phải hỏi lại sổ cho chắc: lỗi ràng buộc cũng có thể đến từ bảng
+            // notifications (tiêu đề quá dài, thiếu userId). Coi nhầm loại đó là "trùng" thì
+            // transaction đã rollback, sổ không có dòng nào, và thông báo mất không dấu vết.
+            if (processedEventRepository.existsById(eventId)) {
+                log.debug("Sự kiện {} đã xử lý trước đó, bỏ qua", eventId);
+                return;
+            }
+            throw new InvalidEventException(
+                    "Sự kiện " + eventId + " loại " + eventType + " vi phạm ràng buộc dữ liệu", ex);
         }
     }
 
