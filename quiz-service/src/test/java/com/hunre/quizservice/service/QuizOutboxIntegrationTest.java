@@ -1,5 +1,6 @@
 package com.hunre.quizservice.service;
 
+import com.hunre.quizservice.client.EnrollmentAccessClient;
 import com.hunre.quizservice.dto.SubmitAnswerItemRequest;
 import com.hunre.quizservice.dto.SubmitQuizAttemptRequest;
 import com.hunre.quizservice.entity.AnswerOption;
@@ -16,6 +17,7 @@ import com.hunre.sharedcommon.event.QuizGradedEvent;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
@@ -24,9 +26,13 @@ import java.util.Set;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest(properties = "app.outbox.publisher.enabled=false")
 class QuizOutboxIntegrationTest {
+
+    @MockitoBean
+    private EnrollmentAccessClient enrollmentAccessClient;
 
     @Autowired
     private QuizRepository quizRepository;
@@ -62,7 +68,8 @@ class QuizOutboxIntegrationTest {
         quiz.addQuestion(unanswered);
         quiz = quizRepository.saveAndFlush(quiz);
 
-        Long attemptId = quizAttemptService.startAttempt(quiz.getId(), 99L).getId();
+        when(enrollmentAccessClient.hasEnrollment(12L, 99L, "Bearer student-token")).thenReturn(true);
+        Long attemptId = quizAttemptService.startAttempt(quiz.getId(), 99L, false, "Bearer student-token").getId();
         SubmitQuizAttemptRequest request = SubmitQuizAttemptRequest.builder()
                 .answers(List.of(SubmitAnswerItemRequest.builder()
                         .questionId(question.getId())
