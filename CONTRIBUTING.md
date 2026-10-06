@@ -224,6 +224,9 @@ merge sớm, và nhánh của bạn không bị trôi xa khỏi `main`.
 squash, GitHub lấy tiêu đề pull request làm tiêu đề commit trên `main`. Viết tiêu đề
 tiếng Việt nghĩa là đưa tiếng Việt thẳng vào lịch sử `main`.
 
+Đặt sai thì cứ sửa tiêu đề trên GitHub, check **Pull request title** tự chạy lại ngay — không
+cần push commit rỗng để "chạy lại CI".
+
 Phần mô tả pull request nên có:
 
 - Thay đổi những gì và vì sao

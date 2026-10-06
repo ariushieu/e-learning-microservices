@@ -58,6 +58,12 @@ public class Lesson {
     @Column(name = "title", nullable = false, length = 200)
     private String title;
 
+    @Column(name = "content", columnDefinition = "MEDIUMTEXT")
+    private String content;
+
+    @Column(name = "content_url", length = 500)
+    private String contentUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, length = 20)
     @Builder.Default

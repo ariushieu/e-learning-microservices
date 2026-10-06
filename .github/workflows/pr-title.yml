@@ -1,0 +1,32 @@
+# Kiểm tiêu đề pull request, vì merge kiểu squash lấy nó làm tiêu đề commit trên main.
+#
+# Tách khỏi ci.yml vì cần chạy cả khi chỉ SỬA tiêu đề (sự kiện "edited"). Để trong ci.yml thì
+# sửa tiêu đề không chạy lại gì, check đỏ của tiêu đề cũ nằm đó mãi; còn thêm "edited" vào
+# ci.yml thì mỗi lần sửa mô tả PR lại build lại cả hệ thống và hủy lần chạy đang dở.
+# Bấm "Re-run" cũng không cứu được: lần chạy lại dùng nguyên tiêu đề lúc sự kiện cũ xảy ra.
+name: PR title
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pr-title:
+    name: Pull request title
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Check pull request title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: bash scripts/check-commit-subject.sh "$PR_TITLE" "Tiêu đề pull request"

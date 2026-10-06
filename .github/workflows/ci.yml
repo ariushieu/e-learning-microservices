@@ -184,7 +184,7 @@ jobs:
         run: bash scripts/check-security-config.sh
 
   # Chặn commit sai quy ước ở tầng pull request, phòng khi ai đó chưa bật git hook.
-  # Tiêu đề PR cũng được kiểm tra vì merge kiểu squash lấy nó làm tiêu đề commit trên main.
+  # Tiêu đề PR kiểm ở workflow riêng pr-title.yml, vì nó phải chạy lại mỗi khi sửa tiêu đề.
   commit-style:
     name: Commit message style
     if: github.event_name == 'pull_request'
@@ -194,11 +194,6 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 0          # cần đủ lịch sử để liệt kê commit của nhánh
-
-      - name: Check pull request title
-        env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
-        run: bash scripts/check-commit-subject.sh "$PR_TITLE" "Tiêu đề pull request"
 
       - name: Check commit subjects
         env:

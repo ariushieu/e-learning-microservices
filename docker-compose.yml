@@ -198,6 +198,7 @@ services:
     container_name: elearning-course-service
     environment:
       <<: *backend-env
+      ENROLLMENT_SERVICE_URL: http://enrollment-service:8083
     depends_on: *backend-depends
     healthcheck:
       <<: *healthcheck-timing

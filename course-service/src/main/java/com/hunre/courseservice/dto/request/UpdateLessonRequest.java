@@ -21,6 +21,12 @@ public class UpdateLessonRequest {
     @Size(max = 200, message = "Tiêu đề bài học không được vượt quá 200 ký tự")
     private String title;
 
+    @Size(max = 1000000, message = "Nội dung bài học không được vượt quá 1000000 ký tự")
+    private String content;
+
+    @Size(max = 500, message = "Đường dẫn nội dung không được vượt quá 500 ký tự")
+    private String contentUrl;
+
     @Builder.Default
     private LessonType type = LessonType.VIDEO;
 
