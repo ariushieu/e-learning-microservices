@@ -1,85 +1,36 @@
 package com.hunre.courseservice.event;
 
 import com.hunre.courseservice.entity.Course;
+import com.hunre.courseservice.entity.OutboxEvent;
+import com.hunre.courseservice.repository.OutboxEventRepository;
 import com.hunre.sharedcommon.event.CourseUpdatedEvent;
-import com.hunre.sharedcommon.event.KafkaTopics;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaTemplate;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityManager;
 
-/**
- * Gửi thông tin trạng thái khóa học lên Kafka topic {@link KafkaTopics#COURSE_EVENTS}.
- *
- * <p>Tự chuyển đổi sự kiện sang JSON bằng {@link ObjectMapper} (Jackson 3 của Spring Boot 4)
- * và gửi dưới dạng chuỗi UTF-8 qua {@code KafkaTemplate<String, String>}.
- */
+/** Lưu sự kiện cùng giao dịch khóa học; worker chỉ gửi các hàng đã commit. */
 @Component
-@Slf4j
+@RequiredArgsConstructor
 public class CourseEventPublisher {
-
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final OutboxEventRepository repository;
     private final ObjectMapper objectMapper;
+    private final EntityManager entityManager;
 
-    public CourseEventPublisher(@Autowired(required = false) KafkaTemplate<String, String> kafkaTemplate,
-                                ObjectMapper objectMapper) {
-        this.kafkaTemplate = kafkaTemplate;
-        this.objectMapper = objectMapper;
-    }
-
-    /**
-     * Phát sự kiện {@link CourseUpdatedEvent} chứa ảnh chụp toàn bộ trạng thái hiện tại của khóa học.
-     *
-     * @param course thực thể khóa học
-     */
+    @Transactional(propagation = Propagation.MANDATORY)
     public void publishCourseUpdated(Course course) {
-        if (course == null) {
-            return;
-        }
-
-        CourseUpdatedEvent event = CourseUpdatedEvent.of(
-                course.getId(),
-                course.getTitle(),
-                course.getSlug(),
-                course.getThumbnailUrl(),
-                course.getInstructorId(),
-                course.getInstructorName(),
-                course.getTotalLessons(),
-                course.getStatus().name()
-        );
-
-        String topic = KafkaTopics.COURSE_EVENTS;
-        // Khóa message là courseId để mọi phiên bản của cùng một khóa học tới đúng thứ tự
-        String key = String.valueOf(course.getId());
-
-        log.info("Phát sự kiện {} lên topic {} với key {}: status={}, totalLessons={}",
-                event.eventType(), topic, key, event.status(), event.totalLessons());
-
-        if (kafkaTemplate == null) {
-            log.warn("KafkaTemplate không khả dụng, bỏ qua gửi sự kiện {} sang Kafka", event.eventType());
-            return;
-        }
-
-        String payload;
-        try {
-            payload = objectMapper.writeValueAsString(event);
-        } catch (RuntimeException ex) {
-            log.error("Không chuyển được sự kiện {} sang JSON", event.eventType(), ex);
-            return;
-        }
-
-        try {
-            kafkaTemplate.send(topic, key, payload).whenComplete((result, ex) -> {
-                if (ex != null) {
-                    log.error("Lỗi khi gửi sự kiện {} lên Kafka", event.eventType(), ex);
-                } else {
-                    log.debug("Gửi thành công sự kiện {} offset={}", event.eventType(),
-                            result.getRecordMetadata().offset());
-                }
-            });
-        } catch (Exception ex) {
-            log.error("Không thể gửi sự kiện {} sang Kafka", event.eventType(), ex);
-        }
+        if (course == null) return;
+        // Ghi thay đổi và giữ khóa hàng course trước khi cấp id outbox, tránh đảo thứ tự
+        // hai giao dịch đồng thời cập nhật cùng một khóa học.
+        entityManager.flush();
+        CourseUpdatedEvent event = CourseUpdatedEvent.of(course.getId(), course.getTitle(), course.getSlug(),
+                course.getThumbnailUrl(), course.getInstructorId(), course.getInstructorName(),
+                course.getTotalLessons(), course.getStatus().name());
+        // Không nuốt lỗi: nếu không lưu được sự kiện thì thay đổi khóa học cũng phải rollback.
+        repository.save(OutboxEvent.builder().eventId(event.eventId()).aggregateType("COURSE")
+                .aggregateId(String.valueOf(course.getId())).eventType(event.eventType())
+                .payload(objectMapper.writeValueAsString(event)).build());
     }
 }
