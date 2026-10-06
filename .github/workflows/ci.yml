@@ -45,6 +45,38 @@ jobs:
   # Test của các service chạy trên H2 với ddl-auto=create-drop, tức schema được dựng TỪ
   # entity, nên entity lệch migration bao nhiêu thì test vẫn xanh. Job này bắt đúng chỗ đó:
   # database rỗng, Flyway dựng schema từ migration, Hibernate validate đối chiếu lại.
+  # Frontend Next.js: cài đúng phiên bản trong pnpm-lock.yaml, kiểm kiểu, lint rồi build thật.
+  # Build bắt được lỗi mà tsc bỏ sót, ví dụ trang dùng useSearchParams mà thiếu Suspense.
+  frontend:
+    name: Frontend (Next.js)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm next typegen && pnpm tsc --noEmit
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+
   schema:
     name: Schema matches entities (MySQL)
     runs-on: ubuntu-latest

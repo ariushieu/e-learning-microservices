@@ -106,6 +106,19 @@ else
     FAILED=1
 fi
 
+# Frontend chỉ kiểm khi đang chạy trong compose: lập trình hằng ngày thường chạy `pnpm dev`
+# riêng hoặc không chạy, khi đó bỏ qua chứ không báo lỗi.
+FRONTEND="${FRONTEND:-http://localhost:3000}"
+if docker compose ps --status running --services 2>/dev/null | grep -qx frontend; then
+    echo "frontend"
+    check "GET /healthz" 200 "$FRONTEND/healthz"
+    check "GET / (trang danh mục khóa học)" 200 "$FRONTEND/"
+    # Đi qua route /api của Next.js rồi sang gateway: bắt lỗi GATEWAY_URL sai trong compose,
+    # thứ mà trang chủ không lộ ra nếu nó chỉ hiện "không tải được".
+    check "GET /api/courses qua Next.js → gateway" 200 "$FRONTEND/api/courses"
+    check "GET /my-courses chưa đăng nhập phải chuyển sang /login" 307 "$FRONTEND/my-courses"
+fi
+
 rm -f /tmp/smoke-body.$$
 
 # Dọn tài khoản vừa tạo nếu MySQL chạy trong compose, để chạy nhiều lần không để lại rác trong
