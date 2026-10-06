@@ -47,7 +47,7 @@ class EnrollmentAccessClientTest {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         executor = Executors.newCachedThreadPool();
         server.setExecutor(executor);
-        server.createContext("/api/enrollments/my-courses", exchange -> {
+        server.createContext("/api/enrollments", exchange -> {
             calls.add(exchange.getRequestURI().toString());
             tokens.add(exchange.getRequestHeaders().getFirst("Authorization"));
             if (delay > 0) {
@@ -64,7 +64,7 @@ class EnrollmentAccessClientTest {
         });
         server.start();
         client = new EnrollmentAccessClient(provider, JsonMapper.builder().build(),
-                "http://127.0.0.1:" + server.getAddress().getPort(), "/api/enrollments/my-courses", 500);
+                "http://127.0.0.1:" + server.getAddress().getPort(), "/api/enrollments", 500);
     }
 
     @AfterEach

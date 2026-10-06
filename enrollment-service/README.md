@@ -87,7 +87,9 @@ Không giữ alias đường dẫn cũ. Frontend/collection phải chuyển sang
 Gateway thêm route `enrollment-lesson-progress`, `order=-10`, chỉ khớp PUT và
 `/api/lessons/{lessonId}/progress`, đích là enrollment-service. GET bài học và các đường
 dẫn course khác giữ route course-service. Không mở công khai PUT.
-Phải triển khai gateway cùng thay đổi API này. Nhóm trưởng cần review route trước khi merge.
+Phải triển khai gateway và course-service cùng thay đổi API này. Course-service dùng
+`/api/enrollments` để kiểm tra quyền đọc nội dung; bỏ hoặc cập nhật biến môi trường
+`ENROLLMENT_LIST_PATH` nếu đang trỏ đường dẫn cũ. Nhóm trưởng cần review route trước khi merge.
 Phần consumer, kiểm tra bài học và chuẩn hóa API được chia thành commit riêng để dễ review.
 Việc chuẩn hóa API cần được nhóm thống nhất trước khi merge và triển khai.
 
@@ -116,6 +118,10 @@ FROM course_snapshots WHERE course_id = 3;
 7. Chuyển khóa sang ARCHIVED; dùng học viên khác ghi danh: bị từ chối.
 8. Khóa PUBLISHED: gọi PUT tiến độ, GET tiến độ và GET chứng chỉ sau khi học đủ bài.
 9. Kiểm tra `outbox_events.published_at` và thông báo của học viên để xác nhận chuỗi liên service.
+
+Khóa đã xuất bản trước khi có sự kiện `course.updated` có thể chưa có snapshot.
+Giảng viên cần sửa/lưu khóa đang xuất bản hoặc xuất bản lại để phát sự kiện đồng bộ;
+sau đó kiểm tra snapshot trước khi ghi danh. Không cần chèn snapshot bằng SQL.
 
 Có thể produce message mẫu khi chưa chạy course-service (đổi ID phù hợp môi trường):
 
@@ -173,13 +179,18 @@ Trên Windows dùng `mvnw.cmd` thay cho `./mvnw`.
   backend giả lập xác nhận đúng service, URL, query, body và token. PUT thiếu token trả 401;
   GET bài học công khai vẫn đến course-service.
 - Test cũ của nghiệp vụ, client kiểm bài học và outbox tiếp tục chạy.
+- `EnrollmentContentAccessIntegrationTest` ở course-service: client HTTP thật dùng
+  đường dẫn `/api/enrollments`; ghi danh ACTIVE/COMPLETED đọc được nội dung bài học
+  và đề cương, CANCELLED/chưa ghi danh không được lộ nội dung. Đối chiếu cả mặc định
+  production để tránh test dùng đúng URL nhưng cấu hình triển khai vẫn dùng URL cũ.
 
 Test tự động không thay thế kiểm thử toàn bộ Docker/MySQL/notification. Không sửa entity
 hay migration đã merge trong nhiệm vụ này; bước MySQL thật ở trên vẫn cần trước buổi demo.
 
 ### Kết quả kiểm tra local ngày 06/10/2026
 
-Maven 3.9.16 / JDK 21 chạy `clean verify`: **BUILD SUCCESS**, 333 test, 0 failure,
+Maven 3.9.16 / JDK 21 chạy `clean verify` sau khi đồng bộ main (gồm #37, #42):
+**BUILD SUCCESS**, 419 test, 0 failure,
 0 error, 0 skipped. Đã build cả 8 module của reactor.
 
 | Module | Test đạt |
@@ -187,10 +198,13 @@ Maven 3.9.16 / JDK 21 chạy `clean verify`: **BUILD SUCCESS**, 333 test, 0 fail
 | shared-common | 77 |
 | api-gateway | 21 |
 | auth-service | 32 |
-| course-service | 73 |
+| course-service | 145 |
 | enrollment-service | 65 |
-| quiz-service | 34 |
+| quiz-service | 48 |
 | notification-service | 31 |
+
+Test hồi quy truy cập nội dung đã chạy trước và sau bản sửa: cấu hình URL cũ gây
+4 ca lỗi `502`; đổi sang `/api/enrollments` thì cả 5 ca đạt (gồm kiểm tra cấu hình).
 
 Collection Postman có 17 request, đã kiểm tra JSON và đường dẫn; chưa chạy Postman Runner
 trên hệ thống Docker. Môi trường thực hiện không có lệnh Docker nên chưa xác nhận toàn
