@@ -10,8 +10,8 @@ MySQL/Flyway; JWT và hợp đồng sự kiện dùng từ `shared-common`.
 - `CourseSnapshotConsumer` nhận `course.updated` trên `elearning.course.events`, thêm hoặc
   thay thế toàn bộ snapshot theo `courseId`, gồm trạng thái và tổng số bài học.
 - Năm đường dẫn enrollment/progress đã chuẩn hóa; gateway có route riêng cho PUT tiến độ.
-- Danh tính lấy từ JWT. Endpoint ghi yêu cầu `ROLE_STUDENT`; người có nhiều vai trò vẫn
-  dùng được nếu có vai trò học viên. Không cho thao tác thay học viên khác.
+- Danh tính lấy từ JWT. Mọi tài khoản đã đăng nhập được học trên lượt ghi danh của chính mình,
+  kể cả giảng viên/admin. Không có quyền đọc, sửa hoặc xóa thay người khác.
 
 ## 2. Luồng đồng bộ khóa học
 
@@ -88,8 +88,8 @@ Gateway thêm route `enrollment-lesson-progress`, `order=-10`, chỉ khớp PUT 
 `/api/lessons/{lessonId}/progress`, đích là enrollment-service. GET bài học và các đường
 dẫn course khác giữ route course-service. Không mở công khai PUT.
 Phải triển khai gateway cùng thay đổi API này. Nhóm trưởng cần review route trước khi merge.
-Phân công yêu cầu phần API mở PR riêng với phần consumer; code hiện tại chuẩn bị tại local,
-chưa có xác nhận review hoặc triển khai chung.
+Phần consumer, kiểm tra bài học và chuẩn hóa API được chia thành commit riêng để dễ review.
+Việc chuẩn hóa API cần được nhóm thống nhất trước khi merge và triển khai.
 
 ## 4. Chạy và kiểm tra thủ công
 
@@ -147,8 +147,8 @@ Import `docs/postman/enrollment-service.postman_collection.json`.
 - Chạy từng thư mục theo trạng thái. Chứng chỉ chỉ trả 200 sau khi hoàn thành tất cả bài.
 - Thư mục hủy dùng lượt chưa COMPLETED. Thư mục xóa đặt riêng vì xóa cả tiến độ/chứng chỉ
   của tài khoản đang đăng nhập trong khóa đã chọn.
-- Thử quyền sở hữu bằng học viên thứ hai; thử sai vai trò bằng tài khoản chỉ có
-  `ROLE_INSTRUCTOR`. Không lưu mật khẩu/token thật vào file collection trong Git.
+- Thử quyền sở hữu bằng tài khoản thứ hai, kể cả giảng viên/admin. Mọi vai trò đều được học
+  trên lượt ghi danh của mình; không được sửa hộ người khác. Không lưu mật khẩu/token thật vào Git.
 
 ## 6. Kiểm thử tự động
 
@@ -167,7 +167,8 @@ Trên Windows dùng `mvnw.cmd` thay cho `./mvnw`.
   nhận trùng, ghi đè cả trường null, archive chặn ghi danh, message hỏng không chặn message
   sau, lỗi tạm thời được retry trước snapshot tiếp theo.
 - `EnrollmentApiIntegrationTest`: JWT thật + MVC + service + H2; danh tính từ token,
-  ID bài từ URL, quyền sở hữu, đầu vào lỗi, không tự hoàn thành, vai trò học viên.
+  ID bài từ URL, quyền sở hữu, đầu vào lỗi, không tự hoàn thành; giảng viên/admin học được
+  nhưng không có quyền sửa lượt ghi danh của người khác.
 - `EnrollmentRoutingIntegrationTest`: gọi HTTP qua gateway thật ở cổng ngẫu nhiên;
   backend giả lập xác nhận đúng service, URL, query, body và token. PUT thiếu token trả 401;
   GET bài học công khai vẫn đến course-service.
@@ -178,18 +179,18 @@ hay migration đã merge trong nhiệm vụ này; bước MySQL thật ở trên
 
 ### Kết quả kiểm tra local ngày 06/10/2026
 
-Maven 3.9.16 / JDK 21 chạy `clean verify`: **BUILD SUCCESS**, 316 test, 0 failure,
+Maven 3.9.16 / JDK 21 chạy `clean verify`: **BUILD SUCCESS**, 333 test, 0 failure,
 0 error, 0 skipped. Đã build cả 8 module của reactor.
 
 | Module | Test đạt |
 |---|---:|
 | shared-common | 77 |
 | api-gateway | 21 |
-| auth-service | 26 |
+| auth-service | 32 |
 | course-service | 73 |
-| enrollment-service | 63 |
+| enrollment-service | 65 |
 | quiz-service | 34 |
-| notification-service | 22 |
+| notification-service | 31 |
 
 Collection Postman có 17 request, đã kiểm tra JSON và đường dẫn; chưa chạy Postman Runner
 trên hệ thống Docker. Môi trường thực hiện không có lệnh Docker nên chưa xác nhận toàn

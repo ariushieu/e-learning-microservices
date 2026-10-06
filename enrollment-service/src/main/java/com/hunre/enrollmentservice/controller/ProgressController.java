@@ -3,7 +3,6 @@ package com.hunre.enrollmentservice.controller;
 import com.hunre.enrollmentservice.dto.request.LessonProgressRequest;
 import com.hunre.enrollmentservice.dto.response.CourseProgressResponse;
 import com.hunre.enrollmentservice.dto.response.LessonProgressResponse;
-import com.hunre.enrollmentservice.security.EnrollmentPermissions;
 import com.hunre.enrollmentservice.service.ProgressService;
 import com.hunre.sharedcommon.dto.ApiResponse;
 import com.hunre.sharedcommon.security.AuthenticatedUser;
@@ -32,7 +31,7 @@ public class ProgressController {
             @Valid @RequestBody LessonProgressRequest request,
             AuthenticatedUser user) {
 
-        EnrollmentPermissions.requireStudent(user);
+        // Quyền học dựa trên lượt ghi danh của chính người gọi, không phụ thuộc vai trò.
         LessonProgressResponse response = progressService.updateLessonProgress(user.userId(), request.forLesson(lessonId));
         return ApiResponse.ok(response, "Cập nhật tiến độ bài học thành công");
     }

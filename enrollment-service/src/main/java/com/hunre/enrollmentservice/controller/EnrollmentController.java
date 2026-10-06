@@ -5,7 +5,6 @@ import com.hunre.enrollmentservice.dto.request.EnrollCourseRequest;
 import com.hunre.enrollmentservice.dto.response.CertificateResponse;
 import com.hunre.enrollmentservice.dto.response.EnrollmentResponse;
 import com.hunre.enrollmentservice.entity.EnrollmentStatus;
-import com.hunre.enrollmentservice.security.EnrollmentPermissions;
 import com.hunre.enrollmentservice.service.EnrollmentService;
 import com.hunre.sharedcommon.dto.ApiResponse;
 import com.hunre.sharedcommon.dto.PageResponse;
@@ -35,6 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class EnrollmentController {
 
+    // Mọi tài khoản đã đăng nhập được học; service kiểm quyền sở hữu bằng userId từ JWT.
     private final EnrollmentService enrollmentService;
 
     /**
@@ -46,7 +46,6 @@ public class EnrollmentController {
             @Valid @RequestBody EnrollCourseRequest request,
             AuthenticatedUser user) {
 
-        EnrollmentPermissions.requireStudent(user);
         EnrollmentResponse response = enrollmentService.enroll(user.userId(), request);
         return ApiResponse.ok(response, "Đăng ký khóa học thành công");
     }
@@ -84,7 +83,6 @@ public class EnrollmentController {
             @Valid @RequestBody ChangeEnrollmentStatusRequest request,
             AuthenticatedUser user) {
 
-        EnrollmentPermissions.requireStudent(user);
         // ACTIVE và COMPLETED do nghiệp vụ ghi danh/tiến độ quyết định, không cho tự cấp chứng chỉ.
         if (request.status() != EnrollmentStatus.CANCELLED) {
             throw new BusinessException(ErrorCode.BUSINESS_RULE_VIOLATED,
@@ -102,7 +100,6 @@ public class EnrollmentController {
             @RequestParam @Positive Long courseId,
             AuthenticatedUser user) {
 
-        EnrollmentPermissions.requireStudent(user);
         enrollmentService.unenrollCourse(user.userId(), courseId);
         return ApiResponse.message("Đã hủy ghi danh và đặt lại tiến độ khóa học thành công");
     }

@@ -7,6 +7,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -109,20 +111,35 @@ class EnrollmentApiIntegrationTest {
     }
 
     @Test
-    void writesRequireStudentRoleAndAuthentication() throws Exception {
+    void writesRequireAuthentication() throws Exception {
         mvc.perform(get("/api/enrollments")).andExpect(status().isUnauthorized());
         mvc.perform(put("/api/lessons/101/progress").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"courseId\":10,\"status\":\"COMPLETED\"}"))
                 .andExpect(status().isUnauthorized());
-        String instructor = token(3, "ROLE_INSTRUCTOR");
-        mvc.perform(post("/api/enrollments").header("Authorization", instructor).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"courseId\":10}")).andExpect(status().isForbidden());
-        mvc.perform(put("/api/lessons/101/progress").header("Authorization", instructor).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"courseId\":10,\"status\":\"COMPLETED\"}")).andExpect(status().isForbidden());
-        mvc.perform(delete("/api/enrollments?courseId=10").header("Authorization", instructor))
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ROLE_INSTRUCTOR", "ROLE_ADMIN"})
+    void everyAuthenticatedRoleCanLearnButCannotManageOtherUsers(String role) throws Exception {
+        long studentEnrollment = enroll(1);
+        String learner = token(3, role);
+        var result = mvc.perform(post("/api/enrollments").header("Authorization", learner)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"courseId\":10}"))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.data.userId").value(3)).andReturn();
+        long ownEnrollment = mapper.readTree(result.getResponse().getContentAsString()).path("data").path("id").asLong();
+        mvc.perform(put("/api/lessons/101/progress").header("Authorization", learner).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"courseId\":10,\"status\":\"COMPLETED\"}"))
+                .andExpect(status().isOk());
+        mvc.perform(patch("/api/enrollments/{id}/status", studentEnrollment).header("Authorization", learner)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"CANCELLED\"}"))
                 .andExpect(status().isForbidden());
-        mvc.perform(patch("/api/enrollments/1/status").header("Authorization", instructor).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"status\":\"CANCELLED\"}")).andExpect(status().isForbidden());
+        mvc.perform(patch("/api/enrollments/{id}/status", ownEnrollment).header("Authorization", learner)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"CANCELLED\"}"))
+                .andExpect(status().isOk());
+        mvc.perform(delete("/api/enrollments?courseId=10").header("Authorization", learner))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/enrollments/{id}", studentEnrollment).header("Authorization", token(1)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.userId").value(1));
     }
 
     private long enroll(long user) throws Exception {
