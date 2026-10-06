@@ -24,7 +24,7 @@ RUN pnpm install --frozen-lockfile
 FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_TELEMETRY_DISABLED=1 NEXT_OUTPUT=standalone
 RUN pnpm build
 
 # =============================================================================
@@ -44,5 +44,7 @@ COPY --from=build --chown=app:app /app/public ./public
 USER app
 
 EXPOSE 3000
-# GATEWAY_URL đọc lúc chạy chứ không lúc build, nên một image dùng được cho mọi môi trường.
+# server.js là bản `pnpm start` của chế độ standalone — image không mang theo pnpm hay toàn bộ
+# node_modules. GATEWAY_URL đọc lúc chạy chứ không lúc build, nên một image dùng được cho mọi
+# môi trường.
 CMD ["node", "server.js"]

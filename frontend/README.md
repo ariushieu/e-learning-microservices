@@ -14,16 +14,10 @@ Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS 4, quản lý gó
 
 ```bash
 docker compose --profile app up -d --build --wait
-node scripts/seed-demo.mjs        # dữ liệu mẫu: giảng viên, học viên, 3 khóa học, bài kiểm tra
 ```
 
-Mở http://localhost:3000. Tài khoản mẫu (mật khẩu `Demo@123456`):
-
-| Vai trò | Email |
-|---|---|
-| Giảng viên | `giangvien@hunre.edu.vn` |
-| Học viên | `hocvien@hunre.edu.vn` |
-| Admin | `admin@elearning.hunre.edu.vn` / `Admin@123456` |
+Mở http://localhost:3000. Database mới chỉ có tài khoản admin `admin@elearning.hunre.edu.vn` /
+`Admin@123456`; đăng ký thêm tài khoản rồi cấp quyền giảng viên ở trang **Quản trị**.
 
 **Chỉ frontend trên máy** (backend chạy Docker hoặc IntelliJ, gateway ở cổng 8080):
 
@@ -32,7 +26,15 @@ cd frontend
 cp .env.example .env.local
 pnpm install
 pnpm dev                           # http://localhost:3000
+
+# hoặc chạy bản production trên máy
+pnpm build
+pnpm start
 ```
+
+Trong Docker, image build ở chế độ `standalone` (Dockerfile đặt `NEXT_OUTPUT=standalone`) và chạy
+`node server.js` — đó là bản `pnpm start` gọn nhẹ, image không cần mang theo pnpm và toàn bộ
+`node_modules`. Trên máy thì không bật chế độ này, nên `pnpm start` chạy bình thường.
 
 Trước khi mở pull request:
 
