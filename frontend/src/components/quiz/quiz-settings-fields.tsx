@@ -1,6 +1,11 @@
 "use client";
 
-import { Field, Input, Textarea } from "@/components/ui";
+import { useId, type ReactNode } from "react";
+import { FieldError } from "@/components/common/field-error";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/errors";
 import type { Quiz } from "@/lib/types";
 
@@ -77,61 +82,103 @@ export function backendFieldErrors(e: unknown): FieldErrors {
   return result;
 }
 
-export function FieldError({ message }: { message?: string }) {
-  return message ? <span className="block text-xs text-rose-600">{message}</span> : null;
+function Field({
+  id,
+  label,
+  required,
+  hint,
+  error,
+  children,
+}: {
+  id: string;
+  label: string;
+  required?: boolean;
+  hint?: string;
+  error?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>
+        {label}
+        {required && <span className="text-destructive">*</span>}
+      </Label>
+      {children}
+      {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
+      <FieldError message={error} />
+    </div>
+  );
 }
 
+/**
+ * Các ô cấu hình bài kiểm tra, dùng chung cho form tạo mới và form cài đặt.
+ * `compact` xếp các ô số thành một cột (dùng trong cột hẹp bên phải trang soạn bài).
+ */
 export function QuizSettingsFields({
   values,
   errors,
   onChange,
   disabled,
   showShuffle = true,
+  compact = false,
 }: {
   values: QuizSettingsValues;
   errors: FieldErrors;
   onChange: (v: QuizSettingsValues) => void;
   disabled?: boolean;
   showShuffle?: boolean;
+  compact?: boolean;
 }) {
+  const id = useId();
   const set = <K extends keyof QuizSettingsValues>(key: K, value: QuizSettingsValues[K]) =>
     onChange({ ...values, [key]: value });
 
   return (
-    <div className="space-y-4">
-      <Field label="Tiêu đề *">
+    <div className="space-y-5">
+      <Field id={`${id}-title`} label="Tiêu đề" required error={errors.title}>
         <Input
+          id={`${id}-title`}
           value={values.title}
           onChange={(e) => set("title", e.target.value)}
           maxLength={200}
           disabled={disabled}
           placeholder="Ví dụ: Kiểm tra chương 1"
+          aria-invalid={Boolean(errors.title)}
         />
-        <FieldError message={errors.title} />
       </Field>
-      <Field label="Mô tả">
+      <Field id={`${id}-description`} label="Mô tả" error={errors.description}>
         <Textarea
+          id={`${id}-description`}
           rows={3}
           value={values.description}
           onChange={(e) => set("description", e.target.value)}
           maxLength={1000}
           disabled={disabled}
+          placeholder="Nội dung, phạm vi kiến thức của bài kiểm tra"
+          aria-invalid={Boolean(errors.description)}
         />
-        <FieldError message={errors.description} />
       </Field>
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Field label="Thời gian (phút)" hint="Để trống nếu không giới hạn">
+      <div className={compact ? "space-y-5" : "grid gap-5 sm:grid-cols-3"}>
+        <Field
+          id={`${id}-time`}
+          label="Thời gian (phút)"
+          hint="Để trống nếu không giới hạn"
+          error={errors.timeLimitMinutes}
+        >
           <Input
+            id={`${id}-time`}
             type="number"
             min={1}
+            inputMode="numeric"
             value={values.timeLimitMinutes}
             onChange={(e) => set("timeLimitMinutes", e.target.value)}
             disabled={disabled}
+            aria-invalid={Boolean(errors.timeLimitMinutes)}
           />
-          <FieldError message={errors.timeLimitMinutes} />
         </Field>
-        <Field label="Điểm đạt (%)" hint="Từ 0 đến 100">
+        <Field id={`${id}-pass`} label="Điểm đạt (%)" hint="Từ 0 đến 100" error={errors.passScore}>
           <Input
+            id={`${id}-pass`}
             type="number"
             min={0}
             max={100}
@@ -139,31 +186,35 @@ export function QuizSettingsFields({
             value={values.passScore}
             onChange={(e) => set("passScore", e.target.value)}
             disabled={disabled}
+            aria-invalid={Boolean(errors.passScore)}
           />
-          <FieldError message={errors.passScore} />
         </Field>
-        <Field label="Số lần làm tối đa" hint="0 = không giới hạn">
+        <Field id={`${id}-attempts`} label="Số lần làm tối đa" hint="0 = không giới hạn" error={errors.maxAttempts}>
           <Input
+            id={`${id}-attempts`}
             type="number"
             min={0}
+            inputMode="numeric"
             value={values.maxAttempts}
             onChange={(e) => set("maxAttempts", e.target.value)}
             disabled={disabled}
+            aria-invalid={Boolean(errors.maxAttempts)}
           />
-          <FieldError message={errors.maxAttempts} />
         </Field>
       </div>
       {showShuffle && (
-        <label className="flex items-center gap-2 text-sm text-slate-700">
-          <input
-            type="checkbox"
-            className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+        <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
+          <div className="space-y-1">
+            <Label htmlFor={`${id}-shuffle`}>Xáo trộn câu hỏi</Label>
+            <p className="text-xs text-muted-foreground">Đổi thứ tự câu hỏi mỗi lần làm bài</p>
+          </div>
+          <Switch
+            id={`${id}-shuffle`}
             checked={values.shuffleQuestions}
-            onChange={(e) => set("shuffleQuestions", e.target.checked)}
+            onCheckedChange={(checked) => set("shuffleQuestions", checked)}
             disabled={disabled}
           />
-          Xáo trộn thứ tự câu hỏi mỗi lần làm bài
-        </label>
+        </div>
       )}
     </div>
   );

@@ -2,6 +2,8 @@ package com.hunre.authservice.service;
 
 import com.hunre.authservice.domain.RoleCode;
 import com.hunre.authservice.dto.AuthResponse;
+import com.hunre.authservice.dto.ChangePasswordRequest;
+import com.hunre.authservice.dto.UpdateProfileRequest;
 import com.hunre.authservice.dto.LoginRequest;
 import com.hunre.authservice.dto.RefreshTokenRequest;
 import com.hunre.authservice.dto.RegisterRequest;
@@ -15,5 +17,7 @@ public interface AuthService {
     AuthResponse refreshToken(RefreshTokenRequest request, String userAgent, String ipAddress);
     void logout(String refreshToken);
     UserResponse getUserById(Long userId);
+    UserResponse updateProfile(Long userId, UpdateProfileRequest request);
+    void changePassword(Long userId, ChangePasswordRequest request);
     UserResponse updateUserRoles(Long userId, Set<RoleCode> roles);
 }

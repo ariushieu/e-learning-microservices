@@ -2,6 +2,7 @@ package com.hunre.authservice.service;
 
 import com.hunre.authservice.domain.*;
 import com.hunre.authservice.dto.*;
+import com.hunre.authservice.exception.IncorrectCurrentPasswordException;
 import com.hunre.authservice.repository.RefreshTokenRepository;
 import com.hunre.authservice.repository.RoleRepository;
 import com.hunre.authservice.repository.UserRepository;
@@ -68,7 +69,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public AuthResponse login(LoginRequest request, String userAgent, String ipAddress) {
         String email = request.getEmail().trim().toLowerCase();
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailForUpdate(email)
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED, "Email hoặc mật khẩu không chính xác"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
@@ -113,14 +114,18 @@ public class AuthServiceImpl implements AuthService {
         String rawRefreshToken = request.getRefreshToken().trim();
         String tokenHash = jwtService.hashToken(rawRefreshToken);
 
-        RefreshToken currentToken = refreshTokenRepository.findByTokenHash(tokenHash)
+        // Serialize token issuance with password changes, always locking user before token.
+        Long userId = refreshTokenRepository.findUserIdByTokenHash(tokenHash)
+                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED, "Refresh token không hợp lệ hoặc đã bị thu hồi"));
+        User user = userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED, "Refresh token không hợp lệ hoặc đã bị thu hồi"));
+        RefreshToken currentToken = refreshTokenRepository.findByTokenHashForUpdate(tokenHash)
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED, "Refresh token không hợp lệ hoặc đã bị thu hồi"));
 
         if (!currentToken.isValid()) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED, "Refresh token đã hết hạn hoặc đã bị thu hồi");
         }
 
-        User user = currentToken.getUser();
         if (user.getStatus() == UserStatus.LOCKED) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "Tài khoản của bạn đã bị khóa");
         }
@@ -181,8 +186,32 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
+    public UserResponse updateProfile(Long userId, UpdateProfileRequest request) {
+        User user = userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("người dùng", "id", userId));
+        user.setFullName(request.getFullName().trim());
+        String phone = request.getPhone();
+        user.setPhone(phone == null || phone.isBlank() ? null : phone.trim());
+        return UserResponse.from(userRepository.save(user));
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        User user = userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("người dùng", "id", userId));
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw new IncorrectCurrentPasswordException();
+        }
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+        refreshTokenRepository.revokeAllUserTokens(userId, Instant.now());
+    }
+
+    @Override
+    @Transactional
     public UserResponse updateUserRoles(Long userId, Set<RoleCode> roleCodes) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdForUpdate(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("người dùng", "id", userId));
 
         Set<Role> newRoles = roleCodes.stream()

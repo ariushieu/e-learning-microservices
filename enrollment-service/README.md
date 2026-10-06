@@ -28,9 +28,14 @@ Các trường có thể null (ảnh bìa, thông tin giảng viên) được x�
 
 - Nhận trùng: cập nhật cùng khóa chính, không tạo thêm dòng; không cần `processed_events`.
 - Nhận ARCHIVED/DRAFT: vẫn cập nhật; ghi danh mới bị từ chối (404 theo cơ chế tra cứu hiện có).
-- JSON sai hoặc dữ liệu bắt buộc sai: bỏ qua, ghi cảnh báo, tiếp tục message sau.
-- Lỗi database: ném lỗi cho Kafka error handler retry mỗi giây, không đánh dấu offset đã xử lý.
-  Retry không giới hạn để không âm thầm mất snapshot; lỗi ghi kéo dài cần kiểm tra database/log.
+- JSON sai, thiếu trường, vượt độ dài cột hoặc lỗi ràng buộc database: chuyển ngay sang
+  `elearning.course.events.DLT`, giữ nguyên key/payload cùng header nguyên nhân và offset gốc.
+  Sự kiện có `eventType` khác vẫn được bỏ qua vì không thuộc consumer này.
+- Lỗi tạm thời: retry sau 1s, 2s, 4s... tối đa 30s mỗi khoảng chờ, tổng ngân sách chờ 5 phút;
+  hết ngân sách thì chuyển sang `.DLT`. Thời gian gọi database không tính vào ngân sách này,
+  nên thời gian thực tế dài hơn. Trong khi retry vẫn giữ thứ tự trong partition.
+- Chỉ xử lý tiếp sau khi broker xác nhận đã ghi `.DLT`. Nếu ghi `.DLT` thất bại, giữ offset
+  gốc để thử lại, không báo recovery thành công và không bỏ mất sự kiện.
 - `earliest` chỉ áp dụng khi group chưa có offset. Không tự đọc lại sự kiện đã hết retention.
 - Thứ tự phụ thuộc producer dùng key `courseId`; không dùng `syncedAt` để so phiên bản sự kiện.
   Không thay đổi số partition hoặc phát lại sự kiện cũ sau sự kiện mới khi đang vận hành.
@@ -42,10 +47,36 @@ spring.kafka.consumer.group-id=enrollment-service
 spring.kafka.consumer.auto-offset-reset=earliest
 spring.kafka.consumer.enable-auto-commit=false
 spring.kafka.listener.ack-mode=record
+elearning.kafka.retry.initial-interval=${KAFKA_RETRY_INITIAL_INTERVAL:1s}
+elearning.kafka.retry.multiplier=${KAFKA_RETRY_MULTIPLIER:2}
+elearning.kafka.retry.max-interval=${KAFKA_RETRY_MAX_INTERVAL:30s}
+elearning.kafka.retry.max-elapsed-time=${KAFKA_RETRY_MAX_ELAPSED_TIME:5m}
 ```
 
 `KAFKA_ENABLED=false` dùng để tắt listener khi phát triển không có Kafka.
 Worker outbox có công tắc riêng `app.outbox.publisher.enabled=false`.
+
+### Xử lý message trong DLT
+
+Mở Kafka UI (`http://localhost:8090`), chọn `elearning.course.events.DLT`. Header
+`kafka_dlt-exception-message`/`kafka_dlt-exception-stacktrace` ghi nguyên nhân;
+`kafka_dlt-original-topic`, `kafka_dlt-original-partition`, `kafka_dlt-original-offset`
+xác định message nguồn. Cấu hình Kafka trong Compose cho phép tự tạo topic; môi trường
+tắt auto-create phải tạo `.DLT` trước và cấp quyền ghi cho enrollment-service.
+
+Sửa dữ liệu hoặc lỗi database trước khi xử lý lại. Với snapshot, **không phát lại mù quáng
+message cũ** vì sự kiện mới hơn của cùng khóa có thể đã được xử lý sau khi message vào DLT.
+Ưu tiên sửa/lưu lại khóa ở course-service để phát snapshot hiện tại. Không có consumer tự
+đọc `.DLT`; không xóa message trước khi đã kiểm tra snapshot đồng bộ đúng.
+
+Tự kiểm qua Kafka UI/MySQL:
+
+1. Tắt MySQL, xuất bản khóa, bật MySQL lại sau 40 giây: snapshot cuối cùng phải được ghi,
+   các sự kiện phía sau cùng partition xử lý đúng thứ tự.
+2. Gửi `course.updated` có `title` 300 ký tự rồi một khóa hợp lệ: message lỗi nằm trong
+   `.DLT`, khóa sau vẫn có snapshot.
+3. Trong môi trường test, giảm `elearning.kafka.retry.max-elapsed-time`, mô phỏng lỗi
+   database kéo dài: sau retry hữu hạn, message sang `.DLT` và consumer xử lý tiếp.
 
 ## 3. REST API qua gateway
 
@@ -94,6 +125,17 @@ Phần consumer, kiểm tra bài học và chuẩn hóa API được chia thành
 Việc chuẩn hóa API cần được nhóm thống nhất trước khi merge và triển khai.
 
 ## 4. Chạy và kiểm tra thủ công
+
+### Tiến độ hoàn thành không bị lùi
+
+- Bài đã `COMPLETED` giữ nguyên trạng thái và `completedAt` khi nhận lại `IN_PROGRESS`.
+  `watchedSeconds` chỉ tăng, kể cả request gửi muộn hoặc lặp lại.
+- Lượt ghi danh đã `COMPLETED` giữ 100%, thời điểm hoàn thành và chứng chỉ, kể cả khi
+  giảng viên bổ sung bài. Số bài trong response vẫn phản ánh nội dung khóa hiện tại.
+- GET/PUT tiến độ khóa cùng một dòng ghi danh trong transaction để hai request đồng thời
+  không ghi đè trạng thái cũ, tạo trùng tiến độ hoặc phát lại sự kiện cấp chứng chỉ.
+- Tự kiểm: hoàn thành cả khóa, lưu `certificateCode`, gửi lại `IN_PROGRESS` với số giây
+  lớn hơn rồi nhỏ hơn. GET tiến độ vẫn 100%, bài vẫn hoàn thành, mã chứng chỉ không đổi.
 
 Từ thư mục gốc repo:
 
@@ -171,10 +213,16 @@ Trên Windows dùng `mvnw.cmd` thay cho `./mvnw`.
   trường tương lai và lỗi database phải được ném ra để retry.
 - `CourseSnapshotKafkaIntegrationTest`: broker Kafka thực trong JVM + H2; nhận message,
   nhận trùng, ghi đè cả trường null, archive chặn ghi danh, message hỏng không chặn message
-  sau, lỗi tạm thời được retry trước snapshot tiếp theo.
+  sau và được giữ trong DLT, lỗi tạm thời được retry trước snapshot tiếp theo; kiểm lỗi
+  ràng buộc không retry và hết ngân sách retry vẫn cho snapshot tiếp theo chạy.
+- `KafkaErrorHandlingConfigTest`: gửi DLT thất bại phải tua về offset gốc; phục hồi sau đó
+  gửi DLT thành công. `KafkaRetryPropertiesTest`: mặc định chờ đủ qua gián đoạn 40 giây
+  nhưng kết thúc hữu hạn; cấu hình khoảng chờ không hợp lệ bị từ chối ngay khi khởi động.
 - `EnrollmentApiIntegrationTest`: JWT thật + MVC + service + H2; danh tính từ token,
   ID bài từ URL, quyền sở hữu, đầu vào lỗi, không tự hoàn thành; giảng viên/admin học được
   nhưng không có quyền sửa lượt ghi danh của người khác.
+  Test tiến độ kiểm request muộn/lặp/đồng thời, chỉ tăng thời gian xem, giữ thời điểm hoàn
+  thành và chứng chỉ, không phát lại sự kiện hoàn thành/cấp chứng chỉ.
 - `EnrollmentRoutingIntegrationTest`: gọi HTTP qua gateway thật ở cổng ngẫu nhiên;
   backend giả lập xác nhận đúng service, URL, query, body và token. PUT thiếu token trả 401;
   GET bài học công khai vẫn đến course-service.
@@ -189,8 +237,8 @@ hay migration đã merge trong nhiệm vụ này; bước MySQL thật ở trên
 
 ### Kết quả kiểm tra local ngày 06/10/2026
 
-Maven 3.9.16 / JDK 21 chạy `clean verify` sau khi đồng bộ main (gồm #37, #42):
-**BUILD SUCCESS**, 419 test, 0 failure,
+Maven 3.9.16 / JDK 21 chạy `clean verify` sau khi đồng bộ main `250786c` và sửa tiến độ/retry:
+**BUILD SUCCESS**, 551 test, 0 failure,
 0 error, 0 skipped. Đã build cả 8 module của reactor.
 
 | Module | Test đạt |
@@ -198,13 +246,19 @@ Maven 3.9.16 / JDK 21 chạy `clean verify` sau khi đồng bộ main (gồm #37
 | shared-common | 77 |
 | api-gateway | 21 |
 | auth-service | 32 |
-| course-service | 145 |
-| enrollment-service | 65 |
-| quiz-service | 48 |
+| course-service | 169 |
+| enrollment-service | 89 |
+| quiz-service | 132 |
 | notification-service | 31 |
 
-Test hồi quy truy cập nội dung đã chạy trước và sau bản sửa: cấu hình URL cũ gây
+Ở PR #41, test hồi quy truy cập nội dung đã chạy trước và sau bản sửa: cấu hình URL cũ gây
 4 ca lỗi `502`; đổi sang `/api/enrollments` thì cả 5 ca đạt (gồm kiểm tra cấu hình).
+
+Đợt sửa tiếp theo: 3 ca hồi quy tiến độ đều thất bại trước bản sửa và đạt sau bản sửa;
+6 ca tích hợp Kafka thật đạt, gồm DLT và retry hết giới hạn. Lỗi database trong các test
+Kafka được mô phỏng bằng exception; việc tắt MySQL thật 40 giây vẫn cần kiểm trên môi trường
+Docker. Collection Postman chung chưa có trong repo ở commit main trên nên chưa lập biên bản
+đợt test chung hoặc coi các ca thủ công là PASS.
 
 Collection Postman có 17 request, đã kiểm tra JSON và đường dẫn; chưa chạy Postman Runner
 trên hệ thống Docker. Môi trường thực hiện không có lệnh Docker nên chưa xác nhận toàn

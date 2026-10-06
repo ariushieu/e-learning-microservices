@@ -63,7 +63,7 @@ public class ProgressServiceImpl implements ProgressService {
         Long lessonId = request.getLessonId();
 
         // 1. Kiểm tra học viên đã ghi danh khóa học chưa
-        Enrollment enrollment = enrollmentRepository.findByUserIdAndCourseId(currentUserId, courseId)
+        Enrollment enrollment = enrollmentRepository.findForProgressUpdate(currentUserId, courseId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Không tìm thấy lượt ghi danh của học viên %s cho khóa học %s"
                                 .formatted(currentUserId, courseId)));
@@ -98,7 +98,7 @@ public class ProgressServiceImpl implements ProgressService {
             if (lessonProgress.getCompletedAt() == null) {
                 lessonProgress.setCompletedAt(Instant.now());
             }
-        } else if (request.getStatus() != null) {
+        } else if (request.getStatus() != null && lessonProgress.getStatus() != LessonProgressStatus.COMPLETED) {
             lessonProgress.setStatus(request.getStatus());
         }
 
@@ -110,7 +110,7 @@ public class ProgressServiceImpl implements ProgressService {
                 enrollment.getId(), LessonProgressStatus.COMPLETED);
 
         BigDecimal progressPercent;
-        if (completedLessons >= totalLessons) {
+        if (enrollment.getStatus() == EnrollmentStatus.COMPLETED || completedLessons >= totalLessons) {
             progressPercent = BigDecimal.valueOf(100).setScale(2, RoundingMode.HALF_UP);
         } else {
             progressPercent = BigDecimal.valueOf(completedLessons)
@@ -125,11 +125,6 @@ public class ProgressServiceImpl implements ProgressService {
                 enrollment.setCompletedAt(Instant.now());
                 saveEnrollmentCompletedOutboxEvent(enrollment);
                 issueCertificateIfAbsent(enrollment);
-            }
-        } else {
-            if (enrollment.getStatus() == EnrollmentStatus.COMPLETED) {
-                enrollment.setStatus(EnrollmentStatus.ACTIVE);
-                enrollment.setCompletedAt(null);
             }
         }
 
@@ -150,7 +145,8 @@ public class ProgressServiceImpl implements ProgressService {
             throw new BusinessException(ErrorCode.UNAUTHORIZED, "Người dùng chưa được xác thực");
         }
 
-        Enrollment enrollment = enrollmentRepository.findByUserIdAndCourseId(currentUserId, courseId)
+        // GET cũng có thể đồng bộ tiến độ/cấp chứng chỉ: dùng cùng khóa với PUT.
+        Enrollment enrollment = enrollmentRepository.findForProgressUpdate(currentUserId, courseId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Không tìm thấy lượt ghi danh của học viên %s cho khóa học %s"
                                 .formatted(currentUserId, courseId)));
@@ -167,7 +163,8 @@ public class ProgressServiceImpl implements ProgressService {
 
         // Chuẩn hóa và đồng bộ lại tiến độ của enrollment nếu có sự chênh lệch
         BigDecimal accuratePercent;
-        if (completedCount >= totalLessons) {
+        // Chứng nhận hoàn thành đã đạt không bị thu hồi khi khóa học bổ sung bài mới.
+        if (enrollment.getStatus() == EnrollmentStatus.COMPLETED || completedCount >= totalLessons) {
             accuratePercent = BigDecimal.valueOf(100).setScale(2, RoundingMode.HALF_UP);
         } else {
             accuratePercent = BigDecimal.valueOf(completedCount)

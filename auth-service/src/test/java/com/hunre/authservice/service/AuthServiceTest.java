@@ -120,7 +120,7 @@ class AuthServiceTest {
                 .password("password123")
                 .build();
 
-        when(userRepository.findByEmail("test@hunre.edu.vn")).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmailForUpdate("test@hunre.edu.vn")).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches("password123", testUser.getPasswordHash())).thenReturn(true);
         when(jwtService.generateAccessToken(testUser)).thenReturn("valid.access.token");
         when(jwtService.generateRefreshToken()).thenReturn("raw-refresh-token-123");
@@ -146,7 +146,7 @@ class AuthServiceTest {
                 .password("wrongpassword")
                 .build();
 
-        when(userRepository.findByEmail("test@hunre.edu.vn")).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmailForUpdate("test@hunre.edu.vn")).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches("wrongpassword", testUser.getPasswordHash())).thenReturn(false);
 
         assertThatThrownBy(() -> authService.login(request, null, null))
@@ -163,7 +163,7 @@ class AuthServiceTest {
                 .password("password123")
                 .build();
 
-        when(userRepository.findByEmail("test@hunre.edu.vn")).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmailForUpdate("test@hunre.edu.vn")).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches("password123", testUser.getPasswordHash())).thenReturn(true);
 
         assertThatThrownBy(() -> authService.login(request, null, null))
@@ -186,7 +186,9 @@ class AuthServiceTest {
                 .build();
 
         when(jwtService.hashToken("valid-raw-refresh-token")).thenReturn("hash-abc");
-        when(refreshTokenRepository.findByTokenHash("hash-abc")).thenReturn(Optional.of(existingToken));
+        when(refreshTokenRepository.findUserIdByTokenHash("hash-abc")).thenReturn(Optional.of(1L));
+        when(userRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(testUser));
+        when(refreshTokenRepository.findByTokenHashForUpdate("hash-abc")).thenReturn(Optional.of(existingToken));
         when(jwtService.generateAccessToken(testUser)).thenReturn("new.access.token");
         when(jwtService.generateRefreshToken()).thenReturn("new-raw-refresh-token");
         when(jwtService.hashToken("new-raw-refresh-token")).thenReturn("new-hash-xyz");
@@ -230,7 +232,7 @@ class AuthServiceTest {
                 .name("Giảng viên")
                 .build();
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(userRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(testUser));
         when(roleRepository.findByCode(RoleCode.ROLE_STUDENT)).thenReturn(Optional.of(studentRole));
         when(roleRepository.findByCode(RoleCode.ROLE_INSTRUCTOR)).thenReturn(Optional.of(instructorRole));
         when(userRepository.save(any(User.class))).thenReturn(testUser);
@@ -245,7 +247,7 @@ class AuthServiceTest {
     @Test
     @DisplayName("updateUserRoles - User không tồn tại ném ResourceNotFoundException")
     void updateUserRoles_userNotFound_throwsException() {
-        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+        when(userRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> authService.updateUserRoles(999L, Set.of(RoleCode.ROLE_STUDENT)))
                 .isInstanceOf(ResourceNotFoundException.class);

@@ -1,5 +1,6 @@
 package com.hunre.quizservice.service;
 
+import com.hunre.quizservice.client.EnrollmentAccessClient;
 import com.hunre.quizservice.dto.SubmitAnswerItemRequest;
 import com.hunre.quizservice.dto.SubmitQuizAttemptRequest;
 import com.hunre.quizservice.dto.QuizAttemptResponse;
@@ -54,6 +55,9 @@ class QuizAttemptServiceTest {
 
     @Spy
     private ObjectMapper objectMapper = new ObjectMapper();
+
+    @Mock
+    private EnrollmentAccessClient enrollmentAccessClient;
 
     @InjectMocks
     private QuizAttemptServiceImpl quizAttemptService;
@@ -118,6 +122,7 @@ class QuizAttemptServiceTest {
     @DisplayName("startAttempt: Khởi tạo lượt làm bài thành công khi quiz đã PUBLISHED")
     void startAttempt_success() {
         when(quizRepository.findById(1L)).thenReturn(Optional.of(quiz));
+        when(enrollmentAccessClient.hasEnrollment(100L, 99L, "Bearer student-token")).thenReturn(true);
         when(quizAttemptRepository.findFirstByQuizIdAndUserIdAndStatus(1L, 99L, AttemptStatus.IN_PROGRESS))
                 .thenReturn(Optional.empty());
         when(quizAttemptRepository.countByQuizIdAndUserId(1L, 99L)).thenReturn(0L);
@@ -128,7 +133,7 @@ class QuizAttemptServiceTest {
             return a;
         });
 
-        QuizAttemptResponse response = quizAttemptService.startAttempt(1L, 99L);
+        QuizAttemptResponse response = quizAttemptService.startAttempt(1L, 99L, false, "Bearer student-token");
 
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(500L);
@@ -140,11 +145,12 @@ class QuizAttemptServiceTest {
     @DisplayName("startAttempt: Ném BusinessException khi đã dùng hết số lần làm bài tối đa")
     void startAttempt_maxAttemptsExceeded() {
         when(quizRepository.findById(1L)).thenReturn(Optional.of(quiz));
+        when(enrollmentAccessClient.hasEnrollment(100L, 99L, "Bearer student-token")).thenReturn(true);
         when(quizAttemptRepository.findFirstByQuizIdAndUserIdAndStatus(1L, 99L, AttemptStatus.IN_PROGRESS))
                 .thenReturn(Optional.empty());
         when(quizAttemptRepository.countByQuizIdAndUserId(1L, 99L)).thenReturn(2L); // max = 2
 
-        assertThatThrownBy(() -> quizAttemptService.startAttempt(1L, 99L))
+        assertThatThrownBy(() -> quizAttemptService.startAttempt(1L, 99L, false, "Bearer student-token"))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("đã sử dụng hết số lần làm bài tối đa");
     }

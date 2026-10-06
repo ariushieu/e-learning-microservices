@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface QuizAttemptService {
 
-    QuizAttemptResponse startAttempt(Long quizId, Long userId);
+    QuizAttemptResponse startAttempt(Long quizId, Long userId, boolean isAdmin, String authorization);
 
     QuizResultResponse submitAttempt(Long attemptId, Long userId, SubmitQuizAttemptRequest request);
 

@@ -1,28 +1,20 @@
+import { StatusBadge } from "@/components/common/status-badge";
+import { Badge } from "@/components/ui/badge";
+import { label } from "@/lib/format";
 import type { AttemptStatus, QuestionType } from "@/lib/types";
 
 export const questionTypeLabels: Record<QuestionType, string> = {
-  SINGLE_CHOICE: "Một đáp án",
-  MULTIPLE_CHOICE: "Nhiều đáp án",
-  TRUE_FALSE: "Đúng / Sai",
+  SINGLE_CHOICE: label("SINGLE_CHOICE"),
+  MULTIPLE_CHOICE: label("MULTIPLE_CHOICE"),
+  TRUE_FALSE: label("TRUE_FALSE"),
 };
 
 export function QuestionTypeTag({ type }: { type: QuestionType }) {
-  return (
-    <span className="inline-block rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700">
-      {questionTypeLabels[type] ?? type}
-    </span>
-  );
+  return <Badge variant="secondary">{questionTypeLabels[type] ?? type}</Badge>;
 }
 
-const attemptStatus: Record<AttemptStatus, { label: string; color: string }> = {
-  IN_PROGRESS: { label: "Đang làm", color: "bg-sky-100 text-sky-700" },
-  SUBMITTED: { label: "Đã nộp", color: "bg-emerald-100 text-emerald-700" },
-  EXPIRED: { label: "Hết giờ", color: "bg-rose-100 text-rose-700" },
-};
-
 export function AttemptStatusBadge({ status }: { status: AttemptStatus }) {
-  const s = attemptStatus[status] ?? { label: status, color: "bg-slate-100 text-slate-600" };
-  return <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${s.color}`}>{s.label}</span>;
+  return <StatusBadge status={status} />;
 }
 
 /** Điểm phần trăm, BigDecimal bên Java có thể về dạng số hoặc chuỗi. */
