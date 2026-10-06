@@ -1,6 +1,7 @@
 package com.hunre.enrollmentservice.service.impl;
 
 import com.hunre.enrollmentservice.client.CourseClient;
+import com.hunre.enrollmentservice.client.CourseLessonClient;
 import com.hunre.enrollmentservice.client.CourseDto;
 import com.hunre.enrollmentservice.dto.request.UpdateLessonProgressRequest;
 import com.hunre.enrollmentservice.dto.response.CourseProgressResponse;
@@ -48,6 +49,7 @@ public class ProgressServiceImpl implements ProgressService {
     private final CertificateRepository certificateRepository;
     private final OutboxEventRepository outboxEventRepository;
     private final CourseClient courseClient;
+    private final CourseLessonClient courseLessonClient;
 
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
@@ -70,6 +72,10 @@ public class ProgressServiceImpl implements ProgressService {
             throw new BusinessException(ErrorCode.BUSINESS_RULE_VIOLATED,
                     "Lượt ghi danh khóa học này đã bị hủy, không thể cập nhật tiến độ");
         }
+
+        // Chỉ ghi tiến độ sau khi xác minh bài học tồn tại và thuộc đúng khóa học.
+        // Không dùng tổng số bài trong snapshot để suy đoán tính hợp lệ của lessonId.
+        courseLessonClient.validateLesson(courseId, lessonId);
 
         // 2. Tìm hoặc tạo mới bản ghi tiến độ bài học
         LessonProgress lessonProgress = lessonProgressRepository

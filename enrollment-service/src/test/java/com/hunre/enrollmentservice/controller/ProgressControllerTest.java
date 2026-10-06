@@ -32,7 +32,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -64,7 +64,7 @@ class ProgressControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/progress/lesson - Cập nhật tiến độ bài học thành công")
+    @DisplayName("PUT /api/lessons/{lessonId}/progress - Cập nhật tiến độ bài học thành công")
     void updateLessonProgress_success() throws Exception {
         UpdateLessonProgressRequest request = UpdateLessonProgressRequest.builder()
                 .courseId(10L)
@@ -82,7 +82,7 @@ class ProgressControllerTest {
         when(progressService.updateLessonProgress(eq(1L), any(UpdateLessonProgressRequest.class)))
                 .thenReturn(response);
 
-        mockMvc.perform(post("/api/progress/lesson")
+        mockMvc.perform(put("/api/lessons/101/progress")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, mockUser)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -94,7 +94,7 @@ class ProgressControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/progress/course/{courseId} - Lấy chi tiết tiến độ khóa học")
+    @DisplayName("GET /api/progress?courseId={courseId} - Lấy chi tiết tiến độ khóa học")
     void getCourseProgress_success() throws Exception {
         LessonProgressResponse l1 = LessonProgressResponse.builder()
                 .lessonId(1L)
@@ -115,7 +115,7 @@ class ProgressControllerTest {
 
         when(progressService.getCourseProgress(eq(1L), eq(10L))).thenReturn(response);
 
-        mockMvc.perform(get("/api/progress/course/10")
+        mockMvc.perform(get("/api/progress").param("courseId", "10")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, mockUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
