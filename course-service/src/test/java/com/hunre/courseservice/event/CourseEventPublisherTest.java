@@ -3,7 +3,6 @@ package com.hunre.courseservice.event;
 import com.hunre.courseservice.entity.Course;
 import com.hunre.courseservice.entity.CourseStatus;
 import com.hunre.sharedcommon.event.CourseUpdatedEvent;
-import com.hunre.sharedcommon.event.KafkaTopics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,23 +10,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.kafka.core.KafkaTemplate;
+import com.hunre.courseservice.repository.OutboxEventRepository;
+import com.hunre.courseservice.entity.OutboxEvent;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
-import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CourseEventPublisherTest {
 
     @Mock
-    private KafkaTemplate<String, String> kafkaTemplate;
+    private OutboxEventRepository repository;
+    @Mock private jakarta.persistence.EntityManager entityManager;
 
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
@@ -35,11 +33,11 @@ class CourseEventPublisherTest {
 
     @BeforeEach
     void setUp() {
-        publisher = new CourseEventPublisher(kafkaTemplate, objectMapper);
+        publisher = new CourseEventPublisher(repository, objectMapper, entityManager);
     }
 
     @Test
-    @DisplayName("publishCourseUpdated gửi event lên Kafka đúng topic, key là courseId và payload đầy đủ")
+    @DisplayName("publishCourseUpdated lưu outbox với courseId và payload đầy đủ")
     void publishCourseUpdated_thanhCong() {
         Course course = Course.builder()
                 .id(100L)
@@ -52,21 +50,13 @@ class CourseEventPublisherTest {
                 .status(CourseStatus.PUBLISHED)
                 .build();
 
-        when(kafkaTemplate.send(any(), any(), any()))
-                .thenReturn(CompletableFuture.completedFuture(null));
-
         publisher.publishCourseUpdated(course);
-
-        ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> payloadCaptor = ArgumentCaptor.forClass(String.class);
-
-        verify(kafkaTemplate).send(topicCaptor.capture(), keyCaptor.capture(), payloadCaptor.capture());
-
-        assertThat(topicCaptor.getValue()).isEqualTo(KafkaTopics.COURSE_EVENTS);
-        assertThat(keyCaptor.getValue()).isEqualTo("100");
-
-        CourseUpdatedEvent readEvent = objectMapper.readValue(payloadCaptor.getValue(), CourseUpdatedEvent.class);
+        ArgumentCaptor<OutboxEvent> eventCaptor = ArgumentCaptor.forClass(OutboxEvent.class);
+        verify(repository).save(eventCaptor.capture());
+        OutboxEvent stored = eventCaptor.getValue();
+        assertThat(stored.getAggregateId()).isEqualTo("100");
+        assertThat(stored.getPublishedAt()).isNull();
+        CourseUpdatedEvent readEvent = objectMapper.readValue(stored.getPayload(), CourseUpdatedEvent.class);
         assertThat(readEvent.courseId()).isEqualTo(100L);
         assertThat(readEvent.title()).isEqualTo("Khóa học Microservices");
         assertThat(readEvent.slug()).isEqualTo("khoa-hoc-microservices");
@@ -78,19 +68,17 @@ class CourseEventPublisherTest {
     }
 
     @Test
-    @DisplayName("publishCourseUpdated không lỗi khi kafkaTemplate là null (môi trường tắt Kafka)")
-    void publishCourseUpdated_khiKafkaTemplateNull() {
-        CourseEventPublisher publisherWithoutKafka = new CourseEventPublisher(null, objectMapper);
+    @DisplayName("Lỗi lưu outbox phải truyền lên để rollback khóa học")
+    void outboxFailureIsNotSwallowed() {
         Course course = Course.builder().id(1L).status(CourseStatus.PUBLISHED).build();
-
-        assertThatCode(() -> publisherWithoutKafka.publishCourseUpdated(course))
-                .doesNotThrowAnyException();
+        when(repository.save(any())).thenThrow(new IllegalStateException("Database unavailable"));
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> publisher.publishCourseUpdated(course))
+                .isInstanceOf(IllegalStateException.class);
     }
-
     @Test
     @DisplayName("publishCourseUpdated không làm gì khi course là null")
     void publishCourseUpdated_khiCourseNull() {
         publisher.publishCourseUpdated(null);
-        verifyNoInteractions(kafkaTemplate);
+        verifyNoInteractions(repository);
     }
 }

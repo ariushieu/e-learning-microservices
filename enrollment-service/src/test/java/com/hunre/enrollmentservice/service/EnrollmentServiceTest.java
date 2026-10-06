@@ -57,6 +57,9 @@ class EnrollmentServiceTest {
     @Mock
     private CourseClient courseClient;
 
+    @Mock
+    private com.hunre.enrollmentservice.client.CourseLessonClient courseLessonClient;
+
     @InjectMocks
     private EnrollmentServiceImpl enrollmentService;
 

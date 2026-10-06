@@ -1,5 +1,6 @@
 package com.hunre.courseservice.service;
 
+import com.hunre.courseservice.client.EnrollmentAccessClient;
 import com.hunre.courseservice.dto.request.ChangeCourseStatusRequest;
 import com.hunre.courseservice.dto.request.CreateCourseRequest;
 import com.hunre.courseservice.dto.request.UpdateCourseRequest;
@@ -58,6 +59,9 @@ class CourseServiceTest {
 
     @Mock
     private CourseEventPublisher courseEventPublisher;
+
+    @Mock
+    private EnrollmentAccessClient enrollmentAccessClient;
 
     @InjectMocks
     private CourseServiceImpl courseService;
