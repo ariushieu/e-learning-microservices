@@ -6,6 +6,7 @@ import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { ErrorAlert } from "@/components/common/error-alert";
 import { FieldError } from "@/components/common/field-error";
+import { IconTile } from "@/components/common/icon-tile";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,7 +33,7 @@ import { errorMessage } from "@/lib/errors";
 import { formatDuration } from "@/lib/format";
 import { fieldErrorMap, formErrorMessage, text } from "@/lib/forms";
 import type { Lesson, LessonResource } from "@/lib/types";
-import { LessonTypeIcon, lessonTypeLabels } from "./icons";
+import { LESSON_TYPE_ICONS, lessonTypeLabels } from "./icons";
 import { LessonForm } from "./lesson-form";
 
 /** Một dòng bài học trong trình soạn đề cương: sửa, tài liệu đính kèm, xóa. */
@@ -61,9 +62,7 @@ export function LessonItem({ lesson, index }: { lesson: Lesson; index: number })
   return (
     <li className="px-4 py-3">
       <div className="flex items-center gap-3">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-          <LessonTypeIcon type={lesson.type} />
-        </span>
+        <IconTile icon={LESSON_TYPE_ICONS[lesson.type] ?? FileIcon} tone="neutral" size="sm" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">
             <span className="text-muted-foreground tabular-nums">{index}.</span> {lesson.title}
@@ -78,14 +77,14 @@ export function LessonItem({ lesson, index }: { lesson: Lesson; index: number })
               </span>
             )}
             {missingUrl && (
-              <span className="inline-flex items-center gap-1 text-amber-700">
+              <span className="inline-flex items-center gap-1 font-medium text-warning-strong">
                 <TriangleAlertIcon className="size-3" /> Chưa có đường dẫn
               </span>
             )}
           </div>
         </div>
         {lesson.isPreview && (
-          <Badge variant="outline" className="border-0 bg-primary/10 text-primary">
+          <Badge variant="outline" className="border-0 bg-primary-soft text-primary-strong">
             Xem thử
           </Badge>
         )}
@@ -210,7 +209,7 @@ function LessonResources({ lesson }: { lesson: Lesson }) {
       {lesson.resources.length === 0 ? (
         <p className="rounded-lg border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">Chưa có tài liệu nào.</p>
       ) : (
-        <ul className="divide-y rounded-lg ring-1 ring-foreground/10">
+        <ul className="divide-y rounded-lg ring-1 ring-border">
           {lesson.resources.map((r) => (
             <li key={r.id} className="flex items-center gap-3 px-3 py-2 text-sm">
               <FileIcon className="size-4 shrink-0 text-muted-foreground" />
@@ -235,14 +234,14 @@ function LessonResources({ lesson }: { lesson: Lesson }) {
           ))}
         </ul>
       )}
-      <form onSubmit={add} className="space-y-3 rounded-lg bg-muted/40 p-3">
+      <form onSubmit={add} className="space-y-3 rounded-lg bg-muted/50 p-3">
         <p className="text-sm font-medium">Thêm tài liệu</p>
         <div className="space-y-2">
-          <Input name="name" required maxLength={200} placeholder="Tên tài liệu, VD: Slide bài 1" aria-label="Tên tài liệu" className="bg-background" />
+          <Input name="name" required maxLength={200} placeholder="Tên tài liệu, VD: Slide bài 1" aria-label="Tên tài liệu" className="bg-card" />
           <FieldError message={errors.name} />
         </div>
         <div className="space-y-2">
-          <Input name="fileUrl" type="url" required maxLength={500} placeholder="https://..." aria-label="Đường dẫn tệp" className="bg-background" />
+          <Input name="fileUrl" type="url" required maxLength={500} placeholder="https://..." aria-label="Đường dẫn tệp" className="bg-card" />
           <FieldError message={errors.fileUrl} />
         </div>
         <div className="flex justify-end">

@@ -30,7 +30,3 @@ export function CategoryOptions({ tree }: { tree: Category[] }) {
     </>
   );
 }
-
-// Giữ tên cũ cho các form đang dùng; trang mới import thẳng từ @/components/common.
-export { FieldHint, FormField as Field } from "@/components/common/form-field";
-export { NativeSelect } from "@/components/common/native-select";

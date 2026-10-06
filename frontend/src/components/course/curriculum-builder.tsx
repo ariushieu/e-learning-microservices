@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { EmptyState } from "@/components/common/empty-state";
 import { ErrorAlert } from "@/components/common/error-alert";
 import { FieldError } from "@/components/common/field-error";
+import { FormField } from "@/components/common/form-field";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,7 +34,7 @@ import { errorMessage } from "@/lib/errors";
 import { formatDuration } from "@/lib/format";
 import { fieldErrorMap, formErrorMessage, optionalNumber, text } from "@/lib/forms";
 import type { Section } from "@/lib/types";
-import { Field, nextPosition } from "./form-helpers";
+import { nextPosition } from "./form-helpers";
 import { LessonForm } from "./lesson-form";
 import { LessonItem } from "./lesson-item";
 
@@ -43,10 +44,15 @@ export function CurriculumBuilder({ courseId, sections }: { courseId: number; se
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground tabular-nums">
-        {sections.length} chương · {totalLessons} bài học · {formatDuration(totalSeconds)}. Sắp xếp theo số thứ tự (nhỏ hiện
-        trước); bài “xem thử” ai cũng xem được, không cần ghi danh.
-      </p>
+      <div className="space-y-1">
+        <h2 className="text-heading">Đề cương</h2>
+        <p className="text-sm text-muted-foreground">
+          <span className="font-medium text-foreground tabular-nums">
+            {sections.length} chương · {totalLessons} bài học · {formatDuration(totalSeconds)}
+          </span>
+          . Sắp xếp theo số thứ tự (nhỏ hiện trước); bài “xem thử” ai cũng xem được, không cần ghi danh.
+        </p>
+      </div>
       {sections.length === 0 ? (
         <EmptyState icon={LayersIcon} title="Khóa học chưa có chương nào" description="Thêm chương đầu tiên ở bên dưới." />
       ) : (
@@ -88,19 +94,19 @@ function AddSectionForm({ courseId, defaultPosition }: { courseId: number; defau
   }
 
   return (
-    <Card className="border border-dashed bg-muted/20 ring-0">
+    <Card className="border border-dashed bg-muted/30 shadow-none ring-0">
       <CardHeader>
-        <CardTitle>Thêm chương mới</CardTitle>
+        <CardTitle className="text-subheading">Thêm chương mới</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="space-y-4">
           {error && <ErrorAlert message={error} />}
           <div className="grid gap-4 sm:grid-cols-[1fr_120px_auto] sm:items-start">
-            <Field id={`${id}-title`} label="Tên chương" required error={errors.title}>
-              <Input id={`${id}-title`} name="title" required maxLength={200} placeholder="VD: Chương 1 - Giới thiệu" className="bg-background" />
-            </Field>
+            <FormField id={`${id}-title`} label="Tên chương" required error={errors.title}>
+              <Input id={`${id}-title`} name="title" required maxLength={200} placeholder="VD: Chương 1 - Giới thiệu" className="bg-card" />
+            </FormField>
             {/* key đổi theo vị trí kế tiếp để ô số tự cập nhật sau khi thêm chương */}
-            <Field id={`${id}-position`} label="Thứ tự" error={errors.position}>
+            <FormField id={`${id}-position`} label="Thứ tự" error={errors.position}>
               <Input
                 key={defaultPosition}
                 id={`${id}-position`}
@@ -109,9 +115,9 @@ function AddSectionForm({ courseId, defaultPosition }: { courseId: number; defau
                 min={0}
                 step={1}
                 defaultValue={defaultPosition}
-                className="bg-background"
+                className="bg-card"
               />
-            </Field>
+            </FormField>
             <Button type="submit" disabled={pending} className="sm:mt-6">
               {pending ? <Loader2Icon className="animate-spin" /> : <PlusIcon />} Thêm chương
             </Button>
@@ -169,8 +175,8 @@ function SectionCard({ section, index }: { section: Section; index: number }) {
   }
 
   return (
-    <Card className="gap-0 pb-0">
-      <CardHeader className="border-b">
+    <Card className="gap-0 py-0">
+      <CardHeader className="border-b bg-muted/40 pt-(--card-spacing)">
         {renaming ? (
           <form onSubmit={rename} className="col-span-full flex flex-wrap items-start gap-2">
             <div className="min-w-48 flex-1 space-y-1">
@@ -190,8 +196,10 @@ function SectionCard({ section, index }: { section: Section; index: number }) {
           </form>
         ) : (
           <>
-            <CardTitle className="font-semibold">
-              Chương {index}: {section.title}
+            {/* Tên chương thường đã có "Chương 1. ..." nên chỉ thêm nhãn "Phần n" nhỏ, khớp trang học. */}
+            <CardTitle className="min-w-0">
+              <span className="block text-caption font-medium text-muted-foreground">Phần {index}</span>
+              <span className="block text-subheading">{section.title}</span>
             </CardTitle>
             <CardDescription className="tabular-nums">
               {section.lessons.length} bài học · {formatDuration(seconds)} · Thứ tự {section.position}
@@ -245,7 +253,7 @@ function SectionCard({ section, index }: { section: Section; index: number }) {
           <DialogHeader>
             <DialogTitle>Thêm bài học mới</DialogTitle>
             <DialogDescription>
-              Chương {index}: {section.title}
+              Phần {index} · {section.title}
             </DialogDescription>
           </DialogHeader>
           <LessonForm
