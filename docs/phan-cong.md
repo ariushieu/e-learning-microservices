@@ -28,9 +28,9 @@
 | **Cả nhóm** | service của mình | [Đợt test Postman](#cả-nhóm--đợt-test-postman) | Sau khi có collection chung | ~2h/người |
 
 **Đã có giao diện web** (#46): `docker compose --profile app up -d --build --wait` rồi mở
-http://localhost:3000. Tạo dữ liệu mẫu bằng `node scripts/seed-demo.mjs` — tài khoản demo ở
-[README](../README.md#cách-nhanh-nhất-chạy-cả-hệ-thống-bằng-docker). Ba việc mới của
-phamquyet, hiep, duyd đều do chạy thử giao diện web mà lộ ra.
+http://localhost:3000, hoặc chạy riêng trong `frontend/` bằng `pnpm dev` — xem
+[frontend/README.md](../frontend/README.md). Ba việc mới của phamquyet, hiep, duyd đều do chạy
+thử giao diện web mà lộ ra.
 
 **Đã đủ bốn điều kiện để test toàn bộ API** (#41, #42). Thứ tự:
 
