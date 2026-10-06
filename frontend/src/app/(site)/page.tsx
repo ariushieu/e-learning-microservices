@@ -5,7 +5,7 @@ import { EmptyState } from "@/components/common/empty-state";
 import { ErrorAlert } from "@/components/common/error-alert";
 import { CatalogFilters, levels } from "@/components/course/catalog-filters";
 import { CourseCard } from "@/components/course/course-card";
-import { Pagination } from "@/components/course/pagination";
+import { Pagination } from "@/components/common/pagination";
 import { attempt } from "@/components/course/queries";
 import { Button } from "@/components/ui/button";
 import { formatNumber } from "@/lib/format";

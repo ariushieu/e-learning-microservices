@@ -17,7 +17,7 @@ export function Pagination({
   const pages = Array.from({ length: Math.min(5, totalPages) }, (_, i) => from + i);
 
   return (
-    <nav className="flex flex-wrap items-center justify-center gap-1" aria-label="Phân trang">
+    <nav className="mt-10 flex flex-wrap items-center justify-center gap-1" aria-label="Phân trang">
       {page > 0 ? (
         <Button asChild variant="ghost">
           <Link href={hrefFor(page - 1)}>
@@ -49,6 +49,45 @@ export function Pagination({
       ) : (
         <Button variant="ghost" disabled>
           Sau <ChevronRightIcon />
+        </Button>
+      )}
+    </nav>
+  );
+}
+
+/** Phân trang chỉ có Trước / Sau (danh sách theo thời gian như thông báo). Nhãn tùy chỉnh được. */
+export function PrevNextPagination({
+  first,
+  last,
+  prevHref,
+  nextHref,
+  prevLabel = "Trước",
+  nextLabel = "Sau",
+}: {
+  first: boolean;
+  last: boolean;
+  prevHref: string;
+  nextHref: string;
+  prevLabel?: string;
+  nextLabel?: string;
+}) {
+  if (first && last) return null;
+  return (
+    <nav className="mt-6 flex items-center justify-between" aria-label="Phân trang">
+      {first ? (
+        <span />
+      ) : (
+        <Button asChild variant="outline">
+          <Link href={prevHref}>
+            <ChevronLeftIcon /> {prevLabel}
+          </Link>
+        </Button>
+      )}
+      {!last && (
+        <Button asChild variant="outline">
+          <Link href={nextHref}>
+            {nextLabel} <ChevronRightIcon />
+          </Link>
         </Button>
       )}
     </nav>
