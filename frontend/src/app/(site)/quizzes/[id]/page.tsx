@@ -1,19 +1,21 @@
-import { ArrowLeftIcon, ClipboardListIcon, ClockIcon, HistoryIcon, LockIcon, RepeatIcon, TargetIcon } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { ArrowLeftIcon, CheckIcon, ClipboardListIcon, ClockIcon, HistoryIcon, LockIcon, RepeatIcon, TargetIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
+import { DataTableCard } from "@/components/common/data-table-card";
 import { EmptyState } from "@/components/common/empty-state";
+import { Fact, FactList } from "@/components/common/fact-list";
+import { Section } from "@/components/common/section";
 import { StatusBadge } from "@/components/common/status-badge";
 import { formatScore, formatTimeLimit } from "@/components/quiz/labels";
+import { DetailHero, HeroMeta } from "@/components/templates/detail-page";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ApiError } from "@/lib/errors";
 import { formatDate } from "@/lib/format";
 import { gateway } from "@/lib/server/gateway";
-import type { QuizAttempt, QuizDetail } from "@/lib/types";
+import type { Course, QuizAttempt, QuizDetail } from "@/lib/types";
 import { QuizRunner } from "./quiz-runner";
 
 /** Đề cho học viên; null kèm lý do khi bài chưa xuất bản (422) hoặc không tồn tại (404). */
@@ -40,7 +42,7 @@ export default async function QuizPage({ params }: PageProps<"/quizzes/[id]">) {
   const { quiz, reason } = await loadQuiz(id);
   if (!quiz) {
     return (
-      <div className="mx-auto max-w-lg py-10">
+      <div className="mx-auto w-full max-w-lg py-10">
         <EmptyState
           icon={LockIcon}
           title="Bài kiểm tra chưa mở"
@@ -55,110 +57,122 @@ export default async function QuizPage({ params }: PageProps<"/quizzes/[id]">) {
     );
   }
 
-  const attempts = await gateway<QuizAttempt[]>(`/api/quizzes/${id}/attempts`);
+  // Tên khóa chỉ để hiện trên đường dẫn; không lấy được thì ghi chung chung, không chặn trang.
+  const [attempts, course] = await Promise.all([
+    gateway<QuizAttempt[]>(`/api/quizzes/${id}/attempts`),
+    gateway<Course>(`/api/courses/${quiz.courseId}`).catch(() => null),
+  ]);
   const inProgress = attempts.some((a) => a.status === "IN_PROGRESS");
   // Server đếm cả lượt đang làm và lượt hết giờ vào số lần đã dùng.
   const exhausted = !inProgress && quiz.maxAttempts > 0 && attempts.length >= quiz.maxAttempts;
 
-  const intro = (
-    <>
-      <div className="space-y-3">
-        <Button asChild variant="ghost" size="sm" className="-ml-2.5 text-muted-foreground">
+  const hero = (
+    <DetailHero
+      crumbs={[
+        { href: "/my-courses", label: "Khóa học của tôi" },
+        { href: `/learn/${quiz.courseId}`, label: course?.title ?? "Khóa học" },
+        { label: quiz.title },
+      ]}
+      eyebrow="Bài kiểm tra"
+      title={quiz.title}
+      description={quiz.description ? <span className="whitespace-pre-line">{quiz.description}</span> : undefined}
+      meta={
+        <>
+          <HeroMeta icon={<ClipboardListIcon />}>{quiz.questions.length} câu hỏi</HeroMeta>
+          <HeroMeta icon={<ClockIcon />}>{quiz.timeLimitMinutes ? `${quiz.timeLimitMinutes} phút` : "Không giới hạn thời gian"}</HeroMeta>
+          <HeroMeta icon={<TargetIcon />}>Điểm đạt {formatScore(quiz.passScore)}</HeroMeta>
+          <HeroMeta icon={<RepeatIcon />}>{quiz.maxAttempts > 0 ? `Tối đa ${quiz.maxAttempts} lượt` : "Không giới hạn lượt"}</HeroMeta>
+        </>
+      }
+      actions={
+        <Button asChild variant="secondary">
           <Link href={`/learn/${quiz.courseId}`}>
             <ArrowLeftIcon /> Về bài học của khóa
           </Link>
         </Button>
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-primary">Bài kiểm tra</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-balance">{quiz.title}</h1>
-          {quiz.description && (
-            <p className="whitespace-pre-line text-muted-foreground">{quiz.description}</p>
-          )}
-        </div>
-      </div>
+      }
+    />
+  );
 
-      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile icon={ClipboardListIcon} label="Câu hỏi" value={String(quiz.questions.length)} />
-        <StatTile icon={ClockIcon} label="Thời gian" value={formatTimeLimit(quiz.timeLimitMinutes)} />
-        <StatTile icon={TargetIcon} label="Điểm đạt" value={formatScore(quiz.passScore)} />
-        <StatTile
-          icon={RepeatIcon}
-          label="Lượt làm"
-          value={quiz.maxAttempts > 0 ? `${attempts.length}/${quiz.maxAttempts}` : `${attempts.length} / không giới hạn`}
-        />
-      </dl>
+  const rules = [
+    quiz.timeLimitMinutes
+      ? `Có ${quiz.timeLimitMinutes} phút; hết giờ hệ thống tự nộp bài.`
+      : "Không giới hạn thời gian, nhớ bấm nộp bài khi làm xong.",
+    "Câu bỏ trống được tính là sai.",
+    `Đạt khi điểm từ ${formatScore(quiz.passScore)} trở lên.`,
+    quiz.maxAttempts > 0 ? `Được làm tối đa ${quiz.maxAttempts} lần.` : "Được làm lại không giới hạn số lần.",
+  ];
+
+  const summary = (
+    <>
+      <FactList>
+        <Fact label="Lượt làm" value={quiz.maxAttempts > 0 ? `${attempts.length}/${quiz.maxAttempts}` : `${attempts.length} / không giới hạn`} />
+        <Fact label="Thời gian" value={formatTimeLimit(quiz.timeLimitMinutes)} />
+        <Fact label="Điểm đạt" value={formatScore(quiz.passScore)} />
+      </FactList>
+      <div className="space-y-2.5 border-t pt-4">
+        <p className="text-subheading">Quy định</p>
+        <ul className="space-y-2 text-sm text-muted-foreground">
+          {rules.map((r) => (
+            <li key={r} className="flex gap-2">
+              <CheckIcon className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
+              {r}
+            </li>
+          ))}
+        </ul>
+      </div>
     </>
   );
 
   return (
-    <QuizRunner quiz={quiz} canStart={!exhausted} resuming={inProgress} intro={intro}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-semibold">Các lần làm trước</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {attempts.length === 0 ? (
-            <EmptyState icon={HistoryIcon} title="Chưa có lần làm nào" description="Kết quả các lần làm bài sẽ hiện ở đây." />
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Lần</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead>Điểm</TableHead>
-                  <TableHead>Kết quả</TableHead>
-                  <TableHead>Nộp lúc</TableHead>
-                  <TableHead className="text-right" />
+    <QuizRunner quiz={quiz} canStart={!exhausted} resuming={inProgress} hero={hero} summary={summary}>
+      <Section title="Các lần làm trước" count={attempts.length}>
+        <DataTableCard
+          isEmpty={attempts.length === 0}
+          empty={<EmptyState icon={HistoryIcon} title="Chưa có lần làm nào" description="Kết quả các lần làm bài sẽ hiện ở đây." />}
+        >
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Lần</TableHead>
+                <TableHead>Trạng thái</TableHead>
+                <TableHead>Điểm</TableHead>
+                <TableHead>Kết quả</TableHead>
+                <TableHead className="hidden sm:table-cell">Nộp lúc</TableHead>
+                <TableHead className="text-right">
+                  <span className="sr-only">Thao tác</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {attempts.map((a) => (
+                <TableRow key={a.id}>
+                  <TableCell className="font-medium tabular-nums">#{a.attemptNo}</TableCell>
+                  <TableCell>
+                    <StatusBadge status={a.status} />
+                  </TableCell>
+                  <TableCell className="tabular-nums">{a.status === "IN_PROGRESS" ? "—" : formatScore(a.score)}</TableCell>
+                  <TableCell>
+                    {a.status === "IN_PROGRESS" ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : (
+                      <StatusBadge status={a.passed ? "PASSED" : "FAILED"} />
+                    )}
+                  </TableCell>
+                  <TableCell className="hidden text-muted-foreground tabular-nums sm:table-cell">{formatDate(a.submittedAt) || "—"}</TableCell>
+                  <TableCell className="text-right">
+                    {a.status !== "IN_PROGRESS" && (
+                      <Button asChild variant="link" size="sm" className="px-0">
+                        <Link href={`/attempts/${a.id}`}>Xem kết quả</Link>
+                      </Button>
+                    )}
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {attempts.map((a) => (
-                  <TableRow key={a.id}>
-                    <TableCell className="font-medium tabular-nums">#{a.attemptNo}</TableCell>
-                    <TableCell>
-                      <StatusBadge status={a.status} />
-                    </TableCell>
-                    <TableCell className="tabular-nums">
-                      {a.status === "IN_PROGRESS" ? "—" : formatScore(a.score)}
-                    </TableCell>
-                    <TableCell>
-                      {a.status === "IN_PROGRESS" ? (
-                        <span className="text-muted-foreground">—</span>
-                      ) : a.passed ? (
-                        <span className="font-medium text-emerald-600">Đạt</span>
-                      ) : (
-                        <span className="font-medium text-red-600">Chưa đạt</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground tabular-nums">
-                      {formatDate(a.submittedAt) || "—"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {a.status !== "IN_PROGRESS" && (
-                        <Button asChild variant="link" size="sm" className="px-0">
-                          <Link href={`/attempts/${a.id}`}>Xem kết quả</Link>
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+              ))}
+            </TableBody>
+          </Table>
+        </DataTableCard>
+      </Section>
     </QuizRunner>
-  );
-}
-
-function StatTile({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
-  return (
-    <div className="rounded-xl border bg-card px-4 py-3">
-      <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Icon className="size-3.5" />
-        {label}
-      </dt>
-      <dd className="mt-1 font-semibold tabular-nums">{value}</dd>
-    </div>
   );
 }

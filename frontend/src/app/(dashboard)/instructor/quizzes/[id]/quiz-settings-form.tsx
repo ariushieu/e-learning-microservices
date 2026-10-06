@@ -56,7 +56,7 @@ export function QuizSettingsForm({ quiz }: { quiz: Quiz }) {
     <Card>
       <form onSubmit={submit} noValidate className="flex flex-col gap-(--card-spacing)">
         <CardHeader>
-          <CardTitle className="text-base font-semibold">Cài đặt</CardTitle>
+          <CardTitle className="text-subheading">Cài đặt</CardTitle>
           <CardDescription>Tiêu đề, thời gian và cách chấm điểm.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">

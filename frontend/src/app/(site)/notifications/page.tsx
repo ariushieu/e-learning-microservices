@@ -2,9 +2,13 @@ import { BellIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { EmptyState } from "@/components/common/empty-state";
-import { PageHeader } from "@/components/common/page-header";
+import { ErrorAlert } from "@/components/common/error-alert";
+import { PrevNextPagination } from "@/components/common/pagination";
 import { NotificationItem } from "@/components/notification/notification-item";
+import { ListPage } from "@/components/templates/list-page";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { errorMessage } from "@/lib/errors";
 import { gateway } from "@/lib/server/gateway";
 import type { Notification, Page } from "@/lib/types";
 
@@ -15,34 +19,61 @@ const PAGE_SIZE = 20;
 export default async function NotificationsPage({ searchParams }: PageProps<"/notifications">) {
   const { page } = await searchParams;
   const current = Math.max(0, Number(page ?? 0) || 0);
-  const data = await gateway<Page<Notification>>(`/api/notifications?page=${current}&size=${PAGE_SIZE}`);
-  const unread = data.content.filter((n) => !n.read).length;
+  let data: Page<Notification> | null = null;
+  let loadError: string | null = null;
+  try {
+    data = await gateway<Page<Notification>>(`/api/notifications?page=${current}&size=${PAGE_SIZE}`);
+  } catch (e) {
+    loadError = errorMessage(e);
+  }
 
+  if (!data) {
+    return (
+      <ListPage title="Thông báo" width="narrow">
+        <ErrorAlert title="Không tải được thông báo" message={loadError ?? ""} />
+      </ListPage>
+    );
+  }
+
+  const unread = data.content.filter((n) => !n.read).length;
   return (
-    <div className="mx-auto max-w-2xl">
-      <PageHeader
-        title="Thông báo"
-        description={unread ? `${unread} thông báo chưa đọc trên trang này` : `${data.totalElements} thông báo`}
-      />
+    <ListPage
+      title="Thông báo"
+      description={unread ? `${unread} thông báo chưa đọc trên trang này` : `${data.totalElements} thông báo`}
+      width="narrow"
+      pagination={
+        data.totalPages > 1 && (
+          <PrevNextPagination
+            first={data.first}
+            last={data.last}
+            prevHref={`/notifications?page=${current - 1}`}
+            nextHref={`/notifications?page=${current + 1}`}
+            prevLabel="Mới hơn"
+            nextLabel="Cũ hơn"
+          />
+        )
+      }
+    >
       {data.content.length === 0 ? (
-        <EmptyState icon={BellIcon} title="Chưa có thông báo" description="Ghi danh khóa học hoặc làm bài kiểm tra để nhận thông báo." />
+        <EmptyState
+          icon={BellIcon}
+          title="Chưa có thông báo"
+          description="Ghi danh khóa học hoặc làm bài kiểm tra để nhận thông báo."
+          action={
+            current > 0 ? (
+              <Button asChild variant="outline">
+                <Link href="/notifications">Về trang đầu</Link>
+              </Button>
+            ) : undefined
+          }
+        />
       ) : (
-        <div className="divide-y overflow-hidden rounded-xl border bg-card">
+        <Card className="gap-0 divide-y py-0">
           {data.content.map((n) => (
             <NotificationItem key={n.id} notification={n} />
           ))}
-        </div>
+        </Card>
       )}
-      {data.totalPages > 1 && (
-        <div className="mt-6 flex justify-between">
-          <Button asChild variant="outline" disabled={data.first} className={data.first ? "invisible" : ""}>
-            <Link href={`/notifications?page=${current - 1}`}>Mới hơn</Link>
-          </Button>
-          <Button asChild variant="outline" className={data.last ? "invisible" : ""}>
-            <Link href={`/notifications?page=${current + 1}`}>Cũ hơn</Link>
-          </Button>
-        </div>
-      )}
-    </div>
+    </ListPage>
   );
 }

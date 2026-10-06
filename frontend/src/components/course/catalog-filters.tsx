@@ -1,17 +1,43 @@
 import { SearchIcon, XIcon } from "lucide-react";
 import Link from "next/link";
+import { NativeSelect } from "@/components/common/native-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { label } from "@/lib/format";
 import type { Category, CourseLevel } from "@/lib/types";
-import { CategoryOptions, COURSE_LEVELS, NativeSelect } from "./form-helpers";
+import { CategoryOptions, COURSE_LEVELS } from "./form-helpers";
 
 export const levels: { value: CourseLevel; label: string }[] = COURSE_LEVELS.map((l) => ({ value: l, label: label(l) }));
 
+const FORM_ID = "catalog-search";
+
 /**
- * Ô tìm kiếm và hàng bộ lọc (danh mục kèm danh mục con, trình độ) chung một form GET thuần,
- * nên lọc được cả khi trình duyệt tắt JavaScript.
+ * Ô tìm kiếm (trong dải hero) và bộ lọc (trên danh sách) nằm ở hai chỗ nhưng vẫn là MỘT form GET thuần:
+ * ô lọc gắn vào form qua thuộc tính `form`, nên tìm kiếm giữ nguyên bộ lọc và ngược lại,
+ * kể cả khi trình duyệt tắt JavaScript.
  */
+export function CatalogSearch({ keyword }: { keyword: string }) {
+  return (
+    <form id={FORM_ID} method="get" action="/" role="search" className="flex max-w-2xl flex-col gap-2 sm:flex-row">
+      <div className="relative flex-1">
+        <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+        <Input
+          type="search"
+          name="keyword"
+          defaultValue={keyword}
+          placeholder="Tìm khóa học theo tên, nội dung..."
+          aria-label="Từ khóa"
+          className="h-11 border-transparent bg-card pl-10 text-foreground shadow-raised pointer-coarse:h-11"
+        />
+      </div>
+      <Button type="submit" variant="secondary" size="lg" className="h-11 px-5 pointer-coarse:h-11">
+        Tìm kiếm
+      </Button>
+    </form>
+  );
+}
+
+/** Danh mục (kèm danh mục con) và trình độ; đặt trong <Toolbar>. */
 export function CatalogFilters({
   categories,
   keyword,
@@ -25,51 +51,33 @@ export function CatalogFilters({
 }) {
   const filtered = keyword || categoryId || level;
   return (
-    <form method="get" action="/" role="search" className="space-y-3">
-      <div className="flex max-w-2xl gap-2">
-        <div className="relative flex-1">
-          <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            name="keyword"
-            defaultValue={keyword}
-            placeholder="Tìm khóa học theo tên, nội dung..."
-            aria-label="Từ khóa"
-            className="h-10 pl-9"
-          />
-        </div>
-        <Button type="submit" className="h-10 px-4">
-          Tìm kiếm
-        </Button>
+    <>
+      <div className="w-full sm:w-60">
+        <NativeSelect form={FORM_ID} name="categoryId" defaultValue={categoryId} aria-label="Danh mục">
+          <option value="">Tất cả danh mục</option>
+          <CategoryOptions tree={categories} />
+        </NativeSelect>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="w-full sm:w-60">
-          <NativeSelect name="categoryId" defaultValue={categoryId} aria-label="Danh mục">
-            <option value="">Tất cả danh mục</option>
-            <CategoryOptions tree={categories} />
-          </NativeSelect>
-        </div>
-        <div className="w-full sm:w-44">
-          <NativeSelect name="level" defaultValue={level} aria-label="Trình độ">
-            <option value="">Mọi trình độ</option>
-            {levels.map((l) => (
-              <option key={l.value} value={l.value}>
-                {l.label}
-              </option>
-            ))}
-          </NativeSelect>
-        </div>
-        <Button type="submit" variant="outline">
-          Lọc
-        </Button>
-        {filtered && (
-          <Button asChild variant="ghost">
-            <Link href="/">
-              <XIcon /> Xóa lọc
-            </Link>
-          </Button>
-        )}
+      <div className="w-full sm:w-44">
+        <NativeSelect form={FORM_ID} name="level" defaultValue={level} aria-label="Trình độ">
+          <option value="">Mọi trình độ</option>
+          {levels.map((l) => (
+            <option key={l.value} value={l.value}>
+              {l.label}
+            </option>
+          ))}
+        </NativeSelect>
       </div>
-    </form>
+      <Button type="submit" form={FORM_ID} variant="outline">
+        Lọc
+      </Button>
+      {filtered && (
+        <Button asChild variant="ghost">
+          <Link href="/">
+            <XIcon /> Xóa lọc
+          </Link>
+        </Button>
+      )}
+    </>
   );
 }

@@ -44,6 +44,8 @@ export const LABELS: Record<string, string> = {
   IN_PROGRESS: "Đang làm",
   SUBMITTED: "Đã nộp",
   EXPIRED: "Hết giờ",
+  PASSED: "Đạt",
+  FAILED: "Chưa đạt",
   BEGINNER: "Cơ bản",
   INTERMEDIATE: "Trung cấp",
   ADVANCED: "Nâng cao",

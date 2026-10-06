@@ -4,7 +4,7 @@ import { NotificationBell } from "@/components/notification/notification-bell";
 import { hasRole } from "@/lib/auth-shared";
 import { getSession } from "@/lib/server/gateway";
 import { Brand } from "./brand";
-import { MainNav } from "./main-nav";
+import { MainNav, MobileNav } from "./main-nav";
 import { UserMenu } from "./user-menu";
 
 export async function SiteHeader() {
@@ -16,11 +16,12 @@ export async function SiteHeader() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-      <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4 sm:px-6">
+    <header className="sticky top-0 z-40 border-b bg-card/85 backdrop-blur-md supports-[backdrop-filter]:bg-card/75">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4 sm:gap-6 sm:px-6">
+        <MobileNav links={links} />
         <Brand />
         <MainNav links={links} />
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
           {session ? (
             <>
               <NotificationBell />

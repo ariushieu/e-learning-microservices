@@ -1,10 +1,12 @@
 import {
+  ArchiveIcon,
   AwardIcon,
   CalendarIcon,
-  CircleAlertIcon,
+  ClipboardListIcon,
   ClockIcon,
   GlobeIcon,
   InfoIcon,
+  LayersIcon,
   ListVideoIcon,
   PlayIcon,
   SettingsIcon,
@@ -12,35 +14,29 @@ import {
   StarIcon,
   UserIcon,
   UsersIcon,
-  type LucideIcon,
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { ReactNode } from "react";
+import { Callout } from "@/components/common/callout";
+import { CourseCover } from "@/components/common/course-cover";
 import { ErrorAlert } from "@/components/common/error-alert";
+import { Fact, FactList } from "@/components/common/fact-list";
+import { ProgressMeter } from "@/components/common/progress-meter";
+import { Section } from "@/components/common/section";
 import { StatusBadge } from "@/components/common/status-badge";
-import { CourseThumb, PriceTag } from "@/components/course/course-card";
+import { PriceTag } from "@/components/course/course-card";
 import { CurriculumList } from "@/components/course/curriculum-list";
 import { attempt, getCourse, getMyEnrollments, isId } from "@/components/course/queries";
 import { EnrollButton } from "@/components/enrollment/enroll-button";
 import { QuizList } from "@/components/quiz/course-quizzes";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+import { DetailHero, DetailPage, HeroMeta } from "@/components/templates/detail-page";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Card, CardContent } from "@/components/ui/card";
 import { hasRole, type Session } from "@/lib/auth-shared";
 import { formatDay, formatDuration, formatNumber, label } from "@/lib/format";
 import { gateway, getSession } from "@/lib/server/gateway";
-import type { Course, Enrollment, Quiz, Section } from "@/lib/types";
+import type { Course, Enrollment, Quiz, Section as CourseSection } from "@/lib/types";
 
 export async function generateMetadata({ params }: PageProps<"/courses/[id]">): Promise<Metadata> {
   const { id } = await params;
@@ -59,7 +55,7 @@ export default async function CourseDetailPage({ params }: PageProps<"/courses/[
   if (!course) notFound();
 
   const [curriculum, enrollments, quizzes] = await Promise.all([
-    attempt(gateway<Section[]>(`/api/courses/${id}/curriculum`)),
+    attempt(gateway<CourseSection[]>(`/api/courses/${id}/curriculum`)),
     session ? attempt(getMyEnrollments()) : Promise.resolve(null),
     session ? attempt(gateway<Quiz[]>(`/api/quizzes?courseId=${id}`)) : Promise.resolve(null),
   ]);
@@ -69,138 +65,114 @@ export default async function CourseDetailPage({ params }: PageProps<"/courses/[
   // Học viên chỉ thấy bài kiểm tra đã xuất bản, và chỉ khi đã ghi danh (hoặc là người quản lý khóa).
   const publishedQuizzes = quizzes?.data?.filter((q) => q.status === "PUBLISHED") ?? [];
   const showQuizzes = (activeEnrollment !== null || isManager) && publishedQuizzes.length > 0;
+  const cover = <CourseCover title={course.title} category={course.categoryName} thumbnailUrl={course.thumbnailUrl} />;
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10">
-      <CourseHeader course={course} />
-
-      <aside className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
-        <div className="lg:sticky lg:top-20">
-          <Card className="gap-0 pt-0">
-            <CourseThumb course={course} />
-            <CardContent className="space-y-4 pt-5">
-              <PriceTag price={course.price} className="text-2xl" />
-              <EnrollAction
-                course={course}
-                session={session}
-                enrollment={enrollment}
-                enrollmentError={enrollments?.error ?? null}
-                isManager={isManager}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      </aside>
-
-      <div className="min-w-0 space-y-10">
-        <section className="space-y-4">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-lg font-semibold">Nội dung khóa học</h2>
-            {curriculum.data && (
-              <p className="text-sm text-muted-foreground tabular-nums">
-                {curriculum.data.length} chương · {course.totalLessons} bài học · {formatDuration(course.totalDurationSeconds)}
-              </p>
-            )}
+    <DetailPage
+      hero={
+        <DetailHero
+          crumbs={[
+            { href: "/", label: "Khám phá" },
+            { href: `/?categoryId=${course.categoryId}`, label: course.categoryName },
+            { label: course.title },
+          ]}
+          eyebrow={course.categoryName}
+          title={course.title}
+          description={course.summary}
+          meta={
+            <>
+              {course.status !== "PUBLISHED" && <StatusBadge status={course.status} />}
+              <HeroMeta icon={<UserIcon />}>
+                <span className="font-medium text-white">{course.instructorName || "Giảng viên HUNRE"}</span>
+              </HeroMeta>
+              <HeroMeta icon={<SignalIcon />}>{label(course.level)}</HeroMeta>
+              <HeroMeta icon={<ListVideoIcon />}>{course.totalLessons} bài học</HeroMeta>
+              <HeroMeta icon={<ClockIcon />}>{formatDuration(course.totalDurationSeconds)}</HeroMeta>
+              <HeroMeta icon={<UsersIcon />}>{formatNumber(course.studentCount)} học viên</HeroMeta>
+              <HeroMeta icon={<GlobeIcon />}>{languageName(course.language)}</HeroMeta>
+              {course.ratingCount > 0 && (
+                <HeroMeta icon={<StarIcon />}>
+                  {formatNumber(course.ratingAvg, 1)}/5 ({formatNumber(course.ratingCount)})
+                </HeroMeta>
+              )}
+              {course.updatedAt && <HeroMeta icon={<CalendarIcon />}>Cập nhật {formatDay(course.updatedAt)}</HeroMeta>}
+            </>
+          }
+          media={cover}
+        />
+      }
+      aside={
+        <Card className="gap-0 py-0">
+          {/* Trên màn lớn ảnh bìa đã nằm trong dải hero; điện thoại không có nên hiện ở đây. */}
+          <div className="lg:hidden">{cover}</div>
+          <div className="space-y-5 p-5">
+            <PriceTag price={course.price} className="block text-title" />
+            <EnrollAction
+              course={course}
+              session={session}
+              enrollment={enrollment}
+              enrollmentError={enrollments?.error ?? null}
+              isManager={isManager}
+            />
           </div>
-          {curriculum.error !== null ? (
-            <ErrorAlert title="Không tải được đề cương" message={curriculum.error} />
-          ) : (
-            <CurriculumList sections={curriculum.data} courseId={course.id} canLearn={activeEnrollment !== null} />
-          )}
-        </section>
+          <div className="space-y-3 border-t p-5">
+            <h2 className="text-subheading">Khóa học gồm</h2>
+            <FactList>
+              {curriculum.data && <Fact icon={LayersIcon} label="Chương" value={curriculum.data.length} />}
+              <Fact icon={ListVideoIcon} label="Bài học" value={course.totalLessons} />
+              <Fact icon={ClockIcon} label="Thời lượng" value={formatDuration(course.totalDurationSeconds)} />
+              {showQuizzes && <Fact icon={ClipboardListIcon} label="Bài kiểm tra" value={publishedQuizzes.length} />}
+              <Fact icon={GlobeIcon} label="Ngôn ngữ" value={languageName(course.language)} />
+              <Fact icon={AwardIcon} label="Chứng chỉ" value="Khi hoàn thành" />
+            </FactList>
+          </div>
+        </Card>
+      }
+    >
+      {course.status === "ARCHIVED" && (
+        <Callout icon={ArchiveIcon} tone="neutral" title="Khóa học đã lưu trữ">
+          Khóa không nhận ghi danh mới. Học viên đã ghi danh vẫn học tiếp được.
+        </Callout>
+      )}
+      {(course.status === "DRAFT" || course.status === "PENDING_REVIEW") && (
+        <Callout icon={InfoIcon} tone="warning" title="Khóa học chưa xuất bản">
+          Chỉ giảng viên của khóa và quản trị viên thấy trang này.
+        </Callout>
+      )}
 
-        {course.description && (
+      <Section
+        title="Nội dung khóa học"
+        actions={
+          curriculum.data && (
+            <p className="text-sm text-muted-foreground tabular-nums">
+              {curriculum.data.length} chương · {course.totalLessons} bài học · {formatDuration(course.totalDurationSeconds)}
+            </p>
+          )
+        }
+      >
+        {curriculum.error !== null ? (
+          <ErrorAlert title="Không tải được đề cương" message={curriculum.error} />
+        ) : (
+          <CurriculumList sections={curriculum.data} courseId={course.id} canLearn={activeEnrollment !== null} />
+        )}
+      </Section>
+
+      {course.description && (
+        <Section title="Giới thiệu khóa học">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold">Giới thiệu khóa học</CardTitle>
-            </CardHeader>
             <CardContent>
               <div className="lesson-content text-foreground/90">{course.description}</div>
             </CardContent>
           </Card>
-        )}
-
-        {showQuizzes && (
-          <section className="space-y-4">
-            <h2 className="text-lg font-semibold">Bài kiểm tra</h2>
-            <QuizList quizzes={publishedQuizzes} />
-          </section>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function CourseHeader({ course }: { course: Course }) {
-  return (
-    <section className="min-w-0 space-y-5">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/">Khám phá</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href={`/?categoryId=${course.categoryId}`}>{course.categoryName}</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator className="hidden sm:block" />
-          <BreadcrumbItem className="hidden sm:inline-flex">
-            <BreadcrumbPage className="line-clamp-1">{course.title}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
-      <div className="space-y-3">
-        {course.status !== "PUBLISHED" && <StatusBadge status={course.status} />}
-        <h1 className="text-3xl font-semibold tracking-tight text-balance">{course.title}</h1>
-        {course.summary && <p className="text-lg text-muted-foreground">{course.summary}</p>}
-      </div>
-
-      <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
-        <Meta icon={UserIcon}>
-          <span className="font-medium text-foreground">{course.instructorName || "Giảng viên HUNRE"}</span>
-        </Meta>
-        <Meta icon={SignalIcon}>{label(course.level)}</Meta>
-        <Meta icon={ListVideoIcon}>{course.totalLessons} bài học</Meta>
-        <Meta icon={ClockIcon}>{formatDuration(course.totalDurationSeconds)}</Meta>
-        <Meta icon={UsersIcon}>{formatNumber(course.studentCount)} học viên</Meta>
-        <Meta icon={GlobeIcon}>{languageName(course.language)}</Meta>
-        {course.ratingCount > 0 && (
-          <Meta icon={StarIcon}>
-            {formatNumber(course.ratingAvg, 1)}/5 ({formatNumber(course.ratingCount)})
-          </Meta>
-        )}
-        {course.updatedAt && <Meta icon={CalendarIcon}>Cập nhật {formatDay(course.updatedAt)}</Meta>}
-      </ul>
-
-      {course.status === "ARCHIVED" && (
-        <Alert>
-          <InfoIcon />
-          <AlertTitle>Khóa học đã lưu trữ</AlertTitle>
-          <AlertDescription>Khóa không nhận ghi danh mới. Học viên đã ghi danh vẫn học tiếp được.</AlertDescription>
-        </Alert>
+        </Section>
       )}
-      {(course.status === "DRAFT" || course.status === "PENDING_REVIEW") && (
-        <Alert>
-          <InfoIcon />
-          <AlertTitle>Khóa học chưa xuất bản</AlertTitle>
-          <AlertDescription>Chỉ giảng viên của khóa và quản trị viên thấy trang này.</AlertDescription>
-        </Alert>
-      )}
-    </section>
-  );
-}
 
-function Meta({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
-  return (
-    <li className="inline-flex items-center gap-1.5">
-      <Icon className="size-4" />
-      {children}
-    </li>
+      {showQuizzes && (
+        <Section title="Bài kiểm tra" count={publishedQuizzes.length}>
+          <QuizList quizzes={publishedQuizzes} />
+        </Section>
+      )}
+    </DetailPage>
   );
 }
 
@@ -227,48 +199,45 @@ function EnrollAction({
 
   if (!session) {
     return (
-      <Button asChild size="lg" className="w-full">
+      <Button asChild size="lg" className="h-10 w-full text-base">
         <Link href={`/login?next=${encodeURIComponent(`/courses/${course.id}`)}`}>Đăng nhập để ghi danh</Link>
       </Button>
     );
   }
 
   if (enrollment && enrollment.status !== "CANCELLED") {
-    const percent = Math.round(enrollment.progressPercent);
     return (
-      <div className="space-y-3">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <StatusBadge status={enrollment.status} />
-            <span className="text-muted-foreground tabular-nums">{percent}% hoàn thành</span>
-          </div>
-          <Progress value={percent} aria-label="Tiến độ học" />
+      <div className="space-y-4">
+        <div className="space-y-2.5">
+          <StatusBadge status={enrollment.status} />
+          <ProgressMeter
+            value={enrollment.progressPercent}
+            label="Tiến độ học"
+            detail={`${Math.round(enrollment.progressPercent)}% hoàn thành`}
+          />
         </div>
-        <Button asChild size="lg" className="w-full">
-          <Link href={`/learn/${course.id}`}>
-            <PlayIcon /> Vào học
-          </Link>
-        </Button>
-        {enrollment.status === "COMPLETED" && (
-          <Button asChild variant="outline" size="lg" className="w-full">
-            <Link href={`/certificates/${enrollment.id}`}>
-              <AwardIcon /> Xem chứng chỉ
+        <div className="space-y-2">
+          <Button asChild size="lg" className="h-10 w-full text-base">
+            <Link href={`/learn/${course.id}`}>
+              <PlayIcon /> Vào học
             </Link>
           </Button>
-        )}
-        {manage}
+          {enrollment.status === "COMPLETED" && (
+            <Button asChild variant="outline" size="lg" className="w-full">
+              <Link href={`/certificates/${enrollment.id}`}>
+                <AwardIcon /> Xem chứng chỉ
+              </Link>
+            </Button>
+          )}
+          {manage}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      {enrollmentError && (
-        <Alert>
-          <CircleAlertIcon />
-          <AlertDescription>Không kiểm tra được trạng thái ghi danh: {enrollmentError}</AlertDescription>
-        </Alert>
-      )}
+      {enrollmentError && <ErrorAlert message={`Không kiểm tra được trạng thái ghi danh: ${enrollmentError}`} />}
       {course.status === "PUBLISHED" ? (
         <EnrollButton courseId={course.id} label={enrollment ? "Ghi danh lại" : "Ghi danh ngay"} />
       ) : (

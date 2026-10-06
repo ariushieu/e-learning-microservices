@@ -62,12 +62,15 @@ chưa xong. `.github/CODEOWNERS` tự gắn đúng người review khi pull requ
 | duyd92689-debug | Trang chủ (danh mục khóa), chi tiết khóa, khu giảng dạy (khóa, chương, bài), danh mục (`/admin/categories`) | `components/course/`, `app/(site)/page.tsx`, `app/(site)/courses/`, `app/(dashboard)/instructor/` (trừ `quizzes/`), `app/(dashboard)/admin/categories/` |
 | phamquyet19042005-netizen | Ghi danh, trang học + tiến độ, khóa của tôi, chứng chỉ | `components/enrollment/`, `app/(learn)/`, `app/(site)/my-courses/`, `app/(site)/certificates/` |
 | hiepdeptrai0111 | Làm bài, kết quả, soạn đề | `components/quiz/`, `app/(site)/quizzes/`, `app/(site)/attempts/`, `app/(dashboard)/instructor/quizzes/` |
-| Hiếu | Khung chung: layout, header, sidebar, đăng nhập/cookie, `proxy.ts`, route `/api`, thông báo, bộ component | `components/ui/`, `components/common/`, `components/layout/`, `components/notification/`, `lib/`, `app/layout.tsx`, `proxy.ts` |
+| Hiếu | Khung chung: hệ thống giao diện (`/design`), layout, header, sidebar, đăng nhập/cookie, `proxy.ts`, route `/api`, thông báo | `components/ui/`, `components/common/`, `components/templates/`, `components/layout/`, `components/notification/`, `lib/`, `app/layout.tsx`, `app/(site)/design/`, `proxy.ts` |
 
-**Trước khi viết trang:** đọc [frontend/README.md](../frontend/README.md). Giao diện dùng
-**shadcn/ui** (`components/ui/`) cùng các thành phần chung trong `components/common/`
-(`PageHeader`, `StatusBadge`, `EmptyState`, `ErrorAlert`...) — không tự viết nút, ô nhập, bảng
-riêng. Chạy thử bằng `pnpm dev` trong `frontend/` với backend đang chạy.
+**Trước khi viết trang:** đọc [frontend/DESIGN.md](../frontend/DESIGN.md) và mở trang `/design`
+trên web. Đó là khung giao diện chung: màu xanh lá theo token, 5 khuôn trang trong
+`components/templates/`, các khối dùng chung trong `components/common/`. Mỗi người chỉ thiết kế
+component riêng của service mình trên khung đó, không tự viết nút, bảng, màu riêng. Việc thiết kế
+tiếp theo của từng người nằm ở mục
+[Việc thiết kế tiếp theo](../frontend/DESIGN.md#việc-thiết-kế-tiếp-theo-của-từng-người).
+Chạy thử bằng `pnpm dev` trong `frontend/` với backend đang chạy.
 
 ## Khi nào test toàn bộ API bằng Postman
 

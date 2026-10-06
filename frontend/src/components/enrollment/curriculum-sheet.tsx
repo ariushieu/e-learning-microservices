@@ -21,10 +21,10 @@ export function CurriculumSheet({ summary, children }: { summary: string; childr
           <ListIcon /> Nội dung khóa học
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-sm">
-        <SheetHeader className="border-b">
-          <SheetTitle>Nội dung khóa học</SheetTitle>
-          <SheetDescription>{summary}</SheetDescription>
+      <SheetContent side="right" className="w-full gap-0 bg-card p-0 sm:max-w-sm">
+        <SheetHeader className="border-b px-4 py-3.5">
+          <SheetTitle className="text-subheading">Nội dung khóa học</SheetTitle>
+          <SheetDescription className="text-xs tabular-nums">{summary}</SheetDescription>
         </SheetHeader>
         <ScrollArea className="min-h-0 flex-1">
           <div onClick={onClick}>{children}</div>

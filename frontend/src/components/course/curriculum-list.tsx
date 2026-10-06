@@ -1,5 +1,6 @@
-import { ChevronDownIcon, LockIcon } from "lucide-react";
+import { ChevronDownIcon, ListVideoIcon, LockIcon } from "lucide-react";
 import Link from "next/link";
+import { EmptyState } from "@/components/common/empty-state";
 import { LessonContent } from "@/components/enrollment/lesson-content";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
@@ -18,20 +19,22 @@ export function CurriculumList({
   canLearn: boolean;
 }) {
   if (sections.length === 0) {
-    return <p className="rounded-xl border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">Khóa học chưa có nội dung.</p>;
+    return <EmptyState icon={ListVideoIcon} title="Khóa học chưa có nội dung." />;
   }
 
   return (
     <Accordion
       type="multiple"
       defaultValue={sections.map((s) => String(s.id))}
-      className="overflow-hidden rounded-xl ring-1 ring-foreground/10"
+      className="overflow-hidden rounded-xl bg-card shadow-card ring-1 ring-border"
     >
       {sections.map((s, i) => (
         <AccordionItem key={s.id} value={String(s.id)}>
           <AccordionTrigger className="items-center gap-4 rounded-none bg-muted/50 px-4 py-3 hover:no-underline">
-            <span className="flex-1 font-semibold">
-              Chương {i + 1}: {s.title}
+            {/* Tên chương do giảng viên đặt thường đã có "Chương 1. ..." nên chỉ thêm nhãn "Phần n" nhỏ phía trên. */}
+            <span className="min-w-0 flex-1">
+              <span className="block text-caption font-medium text-muted-foreground">Phần {i + 1}</span>
+              <span className="block text-subheading">{s.title}</span>
             </span>
             <span className="shrink-0 text-xs font-normal text-muted-foreground tabular-nums">
               {s.lessons.length} bài · {formatDuration(s.lessons.reduce((t, l) => t + l.durationSeconds, 0))}
@@ -57,7 +60,7 @@ function LessonRow({ lesson, courseId, canLearn }: { lesson: Lesson; courseId: n
       <LessonTypeIcon type={lesson.type} className="size-4 shrink-0 text-muted-foreground" />
       <span className="min-w-0 flex-1 truncate">{lesson.title}</span>
       {lesson.isPreview && (
-        <Badge variant="outline" className="border-0 bg-primary/10 text-primary">
+        <Badge variant="outline" className="border-0 bg-primary-soft text-primary-strong">
           Xem thử
         </Badge>
       )}

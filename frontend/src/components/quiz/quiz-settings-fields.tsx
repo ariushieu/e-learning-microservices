@@ -1,7 +1,7 @@
 "use client";
 
-import { useId, type ReactNode } from "react";
-import { FieldError } from "@/components/common/field-error";
+import { useId } from "react";
+import { FormField } from "@/components/common/form-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -82,34 +82,6 @@ export function backendFieldErrors(e: unknown): FieldErrors {
   return result;
 }
 
-function Field({
-  id,
-  label,
-  required,
-  hint,
-  error,
-  children,
-}: {
-  id: string;
-  label: string;
-  required?: boolean;
-  hint?: string;
-  error?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>
-        {label}
-        {required && <span className="text-destructive">*</span>}
-      </Label>
-      {children}
-      {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
-      <FieldError message={error} />
-    </div>
-  );
-}
-
 /**
  * Các ô cấu hình bài kiểm tra, dùng chung cho form tạo mới và form cài đặt.
  * `compact` xếp các ô số thành một cột (dùng trong cột hẹp bên phải trang soạn bài).
@@ -135,7 +107,7 @@ export function QuizSettingsFields({
 
   return (
     <div className="space-y-5">
-      <Field id={`${id}-title`} label="Tiêu đề" required error={errors.title}>
+      <FormField id={`${id}-title`} label="Tiêu đề" required error={errors.title}>
         <Input
           id={`${id}-title`}
           value={values.title}
@@ -145,8 +117,8 @@ export function QuizSettingsFields({
           placeholder="Ví dụ: Kiểm tra chương 1"
           aria-invalid={Boolean(errors.title)}
         />
-      </Field>
-      <Field id={`${id}-description`} label="Mô tả" error={errors.description}>
+      </FormField>
+      <FormField id={`${id}-description`} label="Mô tả" error={errors.description}>
         <Textarea
           id={`${id}-description`}
           rows={3}
@@ -157,9 +129,9 @@ export function QuizSettingsFields({
           placeholder="Nội dung, phạm vi kiến thức của bài kiểm tra"
           aria-invalid={Boolean(errors.description)}
         />
-      </Field>
+      </FormField>
       <div className={compact ? "space-y-5" : "grid gap-5 sm:grid-cols-3"}>
-        <Field
+        <FormField
           id={`${id}-time`}
           label="Thời gian (phút)"
           hint="Để trống nếu không giới hạn"
@@ -175,8 +147,8 @@ export function QuizSettingsFields({
             disabled={disabled}
             aria-invalid={Boolean(errors.timeLimitMinutes)}
           />
-        </Field>
-        <Field id={`${id}-pass`} label="Điểm đạt (%)" hint="Từ 0 đến 100" error={errors.passScore}>
+        </FormField>
+        <FormField id={`${id}-pass`} label="Điểm đạt (%)" hint="Từ 0 đến 100" error={errors.passScore}>
           <Input
             id={`${id}-pass`}
             type="number"
@@ -188,8 +160,8 @@ export function QuizSettingsFields({
             disabled={disabled}
             aria-invalid={Boolean(errors.passScore)}
           />
-        </Field>
-        <Field id={`${id}-attempts`} label="Số lần làm tối đa" hint="0 = không giới hạn" error={errors.maxAttempts}>
+        </FormField>
+        <FormField id={`${id}-attempts`} label="Số lần làm tối đa" hint="0 = không giới hạn" error={errors.maxAttempts}>
           <Input
             id={`${id}-attempts`}
             type="number"
@@ -200,7 +172,7 @@ export function QuizSettingsFields({
             disabled={disabled}
             aria-invalid={Boolean(errors.maxAttempts)}
           />
-        </Field>
+        </FormField>
       </div>
       {showShuffle && (
         <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
