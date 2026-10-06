@@ -2,6 +2,7 @@ package com.hunre.authservice.dto;
 
 import com.hunre.authservice.domain.RoleCode;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.util.Set;
@@ -14,5 +15,5 @@ import java.util.Set;
 public class UpdateUserRolesRequest {
 
     @NotEmpty(message = "Danh sách vai trò không được để trống")
-    private Set<RoleCode> roles;
+    private Set<@NotNull(message = "Vai trò không được là null") RoleCode> roles;
 }
