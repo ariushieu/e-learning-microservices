@@ -93,9 +93,9 @@ class QuizControllerTest {
                 .updatedAt(Instant.now())
                 .build();
 
-        when(quizService.createQuiz(any(CreateQuizRequest.class), eq(instructor.userId()))).thenReturn(response);
+        when(quizService.createQuiz(any(CreateQuizRequest.class), eq(instructor.userId()), eq(false), eq("Bearer test"))).thenReturn(response);
 
-        mockMvc.perform(post("/api/quizzes")
+        mockMvc.perform(post("/api/quizzes").header("Authorization", "Bearer test")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -106,7 +106,7 @@ class QuizControllerTest {
                 .andExpect(jsonPath("$.data.title").value("Kiểm tra chương 1"))
                 .andExpect(jsonPath("$.data.status").value("DRAFT"));
 
-        verify(quizService).createQuiz(any(CreateQuizRequest.class), eq(instructor.userId()));
+        verify(quizService).createQuiz(any(CreateQuizRequest.class), eq(instructor.userId()), eq(false), eq("Bearer test"));
     }
 
     @Test
@@ -123,16 +123,16 @@ class QuizControllerTest {
                 .id(1L)
                 .createdBy(instructor.userId())
                 .build();
-        when(quizService.createQuiz(any(CreateQuizRequest.class), eq(instructor.userId()))).thenReturn(response);
+        when(quizService.createQuiz(any(CreateQuizRequest.class), eq(instructor.userId()), eq(false), eq("Bearer test"))).thenReturn(response);
 
-        mockMvc.perform(post("/api/quizzes")
+        mockMvc.perform(post("/api/quizzes").header("Authorization", "Bearer test")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.createdBy").value(instructor.userId()));
 
-        verify(quizService).createQuiz(any(CreateQuizRequest.class), eq(instructor.userId()));
+        verify(quizService).createQuiz(any(CreateQuizRequest.class), eq(instructor.userId()), eq(false), eq("Bearer test"));
     }
 
     @Test
@@ -142,7 +142,7 @@ class QuizControllerTest {
                 .title("") // Trống tiêu đề
                 .build();
 
-        mockMvc.perform(post("/api/quizzes")
+        mockMvc.perform(post("/api/quizzes").header("Authorization", "Bearer test")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidRequest)))
@@ -171,7 +171,7 @@ class QuizControllerTest {
                 .questions(Collections.emptyList())
                 .build();
 
-        when(quizService.getQuizDetail(1L)).thenReturn(detail);
+        when(quizService.getQuizDetail(1L, 1L, false)).thenReturn(detail);
 
         mockMvc.perform(get("/api/quizzes/1")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor))
@@ -192,7 +192,7 @@ class QuizControllerTest {
                 .questions(Collections.emptyList())
                 .build();
 
-        when(quizService.getQuizDetail(1L)).thenReturn(detail);
+        when(quizService.getQuizDetail(1L, 2L, true)).thenReturn(detail);
 
         mockMvc.perform(get("/api/quizzes/1")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, admin))
@@ -221,7 +221,7 @@ class QuizControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/quizzes")
+        mockMvc.perform(post("/api/quizzes").header("Authorization", "Bearer test")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, student)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createRequest)))
@@ -261,8 +261,8 @@ class QuizControllerTest {
     @ValueSource(strings = {Roles.INSTRUCTOR, Roles.ADMIN})
     void updateStatus_allowsManagers(String role) throws Exception {
         AuthenticatedUser manager = new AuthenticatedUser(1L, "manager@example.com", "Manager", Set.of(role));
-        when(quizService.publishQuiz(1L)).thenReturn(QuizResponse.builder().id(1L).status(QuizStatus.PUBLISHED).build());
-        when(quizService.archiveQuiz(1L)).thenReturn(QuizResponse.builder().id(1L).status(QuizStatus.ARCHIVED).build());
+        when(quizService.publishQuiz(1L, manager.userId(), manager.hasRole(Roles.ADMIN))).thenReturn(QuizResponse.builder().id(1L).status(QuizStatus.PUBLISHED).build());
+        when(quizService.archiveQuiz(1L, manager.userId(), manager.hasRole(Roles.ADMIN))).thenReturn(QuizResponse.builder().id(1L).status(QuizStatus.ARCHIVED).build());
 
         for (String target : new String[]{"PUBLISHED", "ARCHIVED"}) {
             mockMvc.perform(patch("/api/quizzes/1/status")
@@ -272,8 +272,8 @@ class QuizControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.data.status").value(target));
         }
-        verify(quizService).publishQuiz(1L);
-        verify(quizService).archiveQuiz(1L);
+        verify(quizService).publishQuiz(1L, manager.userId(), manager.hasRole(Roles.ADMIN));
+        verify(quizService).archiveQuiz(1L, manager.userId(), manager.hasRole(Roles.ADMIN));
     }
 
     @ParameterizedTest
@@ -306,7 +306,7 @@ class QuizControllerTest {
 
     @Test
     void updateStatus_missingQuizIs404() throws Exception {
-        when(quizService.publishQuiz(999L)).thenThrow(new ResourceNotFoundException("quiz", "id", 999L));
+        when(quizService.publishQuiz(999L, 1L, false)).thenThrow(new ResourceNotFoundException("quiz", "id", 999L));
         mockMvc.perform(patch("/api/quizzes/999/status")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"PUBLISHED\"}"))
@@ -315,11 +315,11 @@ class QuizControllerTest {
 
     @Test
     void getQuizzes_filtersByCourseQueryParameter() throws Exception {
-        when(quizService.getQuizzesByCourse(10L)).thenReturn(Collections.emptyList());
-        mockMvc.perform(get("/api/quizzes").param("courseId", "10"))
+        when(quizService.getQuizzesByCourse(10L, null, false)).thenReturn(Collections.emptyList());
+        mockMvc.perform(get("/api/quizzes").param("courseId", "10").requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, student))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").isArray());
-        verify(quizService).getQuizzesByCourse(10L);
+        verify(quizService).getQuizzesByCourse(10L, null, false);
     }
 
     @Test

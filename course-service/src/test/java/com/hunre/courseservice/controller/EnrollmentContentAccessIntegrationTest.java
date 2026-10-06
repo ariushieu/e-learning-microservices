@@ -15,6 +15,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -58,6 +59,7 @@ class EnrollmentContentAccessIntegrationTest {
     private static final List<String> PATHS = new CopyOnWriteArrayList<>();
     private static final List<String> TOKENS = new CopyOnWriteArrayList<>();
     private static volatile String enrollmentPage;
+    private static volatile int enrollmentStatus;
     private static final HttpServer ENROLLMENT = enrollmentServer();
 
     @Autowired MockMvc mvc;
@@ -79,6 +81,7 @@ class EnrollmentContentAccessIntegrationTest {
     void prepare() {
         PATHS.clear();
         TOKENS.clear();
+        enrollmentStatus = 200;
         course = courses.save(Course.builder().instructorId(50L).title("Enrolled access")
                 .slug(UUID.randomUUID().toString()).status(CourseStatus.PUBLISHED).totalLessons(1).build());
         Section section = sections.save(Section.builder().course(course).title("Section").build());
@@ -131,8 +134,70 @@ class EnrollmentContentAccessIntegrationTest {
         assertThat(productionDefault).isEqualTo(environment.getRequiredProperty("course.enrollment.list-path"));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"ACTIVE", "COMPLETED"})
+    void archivedCourseKeepsContentAndRechecksEnrollmentOnEachRequest(String status) throws Exception {
+        courses.findById(course.getId()).orElseThrow().setStatus(CourseStatus.ARCHIVED);
+        enrollmentPage = page("{\"userId\":60,\"courseId\":" + course.getId() + ",\"status\":\"" + status + "\"}");
+        String token = studentToken();
+        mvc.perform(get("/api/courses/{id}/curriculum", course.getId()).header("Authorization", token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].lessons[0].content").value("Protected text"));
+        mvc.perform(get("/api/lessons/{id}", lesson.getId()).header("Authorization", token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.contentUrl").value("https://example.test/private.mp4"));
+        assertThat(PATHS).hasSize(2);
+        assertThat(TOKENS).containsExactly(token, token);
+
+        // Hủy ghi danh phải mất quyền ngay ở request kế tiếp, không dùng lại kết quả cũ.
+        enrollmentPage = page("{\"userId\":60,\"courseId\":" + course.getId() + ",\"status\":\"CANCELLED\"}");
+        for (String path : List.of("/api/courses/" + course.getId() + "/curriculum",
+                "/api/lessons/" + lesson.getId(), "/api/courses/" + course.getId(),
+                "/api/courses/slug/" + course.getSlug())) {
+            mvc.perform(get(path).header("Authorization", token)).andExpect(status().isNotFound());
+        }
+        assertThat(PATHS).hasSize(6);
+    }
+
     private static String page(String enrollment) {
         return "{\"success\":true,\"data\":{\"page\":0,\"last\":true,\"content\":[" + enrollment + "]}}";
+    }
+
+    @ParameterizedTest
+    @CsvSource({"60,ACTIVE,wrong-course", "999,ACTIVE,same-course", "60,CANCELLED,same-course"})
+    void archivedReadsRejectUnrelatedOrCancelledEnrollment(long userId, String status, String target) throws Exception {
+        courses.findById(course.getId()).orElseThrow().setStatus(CourseStatus.ARCHIVED);
+        long enrolledCourseId = "wrong-course".equals(target) ? course.getId() + 1000 : course.getId();
+        enrollmentPage = page("{\"userId\":" + userId + ",\"courseId\":" + enrolledCourseId
+                + ",\"status\":\"" + status + "\"}");
+        assertArchivedReadsNotFound();
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {401, 403, 429, 500, 503})
+    void archivedReadsFailClosedWithRealHttpErrors(int responseStatus) throws Exception {
+        courses.findById(course.getId()).orElseThrow().setStatus(CourseStatus.ARCHIVED);
+        enrollmentPage = page("{\"userId\":60,\"courseId\":" + course.getId() + ",\"status\":\"ACTIVE\"}");
+        enrollmentStatus = responseStatus;
+        assertArchivedReadsNotFound();
+    }
+
+    @Test
+    void archivedReadsFailClosedWithMalformedHttpResponse() throws Exception {
+        courses.findById(course.getId()).orElseThrow().setStatus(CourseStatus.ARCHIVED);
+        enrollmentPage = "not json";
+        assertArchivedReadsNotFound();
+    }
+
+    private void assertArchivedReadsNotFound() throws Exception {
+        String token = studentToken();
+        for (String path : List.of("/api/courses/" + course.getId(), "/api/courses/slug/" + course.getSlug(),
+                "/api/courses/" + course.getId() + "/curriculum", "/api/lessons/" + lesson.getId())) {
+            mvc.perform(get(path).header("Authorization", token)).andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.data").doesNotExist());
+        }
+        assertThat(PATHS).hasSize(4);
+        assertThat(TOKENS).containsOnly(token);
     }
 
     private String studentToken() {
@@ -151,7 +216,7 @@ class EnrollmentContentAccessIntegrationTest {
                 boolean currentPath = "/api/enrollments".equals(exchange.getRequestURI().getPath());
                 byte[] body = (currentPath ? enrollmentPage : "{}").getBytes(StandardCharsets.UTF_8);
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
-                exchange.sendResponseHeaders(currentPath ? 200 : 404, body.length);
+                exchange.sendResponseHeaders(currentPath ? enrollmentStatus : 404, body.length);
                 try (var output = exchange.getResponseBody()) { output.write(body); }
             });
             server.start();

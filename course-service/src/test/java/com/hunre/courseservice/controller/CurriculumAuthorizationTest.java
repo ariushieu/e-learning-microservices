@@ -244,6 +244,92 @@ class CurriculumAuthorizationTest {
         verifyNoInteractions(enrollmentAccessClient);
     }
 
+    private List<String> archivedReadPaths() {
+        return List.of("/api/courses/" + course.getId(), "/api/courses/slug/" + course.getSlug(),
+                "/api/courses/" + course.getId() + "/curriculum", "/api/lessons/" + lesson.getId());
+    }
+
+    @Test
+    void archivedEnrollmentGrantsReadingButNeverOwnership() throws Exception {
+        courses.findById(course.getId()).orElseThrow().setStatus(CourseStatus.ARCHIVED);
+        when(enrollmentAccessClient.hasEnrollment(course.getId(), 60L)).thenReturn(true);
+        assertContent(token(60, "ROLE_STUDENT"), true);
+        mvc.perform(get("/api/courses/" + course.getId()).header("Authorization", token(60, "ROLE_STUDENT")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.status").value("ARCHIVED"));
+        mvc.perform(get("/api/courses/slug/" + course.getSlug()).header("Authorization", token(60, "ROLE_STUDENT")))
+                .andExpect(status().isOk());
+        verify(enrollmentAccessClient, times(4)).hasEnrollment(course.getId(), 60L);
+        for (String auth : List.of("", token(60, "ROLE_STUDENT"))) {
+            for (String path : List.of("/api/courses", "/api/courses?instructorId=50")) {
+                mvc.perform(get(path).header("Authorization", auth))
+                        .andExpect(status().isOk()).andExpect(jsonPath("$.data.totalElements").value(0));
+            }
+        }
+        mvc.perform(post("/api/courses/" + course.getId() + "/sections")
+                        .header("Authorization", token(60, "ROLE_INSTRUCTOR"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"title\":\"Not mine\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void archivedCourseIncludingPreviewIsHiddenWithoutEnrollment(boolean preview) throws Exception {
+        courses.findById(course.getId()).orElseThrow().setStatus(CourseStatus.ARCHIVED);
+        lessons.findById(lesson.getId()).orElseThrow().setIsPreview(preview);
+        for (String path : archivedReadPaths()) {
+            mvc.perform(get(path)).andExpect(status().isNotFound());
+            mvc.perform(get(path).header("Authorization", "Bearer invalid-token"))
+                    .andExpect(status().isNotFound());
+        }
+        verifyNoInteractions(enrollmentAccessClient);
+        for (String path : archivedReadPaths()) {
+            mvc.perform(get(path).header("Authorization", token(60, "ROLE_STUDENT")))
+                    .andExpect(status().isNotFound());
+        }
+    }
+
+    @Test
+    void archivedOutageDeniesStudentsButOwnerAndAdminStillRead() throws Exception {
+        courses.findById(course.getId()).orElseThrow().setStatus(CourseStatus.ARCHIVED);
+        when(enrollmentAccessClient.hasEnrollment(course.getId(), 60L))
+                .thenThrow(new BusinessException(ErrorCode.EXTERNAL_SERVICE_ERROR, "Enrollment unavailable"));
+        for (String path : archivedReadPaths()) {
+            mvc.perform(get(path).header("Authorization", token(60, "ROLE_STUDENT")))
+                    .andExpect(status().isNotFound());
+            mvc.perform(get(path).header("Authorization", token(50, "ROLE_INSTRUCTOR")))
+                    .andExpect(status().isOk());
+            mvc.perform(get(path).header("Authorization", token(99, "ROLE_ADMIN")))
+                    .andExpect(status().isOk());
+        }
+        assertContent(token(50, "ROLE_INSTRUCTOR"), true);
+        assertContent(token(99, "ROLE_ADMIN"), true);
+        verify(enrollmentAccessClient, times(4)).hasEnrollment(course.getId(), 60L);
+        verifyNoMoreInteractions(enrollmentAccessClient);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = ErrorCode.class, names = {"FORBIDDEN", "UNAUTHORIZED", "BUSINESS_RULE_VIOLATED"})
+    void archivedReadsDoNotSwallowOtherBusinessErrors(ErrorCode errorCode) throws Exception {
+        courses.findById(course.getId()).orElseThrow().setStatus(CourseStatus.ARCHIVED);
+        when(enrollmentAccessClient.hasEnrollment(course.getId(), 60L))
+                .thenThrow(new BusinessException(errorCode, "Other business error"));
+        for (String path : archivedReadPaths()) {
+            mvc.perform(get(path).header("Authorization", token(60, "ROLE_STUDENT")))
+                    .andExpect(status().is(errorCode.httpStatus().value()))
+                    .andExpect(jsonPath("$.code").value(errorCode.name()));
+        }
+    }
+
+    @Test
+    void draftStaysPrivateEvenForPreviouslyEnrolledStudent() throws Exception {
+        when(enrollmentAccessClient.hasEnrollment(course.getId(), 60L)).thenReturn(true);
+        for (String path : archivedReadPaths()) {
+            mvc.perform(get(path).header("Authorization", token(60, "ROLE_STUDENT")))
+                    .andExpect(status().isNotFound());
+        }
+        verifyNoInteractions(enrollmentAccessClient);
+    }
+
     @Test
     void evenPreviewInDraftRemainsHiddenFromStranger() throws Exception {
         lessons.findById(lesson.getId()).orElseThrow().setIsPreview(true);

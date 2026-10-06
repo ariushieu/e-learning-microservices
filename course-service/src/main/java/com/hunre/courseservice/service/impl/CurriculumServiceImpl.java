@@ -61,7 +61,9 @@ public class CurriculumServiceImpl implements CurriculumService {
                 .anyMatch(lesson -> !Boolean.TRUE.equals(lesson.getIsPreview()));
         boolean fullAccess = false;
         try {
-            fullAccess = hasProtectedLessons && canReadProtectedContent(course);
+            // Khóa không công khai đã được kiểm quyền đầy đủ ở canViewCourse.
+            fullAccess = hasProtectedLessons && (course.getStatus() != CourseStatus.PUBLISHED
+                    || canReadProtectedContent(course));
         } catch (BusinessException exception) {
             if (exception.errorCode() != ErrorCode.EXTERNAL_SERVICE_ERROR) {
                 throw exception;
@@ -130,7 +132,8 @@ public class CurriculumServiceImpl implements CurriculumService {
             throw new ResourceNotFoundException("bài học", "id", id);
         }
 
-        return LessonResponse.from(lesson, Boolean.TRUE.equals(lesson.getIsPreview())
+        return LessonResponse.from(lesson, lesson.getCourse().getStatus() != CourseStatus.PUBLISHED
+                || Boolean.TRUE.equals(lesson.getIsPreview())
                 || canReadProtectedContent(lesson.getCourse()));
     }
 
@@ -145,9 +148,24 @@ public class CurriculumServiceImpl implements CurriculumService {
         if (course.getStatus() == CourseStatus.PUBLISHED) {
             return true;
         }
-        return currentUserProvider.getCurrentUser()
-                .filter(u -> u.hasRole(Roles.ADMIN) || u.userId().equals(course.getInstructorId()))
-                .isPresent();
+        return currentUserProvider.getCurrentUser().map(user -> {
+            if (user.hasRole(Roles.ADMIN) || user.userId().equals(course.getInstructorId())) {
+                return true;
+            }
+            if (course.getStatus() != CourseStatus.ARCHIVED) {
+                return false;
+            }
+            try {
+                return enrollmentAccessClient.hasEnrollment(course.getId(), user.userId());
+            } catch (BusinessException exception) {
+                if (exception.errorCode() != ErrorCode.EXTERNAL_SERVICE_ERROR) {
+                    throw exception;
+                }
+                log.warn("Không thể kiểm tra ghi danh cho khóa học lưu trữ {}; từ chối quyền đọc",
+                        course.getId());
+                return false;
+            }
+        }).orElse(false);
     }
 
     @Override

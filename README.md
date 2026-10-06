@@ -26,8 +26,11 @@ Hệ thống website học trực tuyến (E-Learning) được xây dựng theo
 ## Kiến trúc tổng quan
 
 ```
+   Trình duyệt ──► Frontend Next.js :3000
+                        │  (server gọi gateway, token trong cookie httpOnly)
+                        ▼
                         ┌──────────────────┐
-     Client (Web/App) ──►    API Gateway   │  :8080
+                        │    API Gateway   │  :8080
                         └────────┬─────────┘
                                  │
       ┌──────────┬───────────────┼───────────────┬──────────────┐
@@ -47,6 +50,7 @@ Hệ thống website học trực tuyến (E-Learning) được xây dựng theo
 ```
 
 - Mỗi service là một ứng dụng Spring Boot độc lập, sở hữu **một database riêng** (database-per-service).
+- Giao diện web là **Next.js** (`frontend/`). Trình duyệt chỉ nói chuyện với Next.js; Next.js gọi gateway từ phía server, token đăng nhập nằm trong cookie `httpOnly` nên JavaScript trên trang không đọc được (xem [frontend/README.md](frontend/README.md)).
 - Mọi request từ client đi qua **API Gateway** trước khi được điều hướng tới service tương ứng.
 - Gateway giới hạn số request của mỗi người bằng **Redis**: đăng nhập sai liên tục hay gửi dồn dập thì nhận mã 429 (xem [Giới hạn request](#giới-hạn-request)).
 - Các service giao tiếp bất đồng bộ qua **Apache Kafka** (ví dụ: ghi danh thành công thì phát sự kiện để notification-service gửi thông báo).
@@ -203,15 +207,16 @@ docker compose --profile app up -d api-gateway                            # bậ
 | Tiện ích          | Lombok                                                 |
 | Build             | Maven multi-module (parent POM ở thư mục gốc)         |
 | Hạ tầng dev       | Docker Compose                                         |
+| Frontend          | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, pnpm |
 
-**Dự kiến bổ sung:** Swagger/OpenAPI, frontend Next.js.
+**Dự kiến bổ sung:** Swagger/OpenAPI.
 
 ## Cấu trúc thư mục
 
 ```
 e-learning-microservices/
 ├── pom.xml                 # Parent POM: khai báo module, quản lý version chung
-├── docker-compose.yml      # MySQL + Kafka + Kafka UI; thêm 6 service khi dùng --profile app
+├── docker-compose.yml      # MySQL + Kafka + Kafka UI + Redis; thêm 6 service + frontend khi dùng --profile app
 ├── Dockerfile              # Một Dockerfile dùng chung, chọn service bằng build arg SERVICE
 ├── .dockerignore           # Không gửi target/, .git, .env vào lúc build image
 ├── .env.example            # Mẫu biến môi trường cho docker compose
@@ -241,6 +246,7 @@ e-learning-microservices/
 ├── enrollment-service/     # Ghi danh & tiến độ
 ├── quiz-service/           # Bài kiểm tra
 ├── notification-service/   # Thông báo
+├── frontend/               # Giao diện web Next.js 16 + pnpm, có Dockerfile riêng
 ├── .gitignore
 └── README.md
 ```
@@ -289,12 +295,24 @@ cd e-learning-microservices
 docker compose --profile app up -d --build --wait
 ```
 
-Lệnh build 6 image từ mã nguồn rồi bật MySQL, Kafka, Kafka UI, Redis và cả 6 service. `--wait`
+Lệnh build 7 image từ mã nguồn rồi bật MySQL, Kafka, Kafka UI, Redis, cả 6 service và frontend. `--wait`
 giữ lệnh lại cho tới khi mọi healthcheck xanh. Lần đầu mất vài phút vì phải tải thư viện
 Maven; các lần sau chỉ build lại phần mã đã sửa.
 
-Mọi API đi qua gateway ở **http://localhost:8080** — đây là cổng duy nhất mở ra máy host,
-đúng như sơ đồ kiến trúc ở trên. Kafka UI ở http://localhost:8090.
+**Web ở http://localhost:3000.** Tạo dữ liệu mẫu cho buổi demo (gọi qua API như người dùng thật,
+chạy lại nhiều lần không trùng):
+
+```bash
+node scripts/seed-demo.mjs
+```
+
+| Vai trò | Email | Mật khẩu |
+|---|---|---|
+| Giảng viên | `giangvien@hunre.edu.vn` | `Demo@123456` |
+| Học viên | `hocvien@hunre.edu.vn` | `Demo@123456` |
+| Admin | `admin@elearning.hunre.edu.vn` | `Admin@123456` |
+
+Mọi API đi qua gateway ở **http://localhost:8080**. Kafka UI ở http://localhost:8090.
 
 ```bash
 curl http://localhost:8080/api/courses          # công khai, không cần token
@@ -405,7 +423,7 @@ curl http://localhost:8081/actuator/health
 - [x] Quiz Service: câu hỏi, bài kiểm tra, chấm điểm
 - [ ] Phân quyền theo vai trò trong từng service
 - [x] Notification Service: consume sự kiện Kafka, dựng thông báo trong ứng dụng ([tài liệu](docs/notifications.md))
-- [ ] Frontend Next.js (pnpm)
+- [x] Frontend Next.js (pnpm): học viên, giảng viên, admin; chạy trong Docker cùng hệ thống ([tài liệu](frontend/README.md))
 - [x] Image Docker cho từng service, chạy toàn bộ hệ thống bằng một lệnh `docker compose`
 - [x] Giới hạn request ở gateway bằng Redis, chống dò mật khẩu
 - [ ] Tài liệu API (Swagger / OpenAPI)

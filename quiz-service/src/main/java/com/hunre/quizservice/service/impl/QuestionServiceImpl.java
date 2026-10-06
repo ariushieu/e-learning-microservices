@@ -1,5 +1,6 @@
 package com.hunre.quizservice.service.impl;
 
+import com.hunre.quizservice.security.QuizOwnership;
 import com.hunre.quizservice.dto.AnswerOptionRequest;
 import com.hunre.quizservice.dto.CreateQuestionRequest;
 import com.hunre.quizservice.dto.QuestionResponse;
@@ -32,11 +33,12 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     @Transactional
-    public QuestionResponse addQuestion(Long quizId, CreateQuestionRequest request) {
+    public QuestionResponse addQuestion(Long quizId, CreateQuestionRequest request, Long currentUserId, boolean isAdmin) {
         log.info("Thêm câu hỏi mới vào bài kiểm tra id: {}", quizId);
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new ResourceNotFoundException("bài kiểm tra", "id", quizId));
 
+        QuizOwnership.requireOwner(quiz, currentUserId, isAdmin);
         validateOptions(request.getType(), request.getOptions());
 
         int nextPosition = request.getPosition() != null
@@ -68,12 +70,14 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     @Transactional
-    public QuestionResponse updateQuestion(Long quizId, Long questionId, UpdateQuestionRequest request) {
+    public QuestionResponse updateQuestion(Long quizId, Long questionId, UpdateQuestionRequest request, Long currentUserId, boolean isAdmin) {
         log.info("Cập nhật câu hỏi id: {} của bài kiểm tra id: {}", questionId, quizId);
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new ResourceNotFoundException("câu hỏi", "id", questionId));
 
-        if (!question.getQuiz().getId().equals(quizId)) {
+        Quiz quiz = question.getQuiz();
+        QuizOwnership.requireOwner(quiz, currentUserId, isAdmin);
+        if (!quiz.getId().equals(quizId)) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "Câu hỏi không thuộc bài kiểm tra này");
         }
 
@@ -107,12 +111,14 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     @Transactional
-    public void deleteQuestion(Long quizId, Long questionId) {
+    public void deleteQuestion(Long quizId, Long questionId, Long currentUserId, boolean isAdmin) {
         log.info("Xóa câu hỏi id: {} của bài kiểm tra id: {}", questionId, quizId);
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new ResourceNotFoundException("câu hỏi", "id", questionId));
 
-        if (!question.getQuiz().getId().equals(quizId)) {
+        Quiz quiz = question.getQuiz();
+        QuizOwnership.requireOwner(quiz, currentUserId, isAdmin);
+        if (!quiz.getId().equals(quizId)) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "Câu hỏi không thuộc bài kiểm tra này");
         }
 
@@ -121,7 +127,10 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<QuestionResponse> getQuestionsByQuiz(Long quizId) {
+    public List<QuestionResponse> getQuestionsByQuiz(Long quizId, Long currentUserId, boolean isAdmin) {
+        Quiz quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> new ResourceNotFoundException("bài kiểm tra", "id", quizId));
+        QuizOwnership.requireOwner(quiz, currentUserId, isAdmin);
         return questionRepository.findByQuizIdOrderByPositionAsc(quizId).stream()
                 .map(q -> QuestionResponse.from(q, true))
                 .toList();
