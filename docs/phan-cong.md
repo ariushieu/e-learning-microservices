@@ -1,6 +1,6 @@
 # Bảng theo dõi công việc
 
-> **Cập nhật lần cuối:** 06/10/2026 — `main` ở `6e19e13`
+> **Cập nhật lần cuối:** 06/10/2026 — `main` ở `43b07a2`
 >
 > File này là nơi duy nhất ghi ai đang làm gì. Xong một việc thì nhóm trưởng cập nhật ngay
 > tại đây, nên **cứ `git pull` là biết việc tiếp theo của mình**, không phải hỏi ai.
@@ -18,21 +18,26 @@
 
 | Người | Service | Việc đang mở | Ưu tiên | Cỡ |
 |---|---|---|---|---|
-| hiepdeptrai0111 | quiz-service | [Chủ sở hữu của bài kiểm tra](#hiepdeptrai0111--chủ-sở-hữu-của-bài-kiểm-tra) | **Cao** — lỗ hổng | ~1h30 |
-| duyd92689-debug | course-service | [Học viên giữ quyền học khi khóa bị lưu trữ](#duyd92689-debug--học-viên-giữ-quyền-học-khi-khóa-bị-lưu-trữ) | Trung bình | ~1h |
+| phamquyet19042005-netizen | enrollment-service | [Không hạ trạng thái bài đã hoàn thành](#phamquyet19042005-netizen--không-hạ-trạng-thái-bài-đã-hoàn-thành) | **Cao** — sai dữ liệu tiến độ, chứng chỉ | ~30 phút |
 | phamquyet19042005-netizen | enrollment-service | [Thử lại có giới hạn, message hỏng sang `.DLT`](#phamquyet19042005-netizen--thử-lại-có-giới-hạn-message-hỏng-sang-dlt) | Thấp | ~45 phút |
+| hiepdeptrai0111 | quiz-service | [Chỉ người đã ghi danh mới làm bài kiểm tra](#hiepdeptrai0111--chỉ-người-đã-ghi-danh-mới-làm-bài-kiểm-tra) | Trung bình | ~1h |
+| duyd92689-debug | course-service | [Đếm số học viên của khóa](#duyd92689-debug--đếm-số-học-viên-của-khóa) | Trung bình — web đang hiện "0 học viên" | ~1h30 |
+| quocluibotre | auth-service | [Sửa hồ sơ và đổi mật khẩu](#quocluibotre--sửa-hồ-sơ-và-đổi-mật-khẩu) | Thấp | ~1h |
 | Hiếu | cả hệ thống | [Collection Postman chung](#hiếu--collection-postman-chung) | **Cao** — đợt test chờ việc này | ~2h |
+| Hiếu | api-gateway | Giới hạn đăng nhập theo IP thật của người dùng khi đi qua frontend | Trung bình | ~1h |
 | **Cả nhóm** | service của mình | [Đợt test Postman](#cả-nhóm--đợt-test-postman) | Sau khi có collection chung | ~2h/người |
 
-**Đã đủ bốn điều kiện để test toàn bộ API** (#41, #42 vừa merge). Thứ tự:
+**Đã có giao diện web** (#46): `docker compose --profile app up -d --build --wait` rồi mở
+http://localhost:3000. Tạo dữ liệu mẫu bằng `node scripts/seed-demo.mjs` — tài khoản demo ở
+[README](../README.md#cách-nhanh-nhất-chạy-cả-hệ-thống-bằng-docker). Ba việc mới của
+phamquyet, hiep, duyd đều do chạy thử giao diện web mà lộ ra.
+
+**Đã đủ bốn điều kiện để test toàn bộ API** (#41, #42). Thứ tự:
 
 1. Hiếu dựng collection chung — báo trong nhóm khi xong.
 2. Mỗi người chạy file tình huống test của **service mình** (thầy yêu cầu mỗi người tự kiểm
    service mình) và ghi biên bản.
 3. Ca nào FAIL thì người phụ trách service sửa trong PR riêng.
-
-Việc của hiep nên xong **trước** khi chạy `quiz.md`, nếu không các ca phân quyền bài kiểm tra
-chắc chắn FAIL — đã biết trước, không cần test để phát hiện.
 
 **Tài khoản giảng viên và admin tạo bằng API** (#27), không cần SQL:
 
@@ -128,81 +133,95 @@ học viên làm bài kiểm tra → nộp → thông báo "đạt 50.00 điểm
 - notification-service (#38) và enrollment-service (#41): MySQL tắt giữa chừng thì consumer
   thử lại tới khi MySQL lên. notification-service chuyển message hỏng sang topic `.DLT`.
 - course-service: enrollment-service chết thì đề cương vẫn xem được, chỉ ẩn nội dung bài
-  thường (#37).
+  thường (#37). Sự kiện khóa học giờ cũng đi qua outbox (#44): Kafka chết thì sự kiện nằm chờ, và
+  snapshot cũ không cho người lạ ghi danh vào khóa đã lưu trữ.
 
-**Lỗ hổng đang mở:**
-
-| Lỗ hổng | Mức độ | Ai sửa |
-|---|---|---|
-| Giảng viên tạo/sửa/xóa bài kiểm tra trong khóa của người khác; học viên thấy bài DRAFT | Cao | hiep |
+**Lỗ hổng đang mở:** không còn lỗ hổng phân quyền. Lỗ hổng bài kiểm tra đóng ở #45 — chạy thật,
+giảng viên B tạo/sửa/xóa/xem đáp án bài của A đều 403. Còn một chỗ hở nghiệp vụ: chưa ghi danh vẫn
+làm được bài kiểm tra (việc của hiep).
 
 ---
 
 ## Chi tiết từng việc
 
-### hiepdeptrai0111 — chủ sở hữu của bài kiểm tra
+### phamquyet19042005-netizen — không hạ trạng thái bài đã hoàn thành
 
-> Cùng loại lỗ hổng duyd đã đóng ở course-service (#37). Nhóm trưởng tìm ra khi rà code
-> ngày 06/10.
+> Tìm ra khi chạy thử giao diện web (#46): học viên mở bài rồi bấm "Đánh dấu hoàn thành" nhanh,
+> bài vừa xong bị trả về "đang học".
 
-**Vấn đề.** Mọi endpoint ghi của quiz-service chỉ kiểm vai trò (`requireQuizManager`), không
-kiểm ai là chủ. Chạy thật qua gateway với hai giảng viên A và B, khóa 6 không phải của B:
+**Vấn đề.** `ProgressServiceImpl.updateLessonProgress` ghi đè trạng thái theo request:
 
-```
-B tạo bài kiểm tra trong khóa 6                      → 201
-B tạo bài kiểm tra cho khóa 999999 (không tồn tại)   → 201
-B sửa bài kiểm tra của A                             → 200
-B thêm câu hỏi vào bài của A                         → 201
-B xóa bài kiểm tra của A                             → 200
-Học viên GET /api/quizzes?courseId=6                 → 200, thấy cả bài DRAFT
+```java
+} else if (request.getStatus() != null) {
+    lessonProgress.setStatus(request.getStatus());      // IN_PROGRESS đè lên COMPLETED
+}
 ```
 
-**Cần làm.**
+Gửi `IN_PROGRESS` cho bài đã `COMPLETED` là bài lùi về "đang học". Tệ hơn, đoạn tính lại phía
+dưới kéo luôn lượt ghi danh đã `COMPLETED` — đã cấp chứng chỉ — về `ACTIVE`. Frontend đã tránh
+(chỉ gửi `IN_PROGRESS` khi bài chưa có tiến độ, và chờ request đó xong mới gửi `COMPLETED`), nhưng
+Postman hay bất kỳ client nào khác vẫn làm hỏng được.
 
-1. **Tạo bài:** hỏi course-service `GET /api/courses/{courseId}`, chuyển tiếp nguyên header
-   `Authorization` của người gọi (khóa DRAFT chỉ chủ khóa xem được). Không tìm thấy → 404.
-   `data.instructorId` khác người gọi và người gọi không phải admin → 403. course-service không
-   trả lời → 502 `EXTERNAL_SERVICE_ERROR`. Có hai mẫu để chép: `EnrollmentAccessClient` bên
-   course-service và `CourseLessonClient` bên enrollment-service.
-2. **Sửa, đổi trạng thái, xóa bài; thêm/sửa/xóa câu hỏi:** so `quiz.getCreatedBy()` với
-   `user.userId()`, admin được qua. Không cần gọi course-service — bước 1 đã bảo đảm người tạo
-   là chủ khóa. Viết như duyd: `if (currentUserId == null || (!isAdmin && !currentUserId.equals(...)))`.
-3. **`GET /api/quizzes?courseId=`:** học viên chỉ thấy bài `PUBLISHED` (quy tắc A3). Người
-   tạo và admin thấy cả DRAFT.
-4. `docker-compose.yml`: thêm `COURSE_SERVICE_URL: http://course-service:8082` cho quiz-service,
-   giống phamquyet đã làm cho enrollment-service.
+**Cần làm.** Bài đã `COMPLETED` thì nhận `IN_PROGRESS` chỉ cập nhật `watchedSeconds` (vẫn chỉ tăng),
+không đổi trạng thái. Lượt ghi danh đã `COMPLETED` không bao giờ quay về `ACTIVE` vì một request
+tiến độ.
 
-**Tự kiểm.** Đúng sáu dòng ở trên phải thành 403, 404, 403, 403, 403 và "không thấy DRAFT". A làm
-những việc đó với bài của mình vẫn 201/200; admin làm được với bài của bất kỳ ai.
+**Tự kiểm.** Học xong cả khóa (có chứng chỉ), rồi `PUT /api/lessons/{id}/progress` với
+`IN_PROGRESS`: bài vẫn `COMPLETED`, `GET /api/progress?courseId=` vẫn 100% và còn `certificateCode`.
 
 ---
 
-### duyd92689-debug — học viên giữ quyền học khi khóa bị lưu trữ
+### hiepdeptrai0111 — chỉ người đã ghi danh mới làm bài kiểm tra
 
-**Vấn đề.** Giảng viên chuyển khóa sang `ARCHIVED` thì học viên **đã ghi danh** mất luôn khóa
-học. Chạy thật khi review #41:
+**Vấn đề.** `POST /api/quizzes/{id}/attempts` không kiểm ghi danh: tài khoản nào đăng nhập cũng làm
+được bài kiểm tra của mọi khóa, kể cả khóa trả phí chưa mua.
 
-```
-S đã ghi danh, khóa đang PUBLISHED   GET /api/courses/{id}/curriculum   → 200
-giảng viên chuyển khóa sang ARCHIVED
-S                                    GET /api/courses/{id}/curriculum   → 404
-S                                    GET /api/lessons/{id}              → 404
-```
+**Cần làm.** Trước khi tạo lượt làm, hỏi enrollment-service bằng chính token của người gọi — chép
+cách `EnrollmentAccessClient` bên course-service đang làm (`GET /api/enrollments`, tìm `courseId`,
+trạng thái `ACTIVE` hoặc `COMPLETED`). Người tạo bài và admin được làm thử không cần ghi danh.
+Chưa ghi danh → 403. enrollment-service không trả lời → 502, không tạo lượt làm.
 
-`canViewCourse` chỉ cho chủ khóa và admin xem khóa không `PUBLISHED`. Đúng với `DRAFT`, nhưng
-`ARCHIVED` nghĩa là "ngừng nhận học viên mới", không phải "lấy lại khóa của người đã học".
+**Tự kiểm.** Học viên chưa ghi danh bắt đầu làm bài → 403. Ghi danh xong → 201. Người tạo bài làm
+thử → 201. Tắt enrollment-service → 502 và bảng `quiz_attempts` không thêm dòng nào.
 
-**Cần làm.** Trong `canViewCourse`, khóa `ARCHIVED` còn cho xem nếu người gọi đã ghi danh —
-dùng lại `enrollmentAccessClient.hasEnrollment(...)`. Giữ nguyên:
+---
 
-- `DRAFT` vẫn chỉ chủ khóa và admin.
-- Danh sách công khai `GET /api/courses` vẫn chỉ trả `PUBLISHED`.
-- Ghi danh mới vào khóa `ARCHIVED` vẫn bị enrollment-service từ chối (đã chạy đúng).
-- enrollment-service chết → khóa `ARCHIVED` trả 404 cho học viên là chấp nhận được; đừng để
-  lỗi đó làm hỏng khóa `PUBLISHED`.
+### duyd92689-debug — đếm số học viên của khóa
 
-**Tự kiểm.** S ghi danh, giảng viên lưu trữ khóa: S xem đề cương và bài học vẫn 200, có nội
-dung. T chưa ghi danh → 404. Khách → 404.
+**Vấn đề.** `courses.student_count` chỉ được gán 0 lúc tạo khóa, không chỗ nào tăng. Trang danh mục
+và trang khóa học trên web luôn hiện "0 học viên", và điều kiện "chỉ xóa khóa chưa có học viên"
+lúc nào cũng đúng — khóa đã có người học vẫn xóa được nếu chuyển về `DRAFT`.
+
+**Cần làm.** course-service nghe topic `elearning.enrollment.events`, sự kiện `enrollment.created`
+thì cộng 1 vào `student_count` của khóa. Kafka gửi trùng là chuyện bình thường nên phải có bảng
+`processed_events` chống đếm hai lần — chép cách notification-service làm (#18,
+[notifications.md](notifications.md#một-sự-kiện-chỉ-tạo-đúng-một-thông-báo)), kể cả xử lý lỗi
+sang `.DLT` (#38). Cần migration mới cho bảng đó.
+
+Hủy ghi danh hiện không phát sự kiện, nên con số là "số lượt từng ghi danh". Ghi rõ điều này trong
+README; muốn trừ đi khi hủy thì bàn với phamquyet thêm sự kiện `enrollment.cancelled`.
+
+**Tự kiểm.** Hai học viên ghi danh → `studentCount` = 2 trên `GET /api/courses/{id}` và trên web.
+Gửi lại đúng message `enrollment.created` bằng Kafka UI → vẫn 2.
+
+---
+
+### quocluibotre — sửa hồ sơ và đổi mật khẩu
+
+**Vấn đề.** Trang "Hồ sơ" trên web chỉ xem được: auth-service chưa có API sửa họ tên, số điện
+thoại, hay đổi mật khẩu.
+
+**Cần làm.**
+
+- `PUT /api/auth/me` body `{fullName, phone}` — chỉ sửa chính mình, danh tính từ token (A1).
+- `POST /api/auth/change-password` body `{currentPassword, newPassword}` — sai mật khẩu cũ → 400
+  `VALIDATION_FAILED` kèm `fieldErrors`; đổi xong **thu hồi mọi refresh token** của người đó để
+  các phiên khác phải đăng nhập lại.
+
+Báo nhóm trưởng khi xong để gắn vào trang Hồ sơ.
+
+**Tự kiểm.** Đổi mật khẩu xong: đăng nhập bằng mật khẩu cũ → 401, mật khẩu mới → 200; refresh
+token cũ → 401.
 
 ---
 
@@ -249,7 +268,7 @@ Thầy yêu cầu mỗi người tự kiểm service của mình:
 | quocluibotre | [auth.md](test-cases/auth.md) |
 | duyd92689-debug | [course.md](test-cases/course.md) |
 | phamquyet19042005-netizen | [enrollment.md](test-cases/enrollment.md) |
-| hiepdeptrai0111 | [quiz.md](test-cases/quiz.md) — sau khi xong việc chủ sở hữu |
+| hiepdeptrai0111 | [quiz.md](test-cases/quiz.md) |
 | Hiếu | [gateway.md](test-cases/gateway.md), [notification.md](test-cases/notification.md) |
 
 **Cách làm.**
@@ -282,6 +301,8 @@ luôn phát `course.updated`). Hoặc dùng khóa mới tạo trong thư mục "
 
 | Ngày | PR | Việc | Người |
 |---|---|---|---|
+| 06/10 | #45 | Chặn giảng viên sửa bài kiểm tra của người khác, ẩn bài nháp với học viên | hiepdeptrai0111 |
+| 06/10 | #44 | Học viên giữ quyền học khi khóa bị lưu trữ; course-service gửi sự kiện qua outbox | duyd92689-debug |
 | 06/10 | #41 | enrollment-service tự nạp `course_snapshots` từ Kafka, kiểm bài học trước khi ghi tiến độ, chuẩn hóa đường dẫn | phamquyet19042005-netizen |
 | 06/10 | #42 | Outbox quiz giữ nguyên điểm số (`50.00`), chuẩn hóa đường dẫn quiz | hiepdeptrai0111 |
 | 06/10 | #39 | Sửa tiêu đề pull request là check tự chạy lại | Hiếu |
