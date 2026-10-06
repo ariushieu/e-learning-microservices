@@ -20,10 +20,16 @@ class CourseSnapshotConsumerTest {
     private final CourseSnapshotConsumer consumer = new CourseSnapshotConsumer(mapper, repository);
 
     @ParameterizedTest
-    @ValueSource(strings = {"not-json", "null", "[]", "{}", "{\"eventType\":\"quiz.graded\"}",
+    @ValueSource(strings = {"not-json", "null", "[]", "{}",
             "{\"eventType\":\"course.updated\"}", "{\"eventType\":\"course.updated\",\"courseId\":\"abc\"}"})
-    void invalidOrUnrelatedMessagesDoNotWrite(String payload) {
-        assertThatCode(() -> consumer.onMessage(payload)).doesNotThrowAnyException();
+    void invalidMessagesAreRejectedForDeadLetterWithoutWriting(String payload) {
+        assertThatThrownBy(() -> consumer.onMessage(payload)).isInstanceOf(InvalidCourseEventException.class);
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    void unrelatedEventIsIgnored() {
+        assertThatCode(() -> consumer.onMessage("{\"eventType\":\"quiz.graded\"}")).doesNotThrowAnyException();
         verifyNoInteractions(repository);
     }
 
@@ -32,7 +38,8 @@ class CourseSnapshotConsumerTest {
     void missingRequiredFieldsDoNotOverwriteExistingSnapshot(String field) {
         var node = mapper.valueToTree(event());
         ((tools.jackson.databind.node.ObjectNode) node).remove(field);
-        consumer.onMessage(mapper.writeValueAsString(node));
+        assertThatThrownBy(() -> consumer.onMessage(mapper.writeValueAsString(node)))
+                .isInstanceOf(InvalidCourseEventException.class);
         verifyNoInteractions(repository);
     }
 

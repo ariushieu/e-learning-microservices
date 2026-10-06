@@ -21,11 +21,16 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** JWT filter + controller + service + database; chỉ giả lập lời gọi sang course-service. */
 @SpringBootTest(properties = {"elearning.security.enabled=true", "app.outbox.publisher.enabled=false",
@@ -180,6 +185,110 @@ class EnrollmentApiIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"courseId\":10}"))
                 .andExpect(status().isCreated()).andReturn();
         return mapper.readTree(result.getResponse().getContentAsString()).path("data").path("id").asLong();
+    }
+
+    @Test
+    void completedLessonAndCertificateSurviveLateOrRepeatedProgressUpdates() throws Exception {
+        long id = enroll(1);
+        putProgress(101, "COMPLETED", 60);
+        var firstCompletedAt = progress.findByEnrollmentIdAndLessonId(id, 101L).orElseThrow().getCompletedAt();
+        putProgress(101, "IN_PROGRESS", 10);
+        assertThat(progress.findByEnrollmentIdAndLessonId(id, 101L).orElseThrow().getStatus().name())
+                .isEqualTo("COMPLETED");
+        mvc.perform(get("/api/progress?courseId=10").header("Authorization", token(1)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.progressPercent").value(50));
+
+        putProgress(102, "COMPLETED", 60);
+        var certificate = certificates.findByEnrollmentId(id).orElseThrow();
+        var courseCompletedAt = enrollments.findById(id).orElseThrow().getCompletedAt();
+        long events = outbox.count();
+        putProgress(101, "IN_PROGRESS", 90);
+        putProgress(101, "IN_PROGRESS", 5);
+        putProgress(102, "COMPLETED", 1);
+
+        var lesson = progress.findByEnrollmentIdAndLessonId(id, 101L).orElseThrow();
+        assertThat(lesson.getStatus().name()).isEqualTo("COMPLETED");
+        assertThat(lesson.getWatchedSeconds()).isEqualTo(90);
+        assertThat(lesson.getCompletedAt()).isEqualTo(firstCompletedAt);
+        assertThat(enrollments.findById(id).orElseThrow().getCompletedAt()).isEqualTo(courseCompletedAt);
+        assertThat(outbox.count()).isEqualTo(events);
+        assertThat(certificates.count()).isEqualTo(1);
+        mvc.perform(get("/api/progress?courseId=10").header("Authorization", token(1)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.data.progressPercent").value(100))
+                .andExpect(jsonPath("$.data.certificateCode").value(certificate.getCertificateCode()));
+    }
+
+    @Test
+    void addingLessonsDoesNotRevokeAnAlreadyCompletedEnrollment() throws Exception {
+        long id = enroll(1);
+        putProgress(101, "COMPLETED", 60);
+        putProgress(102, "COMPLETED", 60);
+        var certificate = certificates.findByEnrollmentId(id).orElseThrow();
+        var completedAt = enrollments.findById(id).orElseThrow().getCompletedAt();
+        long events = outbox.count();
+        var snapshot = snapshots.findById(10L).orElseThrow();
+        snapshot.setTotalLessons(3);
+        snapshots.save(snapshot);
+        putProgress(101, "IN_PROGRESS", 120);
+        mvc.perform(get("/api/progress?courseId=10").header("Authorization", token(1)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.data.progressPercent").value(100))
+                .andExpect(jsonPath("$.data.totalLessonsCount").value(3))
+                .andExpect(jsonPath("$.data.certificateCode").value(certificate.getCertificateCode()));
+        assertThat(enrollments.findById(id).orElseThrow().getCompletedAt()).isEqualTo(completedAt);
+        assertThat(outbox.count()).isEqualTo(events);
+    }
+
+    @Test
+    void concurrentFirstUpdatesAreSerializedAndDoNotLoseCompletionOrWatchTime() throws Exception {
+        long id = enroll(1);
+        var snapshot = snapshots.findById(10L).orElseThrow();
+        snapshot.setTotalLessons(1);
+        snapshots.save(snapshot);
+        CountDownLatch completing = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        CountDownLatch lateRequestStarted = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            completing.countDown();
+            assertThat(release.await(5, TimeUnit.SECONDS)).isTrue();
+            return null;
+        }).doNothing().when(lessons).validateLesson(10L, 101L);
+        var executor = Executors.newFixedThreadPool(2);
+        try {
+            var complete = executor.submit(() -> { putProgress(101, "COMPLETED", 90); return null; });
+            assertThat(completing.await(5, TimeUnit.SECONDS)).isTrue();
+            var late = executor.submit(() -> {
+                lateRequestStarted.countDown();
+                putProgress(101, "IN_PROGRESS", 10);
+                return null;
+            });
+            assertThat(lateRequestStarted.await(5, TimeUnit.SECONDS)).isTrue();
+            // Request thứ hai phải đợi transaction hoàn thành thay vì đọc trạng thái cũ.
+            assertThatThrownBy(() -> late.get(200, TimeUnit.MILLISECONDS)).isInstanceOf(TimeoutException.class);
+            release.countDown();
+            complete.get(5, TimeUnit.SECONDS);
+            late.get(5, TimeUnit.SECONDS);
+        } finally {
+            release.countDown();
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
+        }
+        assertThat(progress.findAllByEnrollmentId(id)).singleElement().satisfies(lesson -> {
+            assertThat(lesson.getStatus().name()).isEqualTo("COMPLETED");
+            assertThat(lesson.getWatchedSeconds()).isEqualTo(90);
+        });
+        assertThat(enrollments.findById(id).orElseThrow().getStatus().name()).isEqualTo("COMPLETED");
+        assertThat(certificates.count()).isEqualTo(1);
+        assertThat(outbox.findAll()).filteredOn(event -> "enrollment.completed".equals(event.getEventType())).hasSize(1);
+        assertThat(outbox.findAll()).filteredOn(event -> "certificate.issued".equals(event.getEventType())).hasSize(1);
+    }
+
+    private void putProgress(long lessonId, String state, int watchedSeconds) throws Exception {
+        mvc.perform(put("/api/lessons/{id}/progress", lessonId).header("Authorization", token(1))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"courseId\":10,\"status\":\"" + state + "\",\"watchedSeconds\":" + watchedSeconds + "}"))
+                .andExpect(status().isOk());
     }
 
     private String token(long user, String... roles) {
