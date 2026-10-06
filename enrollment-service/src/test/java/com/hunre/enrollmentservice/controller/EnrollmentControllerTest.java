@@ -115,7 +115,7 @@ class EnrollmentControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/enrollments/my-courses - Lấy danh sách khóa học của tôi")
+    @DisplayName("GET /api/enrollments - Lấy danh sách khóa học của tôi")
     void getMyCourses_success() throws Exception {
         EnrollmentResponse item = EnrollmentResponse.builder()
                 .id(1L)
@@ -130,7 +130,7 @@ class EnrollmentControllerTest {
 
         when(enrollmentService.getMyCourses(eq(1L), any(Pageable.class))).thenReturn(page);
 
-        mockMvc.perform(get("/api/enrollments/my-courses")
+        mockMvc.perform(get("/api/enrollments")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, mockUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -161,7 +161,7 @@ class EnrollmentControllerTest {
     }
 
     @Test
-    @DisplayName("PATCH /api/enrollments/{id}/cancel - Hủy đăng ký khóa học")
+    @DisplayName("PATCH /api/enrollments/{id}/status - Hủy đăng ký khóa học")
     void cancelEnrollment_success() throws Exception {
         EnrollmentResponse response = EnrollmentResponse.builder()
                 .id(5L)
@@ -174,7 +174,7 @@ class EnrollmentControllerTest {
 
         when(enrollmentService.cancelEnrollment(eq(1L), eq(5L))).thenReturn(response);
 
-        mockMvc.perform(patch("/api/enrollments/5/cancel")
+        mockMvc.perform(patch("/api/enrollments/5/status").contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"CANCELLED\"}")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, mockUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -182,9 +182,9 @@ class EnrollmentControllerTest {
     }
 
     @Test
-    @DisplayName("DELETE /api/enrollments/course/{courseId} - Reset hoặc hủy ghi danh khóa học")
+    @DisplayName("DELETE /api/enrollments?courseId={courseId} - Reset hoặc hủy ghi danh khóa học")
     void unenrollCourse_success() throws Exception {
-        mockMvc.perform(delete("/api/enrollments/course/10")
+        mockMvc.perform(delete("/api/enrollments").param("courseId", "10")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, mockUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))

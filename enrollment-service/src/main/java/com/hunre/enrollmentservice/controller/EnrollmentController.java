@@ -1,13 +1,19 @@
 package com.hunre.enrollmentservice.controller;
 
+import com.hunre.enrollmentservice.dto.request.ChangeEnrollmentStatusRequest;
 import com.hunre.enrollmentservice.dto.request.EnrollCourseRequest;
 import com.hunre.enrollmentservice.dto.response.CertificateResponse;
 import com.hunre.enrollmentservice.dto.response.EnrollmentResponse;
+import com.hunre.enrollmentservice.entity.EnrollmentStatus;
+import com.hunre.enrollmentservice.security.EnrollmentPermissions;
 import com.hunre.enrollmentservice.service.EnrollmentService;
 import com.hunre.sharedcommon.dto.ApiResponse;
 import com.hunre.sharedcommon.dto.PageResponse;
+import com.hunre.sharedcommon.exception.BusinessException;
+import com.hunre.sharedcommon.exception.ErrorCode;
 import com.hunre.sharedcommon.security.AuthenticatedUser;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -20,6 +26,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -39,6 +46,7 @@ public class EnrollmentController {
             @Valid @RequestBody EnrollCourseRequest request,
             AuthenticatedUser user) {
 
+        EnrollmentPermissions.requireStudent(user);
         EnrollmentResponse response = enrollmentService.enroll(user.userId(), request);
         return ApiResponse.ok(response, "Đăng ký khóa học thành công");
     }
@@ -46,7 +54,7 @@ public class EnrollmentController {
     /**
      * API Lấy danh sách khóa học mà người dùng đã đăng ký kèm tiến độ.
      */
-    @GetMapping("/my-courses")
+    @GetMapping
     public ApiResponse<PageResponse<EnrollmentResponse>> getMyCourses(
             AuthenticatedUser user,
             @PageableDefault(size = 10, sort = "enrolledAt", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -70,11 +78,18 @@ public class EnrollmentController {
     /**
      * API Hủy đăng ký khóa học (chuyển trạng thái sang CANCELLED).
      */
-    @PatchMapping("/{id}/cancel")
-    public ApiResponse<EnrollmentResponse> cancelEnrollment(
-            @PathVariable Long id,
+    @PatchMapping("/{id}/status")
+    public ApiResponse<EnrollmentResponse> changeStatus(
+            @PathVariable @Positive Long id,
+            @Valid @RequestBody ChangeEnrollmentStatusRequest request,
             AuthenticatedUser user) {
 
+        EnrollmentPermissions.requireStudent(user);
+        // ACTIVE và COMPLETED do nghiệp vụ ghi danh/tiến độ quyết định, không cho tự cấp chứng chỉ.
+        if (request.status() != EnrollmentStatus.CANCELLED) {
+            throw new BusinessException(ErrorCode.BUSINESS_RULE_VIOLATED,
+                    "Chỉ được yêu cầu chuyển trạng thái ghi danh sang CANCELLED");
+        }
         EnrollmentResponse response = enrollmentService.cancelEnrollment(user.userId(), id);
         return ApiResponse.ok(response, "Hủy đăng ký khóa học thành công");
     }
@@ -82,11 +97,12 @@ public class EnrollmentController {
     /**
      * API Hủy ghi danh / Reset tiến độ khóa học để học viên có thể học lại từ đầu hoặc test lại.
      */
-    @DeleteMapping("/course/{courseId}")
+    @DeleteMapping
     public ApiResponse<Void> unenrollCourse(
-            @PathVariable Long courseId,
+            @RequestParam @Positive Long courseId,
             AuthenticatedUser user) {
 
+        EnrollmentPermissions.requireStudent(user);
         enrollmentService.unenrollCourse(user.userId(), courseId);
         return ApiResponse.message("Đã hủy ghi danh và đặt lại tiến độ khóa học thành công");
     }

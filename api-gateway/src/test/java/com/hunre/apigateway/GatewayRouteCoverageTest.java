@@ -164,7 +164,9 @@ class GatewayRouteCoverageTest {
     /** Mẫu {@code /api/x/**} phải khớp cả {@code /api/x} lẫn đường dẫn con của nó. */
     private static boolean khop(PathPattern mau, String tienTo) {
         return mau.matches(PathContainer.parsePath(tienTo))
-                || mau.matches(PathContainer.parsePath(tienTo + "/1"));
+                || mau.matches(PathContainer.parsePath(tienTo + "/1"))
+                // Route con cụ thể như /api/lessons/{lessonId}/progress cũng thuộc tiền tố này.
+                || mau.getPatternString().startsWith(tienTo + "/");
     }
 
     /**

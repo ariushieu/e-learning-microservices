@@ -1,78 +1,197 @@
 # Enrollment & Progress Tracking Service
 
-Service quản lý đăng ký khóa học (Enrollment), theo dõi tiến độ học tập (Progress Tracking) và cấp chứng chỉ hoàn thành (Certificate) cho nền tảng E-Learning HUNRE, thuộc kiến trúc Microservices.
+Service phụ trách ghi danh, tiến độ và chứng chỉ. Java 17 trở lên, Spring Boot 4.1.1,
+MySQL/Flyway; JWT và hợp đồng sự kiện dùng từ `shared-common`.
 
----
+## 1. Phần đã triển khai
 
-## 1. Công nghệ sử dụng
-- **Ngôn ngữ & Framework:** Java 21, Spring Boot 4.1.1 (Spring MVC, Spring Data JPA, Spring Validation).
-- **Cơ sở dữ liệu:** MySQL 8.4 (`enrollment_db`), Flyway Migration, H2 In-Memory DB (chạy kiểm thử tự động).
-- **Xác thực:** JWT thông qua `AuthenticatedUser` (từ `shared-common`).
-- **Giao tiếp liên dịch vụ:** 
-  - Đọc bản sao chỉ đọc `course_snapshots` (nhất quán cuối đồng bộ từ `course-service`).
-  - Transactional Outbox Pattern (`outbox_events`) lưu các sự kiện `enrollment.created`, `enrollment.completed`, `certificate.issued`.
-- **Kiến trúc:** Layered Architecture:
-  - `controller`: Tiếp nhận HTTP request, phân luồng và trả về `ApiResponse<T>`.
-  - `service`: Chứa logic nghiệp vụ, tính toán % tiến độ bài học, transactional outbox.
-  - `repository`: Tầng truy cập dữ liệu Spring Data JPA.
-  - `entity`: Định nghĩa các thực thể JPA (`Enrollment`, `LessonProgress`, `Certificate`, `CourseSnapshot`, `OutboxEvent`).
-  - `dto`: Request & Response DTOs với Bean Validation.
-  - `client`: Tra cứu dữ liệu từ `course_snapshots`.
+- Ghi danh, hủy, tái kích hoạt, đặt lại tiến độ và xem chứng chỉ của chính người gọi.
+- Worker gửi transactional outbox lên `elearning.enrollment.events`.
+- `CourseSnapshotConsumer` nhận `course.updated` trên `elearning.course.events`, thêm hoặc
+  thay thế toàn bộ snapshot theo `courseId`, gồm trạng thái và tổng số bài học.
+- Năm đường dẫn enrollment/progress đã chuẩn hóa; gateway có route riêng cho PUT tiến độ.
+- Danh tính lấy từ JWT. Endpoint ghi yêu cầu `ROLE_STUDENT`; người có nhiều vai trò vẫn
+  dùng được nếu có vai trò học viên. Không cho thao tác thay học viên khác.
 
----
+## 2. Luồng đồng bộ khóa học
 
-## 2. Thiết kế Cơ sở dữ liệu (`enrollment_db`)
+`course-service → Kafka → CourseSnapshotConsumer → enrollment_db.course_snapshots`
 
-Mã nguồn migration nằm tại: `src/main/resources/db/migration/V1__init_enrollment_schema.sql`
+Consumer dùng group `enrollment-service`, `StringDeserializer` và Jackson 3
+(`tools.jackson.databind.ObjectMapper`). Không thêm dependency vào course-service và không
+đọc database của service khác.
 
-1. **`enrollments`**: Quản lý lượt đăng ký khóa học của học viên.
-   - Khóa chính `id`, `user_id`, `course_id`, `status` (`ACTIVE`, `COMPLETED`, `CANCELLED`), `progress_percent`, `enrolled_at`, `completed_at`, `last_accessed_at`.
-   - Ràng buộc `UNIQUE(user_id, course_id)` chống đăng ký trùng lặp.
-   - Ràng buộc `CHECK (progress_percent BETWEEN 0 AND 100)`.
-2. **`lesson_progress`**: Theo dõi trạng thái từng bài học.
-   - Khóa chính `id`, `enrollment_id` (FK), `lesson_id`, `status` (`IN_PROGRESS`, `COMPLETED`), `watched_seconds`, `completed_at`.
-   - Ràng buộc `UNIQUE(enrollment_id, lesson_id)`.
-3. **`certificates`**: Lưu chứng chỉ tốt nghiệp cấp khi hoàn thành 100% khóa học.
-   - Khóa chính `id`, `enrollment_id` (FK-UK), `certificate_code` (UK), `file_url`, `issued_at`.
-4. **`course_snapshots`**: Lưu bản sao thông tin khóa học đồng bộ qua Kafka (`title`, `slug`, `total_lessons`, `status`).
-5. **`outbox_events`**: Bảng outbox lưu sự kiện để phát sang Apache Kafka theo Transactional Outbox Pattern.
+Mỗi sự kiện hợp lệ ghi đè cả dòng bằng `save()` và gán `syncedAt = Instant.now()`.
+Các trường có thể null (ảnh bìa, thông tin giảng viên) được xóa đúng khi sự kiện gửi null.
+`courseId`, `title`, `slug`, `totalLessons`, `status`, `eventId`, `occurredAt` phải hợp lệ.
+Đặc biệt `slug` không được null vì schema MySQL hiện tại quy định NOT NULL.
 
----
+- Nhận trùng: cập nhật cùng khóa chính, không tạo thêm dòng; không cần `processed_events`.
+- Nhận ARCHIVED/DRAFT: vẫn cập nhật; ghi danh mới bị từ chối (404 theo cơ chế tra cứu hiện có).
+- JSON sai hoặc dữ liệu bắt buộc sai: bỏ qua, ghi cảnh báo, tiếp tục message sau.
+- Lỗi database: ném lỗi cho Kafka error handler retry mỗi giây, không đánh dấu offset đã xử lý.
+  Retry không giới hạn để không âm thầm mất snapshot; lỗi ghi kéo dài cần kiểm tra database/log.
+- `earliest` chỉ áp dụng khi group chưa có offset. Không tự đọc lại sự kiện đã hết retention.
+- Thứ tự phụ thuộc producer dùng key `courseId`; không dùng `syncedAt` để so phiên bản sự kiện.
+  Không thay đổi số partition hoặc phát lại sự kiện cũ sau sự kiện mới khi đang vận hành.
 
-## 3. Danh sách REST API
+Cấu hình chính trong `src/main/resources/application.properties`:
 
-Cổng mặc định: `http://localhost:8083`
+```properties
+spring.kafka.consumer.group-id=enrollment-service
+spring.kafka.consumer.auto-offset-reset=earliest
+spring.kafka.consumer.enable-auto-commit=false
+spring.kafka.listener.ack-mode=record
+```
 
-> **Lưu ý xác thực:** Các endpoint nghiệp vụ yêu cầu header `Authorization: Bearer <jwt-token>`. Thông tin `userId` được tự động trích xuất từ token qua `AuthenticatedUser`. Khi chạy kiểm thử local không cần token, bật `elearning.security.enabled=false` trong `application-local.properties`.
+`KAFKA_ENABLED=false` dùng để tắt listener khi phát triển không có Kafka.
+Worker outbox có công tắc riêng `app.outbox.publisher.enabled=false`.
 
-### Module 1: Đăng ký khóa học (Enrollment)
+## 3. REST API qua gateway
 
-| Phương thức | Endpoint | Mô tả |
+Dùng `http://localhost:8080`, header `Authorization: Bearer <accessToken>`.
+Cổng nội bộ enrollment là 8083; demo và kiểm tra tích hợp đi qua gateway.
+
+| Method | URL | Body / ý nghĩa |
 |---|---|---|
-| `POST` | `/api/enrollments` | Đăng ký khóa học mới (Body: `{"courseId": 1}`) |
-| `GET` | `/api/enrollments/my-courses` | Danh sách khóa học của học viên (hỗ trợ phân trang `page`, `size`) |
-| `GET` | `/api/enrollments/{id}` | Lấy chi tiết lượt ghi danh theo ID |
-| `PATCH` | `/api/enrollments/{id}/cancel` | Hủy đăng ký khóa học (chuyển sang `CANCELLED`) |
-| `DELETE` | `/api/enrollments/course/{courseId}` | Đặt lại / Hủy ghi danh để học lại từ đầu |
-| `GET` | `/api/enrollments/{id}/certificate` | Xem thông tin chứng chỉ hoàn thành khóa học |
+| POST | `/api/enrollments` | `{"courseId":10}`; tạo hoặc kích hoạt lại lượt đã hủy, trả 201 |
+| GET | `/api/enrollments?page=0&size=10&sort=enrolledAt,desc` | Chỉ danh sách của tài khoản đang đăng nhập |
+| GET | `/api/enrollments/{id}` | Chi tiết lượt ghi danh của mình |
+| PATCH | `/api/enrollments/{id}/status` | `{"status":"CANCELLED"}` |
+| DELETE | `/api/enrollments?courseId=10` | Xóa lượt ghi danh, tiến độ và chứng chỉ của mình trong khóa này |
+| GET | `/api/enrollments/{id}/certificate` | Xem chứng chỉ khi hoàn thành |
+| PUT | `/api/lessons/{lessonId}/progress` | `{"courseId":10,"status":"COMPLETED","watchedSeconds":300}` |
+| GET | `/api/progress?courseId=10` | Tiến độ tổng và từng bài học |
 
-### Module 2: Theo dõi tiến độ học (Progress Tracking)
+PATCH chỉ chấp nhận yêu cầu chuyển sang CANCELLED. Gửi enum ACTIVE hoặc COMPLETED
+nhận 422: tái kích hoạt qua POST ghi danh, hoàn thành do tiến độ tự tính. Thiếu trạng thái
+hoặc enum không tồn tại trả 400. Khóa đã hoàn thành không được hủy theo nghiệp vụ hiện có.
 
-| Phương thức | Endpoint | Mô tả |
-|---|---|---|
-| `POST` | `/api/progress/lesson` | Cập nhật tiến độ bài học (thời gian xem, trạng thái `IN_PROGRESS`/`COMPLETED`) |
-| `GET` | `/api/progress/course/{courseId}` | Lấy chi tiết tiến độ khóa học, % hoàn thành và danh sách bài học |
+PUT lấy `lessonId` từ URL, không lấy từ body; `userId` luôn lấy từ token.
+`courseId` bắt buộc, dương; `watchedSeconds` không âm, bỏ trống mặc định 0.
+Giữ nguyên kiểm tra bài học thuộc đúng khóa học qua `CourseLessonClient`:
+bài sai/không tồn tại trả 404; course-service không truy cập được trả 502 và không ghi tiến độ.
 
----
+### Thay đổi cần báo cho nhóm
 
-## 4. Kế hoạch phát triển tiếp theo (Next Steps / PRs)
-- **Outbox Publisher Worker:** Triển khai một `@Scheduled` job định kỳ đọc các dòng chưa gửi (`published_at IS NULL`) trong bảng `outbox_events`, gửi thông điệp lên topic Kafka `KafkaTopics.ENROLLMENT_EVENTS`, và đánh dấu thời điểm `published_at`.
-- **Course Kafka Consumer:** Lắng nghe topic `course.*` từ `course-service` để tự động cập nhật bản ghi trong `course_snapshots`.
+| Cũ | Mới |
+|---|---|
+| `GET /api/enrollments/my-courses` | `GET /api/enrollments` |
+| `DELETE /api/enrollments/course/{id}` | `DELETE /api/enrollments?courseId={id}` |
+| `PATCH /api/enrollments/{id}/cancel` | `PATCH /api/enrollments/{id}/status` + body |
+| `POST /api/progress/lesson` | `PUT /api/lessons/{lessonId}/progress` |
+| `GET /api/progress/course/{id}` | `GET /api/progress?courseId={id}` |
 
----
+Không giữ alias đường dẫn cũ. Frontend/collection phải chuyển sang URL mới.
 
-## 5. Hướng dẫn kiểm thử với Postman
+Gateway thêm route `enrollment-lesson-progress`, `order=-10`, chỉ khớp PUT và
+`/api/lessons/{lessonId}/progress`, đích là enrollment-service. GET bài học và các đường
+dẫn course khác giữ route course-service. Không mở công khai PUT.
+Phải triển khai gateway cùng thay đổi API này. Nhóm trưởng cần review route trước khi merge.
+Phân công yêu cầu phần API mở PR riêng với phần consumer; code hiện tại chuẩn bị tại local,
+chưa có xác nhận review hoặc triển khai chung.
 
-File bộ sưu tập kiểm thử: `docs/postman/enrollment-service.postman_collection.json`.
+## 4. Chạy và kiểm tra thủ công
 
-Import vào Postman và chạy với biến môi trường `baseUrl = http://localhost:8083`. Khi chạy với cấu hình `elearning.security.enabled=false`, hệ thống tự động gán danh tính học viên `id=1` cho toàn bộ các request.
+Từ thư mục gốc repo:
+
+```bash
+docker compose --profile app up -d --build --wait
+bash scripts/smoke-test.sh
+```
+
+1. Đăng nhập giảng viên, tạo khóa học và bài học rồi xuất bản qua gateway.
+2. Kafka UI `http://localhost:8090`: topic `elearning.course.events` có `course.updated`,
+   key bằng `courseId`.
+3. Trong `enrollment_db`, kiểm tra:
+
+```sql
+SELECT course_id, title, slug, total_lessons, status, synced_at
+FROM course_snapshots WHERE course_id = 3;
+```
+
+4. Đăng nhập học viên; POST ghi danh khóa vừa xuất bản: 201.
+5. Gửi lại cùng message: vẫn một dòng snapshot, `synced_at` được cập nhật.
+6. Sửa tên/số bài của khóa đang xuất bản: snapshot cập nhật đúng.
+7. Chuyển khóa sang ARCHIVED; dùng học viên khác ghi danh: bị từ chối.
+8. Khóa PUBLISHED: gọi PUT tiến độ, GET tiến độ và GET chứng chỉ sau khi học đủ bài.
+9. Kiểm tra `outbox_events.published_at` và thông báo của học viên để xác nhận chuỗi liên service.
+
+Có thể produce message mẫu khi chưa chạy course-service (đổi ID phù hợp môi trường):
+
+```json
+{
+  "eventId": "3b2e8f10-7c4d-4a1e-9f6b-2d5c8e7a1b90",
+  "eventType": "course.updated",
+  "occurredAt": "2026-10-06T07:00:00Z",
+  "courseId": 3,
+  "title": "Microservices",
+  "slug": "microservices",
+  "thumbnailUrl": null,
+  "instructorId": 7,
+  "instructorName": "Giang vien",
+  "totalLessons": 2,
+  "status": "PUBLISHED"
+}
+```
+
+Snapshot mẫu chỉ đủ test ghi danh; test tiến độ vẫn cần bài học thật ở course-service.
+
+## 5. Postman
+
+Import `docs/postman/enrollment-service.postman_collection.json`.
+
+- Điền `email`, `password` của học viên và `courseId`, `lessonId` có thật; giữ
+  `baseUrl=http://localhost:8080`.
+- Request đăng nhập tự lưu `accessToken`; ghi danh tự lưu `enrollmentId`.
+- Chạy từng thư mục theo trạng thái. Chứng chỉ chỉ trả 200 sau khi hoàn thành tất cả bài.
+- Thư mục hủy dùng lượt chưa COMPLETED. Thư mục xóa đặt riêng vì xóa cả tiến độ/chứng chỉ
+  của tài khoản đang đăng nhập trong khóa đã chọn.
+- Thử quyền sở hữu bằng học viên thứ hai; thử sai vai trò bằng tài khoản chỉ có
+  `ROLE_INSTRUCTOR`. Không lưu mật khẩu/token thật vào file collection trong Git.
+
+## 6. Kiểm thử tự động
+
+Từ thư mục gốc:
+
+```bash
+./mvnw -pl enrollment-service,api-gateway -am test
+./mvnw clean verify
+```
+
+Trên Windows dùng `mvnw.cmd` thay cho `./mvnw`.
+
+- `CourseSnapshotConsumerTest`: mapping đủ trường, thiếu trường, message sai, event khác,
+  trường tương lai và lỗi database phải được ném ra để retry.
+- `CourseSnapshotKafkaIntegrationTest`: broker Kafka thực trong JVM + H2; nhận message,
+  nhận trùng, ghi đè cả trường null, archive chặn ghi danh, message hỏng không chặn message
+  sau, lỗi tạm thời được retry trước snapshot tiếp theo.
+- `EnrollmentApiIntegrationTest`: JWT thật + MVC + service + H2; danh tính từ token,
+  ID bài từ URL, quyền sở hữu, đầu vào lỗi, không tự hoàn thành, vai trò học viên.
+- `EnrollmentRoutingIntegrationTest`: gọi HTTP qua gateway thật ở cổng ngẫu nhiên;
+  backend giả lập xác nhận đúng service, URL, query, body và token. PUT thiếu token trả 401;
+  GET bài học công khai vẫn đến course-service.
+- Test cũ của nghiệp vụ, client kiểm bài học và outbox tiếp tục chạy.
+
+Test tự động không thay thế kiểm thử toàn bộ Docker/MySQL/notification. Không sửa entity
+hay migration đã merge trong nhiệm vụ này; bước MySQL thật ở trên vẫn cần trước buổi demo.
+
+### Kết quả kiểm tra local ngày 06/10/2026
+
+Maven 3.9.16 / JDK 21 chạy `clean verify`: **BUILD SUCCESS**, 316 test, 0 failure,
+0 error, 0 skipped. Đã build cả 8 module của reactor.
+
+| Module | Test đạt |
+|---|---:|
+| shared-common | 77 |
+| api-gateway | 21 |
+| auth-service | 26 |
+| course-service | 73 |
+| enrollment-service | 63 |
+| quiz-service | 34 |
+| notification-service | 22 |
+
+Collection Postman có 17 request, đã kiểm tra JSON và đường dẫn; chưa chạy Postman Runner
+trên hệ thống Docker. Môi trường thực hiện không có lệnh Docker nên chưa xác nhận toàn
+chuỗi với MySQL/Kafka/notification chạy qua Docker Compose. Test Kafka dùng broker thật
+trong JVM; test gateway dùng HTTP thật với backend giả lập; test database dùng H2.
