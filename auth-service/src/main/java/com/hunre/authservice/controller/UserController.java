@@ -24,7 +24,7 @@ public class UserController {
      * Gán / thay thế toàn bộ vai trò của một tài khoản.
      * Chỉ ROLE_ADMIN mới gọi được endpoint này.
      *
-     * <p>Lưu ý: Quyền mới chỉ có hiệu lực sau khi người dùng đăng nhập lại (để sinh JWT mới mang các vai trò mới).
+     * <p>Lưu ý: Quyền mới có hiệu lực khi đăng nhập lại hoặc làm mới token để sinh JWT mang các vai trò mới.
      * Token cũ vẫn mang vai trò cũ cho tới khi hết hạn (theo cơ chế stateless JWT).
      *
      * <p>Ví dụ: cấp ROLE_INSTRUCTOR cho học viên để họ có thể tạo bài kiểm tra.
