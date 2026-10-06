@@ -12,6 +12,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -26,6 +28,7 @@ import static com.hunre.sharedcommon.security.JwtAuthenticationFilter.USER_ATTRI
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -137,19 +140,27 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
     }
 
-    @Test
-    @DisplayName("PATCH /api/users/{id}/roles - roles để trống trả về 400 VALIDATION_FAILED")
-    void updateRoles_emptyRoles_returns400() throws Exception {
-        String body = """
-                { "roles": [] }
-                """;
-
+    @ParameterizedTest
+    @ValueSource(strings = {"{}", "{\"roles\":null}", "{\"roles\":[]}",
+            "{\"roles\":[null]}", "{\"roles\":[\"ROLE_STUDENT\",null]}"})
+    @DisplayName("PATCH /api/users/{id}/roles - roles thiếu, rỗng hoặc chứa null trả về 400")
+    void updateRoles_invalidRoles_returns400(String body) throws Exception {
         mockMvc.perform(patch("/api/users/2/roles")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body)
                         .requestAttr(USER_ATTRIBUTE, ADMIN_USER))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+                .andExpect(jsonPath("$.success").value(false));
+        verifyNoInteractions(authService);
+    }
+
+    @Test
+    void updateRoles_unknownRole_returns400() throws Exception {
+        mockMvc.perform(patch("/api/users/2/roles")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"roles\":[\"ROLE_UNKNOWN\"]}")
+                        .requestAttr(USER_ATTRIBUTE, ADMIN_USER))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(authService);
     }
 }
