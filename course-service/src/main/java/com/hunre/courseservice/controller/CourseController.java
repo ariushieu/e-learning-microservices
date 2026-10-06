@@ -39,19 +39,13 @@ public class CourseController {
     private final CourseService courseService;
 
     @GetMapping
-    public ApiResponse<PageResponse<CourseSummaryResponse>> getPublishedCourses(
+    public ApiResponse<PageResponse<CourseSummaryResponse>> getCourses(
+            @RequestParam(required = false) Long instructorId,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) CourseLevel level,
             @RequestParam(required = false) String keyword,
             @PageableDefault(size = 12, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ApiResponse.ok(courseService.getPublishedCourses(categoryId, level, keyword, pageable));
-    }
-
-    @GetMapping("/instructor/{instructorId}")
-    public ApiResponse<PageResponse<CourseSummaryResponse>> getInstructorCourses(
-            @PathVariable Long instructorId,
-            @PageableDefault(size = 12, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ApiResponse.ok(courseService.getInstructorCourses(instructorId, pageable));
+        return ApiResponse.ok(courseService.getCourses(instructorId, categoryId, level, keyword, pageable));
     }
 
     @GetMapping("/{id}")

@@ -45,14 +45,21 @@ public class CourseServiceImpl implements CourseService {
     private final CourseEventPublisher courseEventPublisher;
 
     @Override
-    public PageResponse<CourseSummaryResponse> getPublishedCourses(
-            Long categoryId, CourseLevel level, String keyword, Pageable pageable) {
+    public PageResponse<CourseSummaryResponse> getCourses(
+            Long instructorId, Long categoryId, CourseLevel level, String keyword, Pageable pageable) {
 
+        boolean canSeeDrafts = instructorId != null && currentUserProvider.getCurrentUser()
+                .filter(user -> user.hasRole(Roles.ADMIN) || instructorId.equals(user.userId()))
+                .isPresent();
         Specification<Course> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            // Chỉ lấy các khóa học đã được xuất bản (PUBLISHED)
-            predicates.add(cb.equal(root.get("status"), CourseStatus.PUBLISHED));
+            if (!canSeeDrafts) {
+                predicates.add(cb.equal(root.get("status"), CourseStatus.PUBLISHED));
+            }
+            if (instructorId != null) {
+                predicates.add(cb.equal(root.get("instructorId"), instructorId));
+            }
 
             if (categoryId != null) {
                 predicates.add(cb.equal(root.get("category").get("id"), categoryId));
@@ -73,23 +80,6 @@ public class CourseServiceImpl implements CourseService {
         };
 
         Page<Course> page = courseRepository.findAll(spec, pageable);
-        List<CourseSummaryResponse> content = page.getContent().stream()
-                .map(CourseSummaryResponse::from)
-                .toList();
-
-        return PageResponse.of(content, page.getNumber(), page.getSize(), page.getTotalElements());
-    }
-
-    @Override
-    public PageResponse<CourseSummaryResponse> getInstructorCourses(Long instructorId, Pageable pageable) {
-        boolean canSeeAll = currentUserProvider.getCurrentUser()
-                .filter(u -> u.hasRole(Roles.ADMIN) || u.userId().equals(instructorId))
-                .isPresent();
-
-        Page<Course> page = canSeeAll
-                ? courseRepository.findByInstructorId(instructorId, pageable)
-                : courseRepository.findByInstructorIdAndStatus(instructorId, CourseStatus.PUBLISHED, pageable);
-
         List<CourseSummaryResponse> content = page.getContent().stream()
                 .map(CourseSummaryResponse::from)
                 .toList();

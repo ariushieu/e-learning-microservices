@@ -34,13 +34,14 @@ public class LessonController {
         return ApiResponse.ok(curriculumService.getLessonById(id));
     }
 
-    @PostMapping("/api/lessons")
+    @PostMapping("/api/sections/{sectionId}/lessons")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<LessonResponse> createLesson(
+            @PathVariable Long sectionId,
             @Valid @RequestBody CreateLessonRequest request,
             AuthenticatedUser user) {
         requireCurriculumManager(user);
-        return ApiResponse.ok(curriculumService.createLesson(request, user.userId(), user.hasRole(Roles.ADMIN)), "Tạo bài học thành công");
+        return ApiResponse.ok(curriculumService.createLesson(sectionId, request, user.userId(), user.hasRole(Roles.ADMIN)), "Tạo bài học thành công");
     }
 
     @PutMapping("/api/lessons/{id}")
@@ -69,10 +70,10 @@ public class LessonController {
         return ApiResponse.ok(curriculumService.addResource(lessonId, request, user.userId(), user.hasRole(Roles.ADMIN)), "Đính kèm tài liệu thành công");
     }
 
-    @DeleteMapping("/api/lessons/resources/{resourceId}")
-    public ApiResponse<Void> deleteResource(@PathVariable Long resourceId, AuthenticatedUser user) {
+    @DeleteMapping("/api/lessons/{lessonId}/resources/{resourceId}")
+    public ApiResponse<Void> deleteResource(@PathVariable Long lessonId, @PathVariable Long resourceId, AuthenticatedUser user) {
         requireCurriculumManager(user);
-        curriculumService.deleteResource(resourceId, user.userId(), user.hasRole(Roles.ADMIN));
+        curriculumService.deleteResource(lessonId, resourceId, user.userId(), user.hasRole(Roles.ADMIN));
         return ApiResponse.message("Đã xóa tài liệu đính kèm");
     }
 

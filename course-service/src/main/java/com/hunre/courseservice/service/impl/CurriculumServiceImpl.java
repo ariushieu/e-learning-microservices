@@ -66,9 +66,9 @@ public class CurriculumServiceImpl implements CurriculumService {
 
     @Override
     @Transactional
-    public SectionResponse createSection(CreateSectionRequest request, Long currentUserId, boolean isAdmin) {
-        Course course = courseRepository.findById(request.getCourseId())
-                .orElseThrow(() -> new ResourceNotFoundException("khóa học", "id", request.getCourseId()));
+    public SectionResponse createSection(Long courseId, CreateSectionRequest request, Long currentUserId, boolean isAdmin) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("khóa học", "id", courseId));
         requireOwner(course, currentUserId, isAdmin);
 
         Section section = Section.builder()
@@ -140,9 +140,9 @@ public class CurriculumServiceImpl implements CurriculumService {
 
     @Override
     @Transactional
-    public LessonResponse createLesson(CreateLessonRequest request, Long currentUserId, boolean isAdmin) {
-        Section section = sectionRepository.findById(request.getSectionId())
-                .orElseThrow(() -> new ResourceNotFoundException("chương học", "id", request.getSectionId()));
+    public LessonResponse createLesson(Long sectionId, CreateLessonRequest request, Long currentUserId, boolean isAdmin) {
+        Section section = sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new ResourceNotFoundException("chương học", "id", sectionId));
         requireOwner(section.getCourse(), currentUserId, isAdmin);
 
         Course course = section.getCourse();
@@ -245,9 +245,12 @@ public class CurriculumServiceImpl implements CurriculumService {
 
     @Override
     @Transactional
-    public void deleteResource(Long resourceId, Long currentUserId, boolean isAdmin) {
+    public void deleteResource(Long lessonId, Long resourceId, Long currentUserId, boolean isAdmin) {
         LessonResource resource = lessonResourceRepository.findById(resourceId)
                 .orElseThrow(() -> new ResourceNotFoundException("tài liệu bài học", "id", resourceId));
+        if (!lessonId.equals(resource.getLesson().getId())) {
+            throw new ResourceNotFoundException("tài liệu bài học", "id", resourceId);
+        }
         requireOwner(resource.getLesson().getCourse(), currentUserId, isAdmin);
 
         lessonResourceRepository.delete(resource);

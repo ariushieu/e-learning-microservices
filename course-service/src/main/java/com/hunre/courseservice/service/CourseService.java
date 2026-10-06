@@ -11,9 +11,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface CourseService {
 
-    PageResponse<CourseSummaryResponse> getPublishedCourses(Long categoryId, CourseLevel level, String keyword, Pageable pageable);
-
-    PageResponse<CourseSummaryResponse> getInstructorCourses(Long instructorId, Pageable pageable);
+    PageResponse<CourseSummaryResponse> getCourses(Long instructorId, Long categoryId, CourseLevel level, String keyword, Pageable pageable);
 
     CourseResponse getCourseById(Long id);
 

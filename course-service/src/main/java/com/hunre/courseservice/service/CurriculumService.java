@@ -15,7 +15,7 @@ public interface CurriculumService {
 
     List<SectionResponse> getCurriculumByCourseId(Long courseId);
 
-    SectionResponse createSection(CreateSectionRequest request, Long currentUserId, boolean isAdmin);
+    SectionResponse createSection(Long courseId, CreateSectionRequest request, Long currentUserId, boolean isAdmin);
 
     SectionResponse updateSection(Long id, UpdateSectionRequest request, Long currentUserId, boolean isAdmin);
 
@@ -23,7 +23,7 @@ public interface CurriculumService {
 
     LessonResponse getLessonById(Long id);
 
-    LessonResponse createLesson(CreateLessonRequest request, Long currentUserId, boolean isAdmin);
+    LessonResponse createLesson(Long sectionId, CreateLessonRequest request, Long currentUserId, boolean isAdmin);
 
     LessonResponse updateLesson(Long id, UpdateLessonRequest request, Long currentUserId, boolean isAdmin);
 
@@ -31,5 +31,5 @@ public interface CurriculumService {
 
     LessonResourceResponse addResource(Long lessonId, CreateLessonResourceRequest request, Long currentUserId, boolean isAdmin);
 
-    void deleteResource(Long resourceId, Long currentUserId, boolean isAdmin);
+    void deleteResource(Long lessonId, Long resourceId, Long currentUserId, boolean isAdmin);
 }

@@ -78,7 +78,7 @@ class SectionControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/sections thành công trả về 201 Created khi là Giảng viên")
+    @DisplayName("POST /api/courses/{courseId}/sections thành công trả về 201 Created khi là Giảng viên")
     void createSection_success() throws Exception {
         SectionResponse section = SectionResponse.builder()
                 .id(2L)
@@ -86,17 +86,16 @@ class SectionControllerTest {
                 .title("Chương 2: Cài đặt")
                 .build();
 
-        when(curriculumService.createSection(any(CreateSectionRequest.class), eq(1L), eq(false))).thenReturn(section);
+        when(curriculumService.createSection(eq(10L), any(CreateSectionRequest.class), eq(1L), eq(false))).thenReturn(section);
 
         String json = """
                 {
-                    "courseId": 10,
                     "title": "Chương 2: Cài đặt",
                     "position": 2
                 }
                 """;
 
-        mockMvc.perform(post("/api/sections")
+        mockMvc.perform(post("/api/courses/10/sections")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
@@ -107,16 +106,15 @@ class SectionControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/sections bị chặn 403 khi là Học viên")
+    @DisplayName("POST /api/courses/{courseId}/sections bị chặn 403 khi là Học viên")
     void createSection_whenStudent_returnsForbidden403() throws Exception {
         String json = """
                 {
-                    "courseId": 10,
                     "title": "Chương 2: Cài đặt"
                 }
                 """;
 
-        mockMvc.perform(post("/api/sections")
+        mockMvc.perform(post("/api/courses/10/sections")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, student)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))

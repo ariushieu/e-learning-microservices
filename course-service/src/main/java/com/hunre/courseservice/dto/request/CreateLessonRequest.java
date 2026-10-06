@@ -2,7 +2,6 @@ package com.hunre.courseservice.dto.request;
 
 import com.hunre.courseservice.entity.LessonType;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -17,9 +16,6 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class CreateLessonRequest {
-
-    @NotNull(message = "ID chương không được để trống")
-    private Long sectionId;
 
     @NotBlank(message = "Tiêu đề bài học không được để trống")
     @Size(max = 200, message = "Tiêu đề bài học không được vượt quá 200 ký tự")

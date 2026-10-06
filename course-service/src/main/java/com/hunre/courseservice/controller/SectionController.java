@@ -34,13 +34,14 @@ public class SectionController {
         return ApiResponse.ok(curriculumService.getCurriculumByCourseId(courseId));
     }
 
-    @PostMapping("/api/sections")
+    @PostMapping("/api/courses/{courseId}/sections")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<SectionResponse> createSection(
+            @PathVariable Long courseId,
             @Valid @RequestBody CreateSectionRequest request,
             AuthenticatedUser user) {
         requireCurriculumManager(user);
-        return ApiResponse.ok(curriculumService.createSection(request, user.userId(), user.hasRole(Roles.ADMIN)), "Tạo chương học thành công");
+        return ApiResponse.ok(curriculumService.createSection(courseId, request, user.userId(), user.hasRole(Roles.ADMIN)), "Tạo chương học thành công");
     }
 
     @PutMapping("/api/sections/{id}")

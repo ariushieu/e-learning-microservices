@@ -119,7 +119,7 @@ class CurriculumServiceTest {
     @DisplayName("Tạo chương học thành công")
     void createSection_success() {
         Course course = Course.builder().instructorId(50L).id(1L).build();
-        CreateSectionRequest request = CreateSectionRequest.builder().courseId(1L)
+        CreateSectionRequest request = CreateSectionRequest.builder()
                 .title("Chương 1: Tổng quan")
                 .position(1)
                 .build();
@@ -132,7 +132,7 @@ class CurriculumServiceTest {
             return s;
         });
 
-        SectionResponse response = curriculumService.createSection(request, 50L, false);
+        SectionResponse response = curriculumService.createSection(1L, request, 50L, false);
 
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(10L);
@@ -154,7 +154,7 @@ class CurriculumServiceTest {
                 .title("Chương 1")
                 .build();
 
-        CreateLessonRequest request = CreateLessonRequest.builder().sectionId(10L)
+        CreateLessonRequest request = CreateLessonRequest.builder()
                 .title("Bài 3: Cài đặt môi trường")
                 .type(LessonType.VIDEO)
                 .durationSeconds(300)
@@ -168,7 +168,7 @@ class CurriculumServiceTest {
             return l;
         });
 
-        LessonResponse response = curriculumService.createLesson(request, 50L, false);
+        LessonResponse response = curriculumService.createLesson(10L, request, 50L, false);
 
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(100L);
@@ -268,7 +268,7 @@ class CurriculumServiceTest {
                 .totalDurationSeconds(1000)
                 .build();
         Section section = Section.builder().id(10L).course(course).build();
-        CreateLessonRequest request = CreateLessonRequest.builder().sectionId(10L)
+        CreateLessonRequest request = CreateLessonRequest.builder()
                 .title("Bài 1")
                 .durationSeconds(300)
                 .build();
@@ -281,7 +281,7 @@ class CurriculumServiceTest {
         });
         when(courseRepository.save(any(Course.class))).thenAnswer(i -> i.getArgument(0));
 
-        curriculumService.createLesson(request, 50L, false);
+        curriculumService.createLesson(10L, request, 50L, false);
 
         verify(courseEventPublisher).publishCourseUpdated(any(Course.class));
     }
@@ -296,7 +296,7 @@ class CurriculumServiceTest {
                 .totalDurationSeconds(1000)
                 .build();
         Section section = Section.builder().id(10L).course(course).build();
-        CreateLessonRequest request = CreateLessonRequest.builder().sectionId(10L)
+        CreateLessonRequest request = CreateLessonRequest.builder()
                 .title("Bài 1")
                 .durationSeconds(300)
                 .build();
@@ -309,7 +309,7 @@ class CurriculumServiceTest {
         });
         when(courseRepository.save(any(Course.class))).thenAnswer(i -> i.getArgument(0));
 
-        curriculumService.createLesson(request, 50L, false);
+        curriculumService.createLesson(10L, request, 50L, false);
 
         verify(courseEventPublisher, never()).publishCourseUpdated(any(Course.class));
     }
