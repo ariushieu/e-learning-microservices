@@ -69,8 +69,8 @@ export function QuizStatusActions({ quiz }: { quiz: QuizDetail }) {
   const spinner = (key: Busy) => (busy === key ? <Loader2Icon className="animate-spin" /> : null);
 
   return (
-    <div className="flex flex-col items-end gap-3">
-      <div className="flex flex-wrap justify-end gap-2">
+    <div className="flex flex-col items-start gap-3 sm:items-end">
+      <div className="flex flex-wrap gap-2 sm:justify-end">
         {quiz.status === "PUBLISHED" && (
           <Button asChild variant="ghost">
             <Link href={`/quizzes/${quiz.id}`}>

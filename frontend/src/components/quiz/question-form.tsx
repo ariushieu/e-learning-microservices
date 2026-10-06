@@ -3,12 +3,13 @@
 import { CircleAlertIcon, Loader2Icon, PlusIcon, XIcon } from "lucide-react";
 import { useId, useState, type FormEvent, type ReactNode } from "react";
 import { ErrorAlert } from "@/components/common/error-alert";
+import { FormField } from "@/components/common/form-field";
+import { NativeSelect } from "@/components/common/native-select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/client";
@@ -46,10 +47,6 @@ function validate(content: string, type: QuestionType, score: string, options: O
   }
   return errors;
 }
-
-// Ô chọn thả xuống dạng native, trông giống Input.
-const selectClass =
-  "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-base outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30";
 
 /**
  * Form thêm hoặc sửa một câu hỏi. Có `initial` là sửa (PUT thay toàn bộ phương án),
@@ -165,7 +162,7 @@ export function QuestionForm({
           maxLength={1000}
           placeholder={`Phương án ${letter(i)}`}
           disabled={saving}
-          className="bg-background"
+          className="bg-card"
         />
         {!fixedOptions && (
           <Button
@@ -190,15 +187,12 @@ export function QuestionForm({
     <Card className="ring-primary/30">
       <form onSubmit={submit} noValidate className="flex flex-col gap-(--card-spacing)">
         <CardHeader>
-          <CardTitle className="text-base font-semibold">
+          <CardTitle className="text-subheading">
             {initial ? `Sửa câu ${index != null ? index + 1 : ""}`.trim() : "Thêm câu hỏi"}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor={`${id}-content`}>
-              Nội dung câu hỏi<span className="text-destructive">*</span>
-            </Label>
+          <FormField id={`${id}-content`} label="Nội dung câu hỏi" required>
             <Textarea
               id={`${id}-content`}
               rows={3}
@@ -207,14 +201,12 @@ export function QuestionForm({
               disabled={saving}
               placeholder="Nhập câu hỏi"
             />
-          </div>
+          </FormField>
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor={`${id}-type`}>Loại câu hỏi</Label>
-              <select
+            <FormField id={`${id}-type`} label="Loại câu hỏi">
+              <NativeSelect
                 id={`${id}-type`}
-                className={selectClass}
                 value={type}
                 onChange={(e) => changeType(e.target.value as QuestionType)}
                 disabled={saving}
@@ -224,12 +216,9 @@ export function QuestionForm({
                     {questionTypeLabels[t]}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={`${id}-score`}>
-                Điểm<span className="text-destructive">*</span>
-              </Label>
+              </NativeSelect>
+            </FormField>
+            <FormField id={`${id}-score`} label="Điểm" required>
               <Input
                 id={`${id}-score`}
                 type="number"
@@ -239,7 +228,7 @@ export function QuestionForm({
                 onChange={(e) => setScore(e.target.value)}
                 disabled={saving}
               />
-            </div>
+            </FormField>
           </div>
 
           <fieldset className="space-y-3">
@@ -274,8 +263,7 @@ export function QuestionForm({
             )}
           </fieldset>
 
-          <div className="space-y-2">
-            <Label htmlFor={`${id}-explanation`}>Giải thích</Label>
+          <FormField id={`${id}-explanation`} label="Giải thích" hint="Học viên thấy phần này sau khi nộp bài.">
             <Textarea
               id={`${id}-explanation`}
               rows={2}
@@ -284,8 +272,7 @@ export function QuestionForm({
               disabled={saving}
               placeholder="Không bắt buộc"
             />
-            <p className="text-xs text-muted-foreground">Học viên thấy phần này sau khi nộp bài.</p>
-          </div>
+          </FormField>
 
           {errors.length > 0 && (
             <Alert variant="destructive">
@@ -331,11 +318,11 @@ function OptionRow({
     <div
       className={cn(
         "flex items-center gap-3 rounded-lg border px-3 py-2 transition-colors",
-        correct ? "border-emerald-300 bg-emerald-50/60 dark:border-emerald-800 dark:bg-emerald-950/30" : "bg-muted/30",
+        correct ? "border-success/40 bg-success-soft" : "bg-muted/40",
       )}
     >
       {marker}
-      <span className="w-4 shrink-0 text-sm font-medium text-muted-foreground">{letter}</span>
+      <span className={cn("w-4 shrink-0 text-sm font-medium", correct ? "text-success-strong" : "text-muted-foreground")}>{letter}</span>
       {children}
     </div>
   );
