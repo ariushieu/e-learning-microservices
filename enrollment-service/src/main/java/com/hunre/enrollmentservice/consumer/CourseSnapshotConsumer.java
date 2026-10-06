@@ -6,10 +6,10 @@ import com.hunre.sharedcommon.event.CourseUpdatedEvent;
 import com.hunre.sharedcommon.event.EventTypes;
 import com.hunre.sharedcommon.event.KafkaTopics;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
 
 import java.time.Instant;
 import java.util.Set;
@@ -17,7 +17,6 @@ import java.util.Set;
 /** Bản sao khóa học: mỗi message thay thế toàn bộ dòng, kể cả các trường null. */
 @Component
 @RequiredArgsConstructor
-@Slf4j
 public class CourseSnapshotConsumer {
 
     private final ObjectMapper objectMapper;
@@ -33,15 +32,16 @@ public class CourseSnapshotConsumer {
             if (node == null || !node.isObject()) {
                 throw new IllegalArgumentException("Message phải là JSON object");
             }
+            if (!node.path("eventType").isString() || node.path("eventType").asString().isBlank()) {
+                throw new IllegalArgumentException("Thiếu hoặc sai eventType");
+            }
             if (!EventTypes.COURSE_UPDATED.equals(node.path("eventType").asString())) {
                 return;
             }
             event = objectMapper.treeToValue(node, CourseUpdatedEvent.class);
             validate(event);
-        } catch (RuntimeException ex) {
-            // Dữ liệu sai không thể sửa bằng retry; không ghi payload vào log.
-            log.warn("Bỏ qua course.updated không hợp lệ ({})", ex.getClass().getSimpleName());
-            return;
+        } catch (JacksonException | IllegalArgumentException ex) {
+            throw new InvalidCourseEventException("Sự kiện khóa học không hợp lệ", ex);
         }
 
         // Không nuốt lỗi database: error handler retry, chưa commit offset khi ghi thất bại.
