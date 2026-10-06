@@ -2,7 +2,7 @@ import { BookOpenIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ContourPattern } from "./decor";
 
-// Bốn tông nền đậm của bộ nhận diện; cùng danh mục luôn ra cùng một tông.
+// Bốn tông nền đậm của bộ nhận diện.
 const TONES = [
   "bg-[linear-gradient(135deg,#14532d,#166534_60%,#1f7a45)]",
   "bg-[linear-gradient(135deg,#134e5e,#0e7490_60%,#1689a8)]",
@@ -17,8 +17,9 @@ function toneFor(key: string) {
 }
 
 /**
- * Ảnh bìa khóa học. Có `thumbnailUrl` thì hiện ảnh; chưa có thì tự sinh bìa: nền theo danh mục,
- * họa tiết đường đồng mức, tên danh mục — mỗi khóa trông khác nhau thay vì cùng một ô xám.
+ * Ảnh bìa khóa học. Có `thumbnailUrl` thì hiện ảnh; chưa có thì tự sinh bìa: nền chọn theo tên
+ * khóa (cùng khóa luôn cùng màu ở mọi trang), họa tiết đường đồng mức, tên danh mục — mỗi khóa
+ * trông khác nhau thay vì cùng một ô xám.
  */
 export function CourseCover({
   title,
@@ -26,12 +27,15 @@ export function CourseCover({
   thumbnailUrl,
   className,
   showLabel = true,
+  size = "md",
 }: {
   title: string;
   category?: string | null;
   thumbnailUrl?: string | null;
   className?: string;
   showLabel?: boolean;
+  /** "sm": ảnh nhỏ trong bảng, danh sách — chỉ giữ nền và họa tiết. */
+  size?: "sm" | "md";
 }) {
   if (thumbnailUrl) {
     return (
@@ -41,15 +45,17 @@ export function CourseCover({
     );
   }
   return (
-    <div className={cn("relative isolate flex aspect-video w-full overflow-hidden text-white", toneFor(category || title), className)} aria-hidden>
+    <div className={cn("relative isolate flex aspect-video w-full overflow-hidden text-white", toneFor(title), className)} aria-hidden>
       <ContourPattern className="text-white/12" />
       <div className="absolute -right-6 -bottom-8 size-32 rounded-full bg-white/6 blur-2xl" />
-      <div className="relative flex w-full flex-col justify-between p-4">
-        <span className="flex size-9 items-center justify-center rounded-xl bg-white/12 ring-1 ring-white/15">
-          <BookOpenIcon className="size-4.5" />
-        </span>
-        {showLabel && category && <span className="line-clamp-1 text-xs font-medium tracking-wide text-white/80 uppercase">{category}</span>}
-      </div>
+      {size === "md" && (
+        <div className="relative flex w-full flex-col justify-between p-4">
+          <span className="flex size-9 items-center justify-center rounded-xl bg-white/12 ring-1 ring-white/15">
+            <BookOpenIcon className="size-4.5" />
+          </span>
+          {showLabel && category && <span className="line-clamp-1 text-xs font-medium tracking-wide text-white/80 uppercase">{category}</span>}
+        </div>
+      )}
     </div>
   );
 }

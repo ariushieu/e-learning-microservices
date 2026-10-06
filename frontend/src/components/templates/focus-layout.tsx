@@ -65,7 +65,7 @@ export function FocusLayout({
           <div className="mx-auto max-w-5xl space-y-8 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
             {(progress || mobileBar) && (
               <div className="flex items-center justify-between gap-3 lg:hidden">
-                {progress && <ProgressMeter value={progress.value} label={progress.summary} className="min-w-0 flex-1 md:hidden" />}
+                {progress && <ProgressMeter value={progress.value} label="Tiến độ" detail={progress.summary} className="min-w-0 flex-1 md:hidden" />}
                 {mobileBar && <div className="ml-auto">{mobileBar}</div>}
               </div>
             )}

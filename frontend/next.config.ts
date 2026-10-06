@@ -6,6 +6,11 @@ const nextConfig: NextConfig = {
   // `pnpm start` chạy bình thường — bật standalone thì `next start` báo không hỗ trợ.
   output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   poweredByHeader: false,
+  // Chuyển trước khi render. Nếu gọi redirect() trong page, loading.tsx của (dashboard) làm Next
+  // gửi khung "đang tải" trước rồi mới chuyển ở trình duyệt (không còn mã 307).
+  async redirects() {
+    return [{ source: "/admin", destination: "/admin/users", permanent: false }];
+  },
 };
 
 export default nextConfig;

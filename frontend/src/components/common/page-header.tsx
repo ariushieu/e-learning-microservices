@@ -54,7 +54,7 @@ export function PageHeader({
           <h1 className="text-title">{title}</h1>
           {description && <p className="max-w-2xl text-muted-foreground">{description}</p>}
         </div>
-        {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
+        {actions && <div className="flex min-w-0 flex-wrap items-center gap-2 max-sm:w-full">{actions}</div>}
       </div>
     </div>
   );

@@ -14,7 +14,7 @@ const COLUMNS = [
     title: "Dự án",
     links: [
       { href: "/design", label: "Hệ thống giao diện" },
-      { href: "/instructor", label: "Khu giảng dạy" },
+      { href: "/instructor", label: "Dành cho giảng viên" },
     ],
   },
 ];
