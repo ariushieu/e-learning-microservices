@@ -5,6 +5,7 @@ dùng. Nó không gọi service nào và không service nào gọi nó — chỉ
 
 - [Luồng đi của một thông báo](#luồng-đi-của-một-thông-báo)
 - [Một sự kiện chỉ tạo đúng một thông báo](#một-sự-kiện-chỉ-tạo-đúng-một-thông-báo)
+- [Khi xử lý sự kiện bị lỗi](#khi-xử-lý-sự-kiện-bị-lỗi)
 - [Mẫu thông báo](#mẫu-thông-báo)
 - [API](#api)
 - [Vì sao đọc chuỗi thô thay vì để Spring chuyển đổi sẵn](#vì-sao-đọc-chuỗi-thô-thay-vì-để-spring-chuyển-đổi-sẵn)
@@ -60,6 +61,48 @@ cũ, không hề có lỗi trùng khóa, và cơ chế chống trùng im lặng 
 
 Đã kiểm trên hệ thống thật: cho consumer đọc lại toàn bộ topic từ offset 0 bằng một consumer
 group mới, số thông báo trong database không đổi.
+
+## Khi xử lý sự kiện bị lỗi
+
+Bản đầu tiên bắt mọi lỗi, ghi log rồi đi tiếp. Nghe an toàn, nhưng MySQL chập chờn vài giây
+là mọi sự kiện tới trong khoảng đó **mất hẳn**: Kafka coi như đã nhận xong, không gửi lại,
+và học viên không bao giờ nhận được thông báo. Giờ lỗi được chia làm hai loại:
+
+| Loại lỗi | Ví dụ | Xử lý |
+|---|---|---|
+| Tạm thời | MySQL khởi động lại, mất kết nối | Thử lại, chờ 1s, 2s, 4s… tối đa 30s mỗi lần. Consumer đứng chờ ở message đó, không nhảy qua |
+| Message hỏng | JSON sai, thiếu `eventId`/`eventType`, `userId` là chữ | Chuyển ngay sang topic `.DLT`, đi tiếp message sau |
+| Trùng | Sự kiện đã có trong `processed_events` | Bỏ qua êm, không phải lỗi |
+
+Thử lại mãi không được — tổng thời gian chờ quá 5 phút, thực tế khoảng 10–12 phút khi MySQL
+tắt hẳn — thì message cũng sang `.DLT`. Không thử mãi, vì một lỗi lập trình bị đoán nhầm là
+lỗi tạm thời sẽ chặn đứng consumer.
+
+**Topic `.DLT`** (dead letter topic) giữ lại message hỏng để người xem được. Tên là topic gốc
+cộng đuôi `.DLT`, ví dụ `elearning.quiz.events.DLT`. Mở Kafka UI (http://localhost:8090) →
+Topics → topic `.DLT` → Messages: thấy nguyên nội dung gốc kèm header
+`kafka_dlt-exception-message` (vì sao hỏng) và `kafka_dlt-original-offset` (nằm ở đâu trong
+topic gốc). Mỗi lần chuyển, log có một dòng ERROR:
+
+```
+Chuyển message elearning.quiz.events-0@7 sang elearning.quiz.events.DLT: Message trên topic elearning.quiz.events thiếu eventId hoặc eventType
+```
+
+Sửa xong nguyên nhân thì gửi lại được: chép nội dung message trong Kafka UI, Produce Message
+vào topic gốc. An toàn, vì `processed_events` chặn trùng nếu lỡ sự kiện đó đã được xử lý.
+
+Bộ xử lý nằm ở `KafkaErrorHandlingConfig`, khoảng chờ chỉnh ở `elearning.kafka.retry.*`.
+
+**Đã chạy thật** (06/10, MySQL và Kafka trong Docker, service chạy trên máy):
+
+| Thử | Kết quả |
+|---|---|
+| Gửi `{not json` rồi một sự kiện hợp lệ | Message hỏng sang `.DLT`, sự kiện sau vẫn tạo thông báo — consumer không kẹt |
+| Gửi lại sự kiện đã xử lý | Không thêm thông báo, không vào `.DLT` |
+| `userId` là chữ | Sang `.DLT`; `processed_events` không có dòng nào cho sự kiện đó |
+| Tắt MySQL, gửi sự kiện, 40 giây sau bật lại | Thông báo tạo 4 giây sau khi MySQL lên. Bản cũ mất sự kiện này |
+| Tắt MySQL 3 phút 25 giây | Vẫn chờ được, cả hai sự kiện gửi trong lúc tắt đều thành thông báo |
+| Giới hạn chờ 5 giây, tắt MySQL | Thử 4 lần rồi sang `.DLT` (mất 2 phút 20 giây thật); sự kiện sau tạo thông báo ngay khi MySQL lên |
 
 ## Mẫu thông báo
 
