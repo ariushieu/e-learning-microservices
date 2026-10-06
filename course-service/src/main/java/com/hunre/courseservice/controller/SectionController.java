@@ -34,13 +34,14 @@ public class SectionController {
         return ApiResponse.ok(curriculumService.getCurriculumByCourseId(courseId));
     }
 
-    @PostMapping("/api/sections")
+    @PostMapping("/api/courses/{courseId}/sections")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<SectionResponse> createSection(
+            @PathVariable Long courseId,
             @Valid @RequestBody CreateSectionRequest request,
             AuthenticatedUser user) {
         requireCurriculumManager(user);
-        return ApiResponse.ok(curriculumService.createSection(request), "Tạo chương học thành công");
+        return ApiResponse.ok(curriculumService.createSection(courseId, request, user.userId(), user.hasRole(Roles.ADMIN)), "Tạo chương học thành công");
     }
 
     @PutMapping("/api/sections/{id}")
@@ -49,13 +50,13 @@ public class SectionController {
             @Valid @RequestBody UpdateSectionRequest request,
             AuthenticatedUser user) {
         requireCurriculumManager(user);
-        return ApiResponse.ok(curriculumService.updateSection(id, request), "Cập nhật chương học thành công");
+        return ApiResponse.ok(curriculumService.updateSection(id, request, user.userId(), user.hasRole(Roles.ADMIN)), "Cập nhật chương học thành công");
     }
 
     @DeleteMapping("/api/sections/{id}")
     public ApiResponse<Void> deleteSection(@PathVariable Long id, AuthenticatedUser user) {
         requireCurriculumManager(user);
-        curriculumService.deleteSection(id);
+        curriculumService.deleteSection(id, user.userId(), user.hasRole(Roles.ADMIN));
         return ApiResponse.message("Đã xóa chương học");
     }
 

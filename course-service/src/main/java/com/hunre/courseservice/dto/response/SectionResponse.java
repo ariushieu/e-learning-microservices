@@ -1,6 +1,7 @@
 package com.hunre.courseservice.dto.response;
 
 import com.hunre.courseservice.entity.Section;
+import com.hunre.courseservice.entity.Lesson;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -10,6 +11,7 @@ import lombok.Setter;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 @Getter
 @Setter
@@ -29,6 +31,11 @@ public class SectionResponse {
     private List<LessonResponse> lessons = new ArrayList<>();
 
     public static SectionResponse from(Section section) {
+        return from(section, lesson -> false);
+    }
+
+    public static SectionResponse from(Section section,
+            Predicate<Lesson> canReadContent) {
         if (section == null) {
             return null;
         }
@@ -38,7 +45,7 @@ public class SectionResponse {
         List<LessonResponse> lessonList = new ArrayList<>();
         if (section.getLessons() != null && !section.getLessons().isEmpty()) {
             for (var l : section.getLessons()) {
-                lessonList.add(LessonResponse.from(l));
+                lessonList.add(LessonResponse.from(l, canReadContent.test(l)));
             }
         }
 
