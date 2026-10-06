@@ -23,9 +23,6 @@ public class CreateCourseRequest {
     @NotNull(message = "Danh mục khóa học không được để trống")
     private Long categoryId;
 
-    @NotNull(message = "ID giảng viên không được để trống")
-    private Long instructorId;
-
     @Size(max = 150, message = "Tên giảng viên không được vượt quá 150 ký tự")
     private String instructorName;
 

@@ -5,6 +5,10 @@ import com.hunre.courseservice.dto.request.UpdateSectionRequest;
 import com.hunre.courseservice.dto.response.SectionResponse;
 import com.hunre.courseservice.service.CurriculumService;
 import com.hunre.sharedcommon.dto.ApiResponse;
+import com.hunre.sharedcommon.exception.BusinessException;
+import com.hunre.sharedcommon.exception.ErrorCode;
+import com.hunre.sharedcommon.security.AuthenticatedUser;
+import com.hunre.sharedcommon.security.Roles;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -32,20 +36,33 @@ public class SectionController {
 
     @PostMapping("/api/sections")
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<SectionResponse> createSection(@Valid @RequestBody CreateSectionRequest request) {
+    public ApiResponse<SectionResponse> createSection(
+            @Valid @RequestBody CreateSectionRequest request,
+            AuthenticatedUser user) {
+        requireCurriculumManager(user);
         return ApiResponse.ok(curriculumService.createSection(request), "Tạo chương học thành công");
     }
 
     @PutMapping("/api/sections/{id}")
     public ApiResponse<SectionResponse> updateSection(
             @PathVariable Long id,
-            @Valid @RequestBody UpdateSectionRequest request) {
+            @Valid @RequestBody UpdateSectionRequest request,
+            AuthenticatedUser user) {
+        requireCurriculumManager(user);
         return ApiResponse.ok(curriculumService.updateSection(id, request), "Cập nhật chương học thành công");
     }
 
     @DeleteMapping("/api/sections/{id}")
-    public ApiResponse<Void> deleteSection(@PathVariable Long id) {
+    public ApiResponse<Void> deleteSection(@PathVariable Long id, AuthenticatedUser user) {
+        requireCurriculumManager(user);
         curriculumService.deleteSection(id);
         return ApiResponse.message("Đã xóa chương học");
+    }
+
+    private void requireCurriculumManager(AuthenticatedUser user) {
+        if (!user.hasAnyRole(Roles.INSTRUCTOR, Roles.ADMIN)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN,
+                    "Chỉ giảng viên hoặc quản trị viên mới có quyền quản lý chương học");
+        }
     }
 }

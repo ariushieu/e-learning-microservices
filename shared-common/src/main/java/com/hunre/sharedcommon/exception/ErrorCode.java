@@ -40,6 +40,9 @@ public enum ErrorCode {
     /** Request hợp lệ về hình thức nhưng vi phạm quy tắc nghiệp vụ. */
     BUSINESS_RULE_VIOLATED(HttpStatus.UNPROCESSABLE_ENTITY),
 
+    /** Gửi quá nhiều request trong thời gian ngắn, bị gateway chặn lại. */
+    TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS),
+
     /** Gọi sang service khác bị lỗi hoặc không phản hồi. */
     EXTERNAL_SERVICE_ERROR(HttpStatus.BAD_GATEWAY),
 

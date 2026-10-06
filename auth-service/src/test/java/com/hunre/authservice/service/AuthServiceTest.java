@@ -28,6 +28,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
+import com.hunre.sharedcommon.exception.ResourceNotFoundException;
+import java.util.Set;
+
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
@@ -216,5 +219,35 @@ class AuthServiceTest {
 
         assertThat(token.getRevokedAt()).isNotNull();
         verify(refreshTokenRepository).save(token);
+    }
+
+    @Test
+    @DisplayName("updateUserRoles - Admin cấp ROLE_INSTRUCTOR cho user thành công")
+    void updateUserRoles_success() {
+        Role instructorRole = Role.builder()
+                .id(2L)
+                .code(RoleCode.ROLE_INSTRUCTOR)
+                .name("Giảng viên")
+                .build();
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(roleRepository.findByCode(RoleCode.ROLE_STUDENT)).thenReturn(Optional.of(studentRole));
+        when(roleRepository.findByCode(RoleCode.ROLE_INSTRUCTOR)).thenReturn(Optional.of(instructorRole));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        Set<RoleCode> newRoles = Set.of(RoleCode.ROLE_STUDENT, RoleCode.ROLE_INSTRUCTOR);
+        UserResponse response = authService.updateUserRoles(1L, newRoles);
+
+        assertThat(response).isNotNull();
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("updateUserRoles - User không tồn tại ném ResourceNotFoundException")
+    void updateUserRoles_userNotFound_throwsException() {
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.updateUserRoles(999L, Set.of(RoleCode.ROLE_STUDENT)))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 }

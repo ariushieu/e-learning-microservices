@@ -1,11 +1,9 @@
 package com.hunre.authservice.controller;
 
 import com.hunre.authservice.dto.*;
-import com.hunre.authservice.security.JwtService;
 import com.hunre.authservice.service.AuthService;
 import com.hunre.sharedcommon.dto.ApiResponse;
-import com.hunre.sharedcommon.exception.BusinessException;
-import com.hunre.sharedcommon.exception.ErrorCode;
+import com.hunre.sharedcommon.security.AuthenticatedUser;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
-    private final JwtService jwtService;
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
@@ -54,21 +51,14 @@ public class AuthController {
         return ApiResponse.message("Đăng xuất thành công");
     }
 
+    /**
+     * Trả về thông tin người dùng hiện tại dựa trên JWT đã được JwtAuthenticationFilter xác thực.
+     * Filter của shared-common đã bóc tách và kiểm tra token trước khi request đến đây,
+     * nên chỉ cần nhận AuthenticatedUser là đủ — không cần tự parse header nữa.
+     */
     @GetMapping("/me")
-    public ApiResponse<UserResponse> getCurrentUser(
-            @RequestHeader(value = "Authorization", required = false) String authHeader
-    ) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED, "Chưa cung cấp token hoặc định dạng Authorization không đúng");
-        }
-
-        String token = authHeader.substring(7).trim();
-        if (!jwtService.validateToken(token)) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED, "Token không hợp lệ hoặc đã hết hạn");
-        }
-
-        Long userId = jwtService.extractUserId(token);
-        return ApiResponse.ok(authService.getUserById(userId));
+    public ApiResponse<UserResponse> getCurrentUser(AuthenticatedUser user) {
+        return ApiResponse.ok(authService.getUserById(user.userId()));
     }
 
     private String getClientIp(HttpServletRequest request) {
