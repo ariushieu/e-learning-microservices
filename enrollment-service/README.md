@@ -95,6 +95,17 @@ Việc chuẩn hóa API cần được nhóm thống nhất trước khi merge v
 
 ## 4. Chạy và kiểm tra thủ công
 
+### Tiến độ hoàn thành không bị lùi
+
+- Bài đã `COMPLETED` giữ nguyên trạng thái và `completedAt` khi nhận lại `IN_PROGRESS`.
+  `watchedSeconds` chỉ tăng, kể cả request gửi muộn hoặc lặp lại.
+- Lượt ghi danh đã `COMPLETED` giữ 100%, thời điểm hoàn thành và chứng chỉ, kể cả khi
+  giảng viên bổ sung bài. Số bài trong response vẫn phản ánh nội dung khóa hiện tại.
+- GET/PUT tiến độ khóa cùng một dòng ghi danh trong transaction để hai request đồng thời
+  không ghi đè trạng thái cũ, tạo trùng tiến độ hoặc phát lại sự kiện cấp chứng chỉ.
+- Tự kiểm: hoàn thành cả khóa, lưu `certificateCode`, gửi lại `IN_PROGRESS` với số giây
+  lớn hơn rồi nhỏ hơn. GET tiến độ vẫn 100%, bài vẫn hoàn thành, mã chứng chỉ không đổi.
+
 Từ thư mục gốc repo:
 
 ```bash

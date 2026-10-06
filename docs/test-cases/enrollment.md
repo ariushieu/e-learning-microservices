@@ -146,6 +146,10 @@ Không yêu cầu fileUrl luôn có PDF: hiện hệ thống có mã chứng ch�
 | 11 | Giây xem không giảm | S | Đã xem 60, PUT watchedSeconds=10, cùng status | 200; watchedSeconds vẫn 60 |
 | 12 | Giả danh trong body | B (đã ghi danh) | ENROLL-PROGRESS thêm userId=studentId | 200; chỉ tiến độ B thay đổi |
 | 13 | Bài không tồn tại hoặc khác khóa | S | PUT missingId hoặc bài khóa B với courseId khóa A | 404; không tăng tiến độ; CourseLessonClient kiểm bài học thuộc đúng khóa |
+| 14 | Không hạ trạng thái bài đã hoàn thành | S | Sau ca 1, gửi IN_PROGRESS với watchedSeconds lớn hơn rồi nhỏ hơn | 200; bài vẫn COMPLETED, completedAt không đổi, watchedSeconds chỉ tăng; tiến độ khóa vẫn 50% |
+| 15 | Không thu hồi hoàn thành/chứng chỉ | S | Sau ca 10, lưu certificateCode rồi gửi IN_PROGRESS cho bài đã hoàn thành; GET tiến độ và chứng chỉ | 200; khóa vẫn COMPLETED, 100%, completedAt và certificateCode không đổi; không thêm thông báo hoàn thành/cấp chứng chỉ |
+| 16 | Hai request tiến độ đồng thời | S | Trên lượt mới, gửi COMPLETED và IN_PROGRESS gần đồng thời cho cùng bài | Cả hai 200; chỉ một dòng tiến độ, trạng thái cuối COMPLETED, watchedSeconds bằng giá trị lớn nhất; không cấp trùng chứng chỉ |
+| 17 | Bổ sung bài sau khi đã cấp chứng chỉ | A rồi S | Sau ca 10, A thêm bài vào khóa; đợi snapshot; S gửi IN_PROGRESS rồi GET tiến độ | 200; totalLessonsCount tăng nhưng lượt đã hoàn thành vẫn COMPLETED, 100%, mã chứng chỉ giữ nguyên |
 
 Ca 13 đã có client kiểm bài học qua course-service và test tự động. Khi course-service
 không truy cập được, API trả 502 và không ghi tiến độ. Vẫn cần chạy ca này qua gateway thật.
