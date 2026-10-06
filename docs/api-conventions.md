@@ -247,6 +247,7 @@ có đường xem bài học.
 | 404 | Không tìm thấy | `ResourceNotFoundException` |
 | 409 | Trùng: email, slug, ghi danh hai lần | `DuplicateResourceException` |
 | 422 | Hợp lệ về hình thức nhưng sai quy tắc nghiệp vụ | `ErrorCode.BUSINESS_RULE_VIOLATED` |
+| 429 | Gửi quá nhiều request | gateway tự lo, service không trả mã này |
 
 Vài điểm hay nhầm:
 

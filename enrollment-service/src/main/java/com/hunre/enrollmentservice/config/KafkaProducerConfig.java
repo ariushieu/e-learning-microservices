@@ -1,4 +1,4 @@
-package com.hunre.quizservice.config;
+package com.hunre.enrollmentservice.config;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -13,6 +13,14 @@ import org.springframework.kafka.core.ProducerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Cấu hình Kafka Producer cho enrollment-service để phát sự kiện transactional outbox.
+ *
+ * <p>Dùng {@code StringSerializer} thay vì {@code JsonSerializer} của Spring Kafka:
+ * {@code JsonSerializer} vẫn chạy trên Jackson 2, trong khi Spring Boot 4 đã chuyển sang
+ * Jackson 3 ({@code tools.jackson}). Payload trong {@code outbox_events} đã là chuỗi JSON
+ * hợp lệ do Jackson 3 tạo ra sẵn, nên gửi chuỗi thô là an toàn và tránh lỗi không tương thích.
+ */
 @Configuration
 @ConditionalOnProperty(name = "spring.kafka.enabled", havingValue = "true", matchIfMissing = true)
 public class KafkaProducerConfig {
@@ -20,13 +28,6 @@ public class KafkaProducerConfig {
     @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
     private String bootstrapServers;
 
-    /**
-     * Thời gian tối đa send() được phép chặn luồng khi chưa lấy được metadata của broker.
-     *
-     * <p>Mặc định của Kafka là 60 giây. Trên máy chưa chạy broker, mỗi lần nộp bài sẽ
-     * treo đúng 60 giây rồi mới trả kết quả cho người dùng, vì {@code send()} chặn chứ
-     * không ném lỗi. Hạ xuống 5 giây để máy dev không có Kafka vẫn dùng được.
-     */
     @Value("${spring.kafka.producer.max-block-ms:5000}")
     private int maxBlockMs;
 
@@ -35,9 +36,6 @@ public class KafkaProducerConfig {
         Map<String, Object> configProps = new HashMap<>();
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        // StringSerializer chứ không phải JsonSerializer của Spring Kafka: lớp đó chạy trên
-        // Jackson 2 còn Boot 4 dùng Jackson 3, và nó chết khi gặp Instant. Outbox lưu
-        // JSON từ Jackson 3; worker gửi nguyên chuỗi đó lên Kafka.
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configProps.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, maxBlockMs);
         return new DefaultKafkaProducerFactory<>(configProps);
