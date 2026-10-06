@@ -65,13 +65,16 @@ class CurriculumServiceTest {
     @Mock
     private CourseEventPublisher courseEventPublisher;
 
+    @Mock
+    private com.hunre.courseservice.client.EnrollmentAccessClient enrollmentAccessClient;
+
     @InjectMocks
     private CurriculumServiceImpl curriculumService;
 
     @Test
     @DisplayName("Lấy danh sách giáo trình theo courseId thành công")
     void getCurriculumByCourseId_success() {
-        Course course = Course.builder().id(1L).status(CourseStatus.PUBLISHED).build();
+        Course course = Course.builder().instructorId(50L).id(1L).status(CourseStatus.PUBLISHED).build();
         when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
 
         Section section = Section.builder()
@@ -91,7 +94,7 @@ class CurriculumServiceTest {
     @Test
     @DisplayName("Lấy giáo trình khóa học DRAFT khi là khách chưa đăng nhập trả về 404")
     void getCurriculumByCourseId_draft_whenGuest_throwsNotFound() {
-        Course course = Course.builder().id(1L).instructorId(50L).status(CourseStatus.DRAFT).build();
+        Course course = Course.builder().instructorId(50L).id(1L).instructorId(50L).status(CourseStatus.DRAFT).build();
         when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
         when(currentUserProvider.getCurrentUser()).thenReturn(Optional.empty());
 
@@ -102,7 +105,7 @@ class CurriculumServiceTest {
     @Test
     @DisplayName("Lấy giáo trình khóa học DRAFT khi là chủ khóa học thành công")
     void getCurriculumByCourseId_draft_whenOwnerInstructor_success() {
-        Course course = Course.builder().id(1L).instructorId(50L).status(CourseStatus.DRAFT).build();
+        Course course = Course.builder().instructorId(50L).id(1L).instructorId(50L).status(CourseStatus.DRAFT).build();
         when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
         when(currentUserProvider.getCurrentUser()).thenReturn(Optional.of(
                 new AuthenticatedUser(50L, "gv@hunre.edu.vn", "GV", Set.of(Roles.INSTRUCTOR))));
@@ -115,9 +118,8 @@ class CurriculumServiceTest {
     @Test
     @DisplayName("Tạo chương học thành công")
     void createSection_success() {
-        Course course = Course.builder().id(1L).build();
+        Course course = Course.builder().instructorId(50L).id(1L).build();
         CreateSectionRequest request = CreateSectionRequest.builder()
-                .courseId(1L)
                 .title("Chương 1: Tổng quan")
                 .position(1)
                 .build();
@@ -130,7 +132,7 @@ class CurriculumServiceTest {
             return s;
         });
 
-        SectionResponse response = curriculumService.createSection(request);
+        SectionResponse response = curriculumService.createSection(1L, request, 50L, false);
 
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(10L);
@@ -140,7 +142,7 @@ class CurriculumServiceTest {
     @Test
     @DisplayName("Tạo bài học tự động cập nhật tổng số bài và thời lượng của Course")
     void createLesson_success_updatesCourseStats() {
-        Course course = Course.builder()
+        Course course = Course.builder().instructorId(50L)
                 .id(1L)
                 .totalLessons(2)
                 .totalDurationSeconds(600)
@@ -153,7 +155,6 @@ class CurriculumServiceTest {
                 .build();
 
         CreateLessonRequest request = CreateLessonRequest.builder()
-                .sectionId(10L)
                 .title("Bài 3: Cài đặt môi trường")
                 .type(LessonType.VIDEO)
                 .durationSeconds(300)
@@ -167,7 +168,7 @@ class CurriculumServiceTest {
             return l;
         });
 
-        LessonResponse response = curriculumService.createLesson(request);
+        LessonResponse response = curriculumService.createLesson(10L, request, 50L, false);
 
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(100L);
@@ -183,7 +184,7 @@ class CurriculumServiceTest {
     @Test
     @DisplayName("Cập nhật thời lượng bài học tự động điều chỉnh tổng thời lượng của Course")
     void updateLesson_durationChange_updatesCourseStats() {
-        Course course = Course.builder()
+        Course course = Course.builder().instructorId(50L)
                 .id(1L)
                 .totalDurationSeconds(1000)
                 .build();
@@ -203,7 +204,7 @@ class CurriculumServiceTest {
         when(lessonRepository.findById(100L)).thenReturn(Optional.of(lesson));
         when(lessonRepository.save(any(Lesson.class))).thenAnswer(i -> i.getArgument(0));
 
-        curriculumService.updateLesson(100L, request);
+        curriculumService.updateLesson(100L, request, 50L, false);
 
         assertThat(course.getTotalDurationSeconds()).isEqualTo(1200);
         verify(courseRepository).save(course);
@@ -212,7 +213,7 @@ class CurriculumServiceTest {
     @Test
     @DisplayName("Xóa bài học tự động giảm số bài học và thời lượng của Course")
     void deleteLesson_success_updatesCourseStats() {
-        Course course = Course.builder()
+        Course course = Course.builder().instructorId(50L)
                 .id(1L)
                 .totalLessons(5)
                 .totalDurationSeconds(1500)
@@ -226,7 +227,7 @@ class CurriculumServiceTest {
 
         when(lessonRepository.findById(100L)).thenReturn(Optional.of(lesson));
 
-        curriculumService.deleteLesson(100L);
+        curriculumService.deleteLesson(100L, 50L, false);
 
         verify(lessonRepository).delete(lesson);
         assertThat(course.getTotalLessons()).isEqualTo(4);
@@ -237,7 +238,7 @@ class CurriculumServiceTest {
     @Test
     @DisplayName("Thêm tài liệu đính kèm vào bài học thành công")
     void addResource_success() {
-        Lesson lesson = Lesson.builder().id(100L).build();
+        Lesson lesson = Lesson.builder().id(100L).course(Course.builder().instructorId(50L).build()).build();
         CreateLessonResourceRequest request = CreateLessonResourceRequest.builder()
                 .name("Slide bài giảng")
                 .fileUrl("https://storage.elearning.com/slides/intro.pdf")
@@ -250,7 +251,7 @@ class CurriculumServiceTest {
             return r;
         });
 
-        LessonResourceResponse response = curriculumService.addResource(100L, request);
+        LessonResourceResponse response = curriculumService.addResource(100L, request, 50L, false);
 
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(50L);
@@ -260,7 +261,7 @@ class CurriculumServiceTest {
     @Test
     @DisplayName("createLesson trên khóa học PUBLISHED phải phát sự kiện CourseUpdatedEvent")
     void createLesson_khoaPublished_phatSuKien() {
-        Course course = Course.builder()
+        Course course = Course.builder().instructorId(50L)
                 .id(1L)
                 .status(CourseStatus.PUBLISHED)
                 .totalLessons(5)
@@ -268,7 +269,6 @@ class CurriculumServiceTest {
                 .build();
         Section section = Section.builder().id(10L).course(course).build();
         CreateLessonRequest request = CreateLessonRequest.builder()
-                .sectionId(10L)
                 .title("Bài 1")
                 .durationSeconds(300)
                 .build();
@@ -281,7 +281,7 @@ class CurriculumServiceTest {
         });
         when(courseRepository.save(any(Course.class))).thenAnswer(i -> i.getArgument(0));
 
-        curriculumService.createLesson(request);
+        curriculumService.createLesson(10L, request, 50L, false);
 
         verify(courseEventPublisher).publishCourseUpdated(any(Course.class));
     }
@@ -289,7 +289,7 @@ class CurriculumServiceTest {
     @Test
     @DisplayName("createLesson trên khóa học DRAFT không phát sự kiện CourseUpdatedEvent")
     void createLesson_khoaDraft_khongPhatSuKien() {
-        Course course = Course.builder()
+        Course course = Course.builder().instructorId(50L)
                 .id(1L)
                 .status(CourseStatus.DRAFT)
                 .totalLessons(5)
@@ -297,7 +297,6 @@ class CurriculumServiceTest {
                 .build();
         Section section = Section.builder().id(10L).course(course).build();
         CreateLessonRequest request = CreateLessonRequest.builder()
-                .sectionId(10L)
                 .title("Bài 1")
                 .durationSeconds(300)
                 .build();
@@ -310,7 +309,7 @@ class CurriculumServiceTest {
         });
         when(courseRepository.save(any(Course.class))).thenAnswer(i -> i.getArgument(0));
 
-        curriculumService.createLesson(request);
+        curriculumService.createLesson(10L, request, 50L, false);
 
         verify(courseEventPublisher, never()).publishCourseUpdated(any(Course.class));
     }
@@ -318,7 +317,7 @@ class CurriculumServiceTest {
     @Test
     @DisplayName("deleteLesson trên khóa học PUBLISHED phải phát sự kiện CourseUpdatedEvent")
     void deleteLesson_khoaPublished_phatSuKien() {
-        Course course = Course.builder()
+        Course course = Course.builder().instructorId(50L)
                 .id(1L)
                 .status(CourseStatus.PUBLISHED)
                 .totalLessons(5)
@@ -333,7 +332,7 @@ class CurriculumServiceTest {
         when(lessonRepository.findById(100L)).thenReturn(Optional.of(lesson));
         when(courseRepository.save(any(Course.class))).thenAnswer(i -> i.getArgument(0));
 
-        curriculumService.deleteLesson(100L);
+        curriculumService.deleteLesson(100L, 50L, false);
 
         verify(courseEventPublisher).publishCourseUpdated(any(Course.class));
     }
@@ -341,7 +340,7 @@ class CurriculumServiceTest {
     @Test
     @DisplayName("deleteLesson trên khóa học DRAFT không phát sự kiện CourseUpdatedEvent")
     void deleteLesson_khoaDraft_khongPhatSuKien() {
-        Course course = Course.builder()
+        Course course = Course.builder().instructorId(50L)
                 .id(1L)
                 .status(CourseStatus.DRAFT)
                 .totalLessons(5)
@@ -356,7 +355,7 @@ class CurriculumServiceTest {
         when(lessonRepository.findById(100L)).thenReturn(Optional.of(lesson));
         when(courseRepository.save(any(Course.class))).thenAnswer(i -> i.getArgument(0));
 
-        curriculumService.deleteLesson(100L);
+        curriculumService.deleteLesson(100L, 50L, false);
 
         verify(courseEventPublisher, never()).publishCourseUpdated(any(Course.class));
     }

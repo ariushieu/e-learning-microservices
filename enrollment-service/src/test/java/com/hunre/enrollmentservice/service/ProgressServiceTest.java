@@ -1,6 +1,7 @@
 package com.hunre.enrollmentservice.service;
 
 import com.hunre.enrollmentservice.client.CourseClient;
+import com.hunre.enrollmentservice.client.CourseLessonClient;
 import com.hunre.enrollmentservice.client.CourseDto;
 import com.hunre.enrollmentservice.dto.request.UpdateLessonProgressRequest;
 import com.hunre.enrollmentservice.dto.response.CourseProgressResponse;
@@ -55,6 +56,9 @@ class ProgressServiceTest {
 
     @Mock
     private CourseClient courseClient;
+
+    @Mock
+    private CourseLessonClient courseLessonClient;
 
     @InjectMocks
     private ProgressServiceImpl progressService;
@@ -113,6 +117,7 @@ class ProgressServiceTest {
         assertThat(enrollment.getProgressPercent()).isEqualByComparingTo(BigDecimal.valueOf(25.00));
         assertThat(enrollment.getStatus()).isEqualTo(EnrollmentStatus.ACTIVE);
         verify(enrollmentRepository).save(enrollment);
+        verify(courseLessonClient).validateLesson(courseId, lessonId);
     }
 
     @Test
@@ -193,6 +198,44 @@ class ProgressServiceTest {
 
         assertThatThrownBy(() -> progressService.updateLessonProgress(userId, request))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void updateLessonProgress_invalidLesson_doesNotWriteProgressOrIssueCertificate() {
+        Enrollment enrollment = Enrollment.builder().id(1L).userId(1L).courseId(10L)
+                .status(EnrollmentStatus.ACTIVE).progressPercent(BigDecimal.ZERO).build();
+        when(enrollmentRepository.findByUserIdAndCourseId(1L, 10L)).thenReturn(Optional.of(enrollment));
+        org.mockito.Mockito.doThrow(new ResourceNotFoundException("Bài học không thuộc khóa học"))
+                .when(courseLessonClient).validateLesson(10L, 999L);
+
+        assertThatThrownBy(() -> progressService.updateLessonProgress(1L,
+                UpdateLessonProgressRequest.builder().courseId(10L).lessonId(999L)
+                        .status(LessonProgressStatus.COMPLETED).watchedSeconds(300).build()))
+                .isInstanceOf(ResourceNotFoundException.class);
+
+        org.mockito.Mockito.verifyNoInteractions(lessonProgressRepository, certificateRepository,
+                outboxEventRepository, courseSnapshotRepository);
+        org.mockito.Mockito.verify(enrollmentRepository, org.mockito.Mockito.never()).save(any());
+        assertThat(enrollment.getProgressPercent()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(enrollment.getStatus()).isEqualTo(EnrollmentStatus.ACTIVE);
+    }
+
+    @Test
+    void updateLessonProgress_courseServiceUnavailable_doesNotWriteProgress() {
+        Enrollment enrollment = Enrollment.builder().id(1L).userId(1L).courseId(10L)
+                .status(EnrollmentStatus.ACTIVE).progressPercent(BigDecimal.ZERO).build();
+        when(enrollmentRepository.findByUserIdAndCourseId(1L, 10L)).thenReturn(Optional.of(enrollment));
+        org.mockito.Mockito.doThrow(new com.hunre.sharedcommon.exception.BusinessException(
+                com.hunre.sharedcommon.exception.ErrorCode.EXTERNAL_SERVICE_ERROR, "Không thể kết nối"))
+                .when(courseLessonClient).validateLesson(10L, 101L);
+
+        assertThatThrownBy(() -> progressService.updateLessonProgress(1L,
+                UpdateLessonProgressRequest.builder().courseId(10L).lessonId(101L)
+                        .status(LessonProgressStatus.COMPLETED).build()))
+                .isInstanceOf(com.hunre.sharedcommon.exception.BusinessException.class);
+        org.mockito.Mockito.verifyNoInteractions(lessonProgressRepository, certificateRepository,
+                outboxEventRepository, courseSnapshotRepository);
+        org.mockito.Mockito.verify(enrollmentRepository, org.mockito.Mockito.never()).save(any());
     }
 
     @Test

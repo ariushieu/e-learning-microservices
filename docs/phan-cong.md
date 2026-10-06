@@ -1,6 +1,6 @@
 # Bảng theo dõi công việc
 
-> **Cập nhật lần cuối:** 06/10/2026 — `main` ở `d8be737`
+> **Cập nhật lần cuối:** 06/10/2026 — `main` ở `2287546`
 >
 > File này là nơi duy nhất ghi ai đang làm gì. Xong một việc thì nhóm trưởng cập nhật ngay
 > tại đây, nên **cứ `git pull` là biết việc tiếp theo của mình**, không phải hỏi ai.
@@ -18,12 +18,11 @@
 
 | Người | Service | Việc đang mở | Ưu tiên | Cỡ |
 |---|---|---|---|---|
-| duyd92689-debug | course-service | [Chủ sở hữu của chương và bài học](#duyd92689-debug--chủ-sở-hữu-của-chương-và-bài-học) | **Cao** — lỗ hổng | ~1h |
-| duyd92689-debug | course-service | [Trả nội dung bài học](#duyd92689-debug--trả-nội-dung-bài-học) | Trung bình | ~1h |
 | phamquyet19042005-netizen | enrollment-service | [Nạp `course_snapshots`](#phamquyet19042005-netizen--nạp-course_snapshots) | **Cao nhất** — mắt xích cuối của chuỗi ghi danh | ~1h |
 | hiepdeptrai0111 | quiz-service | [Giữ nguyên điểm số trong sự kiện](#hiepdeptrai0111--giữ-nguyên-điểm-số-trong-sự-kiện) | Thấp | ~30 phút |
-| quocluibotre | cả 5 service | [Viết tình huống test cho đợt Postman](#quocluibotre--viết-tình-huống-test-cho-đợt-postman) | Trung bình — xong trước đợt test | ~3h |
-| Cả nhóm | mọi service | [Chuẩn hóa đường dẫn API](#cả-nhóm--chuẩn-hóa-đường-dẫn-api) | Trung bình — trước đợt test Postman | ~1h/người |
+| hiepdeptrai0111, phamquyet | quiz, enrollment | [Chuẩn hóa đường dẫn API](#cả-nhóm--chuẩn-hóa-đường-dẫn-api) — duyd đã xong phần course (#37) | Trung bình — trước đợt test Postman | ~1h/người |
+
+**duyd và quocluibotre đã xong hết việc trong bảng** (#37, #36) — chờ việc mới.
 
 **Việc gấp nhất là của phamquyet.** course-service đã phát `course.updated` (#31), enrollment
 đã gửi outbox lên Kafka (#29). Chỉ còn một mắt xích: nạp `course_snapshots` từ sự kiện đó là
@@ -45,15 +44,15 @@ làm lại hết.
 
 ## Khi nào test toàn bộ API bằng Postman
 
-**Chưa sẵn sàng — xong 1/4, điều kiện 2 gần xong.** Môi trường test thì đã có (xem dưới).
+**Chưa sẵn sàng — xong 2/4.** Môi trường test thì đã có (xem dưới).
 Đủ bốn điều kiện sau thì nhóm trưởng báo cả nhóm vào test:
 
 | # | Điều kiện | Nếu test trước khi có | Tình trạng |
 |---|---|---|---|
 | 1 | API gán vai trò | Người test phải sửa database bằng SQL mới có tài khoản giảng viên | **Xong** (#27) |
-| 2 | Phân quyền course-service, lọc khóa `DRAFT` | "Học viên tạo được khóa học" sẽ bị ghi nhận là chạy đúng | Gần xong (#31) — còn [chủ sở hữu chương/bài học](#duyd92689-debug--chủ-sở-hữu-của-chương-và-bài-học) |
+| 2 | Phân quyền course-service, lọc khóa `DRAFT` | "Học viên tạo được khóa học" sẽ bị ghi nhận là chạy đúng | **Xong** (#31, #37) |
 | 3 | Ghi danh chạy thông (`course.updated` + nạp snapshot + gửi outbox) | Ghi danh, tiến độ, chứng chỉ, thông báo ghi danh đều 404 — nửa hệ thống không test được | Phát sự kiện xong (#31), gửi outbox xong (#29) — chỉ còn nạp snapshot |
-| 4 | Chuẩn hóa đường dẫn | Viết collection xong, đổi đường dẫn là viết lại | Chưa bắt đầu |
+| 4 | Chuẩn hóa đường dẫn | Viết collection xong, đổi đường dẫn là viết lại | course xong (#37) — còn quiz (hiep), enrollment (phamquyet) |
 
 **Môi trường test đã sẵn.** Không ai phải tự bật 6 service trong IntelliJ:
 
@@ -79,17 +78,15 @@ RATE_LIMIT_ENABLED=false docker compose --profile app up -d api-gateway
 Bật lại bằng cùng lệnh, bỏ `RATE_LIMIT_ENABLED=false`. Chi tiết ở
 [README](../README.md#giới-hạn-request).
 
-**Hai collection cũ trong `docs/postman/` không dùng lại được.** Collection của course-service
-gọi thẳng `localhost:8082` và không request nào gửi token — viết trước khi có JWT, nên giờ mọi
-lệnh ghi đều nhận 401. Collection của enrollment-service dùng đường dẫn sẽ đổi ở điều kiện 4.
-Đủ điều kiện thì nhóm trưởng dựng một collection chung đi qua gateway, có sẵn bước đăng nhập tự
-lưu token; người test chỉ việc thêm request.
+**Collection Postman:** `docs/postman/course-service-v2.*` (#37) đi qua gateway, dùng đường dẫn
+mới, đã tự lưu token — dùng được ngay cho course-service. Hai collection cũ của course-service
+và enrollment-service **không dùng lại được**: bản cũ gọi thẳng `localhost:8082` không kèm token,
+bản kia dùng đường dẫn sẽ đổi ở điều kiện 4. Đủ điều kiện thì nhóm trưởng gộp thành một
+collection chung cho cả 5 service.
 
-**Trong lúc chờ,** người được giao test viết trước **danh sách tình huống**: gọi gì, bằng tài
-khoản nào, mong nhận mã gì. Chưa cần mở Postman. Khung sẵn có ở
-[api-conventions.md mục E](api-conventions.md#e-tự-kiểm-trước-khi-mở-pull-request) — mỗi
-endpoint ít nhất sáu ca: đúng, không token, sai vai trò, không tồn tại, sai kiểu tham số, sắp
-xếp bằng trường bịa.
+**Danh sách tình huống test đã có** (#36): `docs/test-cases/` — mỗi service một file, đọc
+[gateway.md](test-cases/gateway.md) trước để tạo bốn tài khoản cố định. Đây là kế hoạch, chưa
+phải biên bản; đến đợt test thì ghi kết quả từng mã ca theo bảng ở đầu `gateway.md`.
 
 ## Quy tắc viết API
 
@@ -111,7 +108,7 @@ Bốn trong năm quy tắc này sinh ra từ lỗi có thật trong repo, ghi r�
 ## Trạng thái hệ thống
 
 Năm service đã có code, database chạy tự động bằng Flyway, xác thực JWT hoạt động ở cả
-gateway lẫn từng service. Gateway giới hạn số request bằng Redis. Toàn bộ 277 test xanh. Cả hệ thống chạy được bằng một lệnh
+gateway lẫn từng service. Gateway giới hạn số request bằng Redis. Toàn bộ 359 test xanh. Cả hệ thống chạy được bằng một lệnh
 `docker compose --profile app up -d --build --wait`, xem
 [README](../README.md#cách-nhanh-nhất-chạy-cả-hệ-thống-bằng-docker).
 
@@ -125,18 +122,20 @@ admin cấp quyền giảng viên → tạo khóa học → xuất bản → s�
 Nộp bài giờ đi qua outbox (#32): tắt Kafka rồi nộp bài thì bài làm vẫn lưu, sự kiện nằm chờ
 trong `outbox_events`, bật Kafka lại là thông báo tới — đã chạy thật ngày 03/10.
 
+Phía nhận cũng không còn mất sự kiện (#38): MySQL của notification-service tắt giữa chừng thì
+consumer thử lại tới khi MySQL lên; message hỏng chuyển sang topic `.DLT` thay vì bị bỏ đi.
+
+Nội dung bài học giờ xem được (#37): bài xem thử ai cũng đọc, bài thường chỉ chủ khóa, admin và
+người đã ghi danh — course-service hỏi enrollment-service bằng chính token của người gọi.
+
 **Chuỗi chưa chạy, và vì sao:**
 
 | Không làm được | Nguyên nhân | Ai sửa |
 |---|---|---|
 | Ghi danh khóa học | Sự kiện `course.updated` đã lên Kafka nhưng chưa ai nạp vào `course_snapshots` | phamquyet |
-| Xem nội dung bài học | `LessonResponse` không có trường `content` | duyd |
 
-**Lỗ hổng đang mở:**
-
-| Lỗ hổng | Mức độ | Ai sửa |
-|---|---|---|
-| Giảng viên thêm/sửa/xóa được chương và bài học trong khóa của giảng viên khác | Vừa | duyd |
+**Lỗ hổng đang mở:** không còn. Lỗ hổng chương/bài học của giảng viên khác đã đóng ở #37 —
+chạy thật qua gateway, giảng viên B tạo/sửa/xóa trong khóa của A đều nhận 403.
 
 Việc đó của phamquyet xong là demo chạy trọn vẹn: đăng ký → ghi danh → học → làm bài → nhận
 thông báo → chứng chỉ.
@@ -144,69 +143,6 @@ thông báo → chứng chỉ.
 ---
 
 ## Chi tiết từng việc
-
-### duyd92689-debug — chủ sở hữu của chương và bài học
-
-> Phần còn lại của việc phân quyền. PR #31 đã chặn đúng những gì bảng phân công yêu cầu — chỉ
-> chủ khóa học mới sửa, đổi trạng thái, xóa được khóa học. Đề bài thiếu phần chương và bài
-> học; lỗi đó là của nhóm trưởng.
-
-**Vấn đề.** Các endpoint ghi của chương, bài học và tài liệu đính kèm chỉ kiểm vai trò, không
-kiểm ai là chủ. Chạy thật qua gateway với hai giảng viên A và B:
-
-```
-B tạo chương trong khóa của A      → 201
-B tạo bài học trong chương của A   → 201
-B đổi tên chương của A             → 200
-```
-
-Bài học B chèn vào còn được tính vào `totalLessons` và đi theo sự kiện `course.updated` sang
-enrollment-service, nên phần trăm tiến độ của mọi học viên trong khóa đó bị tính sai.
-
-**Cần làm.** Trong `CurriculumServiceImpl`, mọi hàm ghi (`createSection`, `updateSection`,
-`deleteSection`, `createLesson`, `updateLesson`, `deleteLesson`, `addResource`, `deleteResource`)
-lấy khóa học cha ra rồi kiểm đúng như bạn đã làm cho khóa học:
-
-```java
-if (!isAdmin && !course.getInstructorId().equals(currentUserId)) {
-    throw new BusinessException(ErrorCode.FORBIDDEN,
-            "Bạn không có quyền chỉnh sửa khóa học của giảng viên khác");
-}
-```
-
-Controller truyền `user.userId()` và `user.hasRole(Roles.ADMIN)` xuống, giống `CourseController`.
-
-Tiện thể bỏ vế `currentUserId != null &&` trong các kiểm tra chủ sở hữu hiện có: lỡ id là null
-thì phải chặn chứ không được mở.
-
-**Tự kiểm.** Giảng viên B tạo chương, tạo bài học, sửa, xóa trong khóa của A: cả bốn phải 403.
-A làm những việc đó trong khóa của mình vẫn 201/200. Admin làm được ở mọi khóa.
-
----
-
-### duyd92689-debug — trả nội dung bài học
-
-**Vấn đề.** `LessonResponse` có `title`, `type`, `durationSeconds`, `position`,
-`isPreview`, `resources` — nhưng **không có `content` lẫn `contentUrl`**. Hai cột đó có
-trong bảng `lessons`, có trong entity, và không một chỗ nào trong course-service map chúng
-ra response.
-
-Nghĩa là một website học trực tuyến hiện không có đường nào để xem bài học.
-
-**Cần làm.** Thêm `content` và `contentUrl` vào `LessonResponse`, nhưng **không trả cho
-mọi người** — đây là phần đáng tiền của khóa học:
-
-- Bài có `isPreview = true`: ai cũng xem được, kể cả khách chưa đăng nhập.
-- Bài thường: chỉ trả khi người gọi là chủ khóa học, là admin, hoặc đã ghi danh.
-
-Phần "đã ghi danh" phải hỏi enrollment-service, mà course-service chưa gọi sang service nào
-bao giờ. Làm sau cùng và hỏi nhóm trưởng trước khi bắt đầu — có thể để tạm mức "đã đăng
-nhập" rồi siết sau, miễn là ghi rõ `// TODO` kèm lý do.
-
-**Tự kiểm.** Bài `isPreview = true` gọi không token phải thấy `content`. Bài thường gọi
-bằng token người lạ không được thấy.
-
----
 
 ### phamquyet19042005-netizen — nạp `course_snapshots`
 
@@ -295,39 +231,6 @@ chưa bị. Không cần sửa bên đó.
 
 ---
 
-### quocluibotre — viết tình huống test cho đợt Postman
-
-> Không đụng code, làm song song với mọi người được. Xong thì đợt test Postman chỉ còn việc
-> bấm, không ai phải nghĩ "test cái gì".
-
-**Cần làm.** Mỗi service một file trong `docs/test-cases/`: `auth.md`, `course.md`,
-`enrollment.md`, `quiz.md`, `notification.md`, cộng `gateway.md` cho các ca chung (thiếu token,
-token hết hạn, service chết trả 502). Mỗi endpoint một bảng:
-
-| # | Tình huống | Tài khoản | Request | Mong đợi |
-|---|---|---|---|---|
-| 1 | Đúng | giảng viên A | `POST /api/courses` + body mẫu | 201, `data.status` = `DRAFT` |
-| 2 | Không token | — | như trên | 401 |
-| 3 | Sai vai trò | học viên | như trên | 403 |
-| 4 | Sửa khóa của người khác | giảng viên B | `PUT /api/courses/{id của A}` | 403 |
-
-Mỗi endpoint ít nhất sáu ca theo [api-conventions.md mục E](api-conventions.md#e-tự-kiểm-trước-khi-mở-pull-request):
-đúng, không token, sai vai trò, không tồn tại, sai kiểu tham số, sắp xếp bằng trường bịa. Thêm
-ca riêng của từng nghiệp vụ, ví dụ ghi danh hai lần, nộp bài quá số lần cho phép, xem khóa
-`DRAFT` của người khác.
-
-**Lưu ý.**
-
-- Dùng năm tài khoản cố định: admin, giảng viên A, giảng viên B, học viên, không token. Ghi ở
-  đầu `gateway.md` cách tạo chúng (đăng ký rồi admin cấp quyền bằng `PATCH /api/users/{id}/roles`).
-- Đường dẫn sẽ đổi khi cả nhóm [chuẩn hóa](#cả-nhóm--chuẩn-hóa-đường-dẫn-api) — viết theo đường
-  dẫn mới trong bảng đó luôn, tình huống thì không đổi.
-- "Mong đợi" phải là mã HTTP cụ thể, không ghi "báo lỗi". 403 và 404 khác nhau và cả hai đều
-  có lúc đúng (khóa `DRAFT` của người khác trả 404 là cố ý, xem A3).
-- Mở pull request theo từng file cho dễ review, không cần đợi xong cả sáu.
-
----
-
 ### Cả nhóm — chuẩn hóa đường dẫn API
 
 > **Có hạn chót**: phải xong trước [đợt test Postman](#khi-nào-test-toàn-bộ-api-bằng-postman)
@@ -339,19 +242,15 @@ nhưng người viết frontend sẽ phải nhớ mỗi service một quy ước
 nhất khi chấm.
 
 Luật đã viết ở [api-conventions.md](api-conventions.md), phần B. Mỗi người sửa service của
-mình:
+mình. **duyd đã xong phần course-service (#37)**, còn lại:
 
 | Người | Đang là | Đổi thành | Quy tắc |
 |---|---|---|---|
-| duyd | `GET /api/courses/instructor/{id}` | `GET /api/courses?instructorId={id}` | B2 |
-| duyd | `DELETE /api/lessons/resources/{id}` | `DELETE /api/lessons/{lessonId}/resources/{id}` | B3 |
-| duyd | `POST /api/sections` (courseId trong body) | `POST /api/courses/{courseId}/sections` | B3 |
-| duyd | `POST /api/lessons` (sectionId trong body) | `POST /api/sections/{sectionId}/lessons` | B3 |
 | hiepdeptrai | `GET /api/quizzes/course/{id}` | `GET /api/quizzes?courseId={id}` | B2 |
 | hiepdeptrai | `PATCH /api/quizzes/{id}/publish` và `/archive` | `PATCH /api/quizzes/{id}/status` + body | B4 |
 | hiepdeptrai | `GET /api/quizzes/{id}/attempts/history` | `GET /api/quizzes/{id}/attempts` | B5 |
 | hiepdeptrai | `GET /api/quizzes/attempts/{attemptId}` | `GET /api/attempts/{attemptId}` | B7 |
-| phamquyet | `GET /api/enrollments/my-courses` | `GET /api/enrollments` | B6 |
+| phamquyet | `GET /api/enrollments/my-courses` | `GET /api/enrollments` — **đổi cùng lúc** `course.enrollment.list-path` trong course-service | B6 |
 | phamquyet | `DELETE /api/enrollments/course/{id}` | `DELETE /api/enrollments?courseId={id}` | B2 |
 | phamquyet | `PATCH /api/enrollments/{id}/cancel` | `PATCH /api/enrollments/{id}/status` + body | B4 |
 | phamquyet | `POST /api/progress/lesson` | `PUT /api/lessons/{lessonId}/progress` | B1, B2 |
@@ -370,6 +269,9 @@ Ai làm xong phần của mình thì mở một pull request riêng, đừng g�
 
 | Ngày | PR | Việc | Người |
 |---|---|---|---|
+| 06/10 | #37 | Chủ sở hữu chương/bài học, trả nội dung bài học theo quyền, chuẩn hóa đường dẫn course, collection Postman qua gateway | duyd92689-debug |
+| 06/10 | #36 | Tình huống test cho cả 5 service (`docs/test-cases/`), chặn vai trò `null` | quocluibotre |
+| 06/10 | #38 | notification-service thử lại khi lỗi tạm thời, message hỏng sang `.DLT` | Hiếu |
 | 03/10 | #34 | Gateway giới hạn số request bằng Redis: chống dò mật khẩu, Redis chết thì vẫn cho qua | Hiếu |
 | 03/10 | #32 | quiz-service gửi sự kiện chấm điểm qua outbox | hiepdeptrai0111 |
 | 25/09 | #29 | Gửi outbox của enrollment-service lên Kafka | phamquyet19042005-netizen |

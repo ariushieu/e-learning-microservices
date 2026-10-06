@@ -90,7 +90,7 @@ class CourseControllerTest {
 
         PageResponse<CourseSummaryResponse> pageResponse = PageResponse.of(List.of(summary), 0, 12, 1);
 
-        when(courseService.getPublishedCourses(any(), any(), any(), any(Pageable.class)))
+        when(courseService.getCourses(any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(pageResponse);
 
         mockMvc.perform(get("/api/courses"))

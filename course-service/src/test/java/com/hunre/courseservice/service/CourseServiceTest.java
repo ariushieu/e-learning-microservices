@@ -213,9 +213,9 @@ class CourseServiceTest {
         Page<Course> page = new PageImpl<>(List.of(course), pageable, 1);
 
         when(currentUserProvider.getCurrentUser()).thenReturn(Optional.empty());
-        when(courseRepository.findByInstructorIdAndStatus(50L, CourseStatus.PUBLISHED, pageable)).thenReturn(page);
+        when(courseRepository.findAll(org.mockito.ArgumentMatchers.<org.springframework.data.jpa.domain.Specification<Course>>any(), org.mockito.ArgumentMatchers.eq(pageable))).thenReturn(page);
 
-        PageResponse<CourseSummaryResponse> result = courseService.getInstructorCourses(50L, pageable);
+        PageResponse<CourseSummaryResponse> result = courseService.getCourses(50L, null, null, null, pageable);
         assertThat(result.content()).hasSize(1);
     }
 

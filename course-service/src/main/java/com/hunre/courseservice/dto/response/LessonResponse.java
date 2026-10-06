@@ -23,6 +23,8 @@ public class LessonResponse {
     private Long sectionId;
     private Long courseId;
     private String title;
+    private String content;
+    private String contentUrl;
     private LessonType type;
     private Integer durationSeconds;
     private Integer position;
@@ -33,7 +35,12 @@ public class LessonResponse {
     @Builder.Default
     private List<LessonResourceResponse> resources = new ArrayList<>();
 
+    /** Mặc định không trả nội dung được bảo vệ. */
     public static LessonResponse from(Lesson lesson) {
+        return from(lesson, false);
+    }
+
+    public static LessonResponse from(Lesson lesson, boolean includeContent) {
         if (lesson == null) {
             return null;
         }
@@ -42,7 +49,7 @@ public class LessonResponse {
         Long courseId = lesson.getCourse() != null ? lesson.getCourse().getId() : null;
 
         List<LessonResourceResponse> resList = new ArrayList<>();
-        if (lesson.getResources() != null && !lesson.getResources().isEmpty()) {
+        if (includeContent && lesson.getResources() != null && !lesson.getResources().isEmpty()) {
             for (var r : lesson.getResources()) {
                 resList.add(LessonResourceResponse.from(r));
             }
@@ -53,6 +60,8 @@ public class LessonResponse {
                 .sectionId(sectionId)
                 .courseId(courseId)
                 .title(lesson.getTitle())
+                .content(includeContent ? lesson.getContent() : null)
+                .contentUrl(includeContent ? lesson.getContentUrl() : null)
                 .type(lesson.getType())
                 .durationSeconds(lesson.getDurationSeconds())
                 .position(lesson.getPosition())
