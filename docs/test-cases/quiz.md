@@ -1,0 +1,271 @@
+# Tình huống test quiz-service
+
+Dùng [gateway.md](gateway.md) cho tài khoản, token, fixture và biên bản.
+Mọi request qua `{{baseUrl}}`. **Kế hoạch chưa chạy Postman**.
+Các API quản lý quiz/câu hỏi cho A/B/ADM gọi theo vai trò; S bị 403. Chưa có hợp đồng
+giới hạn quản lý quiz theo tác giả, nên không tự đặt B=403 như với khóa học.
+Làm bài và đọc kết quả kiểm danh tính người làm, không bắt buộc chỉ ROLE_STUDENT.
+
+## Đường dẫn đích
+
+| Hiện tại | Đích dùng trong bảng |
+|---|---|
+| GET /api/quizzes/course/{id} | GET /api/quizzes?courseId={id} |
+| PATCH /api/quizzes/{id}/publish và /archive | PATCH /api/quizzes/{id}/status + body status |
+| GET /api/quizzes/{id}/attempts/history | GET /api/quizzes/{id}/attempts |
+| GET /api/quizzes/attempts/{attemptId} | GET /api/attempts/{attemptId} |
+| POST /api/quizzes/attempts/{attemptId}/submit | POST /api/attempts/{attemptId}/submit — **[CẦN CHỐT]**, suy ra B7 |
+
+Bốn dòng đầu **[CHỜ ROUTE]** theo phân công. Dòng submit chưa được ghi riêng trong bảng
+phân công: cần nhóm quiz xác nhận trước khi viết collection. Không thử URL đích này rồi
+kết luận backend đã hỏng khi thay đổi chưa được thực hiện. Gateway cần thêm /api/attempts/**.
+
+Danh sách quiz theo course và lịch sử attempt hiện trả List, chưa Pageable (cần chuẩn hóa C1).
+Các ca sort của hai endpoint được đánh dấu CẦN CHỐT; không giả định sort đang được xử lý.
+Các endpoint khác không nhận Pageable/sort.
+
+## Body mẫu và dữ liệu
+
+**QUIZ-CREATE**:
+
+```json
+{"courseId":{{publishedCourseId}},"title":"Quiz QA {{runId}}","timeLimitMinutes":10,"passScore":70,"maxAttempts":1,"shuffleQuestions":false}
+```
+
+**QUIZ-UPDATE**: cùng các trường của QUIZ-CREATE, bỏ courseId.
+**QUIZ-QUESTION** (dùng cả tạo/sửa):
+
+```json
+{"content":"1 + 1 = ?","type":"SINGLE_CHOICE","score":1,"position":1,"explanation":"1 + 1 = 2","options":[{"content":"2","isCorrect":true,"position":1},{"content":"3","isCorrect":false,"position":2}]}
+```
+
+**QUIZ-SUBMIT-50** cho quiz đã xuất bản có đúng hai câu, mỗi câu score=1:
+
+```json
+{"answers":[{"questionId":{{questionId}},"selectedOptionIds":[{{optionCorrectId}}]},{"questionId":{{question2Id}},"selectedOptionIds":[{{option2WrongId}}]}]}
+```
+
+Dùng QUIZ-QUESTION để tạo câu 1; câu 2 đổi content/position, giữ một phương án đúng và một
+phương án sai. Tất cả option ID phải lấy từ response của **đúng quiz**, không đoán ID.
+Lưu ID quiz/câu/option khi tạo. Cho nhóm quản lý dùng quizId; cho nhóm làm bài dùng
+publishedQuizId và bộ questionId/optionId của quiz đó. PUT question thay phương án nên phải
+lấy lại ID option, không tái dùng ID trước khi sửa.
+
+Mỗi ca nộp bài phải có attempt IN_PROGRESS mới và còn hạn; mỗi ca giới hạn số lượt có quiz
+riêng maxAttempts=1. Sau một ca nộp thành công, phải dựng lại trước ca nộp thành công khác.
+Quiz kiểm timeout đặt timeLimitMinutes=1, đợi **hơn 90 giây** từ startedAt (có 30 giây ân hạn).
+
+## QUIZ-01 — POST /api/quizzes
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Tạo hợp lệ | A | POST /api/quizzes + QUIZ-CREATE | 201; status=DRAFT, createdBy=instructorAId |
+| 2 | Không token | — | Cùng URL/body | 401 |
+| 3 | Học viên tạo | S | Cùng URL/body | 403 |
+| 4 | Thiếu courseId | A | QUIZ-CREATE bỏ courseId | 400 |
+| 5 | Sai kiểu courseId | A | Body courseId="abc" | 400 |
+| 6 | Điểm đạt quá 100 | A | Body passScore=101 | 400 |
+| 7 | Giả tác giả | A | Body thêm createdBy={{instructorBId}} | 201; createdBy vẫn instructorAId |
+| 8 | Admin tạo | ADM | Body hợp lệ | 201; createdBy=adminId |
+| 9 | Course không tồn tại [CẦN CHỐT] | A | Body courseId={{missingId}} | 404 đề xuất nếu yêu cầu xác thực course; code hiện không tra course, ghi BLOCKED chờ hợp đồng |
+
+## QUIZ-02 — PUT /api/quizzes/{id}
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Sửa quiz DRAFT | A | PUT /api/quizzes/{{quizId}} + QUIZ-UPDATE | 200; nội dung mới đúng |
+| 2 | Không token | — | Cùng URL/body | 401 |
+| 3 | Sai vai trò | S | Cùng URL/body | 403 |
+| 4 | Quiz không tồn tại | A | PUT /api/quizzes/{{missingId}} + body hợp lệ | 404 |
+| 5 | Sai ID | A | PUT /api/quizzes/abc + body hợp lệ | 400 |
+| 6 | Đã ARCHIVED | A | PUT quiz lưu trữ riêng + body hợp lệ | 422 |
+| 7 | Title trống | A | QUIZ-UPDATE title="" | 400 |
+| 8 | Admin sửa | ADM | PUT quiz của A + body hợp lệ | 200 |
+
+## QUIZ-03 — PATCH /api/quizzes/{id}/status [CHỜ ROUTE]
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Xuất bản có câu hỏi | A | PATCH /api/quizzes/{{quizId}}/status, {"status":"PUBLISHED"} | 200; status=PUBLISHED |
+| 2 | Không token | — | Cùng URL/body | 401 |
+| 3 | Sai vai trò | S | Cùng URL/body | 403 |
+| 4 | Không tồn tại | A | PATCH /api/quizzes/{{missingId}}/status + {"status":"PUBLISHED"} | 404 |
+| 5 | Sai ID | A | PATCH /api/quizzes/abc/status + {"status":"PUBLISHED"} | 400 |
+| 6 | Quiz chưa có câu hỏi | A | Xuất bản quiz DRAFT rỗng riêng | 422 |
+| 7 | Lưu trữ | A | PATCH quiz riêng + {"status":"ARCHIVED"} | 200; status=ARCHIVED |
+| 8 | Sai/thiếu enum [CẦN CHỐT DTO] | A | Lần lượt {"status":"UNKNOWN"}, {} | 400 |
+| 9 | Admin xuất bản | ADM | Xuất bản quiz có câu hỏi | 200 |
+
+## QUIZ-04 — GET /api/quizzes/{id}
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Giảng viên xem đáp án | A | GET /api/quizzes/{{quizId}} | 200; có explanation và isCorrect của phương án |
+| 2 | Không token | — | Cùng URL | 401 |
+| 3 | Học viên xem đáp án | S | Cùng URL | 403 |
+| 4 | Không tồn tại | A | GET /api/quizzes/{{missingId}} | 404 |
+| 5 | Sai ID | A | GET /api/quizzes/abc | 400 |
+| 6 | Admin xem | ADM | GET /api/quizzes/{{quizId}} | 200 |
+| 7 | Giảng viên B xem theo vai trò | B | GET quiz của A | 200 theo hợp đồng hiện tại; không dùng ca này làm kiểm quyền chủ khóa |
+
+## QUIZ-05 — GET /api/quizzes/{id}/take
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Đề hợp lệ | S | GET /api/quizzes/{{publishedQuizId}}/take | 200; có câu hỏi/phương án, không explanation, không isCorrect |
+| 2 | Không token | — | Cùng URL | 401 |
+| 3 | Giảng viên lấy đề | B | Cùng URL | 200; cũng không lộ đáp án |
+| 4 | Không tồn tại | S | GET /api/quizzes/{{missingId}}/take | 404 |
+| 5 | Sai ID | S | GET /api/quizzes/abc/take | 400 |
+| 6 | Đề chưa xuất bản | S | GET /api/quizzes/{{quizId}}/take khi DRAFT | 422 |
+| 7 | Đề đã lưu trữ | S | GET quiz ARCHIVED/take | 422 |
+| 8 | Xáo trộn | S | Với shuffleQuestions=true, gọi nhiều lần | 200; cùng tập ID/câu hỏi, vẫn không đáp án; không bắt buộc mỗi lần thứ tự phải khác |
+
+## QUIZ-06 — GET /api/quizzes?courseId={id} [CHỜ ROUTE]
+
+Mảng hiện tại có cả quiz DRAFT/ARCHIVED và không chứa câu hỏi. Nếu nhóm muốn lọc trạng thái cho học viên thì cần chốt hợp đồng trước khi đổi kỳ vọng; không suy diễn từ quy tắc endpoint course công khai.
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Danh sách theo khóa | S | GET /api/quizzes?courseId={{publishedCourseId}} | 200; mọi quiz có courseId đúng |
+| 2 | Không token | — | Cùng URL | 401 |
+| 3 | Giảng viên xem | A | Cùng URL | 200 |
+| 4 | Khóa không có quiz | S | GET /api/quizzes?courseId={{missingId}} | 200; danh sách rỗng, không 404 |
+| 5 | Sai kiểu bộ lọc | S | GET /api/quizzes?courseId=abc | 400 |
+| 6 | Thiếu courseId bắt buộc | S | GET /api/quizzes | 400 theo chuyển đổi từ path bắt buộc sang query |
+| 7 | Không trả đáp án | S | GET /api/quizzes?courseId={{publishedCourseId}} | 200; không có options/isCorrect/explanation |
+| 8 | Sort bịa sau C1 [CẦN CHỐT] | S | GET /api/quizzes?courseId={{publishedCourseId}}&sort=abcxyz | 400 sau khi có Pageable; hiện List bỏ qua sort nên BLOCKED |
+
+## QUIZ-07 — DELETE /api/quizzes/{id}
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Xóa quiz riêng | A | DELETE /api/quizzes/{{quizId}} | 200; A GET lại 404 |
+| 2 | Không token | — | Cùng URL | 401 |
+| 3 | Sai vai trò | S | Cùng URL | 403 |
+| 4 | Không tồn tại | A | DELETE /api/quizzes/{{missingId}} | 404 |
+| 5 | Sai ID | A | DELETE /api/quizzes/abc | 400 |
+| 6 | Admin xóa | ADM | DELETE quiz riêng | 200 |
+| 7 | Xóa lại | A | DELETE ID đã xóa | 404 |
+
+## QUIZ-08 — POST /api/quizzes/{quizId}/questions
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Thêm câu hỏi | A | POST /api/quizzes/{{quizId}}/questions + QUIZ-QUESTION | 201; hai options, đúng một isCorrect=true; lưu các ID |
+| 2 | Không token | — | Cùng URL/body | 401 |
+| 3 | Sai vai trò | S | Cùng URL/body | 403 |
+| 4 | Quiz không tồn tại | A | POST /api/quizzes/{{missingId}}/questions + body hợp lệ | 404 |
+| 5 | Sai ID | A | POST /api/quizzes/abc/questions + body hợp lệ | 400 |
+| 6 | Chỉ một phương án | A | QUIZ-QUESTION giữ một option | 400 |
+| 7 | SINGLE_CHOICE có hai đáp án đúng | A | Đặt cả hai isCorrect=true | 400 |
+| 8 | MULTIPLE_CHOICE không đáp án đúng | A | Đặt type="MULTIPLE_CHOICE", tất cả isCorrect=false | 400 |
+| 9 | Đúng nhiều lựa chọn | A | type="MULTIPLE_CHOICE", có ít nhất một đáp án đúng | 201 |
+
+## QUIZ-09 — PUT /api/quizzes/{quizId}/questions/{questionId}
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Sửa câu hỏi | A | PUT /api/quizzes/{{quizId}}/questions/{{questionId}} + QUIZ-QUESTION | 200; cập nhật nội dung/options; lưu ID options mới |
+| 2 | Không token | — | Cùng URL/body | 401 |
+| 3 | Sai vai trò | S | Cùng URL/body | 403 |
+| 4 | Câu không tồn tại | A | PUT /api/quizzes/{{quizId}}/questions/{{missingId}} + body hợp lệ | 404 |
+| 5 | Sai ID | A | PUT /api/quizzes/{{quizId}}/questions/abc + body hợp lệ | 400 |
+| 6 | Sai quiz cha | A | PUT câu questionId nhưng quizId là quiz khác có thật | 400; câu hỏi không thuộc bài kiểm tra |
+| 7 | Score bằng 0 | A | Body score=0 | 400 |
+| 8 | Sai loại câu | A | Body type="UNKNOWN" | 400 |
+
+## QUIZ-10 — DELETE /api/quizzes/{quizId}/questions/{questionId}
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Xóa câu riêng | A | DELETE /api/quizzes/{{quizId}}/questions/{{questionId}} | 200; GET questions không còn câu |
+| 2 | Không token | — | Cùng URL | 401 |
+| 3 | Sai vai trò | S | Cùng URL | 403 |
+| 4 | Câu không tồn tại | A | DELETE /api/quizzes/{{quizId}}/questions/{{missingId}} | 404 |
+| 5 | Sai ID | A | DELETE /api/quizzes/{{quizId}}/questions/abc | 400 |
+| 6 | Sai quiz cha | A | DELETE questionId trong quizId khác có thật | 400; câu không bị xóa |
+| 7 | Admin xóa | ADM | DELETE câu test riêng | 200 |
+
+## QUIZ-11 — GET /api/quizzes/{quizId}/questions
+
+Danh sách câu hỏi có trần theo quiz, không Pageable. Nếu nhóm quyết định kiểm cha và trả 404 cho quiz không tồn tại, cập nhật ca 4 trước chạy; không ghi 404 là hành vi hiện có.
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Giảng viên xem | A | GET /api/quizzes/{{quizId}}/questions | 200; theo position; có isCorrect/explanation |
+| 2 | Không token | — | Cùng URL | 401 |
+| 3 | Sai vai trò | S | Cùng URL | 403 |
+| 4 | Quiz không tồn tại | A | GET /api/quizzes/{{missingId}}/questions | 200; data=[] theo truy vấn hiện tại không kiểm cha |
+| 5 | Sai ID | A | GET /api/quizzes/abc/questions | 400 |
+| 6 | Admin xem | ADM | GET /api/quizzes/{{quizId}}/questions | 200 |
+| 7 | Quiz rỗng có thật | A | GET questions của quiz mới chưa thêm câu | 200; data=[] |
+
+## QUIZ-12 — POST /api/quizzes/{quizId}/attempts
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Bắt đầu | S | POST /api/quizzes/{{publishedQuizId}}/attempts, không body | 201; userId=studentId, status=IN_PROGRESS, attemptNo=1; lưu attemptId |
+| 2 | Không token | — | Cùng URL | 401 |
+| 3 | Người khác làm bài riêng | B | Cùng URL | 201; userId=instructorBId; attemptBId khác attemptId |
+| 4 | Quiz không tồn tại | S | POST /api/quizzes/{{missingId}}/attempts | 404 |
+| 5 | Sai ID | S | POST /api/quizzes/abc/attempts | 400 |
+| 6 | Quiz DRAFT | S | POST /api/quizzes/{{quizId}}/attempts khi DRAFT | 422 |
+| 7 | Tiếp tục đang làm | S | POST lại khi attempt IN_PROGRESS còn giờ | 201 theo controller hiện tại; cùng attemptId, không tạo bản ghi thứ hai |
+| 8 | Hết số lần | S | Nộp bài maxAttempts=1 rồi POST lại | 422 |
+| 9 | Giả userId | S | POST URL thêm ?userId={{instructorBId}} | 201; vẫn thuộc S |
+| 10 | Không giới hạn lượt | S | Quiz riêng maxAttempts=0; nộp và bắt đầu lượt mới | 201; attemptNo tăng |
+
+## QUIZ-13 — POST /api/attempts/{attemptId}/submit [CẦN CHỐT ROUTE B7]
+
+Ca Kafka dùng quy trình khôi phục trong gateway.md; không có Kafka thì vẫn phải lưu bài và outbox. Không kết luận định dạng chuỗi điểm 50.00 đã đúng: lỗi payload JSON đang được giao sửa.
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Nộp đúng một trong hai câu | S | POST /api/attempts/{{attemptId}}/submit + QUIZ-SUBMIT-50 | 200; score=50, passScore=70, passed=false; attemptId đúng |
+| 2 | Không token | — | Cùng URL/body | 401 |
+| 3 | Nộp bài của S | B | Cùng URL/body | 404; không tiết lộ attempt thuộc người khác |
+| 4 | Attempt không tồn tại | S | POST /api/attempts/{{missingId}}/submit + body hợp lệ | 404 |
+| 5 | Sai ID | S | POST /api/attempts/abc/submit + body hợp lệ | 400 |
+| 6 | Nộp lần hai | S | Nộp lại attempt đã SUBMITTED | 422 |
+| 7 | Quá giờ | S | Quiz timeLimitMinutes=1; nộp sau hơn 90 giây | 422; không chấm bài |
+| 8 | Answers null | S | Body {"answers":null} | 400 |
+| 9 | Bỏ trống tất cả đáp án | S | Body {"answers":[]} | 200; score=0; không nhầm với answers=null |
+| 10 | Đúng cả hai câu | S | Chọn optionCorrectId và option2CorrectId trên attempt mới | 200; score=100, passed=true |
+| 11 | Kafka ngừng | S | Trong môi trường riêng, stop Kafka, nộp attempt hợp lệ mới rồi start lại Kafka | Nộp 200; kết quả vẫn đọc 200; sau Kafka hồi phục, hộp thư có đúng một thông báo |
+| 12 | Giả người nộp | S | QUIZ-SUBMIT-50 thêm userId=instructorBId | 200; kết quả vẫn userId=studentId |
+
+## QUIZ-14 — GET /api/attempts/{attemptId} [CHỜ ROUTE]
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Kết quả đã nộp | S | GET /api/attempts/{{attemptId}} sau QUIZ-SUBMIT-50 | 200; score=50; có kết quả từng câu và đáp án |
+| 2 | Không token | — | Cùng URL | 401 |
+| 3 | Người khác đọc kết quả S | B | Cùng URL | 404 |
+| 4 | Không tồn tại | S | GET /api/attempts/{{missingId}} | 404 |
+| 5 | Sai ID | S | GET /api/attempts/abc | 400 |
+| 6 | Admin đọc hộ | ADM | GET kết quả của S | 404; API hiện chỉ dành cho người làm |
+| 7 | Giả userId | B | GET /api/attempts/{{attemptId}}?userId={{studentId}} | 404 |
+| 8 | Lộ đáp án trước khi nộp [CẦN CHỐT] | S | GET attempt IN_PROGRESS vừa tạo | 422 đề xuất; không trả đáp án; code hiện dựng đáp án cả khi chưa SUBMITTED, cần chủ service chốt/sửa |
+
+## QUIZ-15 — GET /api/quizzes/{quizId}/attempts [CHỜ ROUTE]
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Lịch sử chính mình | S | GET /api/quizzes/{{publishedQuizId}}/attempts | 200; chỉ userId=studentId, attemptNo giảm dần |
+| 2 | Không token | — | Cùng URL | 401 |
+| 3 | Người khác xem lịch sử riêng | B | Cùng URL | 200; chỉ attempt của B, không có attemptId của S |
+| 4 | Quiz không có lịch sử | S | GET /api/quizzes/{{missingId}}/attempts | 200; data=[] theo truy vấn hiện tại |
+| 5 | Sai ID | S | GET /api/quizzes/abc/attempts | 400 |
+| 6 | Giả danh | B | GET /api/quizzes/{{publishedQuizId}}/attempts?userId={{studentId}} | 200; vẫn chỉ B |
+| 7 | Chưa từng làm quiz có thật | ADM | GET /api/quizzes/{{publishedQuizId}}/attempts | 200; data=[] nếu ADM chưa làm |
+| 8 | Sort bịa sau C1 [CẦN CHỐT] | S | GET /api/quizzes/{{publishedQuizId}}/attempts?sort=abcxyz | 400 sau khi có Pageable; hiện không hỗ trợ sort nên BLOCKED |
+
+## Truy vết nguồn
+
+- [Controllers](../../quiz-service/src/main/java/com/hunre/quizservice/controller),
+  [DTO](../../quiz-service/src/main/java/com/hunre/quizservice/dto).
+- [QuizServiceImpl](../../quiz-service/src/main/java/com/hunre/quizservice/service/impl/QuizServiceImpl.java).
+- [QuestionServiceImpl](../../quiz-service/src/main/java/com/hunre/quizservice/service/impl/QuestionServiceImpl.java).
+- [QuizAttemptServiceImpl](../../quiz-service/src/main/java/com/hunre/quizservice/service/impl/QuizAttemptServiceImpl.java).
+- [Phân công outbox/đường dẫn](../phan-cong.md), [quy ước B7/C1](../api-conventions.md).
