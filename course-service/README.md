@@ -127,7 +127,76 @@ Trong lúc snapshot đang chờ đồng bộ, enrollment-service kiểm tra tr�
 `PUBLISHED` trả 404; không kiểm tra được nguồn thì 502, không ghi thêm dữ liệu.
 Đây là kiểm tra tại thời điểm gọi, không phải giao dịch phân tán khóa cả hai database.
 
+## Số học viên từng ghi danh
+
+`studentCount` là **số người từng ghi danh duy nhất trong mỗi khóa học**, không phải
+số lượt ghi danh hoặc số học viên đang ACTIVE.
+Consumer riêng (`group-id=course-service`) đọc `enrollment.created` từ
+`elearning.enrollment.events`. Trong cùng transaction, consumer ghi `processed_events`,
+khóa hàng khóa học bằng `SELECT ... FOR UPDATE`, rồi `INSERT IGNORE` vào
+`course_learners` có khóa chính `(course_id, user_id)`. Chỉ khi chèn được cặp mới mới
+tăng `courses.student_count` bằng SQL nguyên tử. Lỗi ở bất kỳ bước nào rollback cả
+ba thay đổi. Khóa hàng cũng ngăn khóa học bị xóa giữa lúc kiểm tra và ghi học viên.
+Nhận lại cùng `eventId` hoặc nhận `eventId` mới của cùng học viên đều không tăng lần hai.
+Chỉnh sửa khóa học không ghi đè số đếm do consumer cập nhật.
+Khóa có số đếm lớn hơn 0 không được xóa, kể cả khi chuyển về DRAFT.
+Lệnh DELETE kiểm tra lại trạng thái DRAFT và số đếm bằng 0 ngay trong database,
+tránh xóa theo dữ liệu cũ nếu consumer vừa tăng số đếm sau bước đọc ban đầu.
+
+Migration `V3__add_processed_events.sql` tạo sổ chống trùng message;
+`V4__add_course_learners.sql` tạo sổ học viên duy nhất. Mỗi service có consumer
+group riêng, nên notification-service vẫn nhận đủ sự kiện. Consumer đọc từ earliest
+khi group chưa có offset: chỉ bù được sự kiện Kafka còn lưu. Các ghi danh cũ hơn thời
+gian retention cần đối soát riêng, không tự coi số 0 là chưa từng có học viên.
+Do đồng bộ bất đồng bộ, số đếm và việc chặn xóa dựa trên số đếm có thể trễ khi Kafka lỗi.
+
+Hủy/xóa ghi danh không trừ số đếm và không xóa `course_learners`. Tái kích hoạt lượt
+CANCELLED hay xóa rồi tạo lại ghi danh (đổi cả enrollmentId và eventId) vẫn chỉ tính
+một người. Cùng người học hai khóa được tính một lần ở mỗi khóa. Muốn đếm người đang
+học cần thống nhất thêm sự kiện hủy/xóa với enrollment-service; chưa áp dụng ở đây.
+
+### Nâng cấp môi trường đã chạy bản đếm theo eventId
+
+V4 chỉ tạo bảng, **không tự sửa số đếm cũ**: bảng `processed_events` cũ không lưu
+userId nên không đủ thông tin suy ra các cặp học viên. Để lại số đếm cũ và một bảng
+`course_learners` rỗng sẽ làm lệch số khi người cũ ghi danh lại. Trước khi phục vụ lại,
+cần đối soát/nạp đầy đủ các cặp lịch sử rồi đặt `student_count` bằng số hàng tương ứng.
+
+Nếu topic còn đủ lịch sử, có thể dựng lại từ Kafka theo quy trình bảo trì sau:
+
+1. Sao lưu course database và ghi lại offset hiện tại. Dừng mọi instance course-service,
+   tạm ngừng các thao tác ghi/xóa khóa và ghi danh; áp dụng V4 khi consumer đang tắt
+   (`spring.kafka.enabled=false`), rồi dừng instance đó.
+2. Trong course database, chạy một transaction để xóa dữ liệu dẫn xuất:
+   `DELETE FROM course_learners;`,
+   `DELETE FROM processed_events WHERE event_type = 'enrollment.created';`,
+   `UPDATE courses SET student_count = 0;`, rồi commit.
+   Không xóa khóa học, ghi danh hoặc outbox.
+3. Khi group đã dừng, dùng công cụ Kafka reset offset group `course-service` của
+   riêng topic `elearning.enrollment.events` về earliest; hoặc cấu hình một group
+   mới và giữ tên đó sau triển khai. Chỉ đổi `auto-offset-reset` không reset offset
+   đã có. Khởi động consumer và chờ hết lag, kiểm tra DLT và đối chiếu số hàng
+   `course_learners` với `courses.student_count` trước khi mở lại thao tác ghi.
+
+Không chạy quy trình reset nếu topic đã mất lịch sử mà chưa có bản xuất/backfill
+các cặp học viên còn thiếu. Bản xuất ghi danh hiện tại không chứa người đã xóa ghi
+danh, nên không đủ để khôi phục số người từng học. Replay có thể tính cả người thuộc
+dữ liệu test cũ đã xóa: đó là đúng theo quy tắc lịch sử, nhưng mỗi người chỉ một lần.
+
+Lỗi database tạm thời được thử lại (1s, 2s, 4s… tối đa 30s/lần, tổng thời gian chờ
+5 phút; chỉnh bằng `elearning.kafka.retry.*`). Message sai cấu trúc hoặc không tìm
+thấy khóa được giữ ở `elearning.enrollment.events.DLT`; không ghi sổ và không tăng
+đếm. Hết giới hạn retry cũng chuyển DLT. Nếu gửi DLT thất bại thì chưa xác nhận message.
+Đối soát nguyên nhân rồi phát lại cùng eventId; không xóa sổ chống trùng khi replay.
+
 ## Kiểm tra
+
+Các thao tác sửa khóa học, đổi trạng thái và sửa chương/bài khóa hàng `courses`
+trước khi ghi dữ liệu. Khi nhiều request cùng thêm/xóa/sửa bài, mỗi request đọc lại
+số bài và thời lượng sau khi lấy được khóa, tránh ghi đè số liệu và tránh deadlock
+do cùng chèn bài rồi mới nâng khóa ngoại lên khóa ghi. Giao dịch ghi giáo trình dùng
+`READ_COMMITTED` để truy vấn bài và tính tổng không dùng snapshot cũ từ bước tìm
+courseId. Sự kiện outbox được lưu trong cùng giao dịch với số liệu đã cập nhật.
 
 ```powershell
 .\mvnw.cmd -pl course-service -am test
@@ -143,6 +212,17 @@ bộ để kiểm tra phân trang, token, ghi danh hủy, timeout, redirect và 
 enrollment backend giả lập để kiểm tra đường dẫn cấu hình, chuyển tiếp token và
 quyền đọc bài học/đề cương của ghi danh ACTIVE, COMPLETED, CANCELLED hoặc chưa ghi danh.
 Test cũng đối chiếu đường dẫn mặc định production với cấu hình đã kiểm thử.
+
+`CurriculumConcurrencyIntegrationTest` kiểm tra tạo bài đồng thời với sửa khóa,
+sửa thời lượng cùng một bài, xóa nhiều bài, xóa chương đồng thời với thêm bài ở
+chương khác và nhận sự kiện ghi danh trong lúc tạo bài. Đối chiếu số liệu trên
+khóa với dữ liệu bài thực tế và snapshot outbox.
+
+`EnrollmentEventIntegrationTest` kiểm tra số đếm, rollback cả sổ học viên, gửi trùng đồng thời,
+khác eventId/enrollmentId nhưng cùng người, cùng người ở hai khóa,
+message sai và việc sửa khóa không ghi đè số đếm. `EnrollmentEventKafkaIntegrationTest`
+dùng Kafka thật trong JVM để kiểm retry, DLT, chống trùng và việc message sau vẫn
+được xử lý. `KafkaErrorHandlingConfigTest` kiểm cả trường hợp gửi DLT thất bại.
 
 Collection cập nhật: `docs/postman/course-service-v2.postman_collection.json` cùng
 environment V2. Import lại collection, chọn environment, nhập mật khẩu rồi chạy

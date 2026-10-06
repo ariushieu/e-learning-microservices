@@ -99,7 +99,8 @@ public class Course {
     @Builder.Default
     private Integer totalDurationSeconds = 0;
 
-    @Column(name = "student_count", nullable = false)
+    // Consumer tăng bằng SQL nguyên tử; sửa khóa qua JPA không được ghi đè số đếm cũ.
+    @Column(name = "student_count", nullable = false, updatable = false)
     @Builder.Default
     private Integer studentCount = 0;
 
