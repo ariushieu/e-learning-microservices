@@ -27,12 +27,14 @@ import com.hunre.sharedcommon.exception.BusinessException;
 import com.hunre.sharedcommon.exception.ErrorCode;
 import com.hunre.sharedcommon.security.Roles;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class CurriculumServiceImpl implements CurriculumService {
@@ -57,10 +59,20 @@ public class CurriculumServiceImpl implements CurriculumService {
         List<Section> sections = sectionRepository.findByCourseIdOrderByPositionAsc(courseId);
         boolean hasProtectedLessons = sections.stream().flatMap(section -> section.getLessons().stream())
                 .anyMatch(lesson -> !Boolean.TRUE.equals(lesson.getIsPreview()));
-        boolean fullAccess = hasProtectedLessons && canReadProtectedContent(course);
+        boolean fullAccess = false;
+        try {
+            fullAccess = hasProtectedLessons && canReadProtectedContent(course);
+        } catch (BusinessException exception) {
+            if (exception.errorCode() != ErrorCode.EXTERNAL_SERVICE_ERROR) {
+                throw exception;
+            }
+            log.warn("Không thể kiểm tra ghi danh cho khóa học {}; trả đề cương và ẩn nội dung bài thường",
+                    courseId);
+        }
+        boolean includeProtectedContent = fullAccess;
         return sections.stream()
                 .map(section -> SectionResponse.from(section,
-                        lesson -> fullAccess || Boolean.TRUE.equals(lesson.getIsPreview())))
+                        lesson -> includeProtectedContent || Boolean.TRUE.equals(lesson.getIsPreview())))
                 .toList();
     }
 

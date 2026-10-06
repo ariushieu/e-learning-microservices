@@ -16,7 +16,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 
-/** Checks the caller's enrollments without accepting a client-supplied identity. */
+/** Kiểm tra ghi danh của người gọi, không nhận danh tính do client tự truyền. */
 @Component
 public class EnrollmentAccessClient {
     private final ObjectProvider<HttpServletRequest> requestProvider;
@@ -44,7 +44,7 @@ public class EnrollmentAccessClient {
         if (userId == null || authorization == null || !authorization.startsWith("Bearer ")) {
             return false;
         }
-        // One total deadline covers all pages; never retry or forward tokens on redirects.
+        // Một hạn chờ chung cho mọi trang; không thử lại hay chuyển token theo redirect.
         long deadline = System.nanoTime() + timeout.toNanos();
         for (int page = 0; ; page++) {
             long remaining = deadline - System.nanoTime();

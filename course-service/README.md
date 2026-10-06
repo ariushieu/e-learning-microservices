@@ -79,8 +79,16 @@ Docker Compose đặt URL thành `http://enrollment-service:8083`. Deadline 2 gi
 dụng cho toàn bộ lượt kiểm tra, gồm các trang; không retry, không theo redirect
 và không cache quyền. Ghi danh bị hủy sẽ không còn được mở nội dung ở lần đọc sau.
 Không đăng nhập/không ghi danh/token bị enrollment-service từ chối: không mở nội
-dung. Service đích lỗi, phản hồi sai cấu trúc hoặc timeout: trả `502
-EXTERNAL_SERVICE_ERROR`, không mở nội dung.
+dung. Nếu service đích lỗi, phản hồi sai cấu trúc hoặc timeout:
+
+- Đọc đề cương `GET /api/courses/{courseId}/curriculum`: ghi log cảnh báo và vẫn
+  trả `200`, giữ metadata của tất cả bài học và nội dung/tài liệu bài preview;
+  bài thường có `content`, `contentUrl` null và `resources` rỗng.
+- Mở trực tiếp bài thường `GET /api/lessons/{id}`: vẫn trả
+  `502 EXTERNAL_SERVICE_ERROR` để người học biết chưa thể kiểm tra quyền truy cập.
+
+Chỉ lỗi `EXTERNAL_SERVICE_ERROR` được xử lý như trên khi đọc đề cương. Các lỗi
+nghiệp vụ khác vẫn được trả về; chủ khóa học và admin không cần gọi kiểm tra ghi danh.
 
 Khi nhánh enrollment-service đổi API danh sách thành `GET /api/enrollments` theo
 bảng phân công, cần đổi `ENROLLMENT_LIST_PATH=/api/enrollments` cùng lần triển khai.

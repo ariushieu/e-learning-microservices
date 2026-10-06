@@ -8,6 +8,7 @@ import com.hunre.courseservice.service.CourseService;
 import com.hunre.courseservice.service.CurriculumService;
 import com.hunre.courseservice.dto.request.*;
 import com.hunre.sharedcommon.exception.BusinessException;
+import com.hunre.sharedcommon.exception.ErrorCode;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.persistence.EntityManager;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -187,6 +189,52 @@ class CurriculumAuthorizationTest {
         when(enrollmentAccessClient.hasEnrollment(course.getId(), 60L)).thenReturn(true);
         assertContent(token(60, "ROLE_STUDENT"), true);
         verify(enrollmentAccessClient, times(2)).hasEnrollment(course.getId(), 60L);
+    }
+
+    @Test
+    void enrollmentOutageKeepsCurriculumAvailableButProtectsRegularLessons() throws Exception {
+        publish(false);
+        Lesson preview = lessons.save(Lesson.builder().course(course).section(section).title("Preview lesson")
+                .position(1).isPreview(true).content("Public text")
+                .contentUrl("https://example.test/preview.mp4").build());
+        resources.save(LessonResource.builder().lesson(preview).name("Preview document")
+                .fileUrl("https://example.test/preview.pdf").build());
+        entityManager.flush();
+        entityManager.clear();
+        when(enrollmentAccessClient.hasEnrollment(course.getId(), 60L))
+                .thenThrow(new BusinessException(ErrorCode.EXTERNAL_SERVICE_ERROR, "Enrollment unavailable"));
+
+        for (String authorization : List.of("", token(60, "ROLE_STUDENT"))) {
+            var request = get("/api/courses/" + course.getId() + "/curriculum");
+            if (!authorization.isEmpty()) request.header("Authorization", authorization);
+            mvc.perform(request).andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data[0].lessons.length()").value(2))
+                    .andExpect(jsonPath("$.data[0].lessons[0].id").value(lesson.getId()))
+                    .andExpect(jsonPath("$.data[0].lessons[0].title").value("Original lesson"))
+                    .andExpect(jsonPath("$.data[0].lessons[0].content").doesNotExist())
+                    .andExpect(jsonPath("$.data[0].lessons[0].contentUrl").doesNotExist())
+                    .andExpect(jsonPath("$.data[0].lessons[0].resources").isEmpty())
+                    .andExpect(jsonPath("$.data[0].lessons[1].content").value("Public text"))
+                    .andExpect(jsonPath("$.data[0].lessons[1].contentUrl").value("https://example.test/preview.mp4"))
+                    .andExpect(jsonPath("$.data[0].lessons[1].resources[0].fileUrl").value("https://example.test/preview.pdf"));
+        }
+        mvc.perform(get("/api/lessons/" + lesson.getId()).header("Authorization", token(60, "ROLE_STUDENT")))
+                .andExpect(status().isBadGateway()).andExpect(jsonPath("$.code").value("EXTERNAL_SERVICE_ERROR"));
+        mvc.perform(get("/api/lessons/" + preview.getId()).header("Authorization", token(60, "ROLE_STUDENT")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.content").value("Public text"));
+        verify(enrollmentAccessClient, times(2)).hasEnrollment(course.getId(), 60L);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = ErrorCode.class, names = {"FORBIDDEN", "UNAUTHORIZED", "BUSINESS_RULE_VIOLATED"})
+    void curriculumDoesNotSwallowOtherBusinessErrors(ErrorCode errorCode) throws Exception {
+        publish(false);
+        when(enrollmentAccessClient.hasEnrollment(course.getId(), 60L))
+                .thenThrow(new BusinessException(errorCode, "Other business error"));
+        mvc.perform(get("/api/courses/" + course.getId() + "/curriculum")
+                        .header("Authorization", token(60, "ROLE_STUDENT")))
+                .andExpect(status().is(errorCode.httpStatus().value()))
+                .andExpect(jsonPath("$.code").value(errorCode.name()));
     }
 
     @Test

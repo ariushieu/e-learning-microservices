@@ -35,7 +35,7 @@ public class LessonResponse {
     @Builder.Default
     private List<LessonResourceResponse> resources = new ArrayList<>();
 
-    /** Default mapping never exposes protected content. */
+    /** Mặc định không trả nội dung được bảo vệ. */
     public static LessonResponse from(Lesson lesson) {
         return from(lesson, false);
     }
