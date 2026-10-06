@@ -278,7 +278,10 @@ public class CourseServiceImpl implements CourseService {
                     "Không thể xóa khóa học đã có học viên đăng ký");
         }
 
-        courseRepository.delete(course);
+        if (courseRepository.deleteEmptyDraft(id) != 1) {
+            throw new BusinessException(ErrorCode.BUSINESS_RULE_VIOLATED,
+                    "Khóa học đã thay đổi trạng thái hoặc có học viên đăng ký; không thể xóa");
+        }
     }
 
     private String resolveSlug(String title, String providedSlug) {

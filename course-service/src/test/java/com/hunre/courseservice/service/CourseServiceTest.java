@@ -349,10 +349,11 @@ class CourseServiceTest {
                 .build();
 
         when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.deleteEmptyDraft(1L)).thenReturn(1);
 
         courseService.deleteCourse(1L, 50L, false);
 
-        verify(courseRepository).delete(course);
+        verify(courseRepository).deleteEmptyDraft(1L);
     }
 
     @Test

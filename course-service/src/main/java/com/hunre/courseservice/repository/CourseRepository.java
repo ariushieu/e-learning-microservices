@@ -6,12 +6,24 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Repository
 public interface CourseRepository extends JpaRepository<Course, Long>, JpaSpecificationExecutor<Course> {
+
+    @Modifying
+    @Query(value = "UPDATE courses SET student_count = student_count + 1 WHERE id = :id", nativeQuery = true)
+    int incrementStudentCount(@Param("id") Long id);
+
+    // Kiểm tra ngay tại lệnh ghi, không dựa vào entity có thể đã đọc trước consumer.
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = "DELETE FROM courses WHERE id = :id AND status = 'DRAFT' AND student_count = 0", nativeQuery = true)
+    int deleteEmptyDraft(@Param("id") Long id);
 
     Optional<Course> findBySlug(String slug);
 

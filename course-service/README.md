@@ -127,6 +127,33 @@ Trong lúc snapshot đang chờ đồng bộ, enrollment-service kiểm tra tr�
 `PUBLISHED` trả 404; không kiểm tra được nguồn thì 502, không ghi thêm dữ liệu.
 Đây là kiểm tra tại thời điểm gọi, không phải giao dịch phân tán khóa cả hai database.
 
+## Số lượt ghi danh
+
+`studentCount` là **số lượt từng ghi danh**, không phải số học viên đang ACTIVE.
+Consumer riêng (`group-id=course-service`) đọc `enrollment.created` từ
+`elearning.enrollment.events`, tăng `courses.student_count` bằng SQL nguyên tử.
+Ghi sổ `processed_events` và tăng số đếm trong cùng transaction; nhận lại cùng
+`eventId` không tăng lần hai. Chỉnh sửa khóa học không ghi đè số đếm do consumer cập nhật.
+Khóa có số đếm lớn hơn 0 không được xóa, kể cả khi chuyển về DRAFT.
+Lệnh DELETE kiểm tra lại trạng thái DRAFT và số đếm bằng 0 ngay trong database,
+tránh xóa theo dữ liệu cũ nếu consumer vừa tăng số đếm sau bước đọc ban đầu.
+
+Migration `V3__add_processed_events.sql` tạo sổ chống trùng. Mỗi service có consumer
+group riêng, nên notification-service vẫn nhận đủ sự kiện. Consumer đọc từ earliest
+khi group chưa có offset: chỉ bù được sự kiện Kafka còn lưu. Các ghi danh cũ hơn thời
+gian retention cần đối soát riêng, không tự coi số 0 là chưa từng có học viên.
+Do đồng bộ bất đồng bộ, số đếm và việc chặn xóa dựa trên số đếm có thể trễ khi Kafka lỗi.
+
+Hủy/xóa ghi danh chưa phát sự kiện hủy nên không trừ số đếm. Nếu tái kích hoạt phát
+một `enrollment.created` với `eventId` mới thì tính thêm một lượt; không gọi con số
+này là số người duy nhất. Thêm quy tắc trừ khi hủy cần thống nhất hợp đồng với enrollment-service.
+
+Lỗi database tạm thời được thử lại (1s, 2s, 4s… tối đa 30s/lần, tổng thời gian chờ
+5 phút; chỉnh bằng `elearning.kafka.retry.*`). Message sai cấu trúc hoặc không tìm
+thấy khóa được giữ ở `elearning.enrollment.events.DLT`; không ghi sổ và không tăng
+đếm. Hết giới hạn retry cũng chuyển DLT. Nếu gửi DLT thất bại thì chưa xác nhận message.
+Đối soát nguyên nhân rồi phát lại cùng eventId; không xóa sổ chống trùng khi replay.
+
 ## Kiểm tra
 
 ```powershell
@@ -143,6 +170,11 @@ bộ để kiểm tra phân trang, token, ghi danh hủy, timeout, redirect và 
 enrollment backend giả lập để kiểm tra đường dẫn cấu hình, chuyển tiếp token và
 quyền đọc bài học/đề cương của ghi danh ACTIVE, COMPLETED, CANCELLED hoặc chưa ghi danh.
 Test cũng đối chiếu đường dẫn mặc định production với cấu hình đã kiểm thử.
+
+`EnrollmentEventIntegrationTest` kiểm tra số đếm, rollback, gửi trùng đồng thời,
+message sai và việc sửa khóa không ghi đè số đếm. `EnrollmentEventKafkaIntegrationTest`
+dùng Kafka thật trong JVM để kiểm retry, DLT, chống trùng và việc message sau vẫn
+được xử lý. `KafkaErrorHandlingConfigTest` kiểm cả trường hợp gửi DLT thất bại.
 
 Collection cập nhật: `docs/postman/course-service-v2.postman_collection.json` cùng
 environment V2. Import lại collection, chọn environment, nhập mật khẩu rồi chạy
