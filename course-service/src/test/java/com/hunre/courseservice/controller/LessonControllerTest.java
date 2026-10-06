@@ -90,7 +90,7 @@ class LessonControllerTest {
                 .type(LessonType.VIDEO)
                 .build();
 
-        when(curriculumService.createLesson(any(CreateLessonRequest.class))).thenReturn(lesson);
+        when(curriculumService.createLesson(any(CreateLessonRequest.class), eq(1L), eq(false))).thenReturn(lesson);
 
         String json = """
                 {
@@ -140,7 +140,7 @@ class LessonControllerTest {
                 .fileUrl("https://storage.elearning.com/ref.pdf")
                 .build();
 
-        when(curriculumService.addResource(eq(100L), any(CreateLessonResourceRequest.class))).thenReturn(resource);
+        when(curriculumService.addResource(eq(100L), any(CreateLessonResourceRequest.class), eq(1L), eq(false))).thenReturn(resource);
 
         String json = """
                 {
@@ -168,7 +168,7 @@ class LessonControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Đã xóa bài học"));
 
-        verify(curriculumService).deleteLesson(eq(100L));
+        verify(curriculumService).deleteLesson(eq(100L), eq(1L), eq(false));
     }
 
     @Test

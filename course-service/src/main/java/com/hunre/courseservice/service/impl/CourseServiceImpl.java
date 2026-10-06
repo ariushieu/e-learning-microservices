@@ -176,7 +176,7 @@ public class CourseServiceImpl implements CourseService {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("khóa học", "id", id));
 
-        if (!isAdmin && currentUserId != null && !course.getInstructorId().equals(currentUserId)) {
+        if (currentUserId == null || (!isAdmin && !currentUserId.equals(course.getInstructorId()))) {
             throw new BusinessException(ErrorCode.FORBIDDEN,
                     "Bạn không có quyền chỉnh sửa khóa học của giảng viên khác");
         }
@@ -222,7 +222,7 @@ public class CourseServiceImpl implements CourseService {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("khóa học", "id", id));
 
-        if (!isAdmin && currentUserId != null && !course.getInstructorId().equals(currentUserId)) {
+        if (currentUserId == null || (!isAdmin && !currentUserId.equals(course.getInstructorId()))) {
             throw new BusinessException(ErrorCode.FORBIDDEN,
                     "Bạn không có quyền thay đổi trạng thái khóa học của giảng viên khác");
         }
@@ -253,7 +253,7 @@ public class CourseServiceImpl implements CourseService {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("khóa học", "id", id));
 
-        if (!isAdmin && currentUserId != null && !course.getInstructorId().equals(currentUserId)) {
+        if (currentUserId == null || (!isAdmin && !currentUserId.equals(course.getInstructorId()))) {
             throw new BusinessException(ErrorCode.FORBIDDEN,
                     "Bạn không có quyền xóa khóa học của giảng viên khác");
         }

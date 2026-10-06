@@ -1,5 +1,6 @@
 package com.hunre.courseservice.service.impl;
 
+import com.hunre.courseservice.client.EnrollmentAccessClient;
 import com.hunre.courseservice.dto.request.CreateLessonRequest;
 import com.hunre.courseservice.dto.request.CreateLessonResourceRequest;
 import com.hunre.courseservice.dto.request.CreateSectionRequest;
@@ -22,6 +23,8 @@ import com.hunre.courseservice.service.CurriculumService;
 import com.hunre.courseservice.entity.CourseStatus;
 import com.hunre.courseservice.security.CurrentUserProvider;
 import com.hunre.sharedcommon.exception.ResourceNotFoundException;
+import com.hunre.sharedcommon.exception.BusinessException;
+import com.hunre.sharedcommon.exception.ErrorCode;
 import com.hunre.sharedcommon.security.Roles;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,6 +37,7 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class CurriculumServiceImpl implements CurriculumService {
 
+    private final EnrollmentAccessClient enrollmentAccessClient;
     private final CourseRepository courseRepository;
     private final SectionRepository sectionRepository;
     private final LessonRepository lessonRepository;
@@ -51,16 +55,21 @@ public class CurriculumServiceImpl implements CurriculumService {
         }
 
         List<Section> sections = sectionRepository.findByCourseIdOrderByPositionAsc(courseId);
+        boolean hasProtectedLessons = sections.stream().flatMap(section -> section.getLessons().stream())
+                .anyMatch(lesson -> !Boolean.TRUE.equals(lesson.getIsPreview()));
+        boolean fullAccess = hasProtectedLessons && canReadProtectedContent(course);
         return sections.stream()
-                .map(SectionResponse::from)
+                .map(section -> SectionResponse.from(section,
+                        lesson -> fullAccess || Boolean.TRUE.equals(lesson.getIsPreview())))
                 .toList();
     }
 
     @Override
     @Transactional
-    public SectionResponse createSection(CreateSectionRequest request) {
+    public SectionResponse createSection(CreateSectionRequest request, Long currentUserId, boolean isAdmin) {
         Course course = courseRepository.findById(request.getCourseId())
                 .orElseThrow(() -> new ResourceNotFoundException("khóa học", "id", request.getCourseId()));
+        requireOwner(course, currentUserId, isAdmin);
 
         Section section = Section.builder()
                 .course(course)
@@ -69,27 +78,29 @@ public class CurriculumServiceImpl implements CurriculumService {
                 .build();
 
         Section saved = sectionRepository.save(section);
-        return SectionResponse.from(saved);
+        return SectionResponse.from(saved, lesson -> true);
     }
 
     @Override
     @Transactional
-    public SectionResponse updateSection(Long id, UpdateSectionRequest request) {
+    public SectionResponse updateSection(Long id, UpdateSectionRequest request, Long currentUserId, boolean isAdmin) {
         Section section = sectionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("chương học", "id", id));
+        requireOwner(section.getCourse(), currentUserId, isAdmin);
 
         section.setTitle(request.getTitle().trim());
         section.setPosition(request.getPosition() != null ? request.getPosition() : 0);
 
         Section updated = sectionRepository.save(section);
-        return SectionResponse.from(updated);
+        return SectionResponse.from(updated, lesson -> true);
     }
 
     @Override
     @Transactional
-    public void deleteSection(Long id) {
+    public void deleteSection(Long id, Long currentUserId, boolean isAdmin) {
         Section section = sectionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("chương học", "id", id));
+        requireOwner(section.getCourse(), currentUserId, isAdmin);
 
         Course course = section.getCourse();
         sectionRepository.delete(section);
@@ -107,7 +118,15 @@ public class CurriculumServiceImpl implements CurriculumService {
             throw new ResourceNotFoundException("bài học", "id", id);
         }
 
-        return LessonResponse.from(lesson);
+        return LessonResponse.from(lesson, Boolean.TRUE.equals(lesson.getIsPreview())
+                || canReadProtectedContent(lesson.getCourse()));
+    }
+
+    private boolean canReadProtectedContent(Course course) {
+        return currentUserProvider.getCurrentUser().map(user ->
+                user.hasRole(Roles.ADMIN) || user.userId().equals(course.getInstructorId())
+                        || enrollmentAccessClient.hasEnrollment(course.getId(), user.userId()))
+                .orElse(false);
     }
 
     private boolean canViewCourse(Course course) {
@@ -121,9 +140,10 @@ public class CurriculumServiceImpl implements CurriculumService {
 
     @Override
     @Transactional
-    public LessonResponse createLesson(CreateLessonRequest request) {
+    public LessonResponse createLesson(CreateLessonRequest request, Long currentUserId, boolean isAdmin) {
         Section section = sectionRepository.findById(request.getSectionId())
                 .orElseThrow(() -> new ResourceNotFoundException("chương học", "id", request.getSectionId()));
+        requireOwner(section.getCourse(), currentUserId, isAdmin);
 
         Course course = section.getCourse();
         int duration = request.getDurationSeconds() != null ? request.getDurationSeconds() : 0;
@@ -132,6 +152,8 @@ public class CurriculumServiceImpl implements CurriculumService {
                 .section(section)
                 .course(course)
                 .title(request.getTitle().trim())
+                .content(request.getContent())
+                .contentUrl(request.getContentUrl())
                 .type(request.getType() != null ? request.getType() : LessonType.VIDEO)
                 .durationSeconds(duration)
                 .position(request.getPosition() != null ? request.getPosition() : 0)
@@ -149,20 +171,23 @@ public class CurriculumServiceImpl implements CurriculumService {
             courseEventPublisher.publishCourseUpdated(course);
         }
 
-        return LessonResponse.from(saved);
+        return LessonResponse.from(saved, true);
     }
 
     @Override
     @Transactional
-    public LessonResponse updateLesson(Long id, UpdateLessonRequest request) {
+    public LessonResponse updateLesson(Long id, UpdateLessonRequest request, Long currentUserId, boolean isAdmin) {
         Lesson lesson = lessonRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("bài học", "id", id));
+        requireOwner(lesson.getCourse(), currentUserId, isAdmin);
 
         int oldDuration = lesson.getDurationSeconds() != null ? lesson.getDurationSeconds() : 0;
         int newDuration = request.getDurationSeconds() != null ? request.getDurationSeconds() : 0;
         int durationDiff = newDuration - oldDuration;
 
         lesson.setTitle(request.getTitle().trim());
+        lesson.setContent(request.getContent());
+        lesson.setContentUrl(request.getContentUrl());
         lesson.setType(request.getType() != null ? request.getType() : LessonType.VIDEO);
         lesson.setDurationSeconds(newDuration);
         lesson.setPosition(request.getPosition() != null ? request.getPosition() : 0);
@@ -176,14 +201,15 @@ public class CurriculumServiceImpl implements CurriculumService {
             courseRepository.save(course);
         }
 
-        return LessonResponse.from(updated);
+        return LessonResponse.from(updated, true);
     }
 
     @Override
     @Transactional
-    public void deleteLesson(Long id) {
+    public void deleteLesson(Long id, Long currentUserId, boolean isAdmin) {
         Lesson lesson = lessonRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("bài học", "id", id));
+        requireOwner(lesson.getCourse(), currentUserId, isAdmin);
 
         Course course = lesson.getCourse();
         int duration = lesson.getDurationSeconds() != null ? lesson.getDurationSeconds() : 0;
@@ -202,9 +228,10 @@ public class CurriculumServiceImpl implements CurriculumService {
 
     @Override
     @Transactional
-    public LessonResourceResponse addResource(Long lessonId, CreateLessonResourceRequest request) {
+    public LessonResourceResponse addResource(Long lessonId, CreateLessonResourceRequest request, Long currentUserId, boolean isAdmin) {
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new ResourceNotFoundException("bài học", "id", lessonId));
+        requireOwner(lesson.getCourse(), currentUserId, isAdmin);
 
         LessonResource resource = LessonResource.builder()
                 .lesson(lesson)
@@ -218,11 +245,19 @@ public class CurriculumServiceImpl implements CurriculumService {
 
     @Override
     @Transactional
-    public void deleteResource(Long resourceId) {
+    public void deleteResource(Long resourceId, Long currentUserId, boolean isAdmin) {
         LessonResource resource = lessonResourceRepository.findById(resourceId)
                 .orElseThrow(() -> new ResourceNotFoundException("tài liệu bài học", "id", resourceId));
+        requireOwner(resource.getLesson().getCourse(), currentUserId, isAdmin);
 
         lessonResourceRepository.delete(resource);
+    }
+
+    private void requireOwner(Course course, Long currentUserId, boolean isAdmin) {
+        if (currentUserId == null || (!isAdmin && !currentUserId.equals(course.getInstructorId()))) {
+            throw new BusinessException(ErrorCode.FORBIDDEN,
+                    "Bạn không có quyền chỉnh sửa khóa học của giảng viên khác");
+        }
     }
 
     private void updateCourseStats(Long courseId) {

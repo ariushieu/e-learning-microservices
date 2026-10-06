@@ -86,7 +86,7 @@ class SectionControllerTest {
                 .title("Chương 2: Cài đặt")
                 .build();
 
-        when(curriculumService.createSection(any(CreateSectionRequest.class))).thenReturn(section);
+        when(curriculumService.createSection(any(CreateSectionRequest.class), eq(1L), eq(false))).thenReturn(section);
 
         String json = """
                 {
@@ -133,7 +133,7 @@ class SectionControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Đã xóa chương học"));
 
-        verify(curriculumService).deleteSection(eq(1L));
+        verify(curriculumService).deleteSection(eq(1L), eq(1L), eq(false));
     }
 
     @Test

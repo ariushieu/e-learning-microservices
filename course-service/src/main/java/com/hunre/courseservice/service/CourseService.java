@@ -27,19 +27,8 @@ public interface CourseService {
 
     CourseResponse updateCourse(Long id, UpdateCourseRequest request, Long currentUserId, boolean isAdmin);
 
-    default CourseResponse updateCourse(Long id, UpdateCourseRequest request) {
-        return updateCourse(id, request, null, true);
-    }
-
     CourseResponse changeCourseStatus(Long id, ChangeCourseStatusRequest request, Long currentUserId, boolean isAdmin);
-
-    default CourseResponse changeCourseStatus(Long id, ChangeCourseStatusRequest request) {
-        return changeCourseStatus(id, request, null, true);
-    }
 
     void deleteCourse(Long id, Long currentUserId, boolean isAdmin);
 
-    default void deleteCourse(Long id) {
-        deleteCourse(id, null, true);
-    }
 }
