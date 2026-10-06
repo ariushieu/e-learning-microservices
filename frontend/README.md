@@ -6,6 +6,7 @@ Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS 4, quản lý gó
 - [Kiến trúc](#kiến-trúc)
 - [Các trang](#các-trang)
 - [Thêm trang mới](#thêm-trang-mới)
+- [Ai giữ phần nào](#ai-giữ-phần-nào)
 - [Những điều cần biết](#những-điều-cần-biết)
 
 ## Chạy
@@ -95,7 +96,8 @@ admin. Đây chỉ là lớp ngoài cho dễ dùng — backend vẫn kiểm lạ
 | `/instructor` | giảng viên | Khóa học mình dạy (kể cả bản nháp) |
 | `/instructor/courses/new`, `/instructor/courses/[id]` | giảng viên | Tạo, sửa khóa; soạn chương, bài, tài liệu; xuất bản |
 | `/instructor/quizzes/[id]` | giảng viên | Soạn đề, câu hỏi, xuất bản bài kiểm tra |
-| `/admin` | admin | Cấp vai trò, quản lý danh mục |
+| `/admin/users` | admin | Cấp vai trò theo mã người dùng |
+| `/admin/categories` | admin | Quản lý danh mục khóa học |
 
 ## Thêm trang mới
 
@@ -104,15 +106,41 @@ admin. Đây chỉ là lớp ngoài cho dễ dùng — backend vẫn kiểm lạ
 2. `params` và `searchParams` của trang là **Promise** ở Next 16: `const { id } = await params`.
    Kiểu `PageProps<"/duong-dan/[id]">` sinh bởi `pnpm next typegen`.
 3. Trang cần đăng nhập thì thêm tiền tố vào `requiredAccess()` trong `src/proxy.ts`.
-4. Dùng thành phần sẵn có trong `src/components/ui.tsx` (Button, Card, Badge, Alert...) để giao diện
-   đồng nhất.
+4. Giao diện dùng **shadcn/ui**. Không tự viết nút, ô nhập, bảng, hộp thoại — dùng:
+   - `src/components/ui/*`: component shadcn (Button, Card, Table, Dialog, AlertDialog, Tabs...).
+     Cần component mới thì `pnpm dlx shadcn@latest add <tên>` và báo nhóm trưởng.
+   - `src/components/common/*`: `PageHeader`, `StatusBadge` (mọi trạng thái), `EmptyState`,
+     `ErrorAlert`, `FieldError`, `Stat`, `StatusPage`.
+   - `src/lib/format.ts` (ngày giờ, tiền, nhãn tiếng Việt cho enum), `src/lib/forms.ts` (lỗi form).
+   - Hành động xóa/lưu trữ luôn xác nhận bằng `AlertDialog`, không dùng `window.confirm`; lưu xong
+     báo bằng `toast.success(...)` từ `sonner`.
+5. Đặt file đúng thư mục của service mình — xem bảng dưới.
+
+## Ai giữ phần nào
+
+Ai giữ service backend nào thì giữ luôn giao diện gọi API của service đó; sửa API là sửa giao
+diện trong cùng pull request. `.github/CODEOWNERS` tự gắn người review.
+
+| Service | Người | Thư mục |
+|---|---|---|
+| auth | quocluibotre | `components/auth/`, `app/(auth)/`, `app/(site)/profile/`, `app/(dashboard)/admin/users/` |
+| course | duyd92689-debug | `components/course/`, `app/(site)/page.tsx`, `app/(site)/courses/`, `app/(dashboard)/instructor/` (trừ `quizzes/`), `app/(dashboard)/admin/categories/` |
+| enrollment | phamquyet19042005-netizen | `components/enrollment/`, `app/(learn)/`, `app/(site)/my-courses/`, `app/(site)/certificates/` |
+| quiz | hiepdeptrai0111 | `components/quiz/`, `app/(site)/quizzes/`, `app/(site)/attempts/`, `app/(dashboard)/instructor/quizzes/` |
+| notification + khung chung | Hiếu | `components/{ui,common,layout,notification}/`, `lib/`, `proxy.ts`, `app/layout.tsx`, `app/api/` |
+
+Ba khung trang (route group, không xuất hiện trong URL):
+
+- `(site)`: header + footer, cho học viên và khách.
+- `(learn)`: trang học toàn màn hình, không header chung.
+- `(dashboard)`: sidebar bên trái, cho giảng viên và quản trị.
 
 Next 16 khác nhiều so với tài liệu trên mạng. Tài liệu đúng phiên bản nằm ở
 `node_modules/next/dist/docs/` — xem `AGENTS.md`.
 
 ## Những điều cần biết
 
-- **Giờ luôn hiển thị theo giờ Việt Nam** (`formatDate` trong `ui.tsx`). Container chạy giờ UTC;
+- **Giờ luôn hiển thị theo giờ Việt Nam** (`formatDate` trong `lib/format.ts`). Container chạy giờ UTC;
   không cố định múi giờ thì trang render ở server lệch 7 tiếng so với trình duyệt.
 - **Nội dung thông báo có thẻ `<b>`** từ mẫu nhưng tên khóa học chèn vào không được backend escape.
   Hiển thị qua `safeNotificationHtml()`, chỉ giữ lại đúng thẻ `<b>`.

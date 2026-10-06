@@ -6,6 +6,7 @@
 > tại đây, nên **cứ `git pull` là biết việc tiếp theo của mình**, không phải hỏi ai.
 
 - [Việc của bạn](#việc-của-bạn)
+- [Giao diện web: ai giữ trang nào](#giao-diện-web-ai-giữ-trang-nào)
 - [Khi nào test toàn bộ API bằng Postman](#khi-nào-test-toàn-bộ-api-bằng-postman)
 - [Quy tắc viết API](#quy-tắc-viết-api)
 - [Trạng thái hệ thống](#trạng-thái-hệ-thống)
@@ -48,6 +49,25 @@ Cấp quyền:    PATCH /api/users/{id}/roles   {"roles": ["ROLE_STUDENT", "ROLE
 
 Người được cấp quyền phải **đăng nhập lại** mới nhận vai trò mới — token cũ vẫn mang vai trò
 cũ tới khi hết hạn.
+
+## Giao diện web: ai giữ trang nào
+
+**Ai giữ service nào thì giữ luôn các trang web gọi API của service đó.** Thêm hoặc sửa API thì
+sửa giao diện tương ứng **trong cùng pull request**. Một API không có chỗ dùng trên web coi như
+chưa xong. `.github/CODEOWNERS` tự gắn đúng người review khi pull request đụng vào phần của ai.
+
+| Người | Trang | Thư mục trong `frontend/src/` |
+|---|---|---|
+| quocluibotre | Đăng nhập, đăng ký, hồ sơ, cấp quyền (`/admin/users`) | `components/auth/`, `app/(auth)/`, `app/(site)/profile/`, `app/(dashboard)/admin/users/` |
+| duyd92689-debug | Trang chủ (danh mục khóa), chi tiết khóa, khu giảng dạy (khóa, chương, bài), danh mục (`/admin/categories`) | `components/course/`, `app/(site)/page.tsx`, `app/(site)/courses/`, `app/(dashboard)/instructor/` (trừ `quizzes/`), `app/(dashboard)/admin/categories/` |
+| phamquyet19042005-netizen | Ghi danh, trang học + tiến độ, khóa của tôi, chứng chỉ | `components/enrollment/`, `app/(learn)/`, `app/(site)/my-courses/`, `app/(site)/certificates/` |
+| hiepdeptrai0111 | Làm bài, kết quả, soạn đề | `components/quiz/`, `app/(site)/quizzes/`, `app/(site)/attempts/`, `app/(dashboard)/instructor/quizzes/` |
+| Hiếu | Khung chung: layout, header, sidebar, đăng nhập/cookie, `proxy.ts`, route `/api`, thông báo, bộ component | `components/ui/`, `components/common/`, `components/layout/`, `components/notification/`, `lib/`, `app/layout.tsx`, `proxy.ts` |
+
+**Trước khi viết trang:** đọc [frontend/README.md](../frontend/README.md). Giao diện dùng
+**shadcn/ui** (`components/ui/`) cùng các thành phần chung trong `components/common/`
+(`PageHeader`, `StatusBadge`, `EmptyState`, `ErrorAlert`...) — không tự viết nút, ô nhập, bảng
+riêng. Chạy thử bằng `pnpm dev` trong `frontend/` với backend đang chạy.
 
 ## Khi nào test toàn bộ API bằng Postman
 
@@ -169,6 +189,9 @@ tiến độ.
 **Tự kiểm.** Học xong cả khóa (có chứng chỉ), rồi `PUT /api/lessons/{id}/progress` với
 `IN_PROGRESS`: bài vẫn `COMPLETED`, `GET /api/progress?courseId=` vẫn 100% và còn `certificateCode`.
 
+**Phần web.** Sửa xong backend thì bỏ được đoạn chờ `starting.current` trong
+`components/enrollment/lesson-actions.tsx` (đang có để tránh lỗi này) — giữ cũng không sao.
+
 ---
 
 ### hiepdeptrai0111 — chỉ người đã ghi danh mới làm bài kiểm tra
@@ -183,6 +206,9 @@ Chưa ghi danh → 403. enrollment-service không trả lời → 502, không t�
 
 **Tự kiểm.** Học viên chưa ghi danh bắt đầu làm bài → 403. Ghi danh xong → 201. Người tạo bài làm
 thử → 201. Tắt enrollment-service → 502 và bảng `quiz_attempts` không thêm dòng nào.
+
+**Phần web.** Trang `/quizzes/[id]`: khi nhận 403 thì hiện "Bạn cần ghi danh khóa học để làm bài"
+kèm nút "Ghi danh" dẫn về `/courses/{courseId}`, thay vì thông báo lỗi chung.
 
 ---
 
@@ -204,6 +230,9 @@ README; muốn trừ đi khi hủy thì bàn với phamquyet thêm sự kiện `
 **Tự kiểm.** Hai học viên ghi danh → `studentCount` = 2 trên `GET /api/courses/{id}` và trên web.
 Gửi lại đúng message `enrollment.created` bằng Kafka UI → vẫn 2.
 
+**Phần web.** Thẻ khóa học ở trang chủ, trang chi tiết và bảng ở `/instructor` đã đọc
+`studentCount` — kiểm lại con số hiện đúng; không cần sửa gì nếu backend đúng.
+
 ---
 
 ### quocluibotre — sửa hồ sơ và đổi mật khẩu
@@ -218,7 +247,9 @@ thoại, hay đổi mật khẩu.
   `VALIDATION_FAILED` kèm `fieldErrors`; đổi xong **thu hồi mọi refresh token** của người đó để
   các phiên khác phải đăng nhập lại.
 
-Báo nhóm trưởng khi xong để gắn vào trang Hồ sơ.
+**Phần web** (trong cùng pull request): trang `/profile` thêm hai thẻ "Sửa thông tin" và "Đổi
+mật khẩu" — form theo mẫu `components/auth/user-roles-form.tsx` (shadcn, `toast` khi lưu xong).
+Đổi mật khẩu xong thì đăng xuất (gọi `logoutAction`) vì refresh token đã bị thu hồi.
 
 **Tự kiểm.** Đổi mật khẩu xong: đăng nhập bằng mật khẩu cũ → 401, mật khẩu mới → 200; refresh
 token cũ → 401.
