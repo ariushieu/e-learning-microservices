@@ -299,18 +299,10 @@ Lệnh build 7 image từ mã nguồn rồi bật MySQL, Kafka, Kafka UI, Redis,
 giữ lệnh lại cho tới khi mọi healthcheck xanh. Lần đầu mất vài phút vì phải tải thư viện
 Maven; các lần sau chỉ build lại phần mã đã sửa.
 
-**Web ở http://localhost:3000.** Tạo dữ liệu mẫu cho buổi demo (gọi qua API như người dùng thật,
-chạy lại nhiều lần không trùng):
-
-```bash
-node scripts/seed-demo.mjs
-```
-
-| Vai trò | Email | Mật khẩu |
-|---|---|---|
-| Giảng viên | `giangvien@hunre.edu.vn` | `Demo@123456` |
-| Học viên | `hocvien@hunre.edu.vn` | `Demo@123456` |
-| Admin | `admin@elearning.hunre.edu.vn` | `Admin@123456` |
+**Web ở http://localhost:3000.** Database mới chỉ có sẵn tài khoản admin
+`admin@elearning.hunre.edu.vn` / `Admin@123456`. Có dữ liệu bằng cách dùng chính trang web:
+đăng ký tài khoản, admin cấp quyền giảng viên ở trang **Quản trị**, giảng viên tạo khóa học ở
+trang **Giảng dạy** rồi xuất bản.
 
 Mọi API đi qua gateway ở **http://localhost:8080**. Kafka UI ở http://localhost:8090.
 
