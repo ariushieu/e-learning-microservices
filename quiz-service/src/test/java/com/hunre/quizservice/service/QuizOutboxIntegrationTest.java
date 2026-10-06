@@ -12,6 +12,7 @@ import com.hunre.quizservice.repository.OutboxEventRepository;
 import com.hunre.quizservice.repository.QuizAttemptRepository;
 import com.hunre.quizservice.repository.QuizRepository;
 import com.hunre.sharedcommon.event.EventTypes;
+import com.hunre.sharedcommon.event.QuizGradedEvent;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -20,6 +21,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Set;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -52,7 +54,12 @@ class QuizOutboxIntegrationTest {
         Question question = Question.builder().content("2 + 2 = ?").build();
         AnswerOption correct = AnswerOption.builder().content("4").isCorrect(true).build();
         question.addOption(correct);
+        question.addOption(AnswerOption.builder().content("3").build());
         quiz.addQuestion(question);
+        Question unanswered = Question.builder().content("3 + 3 = ?").position(1).build();
+        unanswered.addOption(AnswerOption.builder().content("6").isCorrect(true).build());
+        unanswered.addOption(AnswerOption.builder().content("5").build());
+        quiz.addQuestion(unanswered);
         quiz = quizRepository.saveAndFlush(quiz);
 
         Long attemptId = quizAttemptService.startAttempt(quiz.getId(), 99L).getId();
@@ -65,7 +72,7 @@ class QuizOutboxIntegrationTest {
 
         var result = quizAttemptService.submitAttempt(attemptId, 99L, request);
 
-        assertThat(result.getScore()).isEqualByComparingTo("100.00");
+        assertThat(result.getScore()).isEqualByComparingTo("50.00");
         var savedAttempt = quizAttemptRepository.findById(attemptId).orElseThrow();
         assertThat(savedAttempt.getStatus()).isEqualTo(AttemptStatus.SUBMITTED);
         assertThat(savedAttempt.getPassed()).isTrue();
@@ -77,10 +84,13 @@ class QuizOutboxIntegrationTest {
         assertThat(event.getAggregateId()).isEqualTo(attemptId.toString());
         assertThat(event.getEventType()).isEqualTo(EventTypes.QUIZ_GRADED);
         JsonNode payload = objectMapper.readTree(event.getPayload());
-        // H2's JSON column can wrap a bound String as a JSON string.
-        if (payload.isTextual()) {
-            payload = objectMapper.readTree(payload.asString());
-        }
+        assertThat(event.getPayload()).contains("\"score\":50.00");
+        QuizGradedEvent expected = new QuizGradedEvent(
+                event.getEventId(), Instant.parse(payload.get("occurredAt").asString()),
+                attemptId, quiz.getId(), quiz.getCourseId(), 99L,
+                quiz.getTitle(), result.getScore(), result.isPassed());
+        // Compare the complete persisted text, not just parsed numeric values.
+        assertThat(event.getPayload()).isEqualTo(objectMapper.writeValueAsString(expected));
         assertThat(payload.get("attemptId").asLong()).isEqualTo(attemptId);
         assertThat(payload.get("quizId").asLong()).isEqualTo(quiz.getId());
         assertThat(payload.get("userId").asLong()).isEqualTo(99L);

@@ -1,0 +1,2613 @@
+{
+  "info": {
+    "_postman_id": "a9be38a8-2ee6-42d6-b1b5-e8a083701fa1",
+    "name": "Course Service V2 - Demo 4 Controllers (JWT)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Bộ test mới cho nhánh course-service, đối chiếu controller ngày 06/10/2026.\n\nCÁCH DÙNG\n1. Import collection và Environment V2 rồi chọn Environment V2. URL đã được điền trực tiếp trong từng request.\n2. Điền password tại máy bạn trong Environment hoặc Collection Variables. Nếu biến password trống, có thể nhập email/password trực tiếp trong JSON Body của 00.2. email mặc định là tài khoản admin người dùng cung cấp. File không chứa mật khẩu/token thật.\n3. Tất cả request dùng URL trực tiếp http://127.0.0.1:8080 qua gateway, không cần biến baseUrl hoặc authBaseUrl. Các biến token và ID vẫn tự lưu sau đăng nhập/tạo dữ liệu.\n4. Chạy lần lượt thư mục 00 đến 06, hoặc dùng Runner, một iteration. 00.1 chỉ kiểm tra gateway và giữ token/ID. Bước 01.1 bắt đầu lượt mới: tạo runId, xóa ID dữ liệu thử đang giữ nhưng giữ token/người đăng nhập. Dọn lượt cũ bằng folder 07 trước khi gửi lại 01.1 nếu cần. Không chạy song song.\n5. Thư mục 07 mặc định BỎ QUA vì runCleanup=false để giữ dữ liệu demo. Đặt runCleanup=true rồi chạy riêng thư mục 07 để xóa dữ liệu vừa tạo. Không sửa các biến cs2_* thành ID dữ liệu khác.\n6. Ca 403 tùy chọn cần studentToken của tài khoản chỉ có ROLE_STUDENT. Trống thì bỏ qua rõ ràng.\n\nĐIỀU KIỆN\nGateway, auth-service, course-service và MySQL phải hoạt động; JWT_SECRET phải thống nhất. Tài khoản cần ROLE_ADMIN hoặc ROLE_INSTRUCTOR. Nếu tài khoản admin người dùng được cấp chưa tồn tại trên database local, liên hệ người phụ trách auth; collection không tự cấp quyền. Khi sai mật khẩu hoặc sai quyền, Runner dừng sau đăng nhập.\n\nPHẠM VI\nCRUD của CategoryController, CourseController, SectionController, LessonController; JWT, dữ liệu DRAFT/PUBLISHED, phân trang, thống kê, lỗi 400/401/403/404/409/422. Collection không khẳng định đã khắc phục thiếu ownership của chương/bài học, không kiểm đảm bảo giao nhận Kafka hoặc quyền ghi danh để xem nội dung.\nEnum CourseStatus hiện gồm DRAFT, PENDING_REVIEW, PUBLISHED, ARCHIVED. HTTP 200 của publish không chứng minh Kafka đã gửi thành công.\n\nBIẾN\nEnvironment được ưu tiên; khi không chọn Environment, dùng các giá trị mặc định trong Collection Variables. Token và ID cs2_* do Collection Variables tự lưu; không khai lại cs2_* trong Environment để tránh che giá trị mới. Không export/chia sẻ Environment sau khi điền mật khẩu hoặc Collection sau khi chứa token thật.\n\nTài liệu Postman: https://learning.postman.com/docs/tests-and-scripts/write-scripts/postman-sandbox-reference/pm-variables/\n\n\nĐã cập nhật đường dẫn theo docs/phan-cong.md. Body tạo chương/bài học không còn courseId/sectionId. Nội dung và tài liệu bài thường chỉ hiện cho chủ khóa học, admin hoặc học viên có ghi danh ACTIVE/COMPLETED. Bài preview chỉ công khai trong khóa PUBLISHED."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{cs2_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "email",
+      "value": "admin@elearning.hunre.edu.vn",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "studentToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "runCleanup",
+      "value": "false",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Chuẩn bị và đăng nhập",
+      "item": [
+        {
+          "name": "00.1 Kiểm tra gateway (giữ token và ID)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Gateway UP\", function () { pm.expect(pm.response.json().status).to.eql(\"UP\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/actuator/health",
+            "description": "Kiểm tra gateway bất kỳ lúc nào. Request không đổi token, runId hoặc ID của lượt test đang giữ. Mong đợi HTTP 200 và status UP.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "00.2 Đăng nhập admin / giảng viên",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.unset(\"cs2_token\");",
+                  "pm.collectionVariables.unset(\"cs2_instructorId\");",
+                  "const variableEmail = String(pm.variables.get(\"email\") || \"\");",
+                  "const variablePassword = String(pm.variables.get(\"password\") || \"\");",
+                  "let credentials;",
+                  "if (variablePassword.trim()) {",
+                  "  credentials = { email: variableEmail, password: variablePassword };",
+                  "} else {",
+                  "  let entered = {};",
+                  "  try { entered = JSON.parse(pm.request.body.raw || \"{}\"); } catch (e) {}",
+                  "  const literalPassword = entered && typeof entered.password === \"string\" && entered.password.trim() && !/\\{\\{[^}]*\\}\\}/.test(entered.password);",
+                  "  if (literalPassword) {",
+                  "    const literalEmail = typeof entered.email === \"string\" && !/\\{\\{[^}]*\\}\\}/.test(entered.email);",
+                  "    credentials = { email: literalEmail ? entered.email : variableEmail, password: entered.password };",
+                  "  } else {",
+                  "    credentials = { email: variableEmail, password: \"\" };",
+                  "    console.error(\"Điền password trong Environment/Collection Variables hoặc nhập email và password thật trong JSON Body của request này. Request vẫn gửi để server hiện lỗi validation.\");",
+                  "  }",
+                  "}",
+                  "pm.request.body.update(JSON.stringify(credentials));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    const user = body.data && body.data.user;",
+                  "const roles = user && user.roles || [];",
+                  "const manager = roles.includes(\"ROLE_ADMIN\") || roles.includes(\"ROLE_INSTRUCTOR\");",
+                  "pm.test(\"Có quyền quản lý khóa học\", function () { pm.expect(manager, \"Tài khoản cần ROLE_ADMIN hoặc ROLE_INSTRUCTOR\").to.eql(true); });",
+                  "pm.test(\"Có access token\", function () { pm.expect(body.data.accessToken).to.be.a(\"string\").and.not.empty; });",
+                  "if (manager && body.data.accessToken) { pm.collectionVariables.set(\"cs2_token\", body.data.accessToken); pm.collectionVariables.set(\"cs2_instructorId\", String(user.id)); } else { pm.execution.setNextRequest(null); }",
+                  "  }",
+                  "}",
+                  "",
+                  "if (pm.response.code !== 200) { pm.execution.setNextRequest(null); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "http://127.0.0.1:8080/api/auth/login",
+            "description": "Nhập password trong Environment (hoặc Collection Variables nếu không chọn Environment). Khi biến password trống, có thể nhập email và password trực tiếp trong JSON Body; script giữ giá trị nhập tay và escape JSON đúng. Token được lưu trong Collection Variables; đăng nhập lại khi token hết hạn. Không chia sẻ/export file sau khi nhập mật khẩu hoặc token thật.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "00.3 Xem tài khoản hiện tại",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"Đúng người vừa đăng nhập\", function () { pm.expect(body.data.id).to.eql(Number(pm.collectionVariables.get(\"cs2_instructorId\"))); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/auth/me",
+            "description": "Mong đợi HTTP 200 sau đăng nhập. Request vẫn gửi khi chưa có token để server trả HTTP 401 rõ ràng."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "01 - CategoryController",
+      "item": [
+        {
+          "name": "01.1 Bắt đầu lượt test mới và tạo danh mục",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "[\"categoryId\", \"courseId\", \"sectionId\", \"lessonId\", \"resourceId\"].forEach(function (key) { pm.collectionVariables.unset(\"cs2_\" + key); });",
+                  "pm.collectionVariables.set(\"cs2_runId\", Date.now().toString(36) + \"-\" + Math.random().toString(36).slice(2, 8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 201) {",
+                  "    pm.test(\"ID hợp lệ\", function () { pm.expect(body.data.id).to.be.a(\"number\").and.above(0); });",
+                  "if (body.data && Number.isInteger(body.data.id) && body.data.id > 0) { pm.collectionVariables.set(\"cs2_categoryId\", String(body.data.id)); }",
+                  "pm.test(\"Slug của lượt chạy\", function () { pm.expect(body.data.slug).to.eql(\"course-demo-\" + pm.collectionVariables.get(\"cs2_runId\")); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "http://127.0.0.1:8080/api/categories",
+            "description": "Bắt đầu lượt test mới mỗi lần Send: tạo runId mới, xóa các ID danh mục/khóa học/chương/bài học/tài liệu đang giữ, giữ token và ID người đăng nhập. Không xóa dữ liệu trên server của lượt trước; hãy chạy folder 07 trước bước này nếu cần dọn lượt cũ. Mong đợi HTTP 201.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Danh mục Demo {{cs2_runId}}\",\n  \"slug\": \"course-demo-{{cs2_runId}}\",\n  \"description\": \"Dữ liệu kiểm thử course-service\",\n  \"position\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "01.2 Danh sách danh mục",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"Có phân trang\", function () { pm.expect(body.data.content).to.be.an(\"array\"); pm.expect(body.data.page).to.eql(0); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/categories?page=0&size=10&sort=position,asc",
+            "description": "Mong đợi HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "01.3 Chi tiết danh mục",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"categoryId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"Đúng categoryId\", function () { pm.expect(body.data.id).to.eql(Number(pm.collectionVariables.get(\"cs2_categoryId\"))); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/categories/{{cs2_categoryId}}",
+            "description": "Mong đợi HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "01.4 Danh mục theo slug",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"categoryId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"Đúng categoryId\", function () { pm.expect(body.data.id).to.eql(Number(pm.collectionVariables.get(\"cs2_categoryId\"))); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/categories/slug/course-demo-{{cs2_runId}}",
+            "description": "Mong đợi HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "01.5 Cây danh mục",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"categoryId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"Danh mục vừa tạo có trong cây\", function () { pm.expect(body.data.some(function (c) { return c.id === Number(pm.collectionVariables.get(\"cs2_categoryId\")); })).to.eql(true); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/categories/tree",
+            "description": "Mong đợi HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "01.6 Sửa danh mục",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"categoryId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"Tên đã cập nhật\", function () { pm.expect(body.data.name).to.eql(\"Danh mục đã sửa \" + pm.collectionVariables.get(\"cs2_runId\")); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "http://127.0.0.1:8080/api/categories/{{cs2_categoryId}}",
+            "description": "Mong đợi HTTP 200.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Danh mục đã sửa {{cs2_runId}}\",\n  \"slug\": \"course-demo-{{cs2_runId}}\",\n  \"description\": \"Dữ liệu kiểm thử course-service\",\n  \"position\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 - CourseController",
+      "item": [
+        {
+          "name": "02.1 Tạo khóa học DRAFT",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"categoryId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 201) {",
+                  "    pm.test(\"ID hợp lệ\", function () { pm.expect(body.data.id).to.be.a(\"number\").and.above(0); });",
+                  "if (body.data && Number.isInteger(body.data.id) && body.data.id > 0) { pm.collectionVariables.set(\"cs2_courseId\", String(body.data.id)); }",
+                  "pm.test(\"Trạng thái và chủ sở hữu\", function () { pm.expect(body.data.status).to.eql(\"DRAFT\"); pm.expect(body.data.instructorId).to.eql(Number(pm.collectionVariables.get(\"cs2_instructorId\"))); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "http://127.0.0.1:8080/api/courses",
+            "description": "Mong đợi HTTP 201.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": {{cs2_categoryId}},\n  \"title\": \"Java Demo {{cs2_runId}}\",\n  \"slug\": \"java-demo-{{cs2_runId}}\",\n  \"summary\": \"Khóa học kiểm thử Postman\",\n  \"description\": \"Dữ liệu do collection Course Service V2 tạo\",\n  \"level\": \"BEGINNER\",\n  \"language\": \"vi\",\n  \"price\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02.2 Chi tiết DRAFT với token chủ sở hữu",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"courseId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"Đúng courseId\", function () { pm.expect(body.data.id).to.eql(Number(pm.collectionVariables.get(\"cs2_courseId\"))); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/courses/{{cs2_courseId}}",
+            "description": "Mong đợi HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "02.3 DRAFT theo slug với token",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"courseId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"Đúng courseId\", function () { pm.expect(body.data.id).to.eql(Number(pm.collectionVariables.get(\"cs2_courseId\"))); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/courses/slug/java-demo-{{cs2_runId}}",
+            "description": "Mong đợi HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "02.4 Khóa học của giảng viên hiện tại",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"courseId\",\"instructorId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"Có phân trang\", function () { pm.expect(body.data.content).to.be.an(\"array\"); pm.expect(body.data.page).to.eql(0); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/courses?instructorId={{cs2_instructorId}}&page=0&size=10&sort=id,desc",
+            "description": "Mong đợi HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "02.5 Khách không được xem DRAFT",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"courseId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", function () { pm.response.to.have.status(404); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(false);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    pm.expect(body.code).to.eql(\"RESOURCE_NOT_FOUND\");",
+                  "  });",
+                  "  if (pm.response.code === 404) {",
+                  "    ",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/courses/{{cs2_courseId}}",
+            "description": "Mong đợi HTTP 404.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02.6 Danh sách công khai chưa có DRAFT",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"courseId\",\"categoryId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"DRAFT không có trong danh sách công khai\", function () { pm.expect(body.data.content.map(function (c) { return c.id; })).not.to.include(Number(pm.collectionVariables.get(\"cs2_courseId\"))); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/courses?categoryId={{cs2_categoryId}}&page=0&size=10",
+            "description": "Mong đợi HTTP 200.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02.7 Sửa khóa học",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"courseId\",\"categoryId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"Tên khóa học đã sửa\", function () { pm.expect(body.data.title).to.eql(\"Java Demo đã sửa \" + pm.collectionVariables.get(\"cs2_runId\")); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "http://127.0.0.1:8080/api/courses/{{cs2_courseId}}",
+            "description": "Mong đợi HTTP 200.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": {{cs2_categoryId}},\n  \"title\": \"Java Demo đã sửa {{cs2_runId}}\",\n  \"slug\": \"java-demo-{{cs2_runId}}\",\n  \"summary\": \"Khóa học kiểm thử Postman\",\n  \"description\": \"Dữ liệu do collection Course Service V2 tạo\",\n  \"level\": \"BEGINNER\",\n  \"language\": \"vi\",\n  \"price\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 - SectionController",
+      "item": [
+        {
+          "name": "03.1 Tạo chương",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"courseId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 201) {",
+                  "    pm.test(\"ID hợp lệ\", function () { pm.expect(body.data.id).to.be.a(\"number\").and.above(0); });",
+                  "if (body.data && Number.isInteger(body.data.id) && body.data.id > 0) { pm.collectionVariables.set(\"cs2_sectionId\", String(body.data.id)); }",
+                  "pm.test(\"Chương thuộc đúng khóa học\", function () { pm.expect(body.data.courseId).to.eql(Number(pm.collectionVariables.get(\"cs2_courseId\"))); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "http://127.0.0.1:8080/api/courses/{{cs2_courseId}}/sections",
+            "description": "Mong đợi HTTP 201.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Chương 1 - Nhập môn Java\",\n  \"position\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03.2 Xem chương trình học",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"sectionId\",\"courseId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"Có chương vừa tạo\", function () { pm.expect(body.data.some(function (s) { return s.id === Number(pm.collectionVariables.get(\"cs2_sectionId\")); })).to.eql(true); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/courses/{{cs2_courseId}}/curriculum",
+            "description": "Mong đợi HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "03.3 Sửa chương",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"sectionId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"Tên chương đã sửa\", function () { pm.expect(body.data.title).to.eql(\"Chương 1 - Java cơ bản\"); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "http://127.0.0.1:8080/api/sections/{{cs2_sectionId}}",
+            "description": "Mong đợi HTTP 200.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Chương 1 - Java cơ bản\",\n  \"position\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 - LessonController",
+      "item": [
+        {
+          "name": "04.1 Tạo bài học",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"sectionId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 201) {",
+                  "    pm.test(\"ID hợp lệ\", function () { pm.expect(body.data.id).to.be.a(\"number\").and.above(0); });",
+                  "if (body.data && Number.isInteger(body.data.id) && body.data.id > 0) { pm.collectionVariables.set(\"cs2_lessonId\", String(body.data.id)); }",
+                  "pm.test(\"Bài học thuộc đúng chương\", function () { pm.expect(body.data.sectionId).to.eql(Number(pm.collectionVariables.get(\"cs2_sectionId\"))); });",
+                  "  }",
+                  "}",
+                  "pm.test(\"Lưu nội dung bài học\", function () { pm.expect(pm.response.json().data.content).to.eql(\"Nội dung bài học kiểm thử Postman\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "http://127.0.0.1:8080/api/sections/{{cs2_sectionId}}/lessons",
+            "description": "Mong đợi HTTP 201.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Bài 1 - Giới thiệu Java\",\n  \"type\": \"VIDEO\",\n  \"durationSeconds\": 600,\n  \"position\": 1,\n  \"isPreview\": true,\n  \"content\": \"Nội dung bài học kiểm thử Postman\",\n  \"contentUrl\": \"https://example.com/course-demo.mp4\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04.2 Đọc bài học",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"lessonId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"Đúng lessonId\", function () { pm.expect(body.data.id).to.eql(Number(pm.collectionVariables.get(\"cs2_lessonId\"))); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/lessons/{{cs2_lessonId}}",
+            "description": "Mong đợi HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "04.3 Thêm tài liệu mẫu",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"lessonId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 201) {",
+                  "    pm.test(\"ID hợp lệ\", function () { pm.expect(body.data.id).to.be.a(\"number\").and.above(0); });",
+                  "if (body.data && Number.isInteger(body.data.id) && body.data.id > 0) { pm.collectionVariables.set(\"cs2_resourceId\", String(body.data.id)); }",
+                  "",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "http://127.0.0.1:8080/api/lessons/{{cs2_lessonId}}/resources",
+            "description": "Chỉ lưu URL mẫu, không tải file hoặc upload file.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Tài liệu mẫu Postman\",\n  \"fileUrl\": \"https://example.com/course-demo.pdf\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04.4 Đọc lại bài học có tài liệu",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"lessonId\",\"resourceId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"Tài liệu vừa thêm có trong bài học\", function () { pm.expect(body.data.resources.some(function (r) { return r.id === Number(pm.collectionVariables.get(\"cs2_resourceId\")); })).to.eql(true); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/lessons/{{cs2_lessonId}}",
+            "description": "Mong đợi HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "04.5 Sửa bài học và thời lượng",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"lessonId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"Thời lượng đã sửa\", function () { pm.expect(body.data.durationSeconds).to.eql(900); });",
+                  "  }",
+                  "}",
+                  "pm.test(\"Lưu nội dung bài học\", function () { pm.expect(pm.response.json().data.content).to.eql(\"Nội dung bài học kiểm thử Postman\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "http://127.0.0.1:8080/api/lessons/{{cs2_lessonId}}",
+            "description": "Mong đợi HTTP 200.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Bài 1 - Java đã cập nhật\",\n  \"type\": \"VIDEO\",\n  \"durationSeconds\": 900,\n  \"position\": 1,\n  \"isPreview\": true,\n  \"content\": \"Nội dung bài học kiểm thử Postman\",\n  \"contentUrl\": \"https://example.com/course-demo.mp4\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04.6 Kiểm tra số bài và tổng thời lượng",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"courseId\",\"lessonId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"Một bài học, tổng 900 giây\", function () { pm.expect(body.data.totalLessons).to.eql(1); pm.expect(body.data.totalDurationSeconds).to.eql(900); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/courses/{{cs2_courseId}}",
+            "description": "Mong đợi HTTP 200."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 - Xuất bản và đọc công khai",
+      "item": [
+        {
+          "name": "05.1 Xuất bản khóa học",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"courseId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"Đã xuất bản\", function () { pm.expect(body.data.status).to.eql(\"PUBLISHED\"); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "http://127.0.0.1:8080/api/courses/{{cs2_courseId}}/status",
+            "description": "Có thể kích hoạt course.updated. HTTP 200 không chứng minh Kafka đã nhận sự kiện.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"PUBLISHED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05.2 Khách xem khóa đã xuất bản",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"courseId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"Đúng courseId\", function () { pm.expect(body.data.id).to.eql(Number(pm.collectionVariables.get(\"cs2_courseId\"))); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/courses/{{cs2_courseId}}",
+            "description": "Mong đợi HTTP 200.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05.3 Tìm khóa đã xuất bản",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"categoryId\",\"courseId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"Có khóa thử trong kết quả tìm kiếm\", function () { pm.expect(body.data.content.some(function (c) { return c.id === Number(pm.collectionVariables.get(\"cs2_courseId\")); })).to.eql(true); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/courses?categoryId={{cs2_categoryId}}&level=BEGINNER&keyword=Java&page=0&size=10&sort=createdAt,desc",
+            "description": "Mong đợi HTTP 200.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05.4 Khách xem chương trình học",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"courseId\",\"sectionId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"Có chương và bài học\", function () { const s = body.data.find(function (x) { return x.id === Number(pm.collectionVariables.get(\"cs2_sectionId\")); }); pm.expect(s).to.be.an(\"object\"); pm.expect(s.lessons.some(function (x) { return x.id === Number(pm.collectionVariables.get(\"cs2_lessonId\")); })).to.eql(true); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/courses/{{cs2_courseId}}/curriculum",
+            "description": "Mong đợi HTTP 200.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05.5 Đọc bài preview không token",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/lessons/{{cs2_lessonId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Preview công khai HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Thấy nội dung và tài liệu preview\", function () { const d = pm.response.json().data; pm.expect(d.content).to.eql(\"Nội dung bài học kiểm thử Postman\"); pm.expect(d.contentUrl).to.eql(\"https://example.com/course-demo.mp4\"); pm.expect(d.resources).to.have.lengthOf(1); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "06 - Các tình huống lỗi",
+      "item": [
+        {
+          "name": "06.1 Thiếu token - 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", function () { pm.response.to.have.status(401); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(false);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    pm.expect(body.code).to.eql(\"UNAUTHORIZED\");",
+                  "  });",
+                  "  if (pm.response.code === 401) {",
+                  "    ",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "http://127.0.0.1:8080/api/categories",
+            "description": "Mong đợi HTTP 401.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Danh mục Demo {{cs2_runId}}\",\n  \"slug\": \"noauth-{{cs2_runId}}\",\n  \"description\": \"Dữ liệu kiểm thử course-service\",\n  \"position\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06.2 Thiếu tên danh mục - 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(false);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    pm.expect(body.code).to.eql(\"VALIDATION_FAILED\");",
+                  "  });",
+                  "  if (pm.response.code === 400) {",
+                  "    ",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "http://127.0.0.1:8080/api/categories",
+            "description": "Mong đợi HTTP 400.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"position\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06.3 Trùng slug danh mục - 409",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"categoryId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", function () { pm.response.to.have.status(409); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(false);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    pm.expect(body.code).to.eql(\"DUPLICATE_RESOURCE\");",
+                  "  });",
+                  "  if (pm.response.code === 409) {",
+                  "    ",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "http://127.0.0.1:8080/api/categories",
+            "description": "Mong đợi HTTP 409.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Danh mục Demo {{cs2_runId}}\",\n  \"slug\": \"course-demo-{{cs2_runId}}\",\n  \"description\": \"Dữ liệu kiểm thử course-service\",\n  \"position\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06.4 ID không tồn tại - 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", function () { pm.response.to.have.status(404); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(false);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    pm.expect(body.code).to.eql(\"RESOURCE_NOT_FOUND\");",
+                  "  });",
+                  "  if (pm.response.code === 404) {",
+                  "    ",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/categories/0",
+            "description": "Mong đợi HTTP 404."
+          },
+          "response": []
+        },
+        {
+          "name": "06.5 ID sai kiểu - 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(false);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    pm.expect(body.code).to.eql(\"BAD_REQUEST\");",
+                  "  });",
+                  "  if (pm.response.code === 400) {",
+                  "    ",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/categories/abc",
+            "description": "Mong đợi HTTP 400."
+          },
+          "response": []
+        },
+        {
+          "name": "06.6 Sắp xếp sai trường - 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(false);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    pm.expect(body.code).to.eql(\"BAD_REQUEST\");",
+                  "  });",
+                  "  if (pm.response.code === 400) {",
+                  "    ",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/categories?sort=fieldDoesNotExist,asc",
+            "description": "Mong đợi HTTP 400."
+          },
+          "response": []
+        },
+        {
+          "name": "06.7 Thiếu categoryId của khóa học - 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(false);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    pm.expect(body.code).to.eql(\"VALIDATION_FAILED\");",
+                  "  });",
+                  "  if (pm.response.code === 400) {",
+                  "    ",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "http://127.0.0.1:8080/api/courses",
+            "description": "Mong đợi HTTP 400.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Khóa học thiếu danh mục\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06.8 Trùng slug khóa học - 409",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"categoryId\",\"courseId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", function () { pm.response.to.have.status(409); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(false);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    pm.expect(body.code).to.eql(\"DUPLICATE_RESOURCE\");",
+                  "  });",
+                  "  if (pm.response.code === 409) {",
+                  "    ",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "http://127.0.0.1:8080/api/courses",
+            "description": "Mong đợi HTTP 409.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": {{cs2_categoryId}},\n  \"title\": \"Java Demo {{cs2_runId}}\",\n  \"slug\": \"java-demo-{{cs2_runId}}\",\n  \"summary\": \"Khóa học kiểm thử Postman\",\n  \"description\": \"Dữ liệu do collection Course Service V2 tạo\",\n  \"level\": \"BEGINNER\",\n  \"language\": \"vi\",\n  \"price\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06.9 Thiếu tiêu đề chương - 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(false);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    pm.expect(body.code).to.eql(\"VALIDATION_FAILED\");",
+                  "  });",
+                  "  if (pm.response.code === 400) {",
+                  "    ",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "http://127.0.0.1:8080/api/courses/{{cs2_courseId}}/sections",
+            "description": "Mong đợi HTTP 400.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06.10 Thời lượng bài học âm - 400",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"sectionId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(false);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    pm.expect(body.code).to.eql(\"VALIDATION_FAILED\");",
+                  "  });",
+                  "  if (pm.response.code === 400) {",
+                  "    ",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "http://127.0.0.1:8080/api/sections/{{cs2_sectionId}}/lessons",
+            "description": "Mong đợi HTTP 400.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Bài 1 - Giới thiệu Java\",\n  \"type\": \"VIDEO\",\n  \"durationSeconds\": -1,\n  \"position\": 1,\n  \"isPreview\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06.11 Không xóa khóa PUBLISHED - 422",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"courseId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 422\", function () { pm.response.to.have.status(422); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(false);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    pm.expect(body.code).to.eql(\"BUSINESS_RULE_VIOLATED\");",
+                  "  });",
+                  "  if (pm.response.code === 422) {",
+                  "    ",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/courses/{{cs2_courseId}}",
+            "description": "Kiểm quy tắc cấm xóa khóa đã xuất bản. Chỉ dùng ID khóa thử vừa tạo."
+          },
+          "response": []
+        },
+        {
+          "name": "06.12 Không xóa danh mục đang chứa khóa - 422",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"categoryId\",\"courseId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 422\", function () { pm.response.to.have.status(422); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(false);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    pm.expect(body.code).to.eql(\"BUSINESS_RULE_VIOLATED\");",
+                  "  });",
+                  "  if (pm.response.code === 422) {",
+                  "    ",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/categories/{{cs2_categoryId}}",
+            "description": "Mong đợi HTTP 422."
+          },
+          "response": []
+        },
+        {
+          "name": "06.13 Học viên không được tạo khóa - 403 (tùy chọn)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"categoryId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }",
+                  "",
+                  "if (!pm.variables.get(\"studentToken\")) { console.info(\"Bỏ qua ca 403: chưa có studentToken.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", function () { pm.response.to.have.status(403); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(false);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    pm.expect(body.code).to.eql(\"FORBIDDEN\");",
+                  "  });",
+                  "  if (pm.response.code === 403) {",
+                  "    ",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "http://127.0.0.1:8080/api/courses",
+            "description": "Điền studentToken là access token còn hạn của tài khoản chỉ có ROLE_STUDENT. Trống thì request được bỏ qua, không tính là đã kiểm tra 403.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": {{cs2_categoryId}},\n  \"title\": \"Java Demo {{cs2_runId}}\",\n  \"slug\": \"student-{{cs2_runId}}\",\n  \"summary\": \"Khóa học kiểm thử Postman\",\n  \"description\": \"Dữ liệu do collection Course Service V2 tạo\",\n  \"level\": \"BEGINNER\",\n  \"language\": \"vi\",\n  \"price\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "07 - Xóa dữ liệu thử (runCleanup=true)",
+      "description": "Chỉ xóa ID được collection tạo trong lượt đang giữ. Mặc định tắt. Chạy riêng folder này sau khi demo nếu muốn dọn dữ liệu.",
+      "item": [
+        {
+          "name": "07.1 Xóa tài liệu thử",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"resourceId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }",
+                  "",
+                  "if (String(pm.variables.get(\"runCleanup\")).toLowerCase() !== \"true\") { console.info(\"Bỏ qua dọn dữ liệu: runCleanup=false.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    ",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/lessons/{{cs2_lessonId}}/resources/{{cs2_resourceId}}",
+            "description": "Mong đợi HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "07.2 Xóa bài học thử",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"lessonId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }",
+                  "",
+                  "if (String(pm.variables.get(\"runCleanup\")).toLowerCase() !== \"true\") { console.info(\"Bỏ qua dọn dữ liệu: runCleanup=false.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    ",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/lessons/{{cs2_lessonId}}",
+            "description": "Mong đợi HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "07.3 Kiểm tra đã trừ thống kê bài học",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"courseId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }",
+                  "",
+                  "if (String(pm.variables.get(\"runCleanup\")).toLowerCase() !== \"true\") { console.info(\"Bỏ qua dọn dữ liệu: runCleanup=false.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"Không còn bài học\", function () { pm.expect(body.data.totalLessons).to.eql(0); pm.expect(body.data.totalDurationSeconds).to.eql(0); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/courses/{{cs2_courseId}}",
+            "description": "Mong đợi HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "07.4 Xóa chương thử",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"sectionId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }",
+                  "",
+                  "if (String(pm.variables.get(\"runCleanup\")).toLowerCase() !== \"true\") { console.info(\"Bỏ qua dọn dữ liệu: runCleanup=false.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    ",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/sections/{{cs2_sectionId}}",
+            "description": "Mong đợi HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "07.5 Đưa khóa thử về DRAFT để xóa",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"courseId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }",
+                  "",
+                  "if (String(pm.variables.get(\"runCleanup\")).toLowerCase() !== \"true\") { console.info(\"Bỏ qua dọn dữ liệu: runCleanup=false.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    pm.test(\"DRAFT\", function () { pm.expect(body.data.status).to.eql(\"DRAFT\"); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "http://127.0.0.1:8080/api/courses/{{cs2_courseId}}/status",
+            "description": "Mong đợi HTTP 200.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"DRAFT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07.6 Xóa khóa thử",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"courseId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }",
+                  "",
+                  "if (String(pm.variables.get(\"runCleanup\")).toLowerCase() !== \"true\") { console.info(\"Bỏ qua dọn dữ liệu: runCleanup=false.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    ",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/courses/{{cs2_courseId}}",
+            "description": "Mong đợi HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "07.7 Xóa danh mục thử",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"categoryId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }",
+                  "",
+                  "if (String(pm.variables.get(\"runCleanup\")).toLowerCase() !== \"true\") { console.info(\"Bỏ qua dọn dữ liệu: runCleanup=false.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(true);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    ",
+                  "  });",
+                  "  if (pm.response.code === 200) {",
+                  "    ",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/categories/{{cs2_categoryId}}",
+            "description": "Mong đợi HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "07.8 Xác nhận khóa thử đã xóa",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"courseId\"];",
+                  "if (required.some(function (key) { return !pm.collectionVariables.get(\"cs2_\" + key); })) { console.warn(\"Thiếu ID từ bước tạo trước đó. Chạy collection theo thứ tự.\"); pm.execution.skipRequest(); }",
+                  "",
+                  "if (String(pm.variables.get(\"runCleanup\")).toLowerCase() !== \"true\") { console.info(\"Bỏ qua dọn dữ liệu: runCleanup=false.\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", function () { pm.response.to.have.status(404); });",
+                  "let body;",
+                  "try { body = pm.response.json(); } catch (e) {",
+                  "  pm.test(\"Response phải là JSON\", function () { throw new Error(\"Response không phải JSON\"); });",
+                  "}",
+                  "if (body) {",
+                  "  pm.test(\"Response envelope\", function () {",
+                  "    pm.expect(body.success).to.eql(false);",
+                  "    pm.expect(body.timestamp).to.be.a(\"string\");",
+                  "    pm.expect(body.code).to.eql(\"RESOURCE_NOT_FOUND\");",
+                  "  });",
+                  "  if (pm.response.code === 404) {",
+                  "    ",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://127.0.0.1:8080/api/courses/{{cs2_courseId}}",
+            "description": "Mong đợi HTTP 404."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

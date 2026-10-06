@@ -71,7 +71,7 @@ echo "enrollment-service"
 check "GET /api/enrollments" 200 "${AUTH[@]}" "$GATEWAY/api/enrollments"
 
 echo "quiz-service"
-check "GET /api/quizzes/course/1" 200 "${AUTH[@]}" "$GATEWAY/api/quizzes/course/1"
+check "GET /api/quizzes?courseId=1" 200 "${AUTH[@]}" "$GATEWAY/api/quizzes?courseId=1"
 
 echo "notification-service"
 check "GET /api/notifications" 200 "${AUTH[@]}" "$GATEWAY/api/notifications"

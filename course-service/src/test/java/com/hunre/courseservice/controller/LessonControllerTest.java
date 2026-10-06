@@ -82,7 +82,7 @@ class LessonControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/lessons thành công trả về 201 Created khi là Giảng viên")
+    @DisplayName("POST /api/sections/{sectionId}/lessons thành công trả về 201 Created khi là Giảng viên")
     void createLesson_success() throws Exception {
         LessonResponse lesson = LessonResponse.builder()
                 .id(101L)
@@ -90,11 +90,10 @@ class LessonControllerTest {
                 .type(LessonType.VIDEO)
                 .build();
 
-        when(curriculumService.createLesson(any(CreateLessonRequest.class))).thenReturn(lesson);
+        when(curriculumService.createLesson(eq(1L), any(CreateLessonRequest.class), eq(1L), eq(false))).thenReturn(lesson);
 
         String json = """
                 {
-                    "sectionId": 1,
                     "title": "Bài 2: Hướng dẫn code",
                     "type": "VIDEO",
                     "durationSeconds": 300,
@@ -102,7 +101,7 @@ class LessonControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/lessons")
+        mockMvc.perform(post("/api/sections/1/lessons")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
@@ -113,16 +112,15 @@ class LessonControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/lessons bị chặn 403 khi là Học viên")
+    @DisplayName("POST /api/sections/{sectionId}/lessons bị chặn 403 khi là Học viên")
     void createLesson_whenStudent_returnsForbidden403() throws Exception {
         String json = """
                 {
-                    "sectionId": 1,
                     "title": "Bài 2"
                 }
                 """;
 
-        mockMvc.perform(post("/api/lessons")
+        mockMvc.perform(post("/api/sections/1/lessons")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, student)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
@@ -140,7 +138,7 @@ class LessonControllerTest {
                 .fileUrl("https://storage.elearning.com/ref.pdf")
                 .build();
 
-        when(curriculumService.addResource(eq(100L), any(CreateLessonResourceRequest.class))).thenReturn(resource);
+        when(curriculumService.addResource(eq(100L), any(CreateLessonResourceRequest.class), eq(1L), eq(false))).thenReturn(resource);
 
         String json = """
                 {
@@ -168,7 +166,7 @@ class LessonControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Đã xóa bài học"));
 
-        verify(curriculumService).deleteLesson(eq(100L));
+        verify(curriculumService).deleteLesson(eq(100L), eq(1L), eq(false));
     }
 
     @Test
