@@ -40,7 +40,7 @@ public class OutboxEvent {
     @Column(name = "event_type", nullable = false, length = 80)
     private String eventType;
 
-    @Column(name = "payload", nullable = false, columnDefinition = "JSON")
+    @Column(name = "payload", nullable = false, columnDefinition = "LONGTEXT")
     private String payload;
 
     @Column(name = "published_at")
