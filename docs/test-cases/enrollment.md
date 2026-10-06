@@ -5,12 +5,12 @@ Mọi request qua `{{baseUrl}}`. **Kế hoạch chưa chạy Postman.**
 
 ## Điều kiện và đường dẫn
 
-Consumer `course.updated` nạp `course_snapshots` còn **[CHỜ SỬA]**. Xuất bản khóa có hai bài,
+Consumer `course.updated` nạp `course_snapshots` đã được triển khai trong nhánh này. Xuất bản khóa có hai bài,
 đợi snapshot đồng bộ trước ca ghi danh thành công. Nếu khóa tồn tại bên course nhưng chưa
 có snapshot, ghi BLOCKED cho ca ghi danh/tiến độ/chứng chỉ; không coi 404 đó là PASS.
 Không tự ghi SQL vào snapshot để che thiếu consumer.
 
-| Hiện tại | Đường dẫn đích dùng trong bảng |
+| Đường dẫn cũ đã bỏ | Đường dẫn hiện tại dùng trong bảng |
 |---|---|
 | GET /api/enrollments/my-courses | GET /api/enrollments |
 | PATCH /api/enrollments/{id}/cancel | PATCH /api/enrollments/{id}/status + {"status":"CANCELLED"} |
@@ -18,7 +18,7 @@ Không tự ghi SQL vào snapshot để che thiếu consumer.
 | POST /api/progress/lesson | PUT /api/lessons/{lessonId}/progress |
 | GET /api/progress/course/{id} | GET /api/progress?courseId={id} |
 
-Các route trên **[CHỜ ROUTE]**. Route PUT tiến độ phải đến enrollment-service, không bị
+Các route trên đã có trong nhánh này. Route PUT tiến độ phải đến enrollment-service, không bị
 `/api/lessons/**` của course-service bắt trước. ID lesson chuyển từ body sang path; body vẫn
 có courseId cho đến khi nhóm chốt hợp đồng khác.
 
@@ -56,7 +56,7 @@ hoàn thành bài 2 → 100, trạng thái COMPLETED và có chứng chỉ.
 | 10 | Khóa bỏ xuất bản đã đồng bộ | S | Với khóa chưa ghi danh, A xuất bản rồi ARCHIVED; đợi snapshot cập nhật; POST khóa đó | 404; DefaultCourseClient lọc bỏ snapshot không PUBLISHED trước khi service kiểm trạng thái; chưa đồng bộ thì BLOCKED |
 | 11 | Thông báo ghi danh | S | Sau ca 1, GET /api/notifications theo thời hạn gateway.md | GET 200; đúng một thông báo ghi danh khóa tương ứng |
 
-## ENROLL-02 — GET /api/enrollments [CHỜ ROUTE]
+## ENROLL-02 — GET /api/enrollments
 
 | # | Tình huống | Tài khoản | Request | Mong đợi |
 |---|---|---|---|---|
@@ -84,7 +84,7 @@ Pageable có thể tự dùng mặc định. Hai ca sort kiểm nhánh sai thu�
 | 6 | ID sai kiểu | S | GET /api/enrollments/abc | 400 |
 | 7 | Đọc lượt đã hủy của mình | S | GET ID của S có status=CANCELLED | 200; status=CANCELLED |
 
-## ENROLL-04 — PATCH /api/enrollments/{id}/status [CHỜ ROUTE]
+## ENROLL-04 — PATCH /api/enrollments/{id}/status
 
 | # | Tình huống | Tài khoản | Request | Mong đợi |
 |---|---|---|---|---|
@@ -95,13 +95,13 @@ Pageable có thể tự dùng mặc định. Hai ca sort kiểm nhánh sai thu�
 | 5 | ID sai kiểu | S | PATCH /api/enrollments/abc/status + body hợp lệ | 400 |
 | 6 | Hủy khóa đã hoàn thành | S | PATCH lượt COMPLETED của S, status=CANCELLED | 422; giữ trạng thái COMPLETED |
 | 7 | Hủy lại | S | Gửi lại cho lượt đã CANCELLED | 200; vẫn CANCELLED |
-| 8 | Enum sai/thiếu [CẦN CHỐT DTO mới] | S | Lần lượt {"status":"UNKNOWN"}, {} | 400 theo quy ước validation |
-| 9 | Tự cấp hoàn thành [CẦN CHỐT] | S | PATCH lượt ACTIVE, {"status":"COMPLETED"} | 422 đề xuất; không cho tự nhận chứng chỉ |
+| 8 | Enum sai/thiếu | S | Lần lượt {"status":"UNKNOWN"}, {} | 400 theo quy ước validation |
+| 9 | Tự cấp hoàn thành | S | PATCH lượt ACTIVE, {"status":"COMPLETED"} | 422; không cho tự nhận chứng chỉ |
 
 Đích chuẩn hóa chỉ thay thao tác cancel hiện có; không mặc nhiên mở mọi chuyển trạng thái.
-Ca 9 yêu cầu nhóm enrollment chốt mã lỗi trước đợt chạy.
+Ca 9 đã chốt 422 trong API và kiểm thử tự động; ACTIVE cũng bị từ chối qua PATCH.
 
-## ENROLL-05 — DELETE /api/enrollments?courseId={id} [CHỜ ROUTE]
+## ENROLL-05 — DELETE /api/enrollments?courseId={id}
 
 | # | Tình huống | Tài khoản | Request | Mong đợi |
 |---|---|---|---|---|
@@ -129,7 +129,7 @@ Ca 9 yêu cầu nhóm enrollment chốt mã lỗi trước đợt chạy.
 
 Không yêu cầu fileUrl luôn có PDF: hiện hệ thống có mã chứng chỉ, chưa có luồng dựng/tải PDF.
 
-## ENROLL-07 — PUT /api/lessons/{lessonId}/progress [CHỜ ROUTE]
+## ENROLL-07 — PUT /api/lessons/{lessonId}/progress
 
 | # | Tình huống | Tài khoản | Request | Mong đợi |
 |---|---|---|---|---|
@@ -145,12 +145,12 @@ Không yêu cầu fileUrl luôn có PDF: hiện hệ thống có mã chứng ch�
 | 10 | Hoàn thành bài cuối | S | PUT /api/lessons/{{lesson2Id}}/progress + ENROLL-PROGRESS | 200; GET tiến độ 200, 100%, COMPLETED; GET certificate 200 |
 | 11 | Giây xem không giảm | S | Đã xem 60, PUT watchedSeconds=10, cùng status | 200; watchedSeconds vẫn 60 |
 | 12 | Giả danh trong body | B (đã ghi danh) | ENROLL-PROGRESS thêm userId=studentId | 200; chỉ tiến độ B thay đổi |
-| 13 | Bài không tồn tại hoặc khác khóa [CẦN CHỐT] | S | PUT missingId hoặc bài khóa B với courseId khóa A | 404 đề xuất; không tăng tiến độ; code hiện chưa kiểm lesson thuộc course |
+| 13 | Bài không tồn tại hoặc khác khóa | S | PUT missingId hoặc bài khóa B với courseId khóa A | 404; không tăng tiến độ; CourseLessonClient kiểm bài học thuộc đúng khóa |
 
-Ca 13 là lỗ hổng phát hiện khi đọc service, chưa có hợp đồng client kiểm lesson; ghi BLOCKED
-cho nghiệm thu cho đến khi chủ service chốt/sửa, không coi việc tăng điểm bằng ID bịa là đúng.
+Ca 13 đã có client kiểm bài học qua course-service và test tự động. Khi course-service
+không truy cập được, API trả 502 và không ghi tiến độ. Vẫn cần chạy ca này qua gateway thật.
 
-## ENROLL-08 — GET /api/progress?courseId={id} [CHỜ ROUTE]
+## ENROLL-08 — GET /api/progress?courseId={id}
 
 | # | Tình huống | Tài khoản | Request | Mong đợi |
 |---|---|---|---|---|

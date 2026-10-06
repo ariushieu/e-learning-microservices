@@ -4,6 +4,7 @@ import com.hunre.quizservice.dto.CreateQuizRequest;
 import com.hunre.quizservice.dto.QuizDetailResponse;
 import com.hunre.quizservice.dto.QuizResponse;
 import com.hunre.quizservice.dto.UpdateQuizRequest;
+import com.hunre.quizservice.dto.UpdateQuizStatusRequest;
 import com.hunre.quizservice.service.QuizService;
 import com.hunre.sharedcommon.dto.ApiResponse;
 import com.hunre.sharedcommon.exception.BusinessException;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -51,16 +53,18 @@ public class QuizController {
         return ApiResponse.ok(quizService.updateQuiz(id, request), "Cập nhật bài kiểm tra thành công");
     }
 
-    @PatchMapping("/{id}/publish")
-    public ApiResponse<QuizResponse> publishQuiz(@PathVariable Long id, AuthenticatedUser user) {
+    @PatchMapping("/{id}/status")
+    public ApiResponse<QuizResponse> updateStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateQuizStatusRequest request,
+            AuthenticatedUser user) {
         requireQuizManager(user);
-        return ApiResponse.ok(quizService.publishQuiz(id), "Xuất bản bài kiểm tra thành công");
-    }
-
-    @PatchMapping("/{id}/archive")
-    public ApiResponse<QuizResponse> archiveQuiz(@PathVariable Long id, AuthenticatedUser user) {
-        requireQuizManager(user);
-        return ApiResponse.ok(quizService.archiveQuiz(id), "Lưu trữ bài kiểm tra thành công");
+        return switch (request.status()) {
+            case PUBLISHED -> ApiResponse.ok(quizService.publishQuiz(id), "Xuất bản bài kiểm tra thành công");
+            case ARCHIVED -> ApiResponse.ok(quizService.archiveQuiz(id), "Lưu trữ bài kiểm tra thành công");
+            case DRAFT -> throw new BusinessException(ErrorCode.BUSINESS_RULE_VIOLATED,
+                    "Chỉ hỗ trợ chuyển trạng thái sang PUBLISHED hoặc ARCHIVED");
+        };
     }
 
     @GetMapping("/{id}")
@@ -76,8 +80,8 @@ public class QuizController {
         return ApiResponse.ok(quizService.getQuizForStudent(id));
     }
 
-    @GetMapping("/course/{courseId}")
-    public ApiResponse<List<QuizResponse>> getQuizzesByCourse(@PathVariable Long courseId) {
+    @GetMapping
+    public ApiResponse<List<QuizResponse>> getQuizzesByCourse(@RequestParam Long courseId) {
         return ApiResponse.ok(quizService.getQuizzesByCourse(courseId));
     }
 

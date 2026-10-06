@@ -7,6 +7,7 @@ import com.hunre.quizservice.entity.QuizStatus;
 import com.hunre.quizservice.service.QuizService;
 import com.hunre.quizservice.dto.QuizDetailResponse;
 import com.hunre.sharedcommon.exception.GlobalExceptionHandler;
+import com.hunre.sharedcommon.exception.ResourceNotFoundException;
 import com.hunre.sharedcommon.security.AuthenticatedUser;
 import com.hunre.sharedcommon.security.AuthenticatedUserArgumentResolver;
 import com.hunre.sharedcommon.security.JwtAuthenticationFilter;
@@ -15,6 +16,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -232,13 +235,17 @@ class QuizControllerTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));
 
-        mockMvc.perform(patch("/api/quizzes/1/publish")
-                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, student))
+        mockMvc.perform(patch("/api/quizzes/1/status")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, student)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"PUBLISHED\"}"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));
 
-        mockMvc.perform(patch("/api/quizzes/1/archive")
-                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, student))
+        mockMvc.perform(patch("/api/quizzes/1/status")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, student)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"ARCHIVED\"}"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));
 
@@ -247,6 +254,82 @@ class QuizControllerTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));
 
+        verifyNoInteractions(quizService);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Roles.INSTRUCTOR, Roles.ADMIN})
+    void updateStatus_allowsManagers(String role) throws Exception {
+        AuthenticatedUser manager = new AuthenticatedUser(1L, "manager@example.com", "Manager", Set.of(role));
+        when(quizService.publishQuiz(1L)).thenReturn(QuizResponse.builder().id(1L).status(QuizStatus.PUBLISHED).build());
+        when(quizService.archiveQuiz(1L)).thenReturn(QuizResponse.builder().id(1L).status(QuizStatus.ARCHIVED).build());
+
+        for (String target : new String[]{"PUBLISHED", "ARCHIVED"}) {
+            mockMvc.perform(patch("/api/quizzes/1/status")
+                            .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, manager)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"status\":\"" + target + "\"}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.status").value(target));
+        }
+        verify(quizService).publishQuiz(1L);
+        verify(quizService).archiveQuiz(1L);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"{}", "{\"status\":null}", "{\"status\":\"UNKNOWN\"}", "{\"status\":42}"})
+    void updateStatus_rejectsInvalidBody(String body) throws Exception {
+        mockMvc.perform(patch("/api/quizzes/1/status")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor)
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(quizService);
+    }
+
+    @Test
+    void updateStatus_cannotResetQuizToDraft() throws Exception {
+        mockMvc.perform(patch("/api/quizzes/1/status")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"DRAFT\"}"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("BUSINESS_RULE_VIOLATED"));
+        verifyNoInteractions(quizService);
+    }
+
+    @Test
+    void updateStatus_requiresAuthenticatedUser() throws Exception {
+        mockMvc.perform(patch("/api/quizzes/1/status")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"PUBLISHED\"}"))
+                .andExpect(status().isUnauthorized());
+        verifyNoInteractions(quizService);
+    }
+
+    @Test
+    void updateStatus_missingQuizIs404() throws Exception {
+        when(quizService.publishQuiz(999L)).thenThrow(new ResourceNotFoundException("quiz", "id", 999L));
+        mockMvc.perform(patch("/api/quizzes/999/status")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"PUBLISHED\"}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getQuizzes_filtersByCourseQueryParameter() throws Exception {
+        when(quizService.getQuizzesByCourse(10L)).thenReturn(Collections.emptyList());
+        mockMvc.perform(get("/api/quizzes").param("courseId", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").isArray());
+        verify(quizService).getQuizzesByCourse(10L);
+    }
+
+    @Test
+    void newRoutes_rejectMissingOrMalformedIds() throws Exception {
+        mockMvc.perform(get("/api/quizzes")).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/quizzes").param("courseId", "abc")).andExpect(status().isBadRequest());
+        mockMvc.perform(patch("/api/quizzes/abc/status")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"PUBLISHED\"}"))
+                .andExpect(status().isBadRequest());
         verifyNoInteractions(quizService);
     }
 }

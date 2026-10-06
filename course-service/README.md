@@ -62,7 +62,7 @@ Khi xóa tài liệu, `resourceId` phải thuộc đúng `lessonId` trong URL; s
 ## Kiểm tra ghi danh
 
 Course-service sử dụng API đọc hiện có của enrollment-service:
-`GET /api/enrollments/my-courses?page=0&size=100&sort=id,asc`.
+`GET /api/enrollments?page=0&size=100&sort=id,asc`.
 Nó chuyển tiếp Bearer token của người gọi, đối chiếu cả `userId`, `courseId` và
 trạng thái, đọc tiếp trang sau khi cần. Không nhận user ID do client tự truyền,
 không truy cập database của enrollment-service, không dùng API tiến độ có tác dụng
@@ -72,7 +72,7 @@ cập nhật dữ liệu. Một lần đọc curriculum chỉ kiểm tra ghi dan
 | Biến môi trường | Mặc định chạy local |
 |---|---|
 | `ENROLLMENT_SERVICE_URL` | `http://localhost:8083` |
-| `ENROLLMENT_LIST_PATH` | `/api/enrollments/my-courses` |
+| `ENROLLMENT_LIST_PATH` | `/api/enrollments` |
 | `ENROLLMENT_TIMEOUT_MS` | `2000` |
 
 Docker Compose đặt URL thành `http://enrollment-service:8083`. Deadline 2 giây áp
@@ -90,8 +90,9 @@ dung. Nếu service đích lỗi, phản hồi sai cấu trúc hoặc timeout:
 Chỉ lỗi `EXTERNAL_SERVICE_ERROR` được xử lý như trên khi đọc đề cương. Các lỗi
 nghiệp vụ khác vẫn được trả về; chủ khóa học và admin không cần gọi kiểm tra ghi danh.
 
-Khi nhánh enrollment-service đổi API danh sách thành `GET /api/enrollments` theo
-bảng phân công, cần đổi `ENROLLMENT_LIST_PATH=/api/enrollments` cùng lần triển khai.
+Triển khai course-service cùng enrollment-service và gateway có API chuẩn hóa.
+Nếu môi trường đang ghi đè đường dẫn cũ, đổi `ENROLLMENT_LIST_PATH=/api/enrollments`
+hoặc bỏ biến này để dùng mặc định mới.
 Không tự chuyển sang đường dẫn khác khi gặp 404 để tránh che lỗi cấu hình.
 
 ## Kiểm tra
@@ -106,6 +107,10 @@ bash scripts/verify-schema.sh
 bật xác thực JWT để kiểm tra tám thao tác ghi, quyền đọc, ID cha/con, bộ lọc và dữ
 liệu sau khi request bị từ chối. `EnrollmentAccessClientTest` dùng HTTP server cục
 bộ để kiểm tra phân trang, token, ghi danh hủy, timeout, redirect và lỗi phản hồi.
+`EnrollmentContentAccessIntegrationTest` dùng JWT, MVC, H2 và client HTTP thật với
+enrollment backend giả lập để kiểm tra đường dẫn cấu hình, chuyển tiếp token và
+quyền đọc bài học/đề cương của ghi danh ACTIVE, COMPLETED, CANCELLED hoặc chưa ghi danh.
+Test cũng đối chiếu đường dẫn mặc định production với cấu hình đã kiểm thử.
 
 Collection cập nhật: `docs/postman/course-service-v2.postman_collection.json` cùng
 environment V2. Import lại collection, chọn environment, nhập mật khẩu rồi chạy

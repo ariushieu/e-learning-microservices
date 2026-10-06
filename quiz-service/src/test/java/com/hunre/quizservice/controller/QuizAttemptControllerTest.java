@@ -8,6 +8,7 @@ import com.hunre.quizservice.dto.SubmitQuizAttemptRequest;
 import com.hunre.quizservice.entity.AttemptStatus;
 import com.hunre.quizservice.service.QuizAttemptService;
 import com.hunre.sharedcommon.exception.GlobalExceptionHandler;
+import com.hunre.sharedcommon.exception.ResourceNotFoundException;
 import com.hunre.sharedcommon.security.AuthenticatedUser;
 import com.hunre.sharedcommon.security.AuthenticatedUserArgumentResolver;
 import com.hunre.sharedcommon.security.JwtAuthenticationFilter;
@@ -31,6 +32,7 @@ import java.util.Set;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -50,10 +52,13 @@ class QuizAttemptControllerTest {
     @InjectMocks
     private QuizAttemptController quizAttemptController;
 
+    @InjectMocks
+    private AttemptController attemptController;
+
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
-                .standaloneSetup(quizAttemptController)
+                .standaloneSetup(quizAttemptController, attemptController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new AuthenticatedUserArgumentResolver())
                 .build();
@@ -89,7 +94,7 @@ class QuizAttemptControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/quizzes/attempts/{attemptId}/submit: Nộp bài thành công")
+    @DisplayName("POST /api/attempts/{attemptId}/submit: Nộp bài thành công")
     void submitAttempt_success() throws Exception {
         SubmitQuizAttemptRequest request = SubmitQuizAttemptRequest.builder()
                 .answers(List.of(
@@ -114,7 +119,7 @@ class QuizAttemptControllerTest {
         when(quizAttemptService.submitAttempt(eq(100L), eq(4L), any(SubmitQuizAttemptRequest.class)))
                 .thenReturn(resultResponse);
 
-        mockMvc.perform(post("/api/quizzes/attempts/100/submit")
+        mockMvc.perform(post("/api/attempts/100/submit")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, studentB)
                         .param("userId", "3")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -128,7 +133,7 @@ class QuizAttemptControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/quizzes/attempts/{attemptId}: Chỉ đọc kết quả của user trong token")
+    @DisplayName("GET /api/attempts/{attemptId}: Chỉ đọc kết quả của user trong token")
     void getAttemptResult_usesAuthenticatedUserId() throws Exception {
         QuizResultResponse response = QuizResultResponse.builder()
                 .attemptId(100L)
@@ -140,7 +145,7 @@ class QuizAttemptControllerTest {
 
         when(quizAttemptService.getAttemptResult(100L, 4L)).thenReturn(response);
 
-        mockMvc.perform(get("/api/quizzes/attempts/100")
+        mockMvc.perform(get("/api/attempts/100")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, studentB)
                         .param("userId", "3"))
                 .andExpect(status().isOk())
@@ -151,7 +156,7 @@ class QuizAttemptControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/quizzes/{quizId}/attempts/history: Chỉ đọc lịch sử của user trong token")
+    @DisplayName("GET /api/quizzes/{quizId}/attempts: Chỉ đọc lịch sử của user trong token")
     void getMyAttempts_usesAuthenticatedUserId() throws Exception {
         QuizAttemptResponse response = QuizAttemptResponse.builder()
                 .id(100L)
@@ -163,7 +168,7 @@ class QuizAttemptControllerTest {
 
         when(quizAttemptService.getUserAttempts(1L, 4L)).thenReturn(List.of(response));
 
-        mockMvc.perform(get("/api/quizzes/1/attempts/history")
+        mockMvc.perform(get("/api/quizzes/1/attempts")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, studentB)
                         .param("userId", "3"))
                 .andExpect(status().isOk())
@@ -171,5 +176,37 @@ class QuizAttemptControllerTest {
                 .andExpect(jsonPath("$.data[0].userId").value(4L));
 
         verify(quizAttemptService).getUserAttempts(1L, 4L);
+    }
+
+    @Test
+    void attemptNotOwnedByCaller_returns404() throws Exception {
+        when(quizAttemptService.getAttemptResult(100L, 4L))
+                .thenThrow(new ResourceNotFoundException("attempt", "id", 100L));
+        mockMvc.perform(get("/api/attempts/100")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, studentB)
+                        .param("userId", "3"))
+                .andExpect(status().isNotFound());
+        verify(quizAttemptService).getAttemptResult(100L, 4L);
+    }
+
+    @Test
+    void newAttemptRoutes_requireIdentity() throws Exception {
+        mockMvc.perform(get("/api/attempts/100")).andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/attempts/100/submit")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"answers\":[]}"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/quizzes/1/attempts")).andExpect(status().isUnauthorized());
+        verifyNoInteractions(quizAttemptService);
+    }
+
+    @Test
+    void newAttemptRoutes_rejectMalformedIds() throws Exception {
+        mockMvc.perform(get("/api/attempts/abc")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, studentB))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/quizzes/abc/attempts")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, studentB))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(quizAttemptService);
     }
 }
