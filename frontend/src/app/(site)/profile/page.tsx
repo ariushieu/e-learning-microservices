@@ -1,17 +1,27 @@
-import { BookOpenIcon, GraduationCapIcon } from "lucide-react";
+import { AwardIcon, BookOpenIcon, InfoIcon, type LucideIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PageHeader } from "@/components/common/page-header";
-import { Stat } from "@/components/common/stat";
+import { RoleBadges } from "@/components/auth/role-badge";
+import { Callout } from "@/components/common/callout";
+import { Fact, FactList } from "@/components/common/fact-list";
+import { FormSection } from "@/components/common/form-field";
+import { IconTile } from "@/components/common/icon-tile";
+import { FormPage } from "@/components/templates/form-page";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDay, initials, label } from "@/lib/format";
+import { Card, CardContent } from "@/components/ui/card";
+import { formatDate, initials } from "@/lib/format";
 import { gateway } from "@/lib/server/gateway";
 import type { Enrollment, Page, User } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Hồ sơ" };
+
+// LABELS dùng ACTIVE = "Đang học" cho ghi danh, nên trạng thái tài khoản cần nhãn riêng.
+const ACCOUNT_STATUS: Record<User["status"], string> = {
+  ACTIVE: "Đang hoạt động",
+  PENDING: "Chờ kích hoạt",
+  LOCKED: "Đã khóa",
+};
 
 export default async function ProfilePage() {
   const [me, enrollments] = await Promise.all([
@@ -21,63 +31,73 @@ export default async function ProfilePage() {
   const completed = enrollments?.content.filter((e) => e.status === "COMPLETED").length ?? 0;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <PageHeader title="Hồ sơ của tôi" />
+    <FormPage
+      title="Hồ sơ của tôi"
+      description="Thông tin tài khoản HUNRE E-Learning của bạn."
+      actions={
+        <Button asChild variant="outline" size="lg">
+          <Link href="/my-courses">Khóa học của tôi</Link>
+        </Button>
+      }
+    >
       <Card>
-        <CardContent className="flex flex-wrap items-center gap-5">
-          <Avatar className="size-16">
-            <AvatarFallback className="bg-primary/10 text-lg font-semibold text-primary">{initials(me.fullName)}</AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-semibold">{me.fullName}</h2>
-            <p className="text-muted-foreground">{me.email}</p>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {me.roles.map((r) => (
-                <Badge key={r} variant="secondary">
-                  {label(r)}
-                </Badge>
-              ))}
+        <CardContent className="flex flex-col gap-6 md:flex-row md:items-center">
+          <div className="flex min-w-0 flex-1 items-center gap-4 sm:gap-5">
+            <Avatar className="size-16 sm:size-20">
+              <AvatarFallback className="bg-primary-soft text-xl font-semibold text-primary-strong sm:text-2xl">{initials(me.fullName)}</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 space-y-1.5">
+              <h2 className="truncate text-heading">{me.fullName}</h2>
+              <p className="truncate text-muted-foreground">{me.email}</p>
+              <RoleBadges roles={me.roles} />
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Stat label="Khóa đã ghi danh" value={enrollments?.totalElements ?? 0} icon={BookOpenIcon} />
-        <Stat label="Đã hoàn thành" value={completed} icon={GraduationCapIcon} />
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Thông tin tài khoản</CardTitle>
-          <CardDescription>
-            Cần quyền giảng viên? Gửi <b>mã người dùng</b> bên dưới cho quản trị viên, rồi đăng nhập lại sau khi được cấp quyền.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid gap-x-8 gap-y-4 text-sm sm:grid-cols-2">
-            <Info label="Mã người dùng" value={`#${me.id}`} />
-            <Info label="Số điện thoại" value={me.phone || "Chưa có"} />
-            <Info label="Ngày tham gia" value={formatDay(me.createdAt)} />
-            <Info label="Trạng thái" value={me.status === "ACTIVE" ? "Đang hoạt động" : me.status} />
+          <dl className="grid shrink-0 grid-cols-2 gap-3 border-t pt-5 md:border-t-0 md:border-l md:pt-0 md:pl-6">
+            <MiniStat icon={BookOpenIcon} label="Khóa đã ghi danh" value={enrollments?.totalElements ?? 0} />
+            <MiniStat icon={AwardIcon} tone="achievement" label="Đã hoàn thành" value={completed} />
           </dl>
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
-        <Button asChild variant="outline" size="lg">
-          <Link href="/my-courses">Khóa học của tôi</Link>
-        </Button>
-      </div>
-    </div>
+      <Callout icon={InfoIcon} tone="info" title="Sắp có: sửa hồ sơ và đổi mật khẩu">
+        Hiện bạn chỉ xem được thông tin. Cần sửa gấp, hãy liên hệ quản trị viên.
+      </Callout>
+
+      <FormSection title="Thông tin cá nhân" description="Họ tên và liên hệ hiển thị cho giảng viên của khóa bạn học.">
+        <FactList>
+          <Fact label="Họ tên" value={me.fullName} />
+          <Fact label="Email" value={<span className="break-all">{me.email}</span>} />
+          <Fact label="Số điện thoại" value={me.phone || <span className="font-normal text-muted-foreground">Chưa có</span>} />
+        </FactList>
+      </FormSection>
+
+      <FormSection
+        title="Tài khoản"
+        description="Cần quyền giảng viên? Gửi mã người dùng cho quản trị viên, rồi đăng nhập lại sau khi được cấp quyền."
+      >
+        <FactList>
+          <Fact
+            label="Mã người dùng"
+            value={<span className="font-mono select-all">#{me.id}</span>}
+            hint="Gửi mã này cho quản trị viên khi cần cấp quyền"
+          />
+          <Fact label="Vai trò" value={<RoleBadges roles={me.roles} className="justify-end" />} />
+          <Fact label="Trạng thái" value={ACCOUNT_STATUS[me.status] ?? me.status} />
+          <Fact label="Ngày tạo" value={formatDate(me.createdAt)} />
+        </FactList>
+      </FormSection>
+    </FormPage>
   );
 }
 
-function Info({ label, value }: { label: string; value: string }) {
+function MiniStat({ icon, label, value, tone = "primary" }: { icon: LucideIcon; label: string; value: number; tone?: "primary" | "achievement" }) {
   return (
-    <div className="flex justify-between gap-4 border-b pb-3 sm:block sm:border-0 sm:pb-0">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="font-medium">{value}</dd>
+    <div className="flex items-center gap-3">
+      <IconTile icon={icon} tone={tone} size="sm" />
+      <div className="flex flex-col-reverse">
+        <dt className="text-caption text-muted-foreground">{label}</dt>
+        <dd className="text-lg leading-tight font-semibold tabular-nums">{value}</dd>
+      </div>
     </div>
   );
 }

@@ -1,10 +1,12 @@
 "use client";
 
-import { Loader2Icon, UserCheckIcon } from "lucide-react";
+import { CircleCheckIcon, Loader2Icon, UserCheckIcon } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
+import { RoleBadges } from "@/components/auth/role-badge";
 import { ErrorAlert } from "@/components/common/error-alert";
 import { FieldError } from "@/components/common/field-error";
+import { FieldHint, FormActions, FormField, FormSection } from "@/components/common/form-field";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,13 +17,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { api } from "@/lib/client";
-import { label } from "@/lib/format";
+import { initials, label } from "@/lib/format";
 import { fieldErrorMap, formErrorMessage } from "@/lib/forms";
 import type { Role, User } from "@/lib/types";
 
@@ -71,50 +72,44 @@ export function UserRolesForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
+    <form onSubmit={onSubmit} className="max-w-4xl space-y-8">
       {error && <ErrorAlert message={error} />}
-      <div className="space-y-2">
-        <Label htmlFor="userId">Mã người dùng</Label>
-        <Input id="userId" inputMode="numeric" value={userId} onChange={(e) => setUserId(e.target.value)} placeholder="VD: 12" className="max-w-40" />
-        <p className="text-xs text-muted-foreground">Người dùng xem mã của mình ở trang Hồ sơ.</p>
-        <FieldError message={errors.userId} />
-      </div>
 
-      <div className="space-y-3">
-        <Label>Vai trò</Label>
-        <div className="grid gap-2">
-          {ROLES.map((r) => (
-            <label key={r.value} className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50 has-[[data-state=checked]]:border-primary/40 has-[[data-state=checked]]:bg-primary/5">
-              <Checkbox checked={roles.includes(r.value)} onCheckedChange={(c) => toggle(r.value, c === true)} className="mt-0.5" />
-              <span>
-                <span className="block text-sm font-medium">{label(r.value)}</span>
-                <span className="block text-xs text-muted-foreground">{r.hint}</span>
-              </span>
-            </label>
-          ))}
-        </div>
-        <FieldError message={errors.roles} />
-        <p className="text-xs text-muted-foreground">Vai trò được thay thế toàn bộ. Người dùng phải đăng nhập lại để nhận vai trò mới.</p>
-      </div>
+      <FormSection title="Tài khoản" description="Backend chưa có tìm kiếm người dùng: nhập mã mà người đó xem được ở trang Hồ sơ.">
+        <FormField id="userId" label="Mã người dùng" hint="Người dùng xem mã của mình ở trang Hồ sơ." error={errors.userId}>
+          <Input id="userId" inputMode="numeric" value={userId} onChange={(e) => setUserId(e.target.value)} placeholder="VD: 12" className="max-w-40" />
+        </FormField>
+        {result && <UpdatedUser user={result} />}
+      </FormSection>
 
-      <Button type="submit" size="lg" disabled={pending}>
-        {pending ? <Loader2Icon className="animate-spin" /> : <UserCheckIcon />} Cập nhật vai trò
-      </Button>
-
-      {result && (
-        <div className="rounded-lg border bg-muted/40 p-4 text-sm">
-          <p className="font-medium">
-            {result.fullName} <span className="font-normal text-muted-foreground">· {result.email}</span>
-          </p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {result.roles.map((r) => (
-              <Badge key={r} variant="secondary">
-                {label(r)}
-              </Badge>
+      <FormSection title="Vai trò" description="Vai trò được thay thế toàn bộ. Người dùng phải đăng nhập lại để nhận vai trò mới.">
+        <fieldset className="space-y-3">
+          <legend className="sr-only">Vai trò</legend>
+          <div className="grid gap-2">
+            {ROLES.map((r) => (
+              <label
+                key={r.value}
+                className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/60 has-[[data-state=checked]]:border-primary/40 has-[[data-state=checked]]:bg-primary-soft/60"
+              >
+                <Checkbox checked={roles.includes(r.value)} onCheckedChange={(c) => toggle(r.value, c === true)} className="mt-0.5" />
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium">{label(r.value)}</span>
+                  <span className="block text-xs text-muted-foreground">{r.hint}</span>
+                </span>
+              </label>
             ))}
           </div>
-        </div>
-      )}
+          <FieldError message={errors.roles} />
+          {!errors.roles && <FieldHint>Chọn ít nhất một vai trò.</FieldHint>}
+        </fieldset>
+      </FormSection>
+
+      <FormActions>
+        <Button type="submit" size="lg" disabled={pending}>
+          {pending ? <Loader2Icon className="animate-spin" aria-hidden /> : <UserCheckIcon aria-hidden />}
+          Cập nhật vai trò
+        </Button>
+      </FormActions>
 
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
         <AlertDialogContent>
@@ -131,5 +126,25 @@ export function UserRolesForm() {
         </AlertDialogContent>
       </AlertDialog>
     </form>
+  );
+}
+
+/** Tài khoản vừa được đặt lại vai trò (API trả về người dùng sau khi cập nhật). */
+function UpdatedUser({ user }: { user: User }) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-3" aria-live="polite">
+      <Avatar className="size-10">
+        <AvatarFallback className="bg-primary-soft font-semibold text-primary-strong">{initials(user.fullName)}</AvatarFallback>
+      </Avatar>
+      <div className="min-w-0 flex-1 space-y-1">
+        <p className="flex items-center gap-1.5 text-sm font-medium">
+          <span className="truncate">{user.fullName}</span>
+          <span className="shrink-0 font-normal text-muted-foreground">#{user.id}</span>
+        </p>
+        <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+        <RoleBadges roles={user.roles} />
+      </div>
+      <CircleCheckIcon className="size-4 shrink-0 text-success" aria-label="Đã lưu" />
+    </div>
   );
 }
