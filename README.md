@@ -350,6 +350,13 @@ Dừng hạ tầng: `docker compose down` (giữ dữ liệu) hoặc `docker com
 3. **File > Project Structure > Project SDK**: chọn JDK 17 trở lên.
 4. Chạy từng service bằng cách mở class `*Application.java` và nhấn Run. Không chạy `shared-common`.
 
+Khi kiểm tra cập nhật tiến độ của `enrollment-service`, chạy cả `course-service` trên cổng
+8082. Enrollment xác minh `lessonId` và `courseId` qua `GET /api/lessons/{id}` trước khi
+ghi dữ liệu: bài học không tồn tại hoặc thuộc khóa khác trả `404`; không kết nối được
+Course Service trả `502` và giữ nguyên tiến độ. Có thể đổi địa chỉ bằng biến môi trường
+`COURSE_SERVICE_URL` trong Run Configuration (mặc định `http://localhost:8082`).
+Docker Compose đã cấu hình địa chỉ nội bộ `http://course-service:8082`.
+
 ### 4. Build và chạy bằng dòng lệnh
 
 ```bash

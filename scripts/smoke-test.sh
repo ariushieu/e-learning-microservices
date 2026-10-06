@@ -68,10 +68,10 @@ check "GET /api/courses (công khai, không token)" 200 "$GATEWAY/api/courses"
 check "GET /api/categories (công khai, không token)" 200 "$GATEWAY/api/categories"
 
 echo "enrollment-service"
-check "GET /api/enrollments/my-courses" 200 "${AUTH[@]}" "$GATEWAY/api/enrollments/my-courses"
+check "GET /api/enrollments" 200 "${AUTH[@]}" "$GATEWAY/api/enrollments"
 
 echo "quiz-service"
-check "GET /api/quizzes/course/1" 200 "${AUTH[@]}" "$GATEWAY/api/quizzes/course/1"
+check "GET /api/quizzes?courseId=1" 200 "${AUTH[@]}" "$GATEWAY/api/quizzes?courseId=1"
 
 echo "notification-service"
 check "GET /api/notifications" 200 "${AUTH[@]}" "$GATEWAY/api/notifications"
