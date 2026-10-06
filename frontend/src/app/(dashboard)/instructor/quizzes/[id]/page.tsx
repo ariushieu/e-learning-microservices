@@ -5,9 +5,10 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { StatusBadge } from "@/components/common/status-badge";
 import { formatMaxAttempts, formatScore, formatTimeLimit } from "@/components/quiz/labels";
+import { DashboardPage } from "@/components/templates/dashboard-page";
 import { Button } from "@/components/ui/button";
-import { gatewayOrNull } from "@/lib/server/gateway";
-import type { QuizDetail } from "@/lib/types";
+import { gateway, gatewayOrNull } from "@/lib/server/gateway";
+import type { Course, QuizDetail } from "@/lib/types";
 import { QuestionManager } from "./question-manager";
 import { QuizSettingsForm } from "./quiz-settings-form";
 import { QuizStatusActions } from "./quiz-status-actions";
@@ -31,35 +32,45 @@ export default async function QuizEditorPage({ params }: PageProps<"/instructor/
   if (!/^\d+$/.test(id)) notFound();
   const quiz = await loadQuiz(id);
   if (!quiz) notFound();
+  // Tên khóa chỉ để hiện trên đường dẫn; lỗi thì ghi chung chung, không chặn trang.
+  const course = await gateway<Course>(`/api/courses/${quiz.courseId}`).catch(() => null);
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-3">
-        <Button asChild variant="ghost" size="sm" className="-ml-2.5 text-muted-foreground">
-          <Link href={`/instructor/courses/${quiz.courseId}`}>
-            <ArrowLeftIcon /> Về khóa học
-          </Link>
-        </Button>
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0 space-y-1.5">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-semibold tracking-tight text-balance">{quiz.title}</h1>
-              <StatusBadge status={quiz.status} />
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {quiz.questions.length} câu hỏi · {formatTimeLimit(quiz.timeLimitMinutes)} · Điểm đạt{" "}
-              {formatScore(quiz.passScore)} · Số lần làm: {formatMaxAttempts(quiz.maxAttempts)}
-            </p>
-            <p className="text-sm text-muted-foreground">{STATUS_HINT[quiz.status]}</p>
-          </div>
+    <DashboardPage
+      crumbs={[
+        { href: "/instructor", label: "Khóa học tôi dạy" },
+        { href: `/instructor/courses/${quiz.courseId}`, label: course?.title ?? "Khóa học" },
+        { label: quiz.title },
+      ]}
+      title={quiz.title}
+      description={
+        <span className="flex flex-col gap-2 text-sm">
+          <span className="flex flex-wrap items-center gap-2">
+            <StatusBadge status={quiz.status} />
+            <span>{STATUS_HINT[quiz.status]}</span>
+          </span>
+          <span className="tabular-nums">
+            {quiz.questions.length} câu hỏi · {formatTimeLimit(quiz.timeLimitMinutes)} · Điểm đạt {formatScore(quiz.passScore)} · Số lần làm:{" "}
+            {formatMaxAttempts(quiz.maxAttempts)}
+          </span>
+        </span>
+      }
+      actions={
+        // PageHeader không cho cột nút co lại; giới hạn theo bề ngang màn hình để nút tự xuống dòng trên điện thoại.
+        <div className="flex flex-wrap items-start gap-2">
+          <Button asChild variant="ghost">
+            <Link href={`/instructor/courses/${quiz.courseId}`}>
+              <ArrowLeftIcon /> Về khóa học
+            </Link>
+          </Button>
           <QuizStatusActions quiz={quiz} />
         </div>
-      </div>
-
-      <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem]">
+      }
+    >
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <QuestionManager quizId={quiz.id} status={quiz.status} questions={quiz.questions} />
         <QuizSettingsForm quiz={quiz} />
       </div>
-    </div>
+    </DashboardPage>
   );
 }

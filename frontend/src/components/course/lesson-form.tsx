@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useId, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { ErrorAlert } from "@/components/common/error-alert";
+import { FormField } from "@/components/common/form-field";
+import { NativeSelect } from "@/components/common/native-select";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -12,7 +14,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/client";
 import { fieldErrorMap, formErrorMessage, optional, optionalNumber, text } from "@/lib/forms";
 import type { Lesson, LessonInput, LessonType } from "@/lib/types";
-import { Field, NativeSelect } from "./form-helpers";
 import { lessonTypeLabels } from "./icons";
 
 /**
@@ -86,10 +87,10 @@ export function LessonForm({
       {error && <ErrorAlert message={error} />}
 
       <div className="grid gap-5 sm:grid-cols-[1fr_180px]">
-        <Field id={`${id}-title`} label="Tên bài học" required error={errors.title}>
+        <FormField id={`${id}-title`} label="Tên bài học" required error={errors.title}>
           <Input id={`${id}-title`} name="title" required maxLength={200} defaultValue={lesson?.title} autoFocus />
-        </Field>
-        <Field id={`${id}-type`} label="Loại bài" error={errors.type}>
+        </FormField>
+        <FormField id={`${id}-type`} label="Loại bài" error={errors.type}>
           <NativeSelect id={`${id}-type`} name="type" value={type} onChange={(e) => setType(e.target.value as LessonType)}>
             {types.map((t) => (
               <option key={t} value={t}>
@@ -97,21 +98,21 @@ export function LessonForm({
               </option>
             ))}
           </NativeSelect>
-        </Field>
+        </FormField>
       </div>
 
       {needsUrl && (
-        <Field
+        <FormField
           id={`${id}-url`}
           label={type === "VIDEO" ? "Đường dẫn video" : "Đường dẫn tệp"}
           hint={type === "VIDEO" ? "Link YouTube hoặc file .mp4" : "Link tải tệp (PDF, slide...)"}
           error={errors.contentUrl}
         >
           <Input id={`${id}-url`} name="contentUrl" type="url" maxLength={500} defaultValue={lesson?.contentUrl ?? ""} placeholder="https://..." />
-        </Field>
+        </FormField>
       )}
 
-      <Field id={`${id}-content`} label={type === "ARTICLE" ? "Nội dung bài viết" : "Mô tả thêm (không bắt buộc)"} error={errors.content}>
+      <FormField id={`${id}-content`} label={type === "ARTICLE" ? "Nội dung bài viết" : "Mô tả thêm (không bắt buộc)"} error={errors.content}>
         <Textarea
           id={`${id}-content`}
           name="content"
@@ -119,15 +120,15 @@ export function LessonForm({
           className={type === "ARTICLE" ? "min-h-48" : undefined}
           defaultValue={lesson?.content ?? ""}
         />
-      </Field>
+      </FormField>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field id={`${id}-duration`} label="Thời lượng (phút)" error={errors.durationSeconds}>
+        <FormField id={`${id}-duration`} label="Thời lượng (phút)" error={errors.durationSeconds}>
           <Input id={`${id}-duration`} name="durationMinutes" type="number" min={0} step="any" defaultValue={minutesDefault} />
-        </Field>
-        <Field id={`${id}-position`} label="Thứ tự" hint="Số nhỏ hiện trước" error={errors.position}>
+        </FormField>
+        <FormField id={`${id}-position`} label="Thứ tự" hint="Số nhỏ hiện trước" error={errors.position}>
           <Input id={`${id}-position`} name="position" type="number" min={0} step={1} defaultValue={lesson?.position ?? defaultPosition} />
-        </Field>
+        </FormField>
       </div>
 
       <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50">

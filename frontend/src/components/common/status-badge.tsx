@@ -1,29 +1,52 @@
+import { AwardIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { label } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-// Màu theo ý nghĩa: xanh lá = xong/đang mở, vàng = nháp/đang làm, xám = đã đóng, đỏ = hủy.
-const TONES: Record<string, string> = {
-  PUBLISHED: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  COMPLETED: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  SUBMITTED: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  ACTIVE: "bg-blue-50 text-blue-700 ring-blue-600/20",
-  DRAFT: "bg-amber-50 text-amber-800 ring-amber-600/20",
-  PENDING_REVIEW: "bg-amber-50 text-amber-800 ring-amber-600/20",
-  IN_PROGRESS: "bg-amber-50 text-amber-800 ring-amber-600/20",
-  ARCHIVED: "bg-zinc-100 text-zinc-600 ring-zinc-500/20",
-  EXPIRED: "bg-zinc-100 text-zinc-600 ring-zinc-500/20",
-  CANCELLED: "bg-red-50 text-red-700 ring-red-600/20",
+export type Tone = "neutral" | "primary" | "info" | "success" | "warning" | "danger" | "achievement";
+
+/** Màu nền nhạt + chữ đậm cho từng tông; dùng chung cho mọi huy hiệu, ô icon, ô thông báo. */
+export const TONE_CLASSES: Record<Tone, { soft: string; dot: string }> = {
+  neutral: { soft: "bg-muted text-muted-foreground", dot: "bg-muted-foreground/60" },
+  primary: { soft: "bg-primary-soft text-primary-strong", dot: "bg-primary" },
+  info: { soft: "bg-info-soft text-info-strong", dot: "bg-info" },
+  success: { soft: "bg-success-soft text-success-strong", dot: "bg-success" },
+  warning: { soft: "bg-warning-soft text-warning-strong", dot: "bg-warning" },
+  danger: { soft: "bg-destructive-soft text-destructive-strong", dot: "bg-destructive" },
+  achievement: { soft: "bg-achievement-soft text-achievement-strong", dot: "bg-achievement" },
+};
+
+/**
+ * Trạng thái backend → tông màu. Hoàn thành / đạt dùng vàng thành tích (có icon huy chương),
+ * không dùng xanh lá để khỏi lẫn với màu chính. Trạng thái mới chưa có ở đây hiện màu xám.
+ */
+export const STATUS_TONES: Record<string, Tone> = {
+  PUBLISHED: "success",
+  SUBMITTED: "success",
+  ACTIVE: "info",
+  IN_PROGRESS: "info",
+  COMPLETED: "achievement",
+  PASSED: "achievement",
+  DRAFT: "neutral",
+  ARCHIVED: "neutral",
+  PENDING_REVIEW: "warning",
+  EXPIRED: "warning",
+  CANCELLED: "danger",
+  FAILED: "danger",
 };
 
 /** Huy hiệu trạng thái cho mọi enum (khóa học, ghi danh, bài kiểm tra, lượt làm). */
-export function StatusBadge({ status, className }: { status: string; className?: string }) {
+export function StatusBadge({ status, className, children }: { status: string; className?: string; children?: ReactNode }) {
+  const tone = STATUS_TONES[status] ?? "neutral";
   return (
-    <Badge
-      variant="outline"
-      className={cn("border-0 ring-1 ring-inset", TONES[status] ?? "bg-muted text-muted-foreground ring-border", className)}
-    >
-      {label(status)}
+    <Badge variant="outline" className={cn("gap-1.5 border-0 font-medium", TONE_CLASSES[tone].soft, className)}>
+      {tone === "achievement" ? (
+        <AwardIcon className="size-3" aria-hidden />
+      ) : (
+        <span className={cn("size-1.5 rounded-full", TONE_CLASSES[tone].dot)} aria-hidden />
+      )}
+      {children ?? label(status)}
     </Badge>
   );
 }

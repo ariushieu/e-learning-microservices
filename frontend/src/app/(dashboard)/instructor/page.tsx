@@ -2,13 +2,14 @@ import { BookOpenIcon, ExternalLinkIcon, FilePenLineIcon, GlobeIcon, PlusIcon, S
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CourseCover } from "@/components/common/course-cover";
+import { DataTableCard } from "@/components/common/data-table-card";
 import { EmptyState } from "@/components/common/empty-state";
 import { ErrorAlert } from "@/components/common/error-alert";
-import { PageHeader } from "@/components/common/page-header";
 import { Stat } from "@/components/common/stat";
 import { StatusBadge } from "@/components/common/status-badge";
+import { DashboardPage } from "@/components/templates/dashboard-page";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { errorMessage } from "@/lib/errors";
 import { formatDay, formatNumber, formatPrice } from "@/lib/format";
@@ -38,102 +39,116 @@ export default async function InstructorPage() {
   const students = courses.reduce((n, c) => n + (c.studentCount ?? 0), 0);
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Khóa học tôi dạy"
-        description="Tạo, soạn nội dung và xuất bản khóa học của bạn."
-        actions={
-          <Button asChild size="lg">
-            <Link href="/instructor/courses/new">
-              <PlusIcon /> Tạo khóa học
-            </Link>
-          </Button>
-        }
-      />
-
+    <DashboardPage
+      title="Khóa học tôi dạy"
+      description="Tạo, soạn nội dung và xuất bản khóa học của bạn."
+      actions={
+        <Button asChild size="lg">
+          <Link href="/instructor/courses/new">
+            <PlusIcon /> Tạo khóa học
+          </Link>
+        </Button>
+      }
+      stats={
+        !loadError && (
+          <>
+            <Stat label="Tổng số khóa" value={formatNumber(total)} icon={BookOpenIcon} tone="primary" />
+            <Stat label="Đã xuất bản" value={formatNumber(published)} icon={GlobeIcon} tone="success" />
+            <Stat label="Bản nháp" value={formatNumber(drafts)} icon={FilePenLineIcon} tone="neutral" />
+            <Stat label="Tổng học viên" value={formatNumber(students)} icon={UsersIcon} tone="info" />
+          </>
+        )
+      }
+    >
       {loadError ? (
         <ErrorAlert title="Không tải được danh sách khóa học" message={loadError} />
       ) : (
-        <>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <Stat label="Tổng số khóa" value={formatNumber(total)} icon={BookOpenIcon} />
-            <Stat label="Đã xuất bản" value={formatNumber(published)} icon={GlobeIcon} />
-            <Stat label="Bản nháp" value={formatNumber(drafts)} icon={FilePenLineIcon} />
-            <Stat label="Tổng học viên" value={formatNumber(students)} icon={UsersIcon} />
-          </div>
-
-          {courses.length === 0 ? (
-            <EmptyState
-              icon={BookOpenIcon}
-              title="Bạn chưa có khóa học nào"
-              description="Tạo khóa học đầu tiên, soạn chương và bài học rồi xuất bản cho học viên."
-              action={
-                <Button asChild>
-                  <Link href="/instructor/courses/new">
-                    <PlusIcon /> Tạo khóa học đầu tiên
-                  </Link>
-                </Button>
-              }
-            />
-          ) : (
-            <Card className="gap-0 py-0">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="pl-4">Khóa học</TableHead>
-                    <TableHead>Trạng thái</TableHead>
-                    <TableHead className="text-right">Bài học</TableHead>
-                    <TableHead className="text-right">Học viên</TableHead>
-                    <TableHead>Xuất bản</TableHead>
-                    <TableHead className="pr-4 text-right">
-                      <span className="sr-only">Thao tác</span>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {courses.map((c) => (
-                    <TableRow key={c.id}>
-                      <TableCell className="max-w-80 py-3 pl-4">
-                        <Link href={`/instructor/courses/${c.id}`} className="block truncate font-medium hover:text-primary">
-                          {c.title}
-                        </Link>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {c.categoryName} · {formatPrice(c.price)}
-                        </p>
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge status={c.status} />
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">{c.totalLessons}</TableCell>
-                      <TableCell className="text-right tabular-nums">{formatNumber(c.studentCount)}</TableCell>
-                      <TableCell className="text-muted-foreground">{c.publishedAt ? formatDay(c.publishedAt) : "—"}</TableCell>
-                      <TableCell className="pr-4">
-                        <div className="flex justify-end gap-1">
-                          <Button asChild variant="outline" size="sm">
-                            <Link href={`/instructor/courses/${c.id}`}>
-                              <SettingsIcon /> Quản lý
-                            </Link>
-                          </Button>
-                          <Button asChild variant="ghost" size="sm">
-                            <Link href={`/courses/${c.id}`}>
-                              <ExternalLinkIcon /> Xem trang khóa
-                            </Link>
-                          </Button>
+        <div className="space-y-3">
+          <DataTableCard
+            title="Danh sách khóa học"
+            isEmpty={courses.length === 0}
+            empty={
+              <EmptyState
+                icon={BookOpenIcon}
+                title="Bạn chưa có khóa học nào"
+                description="Tạo khóa học đầu tiên, soạn chương và bài học rồi xuất bản cho học viên."
+                action={
+                  <Button asChild variant="outline">
+                    <Link href="/instructor/courses/new">
+                      <PlusIcon /> Tạo khóa học đầu tiên
+                    </Link>
+                  </Button>
+                }
+              />
+            }
+          >
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Khóa học</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                  <TableHead className="hidden text-right md:table-cell">Bài học</TableHead>
+                  <TableHead className="hidden text-right md:table-cell">Học viên</TableHead>
+                  <TableHead className="hidden lg:table-cell">Xuất bản</TableHead>
+                  <TableHead className="text-right">
+                    <span className="sr-only">Thao tác</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {courses.map((c) => (
+                  <TableRow key={c.id}>
+                    <TableCell className="py-3">
+                      <div className="flex max-w-96 min-w-56 items-center gap-3">
+                        <CourseCover
+                          title={c.title}
+                          category={c.categoryName}
+                          thumbnailUrl={c.thumbnailUrl}
+                          size="sm"
+                          className="hidden w-20 shrink-0 rounded-md sm:flex"
+                        />
+                        <div className="min-w-0">
+                          <Link href={`/instructor/courses/${c.id}`} className="block truncate font-medium hover:text-primary">
+                            {c.title}
+                          </Link>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {c.categoryName} · {formatPrice(c.price)}
+                          </p>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Card>
-          )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={c.status} />
+                    </TableCell>
+                    <TableCell className="hidden text-right tabular-nums md:table-cell">{c.totalLessons}</TableCell>
+                    <TableCell className="hidden text-right tabular-nums md:table-cell">{formatNumber(c.studentCount)}</TableCell>
+                    <TableCell className="hidden text-muted-foreground lg:table-cell">{c.publishedAt ? formatDay(c.publishedAt) : "—"}</TableCell>
+                    <TableCell>
+                      <div className="flex justify-end gap-1">
+                        <Button asChild variant="outline" size="sm">
+                          <Link href={`/instructor/courses/${c.id}`}>
+                            <SettingsIcon /> Quản lý
+                          </Link>
+                        </Button>
+                        <Button asChild variant="ghost" size="sm">
+                          <Link href={`/courses/${c.id}`}>
+                            <ExternalLinkIcon /> Xem trang khóa
+                          </Link>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </DataTableCard>
           {total > courses.length && (
             <p className="text-sm text-muted-foreground">
               Đang hiển thị {courses.length} khóa mới nhất trên tổng {total}.
             </p>
           )}
-        </>
+        </div>
       )}
-    </div>
+    </DashboardPage>
   );
 }

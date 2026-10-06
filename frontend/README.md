@@ -106,14 +106,17 @@ admin. Đây chỉ là lớp ngoài cho dễ dùng — backend vẫn kiểm lạ
 2. `params` và `searchParams` của trang là **Promise** ở Next 16: `const { id } = await params`.
    Kiểu `PageProps<"/duong-dan/[id]">` sinh bởi `pnpm next typegen`.
 3. Trang cần đăng nhập thì thêm tiền tố vào `requiredAccess()` trong `src/proxy.ts`.
-4. Giao diện dùng **shadcn/ui**. Không tự viết nút, ô nhập, bảng, hộp thoại — dùng:
-   - `src/components/ui/*`: component shadcn (Button, Card, Table, Dialog, AlertDialog, Tabs...).
-     Cần component mới thì `pnpm dlx shadcn@latest add <tên>` và báo nhóm trưởng.
-   - `src/components/common/*`: `PageHeader`, `StatusBadge` (mọi trạng thái), `EmptyState`,
-     `ErrorAlert`, `FieldError`, `Stat`, `StatusPage`.
+4. Giao diện theo **hệ thống giao diện chung**: đọc [DESIGN.md](DESIGN.md) và mở trang
+   [`/design`](http://localhost:3000/design) để xem trực quan. Tóm tắt:
+   - Chọn một khuôn trong `src/components/templates/` (`ListPage`, `DetailPage`, `FormPage`,
+     `DashboardPage`, `FocusLayout`).
+   - Ghép khối trong `src/components/common/` (`Section`, `FormField`, `FactList`, `DataTableCard`,
+     `ProgressMeter`, `CourseCover`, `StatusBadge`, `EmptyState`...) và `src/components/ui/` (shadcn).
+     Cần component shadcn mới thì `pnpm dlx shadcn@latest add <tên>` và báo nhóm trưởng.
+   - Màu chỉ qua token (`bg-primary`, `bg-info-soft text-info-strong`...), chữ qua thang chữ
+     (`text-title`, `text-heading`...). Không viết mã màu.
    - `src/lib/format.ts` (ngày giờ, tiền, nhãn tiếng Việt cho enum), `src/lib/forms.ts` (lỗi form).
-   - Hành động xóa/lưu trữ luôn xác nhận bằng `AlertDialog`, không dùng `window.confirm`; lưu xong
-     báo bằng `toast.success(...)` từ `sonner`.
+   - Xóa/lưu trữ luôn xác nhận bằng `AlertDialog`; lưu xong báo bằng `toast.success(...)`.
 5. Đặt file đúng thư mục của service mình — xem bảng dưới.
 
 ## Ai giữ phần nào
@@ -127,7 +130,7 @@ diện trong cùng pull request. `.github/CODEOWNERS` tự gắn người review
 | course | duyd92689-debug | `components/course/`, `app/(site)/page.tsx`, `app/(site)/courses/`, `app/(dashboard)/instructor/` (trừ `quizzes/`), `app/(dashboard)/admin/categories/` |
 | enrollment | phamquyet19042005-netizen | `components/enrollment/`, `app/(learn)/`, `app/(site)/my-courses/`, `app/(site)/certificates/` |
 | quiz | hiepdeptrai0111 | `components/quiz/`, `app/(site)/quizzes/`, `app/(site)/attempts/`, `app/(dashboard)/instructor/quizzes/` |
-| notification + khung chung | Hiếu | `components/{ui,common,layout,notification}/`, `lib/`, `proxy.ts`, `app/layout.tsx`, `app/api/` |
+| notification + khung chung | Hiếu | `components/{ui,common,layout,templates,notification}/`, `app/(site)/design/`, `lib/`, `proxy.ts`, `app/layout.tsx`, `app/api/` |
 
 Ba khung trang (route group, không xuất hiện trong URL):
 

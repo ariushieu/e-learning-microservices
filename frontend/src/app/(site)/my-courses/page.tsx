@@ -1,15 +1,17 @@
-import { AwardIcon, BookOpenIcon, CompassIcon, PlayIcon, RotateCcwIcon } from "lucide-react";
+import { AwardIcon, BookOpenIcon, CompassIcon, PlayIcon, RotateCcwIcon, XCircleIcon, type LucideIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CourseCover } from "@/components/common/course-cover";
 import { EmptyState } from "@/components/common/empty-state";
 import { ErrorAlert } from "@/components/common/error-alert";
-import { PageHeader } from "@/components/common/page-header";
+import { Fact, FactList } from "@/components/common/fact-list";
+import { ProgressMeter } from "@/components/common/progress-meter";
 import { StatusBadge } from "@/components/common/status-badge";
 import { attempt, getMyEnrollments } from "@/components/course/queries";
 import { CancelEnrollmentButton } from "@/components/enrollment/cancel-enrollment-button";
+import { CardGrid, ListPage } from "@/components/templates/list-page";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDay } from "@/lib/format";
 import type { Enrollment, EnrollmentStatus } from "@/lib/types";
@@ -26,10 +28,10 @@ const TABS: { value: string; label: string; status?: EnrollmentStatus }[] = [
   { value: "cancelled", label: "Đã hủy", status: "CANCELLED" },
 ];
 
-const EMPTY: Record<string, string> = {
-  active: "Không có khóa nào đang học.",
-  completed: "Bạn chưa hoàn thành khóa học nào.",
-  cancelled: "Không có khóa nào đã hủy.",
+const EMPTY: Record<string, { icon: LucideIcon; title: string; description: string }> = {
+  active: { icon: PlayIcon, title: "Không có khóa nào đang học.", description: "Ghi danh một khóa mới để tiếp tục hành trình học tập." },
+  completed: { icon: AwardIcon, title: "Bạn chưa hoàn thành khóa học nào.", description: "Học hết các bài của một khóa để nhận chứng chỉ." },
+  cancelled: { icon: XCircleIcon, title: "Không có khóa nào đã hủy.", description: "Các khóa bạn hủy ghi danh sẽ hiện ở đây." },
 };
 
 export default async function MyCoursesPage() {
@@ -37,18 +39,17 @@ export default async function MyCoursesPage() {
   const enrollments = [...(result.data ?? [])].sort((a, b) => order[a.status] - order[b.status]);
 
   return (
-    <div>
-      <PageHeader
-        title="Khóa học của tôi"
-        description="Các khóa bạn đã ghi danh và tiến độ học."
-        actions={
-          <Button asChild variant="outline" size="lg">
-            <Link href="/">
-              <CompassIcon /> Khám phá khóa học
-            </Link>
-          </Button>
-        }
-      />
+    <ListPage
+      title="Khóa học của tôi"
+      description="Các khóa bạn đã ghi danh và tiến độ học."
+      actions={
+        <Button asChild variant="outline" size="lg">
+          <Link href="/">
+            <CompassIcon /> Khám phá khóa học
+          </Link>
+        </Button>
+      }
+    >
       {result.error !== null ? (
         <ErrorAlert title="Không tải được danh sách ghi danh" message={result.error} />
       ) : enrollments.length === 0 ? (
@@ -64,85 +65,67 @@ export default async function MyCoursesPage() {
         />
       ) : (
         <Tabs defaultValue="all" className="gap-6">
-          <TabsList className="max-w-full overflow-x-auto">
-            {TABS.map((t) => (
-              <TabsTrigger key={t.value} value={t.value} className="px-3">
-                {t.label}
-                <span className="text-xs text-muted-foreground tabular-nums">
-                  {t.status ? enrollments.filter((e) => e.status === t.status).length : enrollments.length}
-                </span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
+          <div className="max-w-full overflow-x-auto">
+            <TabsList>
+              {TABS.map((t) => (
+                <TabsTrigger key={t.value} value={t.value} className="px-3">
+                  {t.label}
+                  <span className="rounded-full bg-muted px-1.5 text-xs text-muted-foreground tabular-nums">
+                    {t.status ? enrollments.filter((e) => e.status === t.status).length : enrollments.length}
+                  </span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
           {TABS.map((t) => {
             const items = t.status ? enrollments.filter((e) => e.status === t.status) : enrollments;
+            const empty = EMPTY[t.value];
             return (
               <TabsContent key={t.value} value={t.value}>
                 {items.length === 0 ? (
-                  <EmptyState icon={BookOpenIcon} title={EMPTY[t.value] ?? "Không có khóa học."} />
+                  <EmptyState icon={empty?.icon ?? BookOpenIcon} title={empty?.title ?? "Không có khóa học."} description={empty?.description} />
                 ) : (
-                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  <CardGrid>
                     {items.map((e) => (
                       <EnrollmentCard key={e.id} enrollment={e} />
                     ))}
-                  </div>
+                  </CardGrid>
                 )}
               </TabsContent>
             );
           })}
         </Tabs>
       )}
-    </div>
+    </ListPage>
   );
 }
 
 function EnrollmentCard({ enrollment: e }: { enrollment: Enrollment }) {
-  const percent = Math.round(e.progressPercent);
   const cancelled = e.status === "CANCELLED";
+  const completed = e.status === "COMPLETED";
   return (
-    <Card className="h-full">
-      <CardContent className="flex flex-1 flex-col gap-4">
-        <div className="flex items-start gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-            <BookOpenIcon className="size-4.5" />
-          </div>
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <Link
-              href={`/courses/${e.courseId}`}
-              className="line-clamp-2 leading-snug font-medium underline-offset-4 hover:underline"
-            >
-              {e.courseTitle}
-            </Link>
-            <StatusBadge status={e.status} />
-          </div>
+    <Card className="h-full gap-0 pt-0 transition-shadow hover:shadow-raised">
+      <Link href={`/courses/${e.courseId}`} tabIndex={-1} aria-hidden className={cn("block", cancelled && "opacity-60 grayscale")}>
+        <CourseCover title={e.courseTitle} />
+      </Link>
+      <CardContent className="flex flex-1 flex-col gap-4 pt-4 pb-4">
+        <div className="space-y-2">
+          <StatusBadge status={e.status} />
+          <Link
+            href={`/courses/${e.courseId}`}
+            className="line-clamp-2 text-subheading underline-offset-4 hover:text-primary hover:underline"
+          >
+            {e.courseTitle}
+          </Link>
         </div>
 
-        <div className={cn("space-y-2", cancelled && "opacity-60")}>
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Tiến độ</span>
-            <span className="font-medium text-foreground tabular-nums">{percent}%</span>
-          </div>
-          <Progress value={percent} />
-        </div>
+        <ProgressMeter value={e.progressPercent} className={cn(cancelled && "opacity-60")} />
 
-        <dl className="mt-auto space-y-1 text-xs text-muted-foreground">
-          <div className="flex justify-between gap-2">
-            <dt>Ghi danh</dt>
-            <dd className="tabular-nums">{formatDay(e.enrolledAt)}</dd>
-          </div>
-          {e.lastAccessedAt && (
-            <div className="flex justify-between gap-2">
-              <dt>Học gần nhất</dt>
-              <dd className="tabular-nums">{formatDay(e.lastAccessedAt)}</dd>
-            </div>
-          )}
-          {e.completedAt && (
-            <div className="flex justify-between gap-2">
-              <dt>Hoàn thành</dt>
-              <dd className="tabular-nums">{formatDay(e.completedAt)}</dd>
-            </div>
-          )}
-        </dl>
+        <FactList className="mt-auto text-xs">
+          <Fact label="Ghi danh" value={formatDay(e.enrolledAt)} />
+          {e.lastAccessedAt && <Fact label="Học gần nhất" value={formatDay(e.lastAccessedAt)} />}
+          {e.completedAt && <Fact label="Hoàn thành" value={formatDay(e.completedAt)} />}
+        </FactList>
       </CardContent>
       <CardFooter className="flex-wrap gap-2">
         {cancelled ? (
@@ -158,7 +141,7 @@ function EnrollmentCard({ enrollment: e }: { enrollment: Enrollment }) {
             </Link>
           </Button>
         )}
-        {e.status === "COMPLETED" && (
+        {completed && (
           <Button asChild variant="outline">
             <Link href={`/certificates/${e.id}`}>
               <AwardIcon /> Chứng chỉ

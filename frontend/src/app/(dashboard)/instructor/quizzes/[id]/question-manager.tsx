@@ -6,6 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/common/empty-state";
 import { ErrorAlert } from "@/components/common/error-alert";
+import { Section } from "@/components/common/section";
 import { formatPoints, QuestionTypeTag } from "@/components/quiz/labels";
 import { QuestionForm } from "@/components/quiz/question-form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -67,18 +68,19 @@ export function QuestionManager({
   const totalScore = questions.reduce((sum, q) => sum + Number(q.score ?? 0), 0);
 
   return (
-    <section className="min-w-0 space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h2 className="text-lg font-semibold">Câu hỏi ({questions.length})</h2>
-          <p className="text-sm text-muted-foreground tabular-nums">Tổng điểm: {formatPoints(totalScore)}</p>
-        </div>
-        {editing !== "new" && (
-          <Button onClick={() => setEditing("new")}>
+    <Section
+      title="Câu hỏi"
+      count={questions.length}
+      description={<span className="tabular-nums">Tổng điểm: {formatPoints(totalScore)}</span>}
+      actions={
+        editing !== "new" && (
+          <Button variant="outline" onClick={() => setEditing("new")}>
             <PlusIcon /> Thêm câu hỏi
           </Button>
-        )}
-      </div>
+        )
+      }
+      className="min-w-0"
+    >
 
       {status === "PUBLISHED" && (
         <Alert>
@@ -115,9 +117,9 @@ export function QuestionManager({
             <Card key={q.id}>
               <CardHeader className="gap-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-semibold">Câu {i + 1}</span>
+                  <span className="text-subheading">Câu {i + 1}</span>
                   <QuestionTypeTag type={q.type} />
-                  <span className="text-xs text-muted-foreground tabular-nums">{formatPoints(q.score)} điểm</span>
+                  <span className="text-caption text-muted-foreground tabular-nums">{formatPoints(q.score)} điểm</span>
                   <span className="ml-auto flex gap-1">
                     <Button variant="ghost" size="sm" onClick={() => setEditing(q.id)}>
                       <PencilIcon /> Sửa
@@ -125,7 +127,7 @@ export function QuestionManager({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      className="text-destructive hover:bg-destructive-soft hover:text-destructive-strong"
                       disabled={deletingId === q.id}
                       onClick={() => setConfirmDelete({ question: q, index: i })}
                     >
@@ -133,7 +135,7 @@ export function QuestionManager({
                     </Button>
                   </span>
                 </div>
-                <p className="whitespace-pre-line">{q.content}</p>
+                <p className="leading-relaxed whitespace-pre-line">{q.content}</p>
               </CardHeader>
               <CardContent className="space-y-3">
                 <ul className="space-y-1.5">
@@ -142,15 +144,13 @@ export function QuestionManager({
                       key={o.id}
                       className={cn(
                         "flex items-start gap-2.5 rounded-lg px-3 py-2 text-sm",
-                        o.isCorrect
-                          ? "bg-emerald-50 text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200"
-                          : "bg-muted/40",
+                        o.isCorrect ? "bg-success-soft text-success-strong" : "bg-muted/50",
                       )}
                     >
                       <span
                         className={cn(
                           "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full",
-                          o.isCorrect ? "bg-emerald-600 text-white" : "border bg-background",
+                          o.isCorrect ? "bg-success text-white" : "border bg-card",
                         )}
                         aria-hidden
                       >
@@ -162,7 +162,7 @@ export function QuestionManager({
                   ))}
                 </ul>
                 {q.explanation && (
-                  <div className="flex gap-2.5 rounded-lg bg-muted/60 px-3 py-2 text-sm">
+                  <div className="flex gap-2.5 rounded-lg bg-muted px-3 py-2 text-sm">
                     <LightbulbIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                     <p>
                       <span className="font-medium">Giải thích: </span>
@@ -196,6 +196,6 @@ export function QuestionManager({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </section>
+    </Section>
   );
 }

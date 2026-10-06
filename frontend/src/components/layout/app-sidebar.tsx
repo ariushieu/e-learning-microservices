@@ -56,8 +56,8 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="h-14 justify-center px-4">
-        <Brand href="/instructor" />
+      <SidebarHeader className="h-16 justify-center border-b border-sidebar-border px-4">
+        <Brand href="/instructor" tone="inverse" />
       </SidebarHeader>
       <SidebarContent>
         {hasRole("ROLE_INSTRUCTOR", "ROLE_ADMIN") && group("Giảng dạy", TEACHING)}
