@@ -9,19 +9,19 @@ import java.util.List;
 
 public interface QuizService {
 
-    QuizResponse createQuiz(CreateQuizRequest request, Long createdBy);
+    QuizResponse createQuiz(CreateQuizRequest request, Long createdBy, boolean isAdmin, String authorization);
 
-    QuizResponse updateQuiz(Long id, UpdateQuizRequest request);
+    QuizResponse updateQuiz(Long id, UpdateQuizRequest request, Long currentUserId, boolean isAdmin);
 
-    QuizResponse publishQuiz(Long id);
+    QuizResponse publishQuiz(Long id, Long currentUserId, boolean isAdmin);
 
-    QuizResponse archiveQuiz(Long id);
+    QuizResponse archiveQuiz(Long id, Long currentUserId, boolean isAdmin);
 
-    QuizDetailResponse getQuizDetail(Long id);
+    QuizDetailResponse getQuizDetail(Long id, Long currentUserId, boolean isAdmin);
 
     QuizDetailResponse getQuizForStudent(Long id);
 
-    List<QuizResponse> getQuizzesByCourse(Long courseId);
+    List<QuizResponse> getQuizzesByCourse(Long courseId, Long currentUserId, boolean isAdmin);
 
-    void deleteQuiz(Long id);
+    void deleteQuiz(Long id, Long currentUserId, boolean isAdmin);
 }

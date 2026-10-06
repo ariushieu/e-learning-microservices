@@ -1,5 +1,6 @@
 package com.hunre.quizservice.service;
 
+import com.hunre.quizservice.client.CourseOwnershipClient;
 import com.hunre.quizservice.dto.CreateQuizRequest;
 import com.hunre.quizservice.dto.QuizDetailResponse;
 import com.hunre.quizservice.dto.QuizResponse;
@@ -36,6 +37,9 @@ class QuizServiceTest {
     @Mock
     private QuizRepository quizRepository;
 
+    @Mock
+    private CourseOwnershipClient courseOwnershipClient;
+
     @InjectMocks
     private QuizServiceImpl quizService;
 
@@ -70,7 +74,7 @@ class QuizServiceTest {
             return q;
         });
 
-        QuizResponse response = quizService.createQuiz(request, 100L);
+        QuizResponse response = quizService.createQuiz(request, 100L, false, "Bearer test");
 
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(1L);
@@ -88,7 +92,7 @@ class QuizServiceTest {
                 .title("Tiêu đề mới")
                 .build();
 
-        assertThatThrownBy(() -> quizService.updateQuiz(1L, request))
+        assertThatThrownBy(() -> quizService.updateQuiz(1L, request, 100L, false))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("Không thể chỉnh sửa bài kiểm tra đã lưu trữ");
     }
@@ -98,7 +102,7 @@ class QuizServiceTest {
     void publishQuiz_emptyQuestions_throwsException() {
         when(quizRepository.findById(1L)).thenReturn(Optional.of(quiz));
 
-        assertThatThrownBy(() -> quizService.publishQuiz(1L))
+        assertThatThrownBy(() -> quizService.publishQuiz(1L, 100L, false))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("phải có ít nhất 1 câu hỏi để có thể xuất bản");
     }
@@ -110,7 +114,7 @@ class QuizServiceTest {
         when(quizRepository.findById(1L)).thenReturn(Optional.of(quiz));
         when(quizRepository.save(any(Quiz.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        QuizResponse response = quizService.publishQuiz(1L);
+        QuizResponse response = quizService.publishQuiz(1L, 100L, false);
 
         assertThat(response.getStatus()).isEqualTo(QuizStatus.PUBLISHED);
     }
@@ -130,7 +134,7 @@ class QuizServiceTest {
     void deleteQuiz_success() {
         when(quizRepository.findById(1L)).thenReturn(Optional.of(quiz));
 
-        quizService.deleteQuiz(1L);
+        quizService.deleteQuiz(1L, 100L, false);
 
         verify(quizRepository).delete(quiz);
     }

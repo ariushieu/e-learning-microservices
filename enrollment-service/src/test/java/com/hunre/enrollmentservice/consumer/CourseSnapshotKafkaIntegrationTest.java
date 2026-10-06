@@ -39,6 +39,8 @@ import static org.mockito.Mockito.*;
         bootstrapServersProperty = "spring.kafka.bootstrap-servers")
 @DirtiesContext
 class CourseSnapshotKafkaIntegrationTest {
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    com.hunre.enrollmentservice.client.CourseLessonClient courseLessonClient;
     @Autowired KafkaTemplate<String, String> kafka;
     @Autowired ObjectMapper mapper;
     @Autowired CourseSnapshotRepository snapshots;

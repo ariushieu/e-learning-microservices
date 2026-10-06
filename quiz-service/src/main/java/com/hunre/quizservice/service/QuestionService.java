@@ -8,11 +8,11 @@ import java.util.List;
 
 public interface QuestionService {
 
-    QuestionResponse addQuestion(Long quizId, CreateQuestionRequest request);
+    QuestionResponse addQuestion(Long quizId, CreateQuestionRequest request, Long currentUserId, boolean isAdmin);
 
-    QuestionResponse updateQuestion(Long quizId, Long questionId, UpdateQuestionRequest request);
+    QuestionResponse updateQuestion(Long quizId, Long questionId, UpdateQuestionRequest request, Long currentUserId, boolean isAdmin);
 
-    void deleteQuestion(Long quizId, Long questionId);
+    void deleteQuestion(Long quizId, Long questionId, Long currentUserId, boolean isAdmin);
 
-    List<QuestionResponse> getQuestionsByQuiz(Long quizId);
+    List<QuestionResponse> getQuestionsByQuiz(Long quizId, Long currentUserId, boolean isAdmin);
 }

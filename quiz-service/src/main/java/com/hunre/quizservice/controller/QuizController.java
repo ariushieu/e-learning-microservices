@@ -14,6 +14,8 @@ import com.hunre.sharedcommon.security.Roles;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -39,9 +41,10 @@ public class QuizController {
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<QuizResponse> createQuiz(
             @Valid @RequestBody CreateQuizRequest request,
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization,
             AuthenticatedUser user) {
         requireQuizManager(user);
-        return ApiResponse.ok(quizService.createQuiz(request, user.userId()), "Tạo bài kiểm tra thành công");
+        return ApiResponse.ok(quizService.createQuiz(request, user.userId(), user.hasRole(Roles.ADMIN), authorization), "Tạo bài kiểm tra thành công");
     }
 
     @PutMapping("/{id}")
@@ -50,7 +53,7 @@ public class QuizController {
             @Valid @RequestBody UpdateQuizRequest request,
             AuthenticatedUser user) {
         requireQuizManager(user);
-        return ApiResponse.ok(quizService.updateQuiz(id, request), "Cập nhật bài kiểm tra thành công");
+        return ApiResponse.ok(quizService.updateQuiz(id, request, user.userId(), user.hasRole(Roles.ADMIN)), "Cập nhật bài kiểm tra thành công");
     }
 
     @PatchMapping("/{id}/status")
@@ -60,8 +63,8 @@ public class QuizController {
             AuthenticatedUser user) {
         requireQuizManager(user);
         return switch (request.status()) {
-            case PUBLISHED -> ApiResponse.ok(quizService.publishQuiz(id), "Xuất bản bài kiểm tra thành công");
-            case ARCHIVED -> ApiResponse.ok(quizService.archiveQuiz(id), "Lưu trữ bài kiểm tra thành công");
+            case PUBLISHED -> ApiResponse.ok(quizService.publishQuiz(id, user.userId(), user.hasRole(Roles.ADMIN)), "Xuất bản bài kiểm tra thành công");
+            case ARCHIVED -> ApiResponse.ok(quizService.archiveQuiz(id, user.userId(), user.hasRole(Roles.ADMIN)), "Lưu trữ bài kiểm tra thành công");
             case DRAFT -> throw new BusinessException(ErrorCode.BUSINESS_RULE_VIOLATED,
                     "Chỉ hỗ trợ chuyển trạng thái sang PUBLISHED hoặc ARCHIVED");
         };
@@ -72,7 +75,7 @@ public class QuizController {
         if (!user.hasAnyRole(Roles.INSTRUCTOR, Roles.ADMIN)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "Chỉ giảng viên hoặc quản trị viên mới có quyền xem chi tiết bài kiểm tra kèm đáp án");
         }
-        return ApiResponse.ok(quizService.getQuizDetail(id));
+        return ApiResponse.ok(quizService.getQuizDetail(id, user.userId(), user.hasRole(Roles.ADMIN)));
     }
 
     @GetMapping("/{id}/take")
@@ -81,14 +84,16 @@ public class QuizController {
     }
 
     @GetMapping
-    public ApiResponse<List<QuizResponse>> getQuizzesByCourse(@RequestParam Long courseId) {
-        return ApiResponse.ok(quizService.getQuizzesByCourse(courseId));
+    public ApiResponse<List<QuizResponse>> getQuizzesByCourse(@RequestParam Long courseId, AuthenticatedUser user) {
+        // Người đã mất vai trò giảng viên cũng chỉ thấy bài đã xuất bản.
+        Long creatorId = user.hasAnyRole(Roles.INSTRUCTOR, Roles.ADMIN) ? user.userId() : null;
+        return ApiResponse.ok(quizService.getQuizzesByCourse(courseId, creatorId, user.hasRole(Roles.ADMIN)));
     }
 
     @DeleteMapping("/{id}")
     public ApiResponse<Void> deleteQuiz(@PathVariable Long id, AuthenticatedUser user) {
         requireQuizManager(user);
-        quizService.deleteQuiz(id);
+        quizService.deleteQuiz(id, user.userId(), user.hasRole(Roles.ADMIN));
         return ApiResponse.message("Đã xóa bài kiểm tra");
     }
 
