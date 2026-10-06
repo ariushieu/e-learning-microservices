@@ -4,6 +4,15 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Hệ thống giao diện HUNRE E-Learning. Xem trực quan ở /design, quy tắc ở frontend/DESIGN.md.
+ *
+ * Màu chủ đạo xanh lá (tài nguyên – môi trường). Mỗi màu ngữ nghĩa có ba mức:
+ *   --x        màu đậm: nền nút, icon, viền nhấn
+ *   --x-soft   nền nhạt: huy hiệu, ô thông báo, ô icon
+ *   --x-strong chữ đặt trên nền -soft (đều ≥ 4.5:1)
+ * Component chỉ dùng tên token (bg-info-soft, text-achievement-strong...), không viết mã màu.
+ */
 @theme inline {
   --font-sans: var(--font-sans);
   --font-heading: var(--font-sans);
@@ -14,6 +23,7 @@
   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
   --color-sidebar: var(--sidebar);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
@@ -24,6 +34,20 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-destructive-strong: var(--destructive-strong);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-strong: var(--success-strong);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-strong: var(--warning-strong);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-info-strong: var(--info-strong);
+  --color-achievement: var(--achievement);
+  --color-achievement-soft: var(--achievement-soft);
+  --color-achievement-strong: var(--achievement-strong);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -32,6 +56,8 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-strong: var(--primary-strong);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -45,49 +71,75 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
-}
-
-/* Nội dung bài học do giảng viên nhập dạng văn bản nhiều dòng. */
-.lesson-content {
-  white-space: pre-wrap;
-  line-height: 1.75;
+  --shadow-card: var(--shadow-card);
+  --shadow-raised: var(--shadow-raised);
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.488 0.217 264.4);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.488 0.217 264.4 / 50%);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  /* Nền trang ngả xanh rất nhẹ để thẻ trắng nổi lên. */
+  --background: #f7faf8;
+  --foreground: #13221b;
+  --card: #ffffff;
+  --card-foreground: #13221b;
+  --popover: #ffffff;
+  --popover-foreground: #13221b;
+
+  /* Xanh lá rừng: nút chính, liên kết, mục đang chọn. */
+  --primary: #166534;
+  --primary-foreground: #ffffff;
+  --primary-soft: #e8f1ec;
+  --primary-strong: #14532d;
+
+  --secondary: #e8f1ec;
+  --secondary-foreground: #14532d;
+  --muted: #eef3f0;
+  --muted-foreground: #5b6b63;
+  --accent: #eef5f1;
+  --accent-foreground: #14532d;
+  --border: #dde5e0;
+  --input: #d3ddd7;
+  --ring: color-mix(in oklch, #166534 45%, transparent);
+
+  /* Trạng thái. Đạt/hoàn thành dùng vàng thành tích, không dùng xanh lá để khỏi lẫn với màu chính. */
+  --destructive: #dc2626;
+  --destructive-soft: #fee2e2;
+  --destructive-strong: #991b1b;
+  --success: #047857;
+  --success-soft: #d1fae5;
+  --success-strong: #065f46;
+  --warning: #c2410c;
+  --warning-soft: #ffedd5;
+  --warning-strong: #9a3412;
+  --info: #0e7490;
+  --info-soft: #e0f2f5;
+  --info-strong: #155e75;
+  --achievement: #b45309;
+  --achievement-soft: #fef3c7;
+  --achievement-strong: #92400e;
+
+  --chart-1: #166534;
+  --chart-2: #0e7490;
+  --chart-3: #b45309;
+  --chart-4: #65a30d;
+  --chart-5: #475569;
+
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.488 0.217 264.4);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --shadow-card: 0 1px 2px rgb(19 34 27 / 0.04), 0 1px 3px rgb(19 34 27 / 0.06);
+  --shadow-raised: 0 10px 24px -6px rgb(19 34 27 / 0.12), 0 2px 6px -2px rgb(19 34 27 / 0.08);
+
+  /* Sidebar khu giảng dạy/quản trị: xanh lá rất đậm, chữ sáng. */
+  --sidebar: #0b3b24;
+  --sidebar-foreground: #e6f0ea;
+  --sidebar-muted: #a7c4b4;
+  --sidebar-primary: #4ade80;
+  --sidebar-primary-foreground: #0b3b24;
+  --sidebar-accent: rgb(255 255 255 / 0.1);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgb(255 255 255 / 0.1);
+  --sidebar-ring: #4ade80;
 }
 
+/* Chưa bật giao diện tối; giữ bộ token mặc định của shadcn để thêm sau. */
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
@@ -107,11 +159,6 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -122,17 +169,77 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* Thang chữ. Dùng thay cho việc tự ghép text-2xl font-semibold tracking-tight ở từng trang. */
+@utility text-display {
+  font-size: clamp(2rem, 1.4rem + 2.4vw, 3rem);
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+@utility text-title {
+  font-size: clamp(1.5rem, 1.3rem + 0.8vw, 1.875rem);
+  line-height: 1.2;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+@utility text-heading {
+  font-size: 1.125rem;
+  line-height: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+@utility text-subheading {
+  font-size: 0.9375rem;
+  line-height: 1.375rem;
+  font-weight: 600;
+}
+@utility text-caption {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+@utility text-eyebrow {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Nội dung bài học do giảng viên nhập dạng văn bản nhiều dòng. */
+.lesson-content {
+  white-space: pre-wrap;
+  line-height: 1.75;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "cv11", "ss01";
   }
   button:not(:disabled), [role="button"]:not(:disabled) {
     cursor: pointer;
   }
   html {
     @apply font-sans;
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--primary) 18%, transparent);
+  }
+}
+
+/* Người dùng bật "giảm chuyển động" trong hệ điều hành: tắt hiệu ứng, giữ nguyên chức năng. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
