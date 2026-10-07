@@ -1,8 +1,10 @@
 import { AwardIcon } from "lucide-react";
 import { ContourPattern } from "@/components/common/decor";
 import { BrandMark } from "@/components/layout/brand";
+import { VerificationLink } from "@/components/enrollment/verification-link";
 import { TIME_ZONE } from "@/lib/format";
 import type { Certificate } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 function issuedDate(value: string) {
   const parts = new Intl.DateTimeFormat("vi-VN", {
@@ -20,13 +22,13 @@ function issuedDate(value: string) {
  * dấu mộc vàng thành tích. Khi in, header/footer của layout bị ẩn bằng CSS in ở trang,
  * còn bản thân thẻ thì bỏ bóng đổ và co theo khổ giấy.
  */
-export function CertificateCard({ certificate, learnerName }: { certificate: Certificate; learnerName: string }) {
+export function CertificateCard({ certificate }: { certificate: Certificate }) {
   return (
-    <div className="certificate relative isolate mx-auto w-full max-w-5xl overflow-hidden rounded-xl bg-card p-2.5 text-foreground shadow-raised ring-1 ring-border sm:aspect-[297/210] sm:p-4 print:h-[190mm] print:max-w-none print:rounded-none print:p-0 print:shadow-none print:ring-0">
+    <div className="certificate relative isolate mx-auto flex w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-card p-2.5 text-foreground shadow-raised ring-1 ring-border sm:min-h-[600px] sm:p-4 lg:min-h-[700px] print:h-[190mm] print:min-h-0 print:max-w-none print:rounded-none print:p-0 print:shadow-none print:ring-0">
       {/* Hình mờ đường đồng mức: dấu ấn tài nguyên – môi trường, đủ nhạt để không lấn chữ khi in. */}
       <ContourPattern className="-z-10 text-primary/6" />
 
-      <div className="relative flex h-full min-h-[480px] flex-col items-center justify-between rounded-lg border-[6px] border-double border-primary px-[6%] py-8 text-center sm:min-h-0 sm:py-[4.5%]">
+      <div className="relative flex min-h-[480px] flex-1 flex-col items-center justify-between gap-6 rounded-lg border-[6px] border-double border-primary px-[6%] py-8 text-center [overflow-wrap:anywhere] sm:min-h-0 sm:py-[4.5%] print:gap-3 print:py-6">
         <div className="pointer-events-none absolute inset-1.5 rounded-sm border border-primary/25" aria-hidden />
 
         <div className="flex flex-col items-center gap-2.5">
@@ -44,14 +46,14 @@ export function CertificateCard({ certificate, learnerName }: { certificate: Cer
         <div className="w-full py-6 sm:py-0">
           <p className="text-xs font-semibold tracking-[0.35em] text-primary sm:text-sm">CHỨNG NHẬN HOÀN THÀNH</p>
           <p className="mt-5 text-sm text-muted-foreground sm:mt-7">Chứng nhận học viên</p>
-          <p className="mt-2 font-serif text-3xl leading-tight font-semibold tracking-tight text-balance break-words sm:text-5xl">{learnerName}</p>
+          <p className={cn("mt-2 font-serif leading-tight font-semibold tracking-tight text-balance", certificate.learnerName.length > 60 ? "text-xl sm:text-2xl print:text-xl" : "text-3xl sm:text-5xl")}>{certificate.learnerName}</p>
           <div className="mx-auto mt-4 flex w-1/2 items-center gap-3 text-primary/40" aria-hidden>
             <span className="h-px flex-1 bg-current" />
             <span className="size-1.5 rotate-45 bg-current" />
             <span className="h-px flex-1 bg-current" />
           </div>
           <p className="mt-4 text-sm text-muted-foreground">đã hoàn thành khóa học</p>
-          <p className="mx-auto mt-2 max-w-3xl text-lg font-semibold text-balance text-primary-strong sm:text-2xl">{certificate.courseTitle}</p>
+          <p className={cn("mx-auto mt-2 max-w-3xl font-semibold text-balance text-primary-strong", certificate.courseTitle.length > 100 ? "text-sm sm:text-base print:text-sm" : "text-lg sm:text-2xl")}>{certificate.courseTitle}</p>
         </div>
 
         <div className="grid w-full grid-cols-1 items-end gap-x-4 gap-y-5 text-xs sm:grid-cols-3 sm:text-sm">
@@ -73,6 +75,7 @@ export function CertificateCard({ certificate, learnerName }: { certificate: Cer
             </div>
           </div>
         </div>
+        <VerificationLink code={certificate.certificateCode} />
       </div>
     </div>
   );

@@ -16,6 +16,7 @@ import com.hunre.enrollmentservice.repository.EnrollmentRepository;
 import com.hunre.enrollmentservice.repository.LessonProgressRepository;
 import com.hunre.enrollmentservice.repository.OutboxEventRepository;
 import com.hunre.enrollmentservice.service.EnrollmentService;
+import com.hunre.enrollmentservice.service.CertificateDetailsService;
 import com.hunre.sharedcommon.dto.PageResponse;
 import com.hunre.sharedcommon.event.EnrollmentCreatedEvent;
 import com.hunre.sharedcommon.exception.BusinessException;
@@ -48,6 +49,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     private final OutboxEventRepository outboxEventRepository;
     private final CourseClient courseClient;
     private final com.hunre.enrollmentservice.client.CourseLessonClient courseLessonClient;
+    private final CertificateDetailsService certificateDetails;
 
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
@@ -208,7 +210,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public CertificateResponse getCertificate(Long currentUserId, Long enrollmentId) {
         if (currentUserId == null) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED, "Người dùng chưa được xác thực");
@@ -224,13 +226,19 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Khóa học này chưa hoàn thành hoặc chưa được cấp chứng chỉ"));
 
-        String courseTitle = courseSnapshotRepository.findById(enrollment.getCourseId())
-                .map(CourseSnapshot::getTitle)
-                .orElseGet(() -> courseClient.getCourseById(enrollment.getCourseId())
-                        .map(CourseDto::getTitle)
-                        .orElse("Khóa học #" + enrollment.getCourseId()));
-
-        return CertificateResponse.from(certificate, enrollment.getUserId(), enrollment.getCourseId(), courseTitle);
+        if (certificate.getCourseTitle() == null || certificate.getLearnerName() == null) {
+            String courseTitle = certificate.getCourseTitle();
+            if (courseTitle == null) {
+                courseTitle = courseSnapshotRepository.findById(enrollment.getCourseId())
+                        .map(CourseSnapshot::getTitle)
+                        .orElseGet(() -> courseClient.getCourseById(enrollment.getCourseId())
+                                .map(CourseDto::getTitle)
+                                .orElseThrow(() -> new BusinessException(ErrorCode.BUSINESS_RULE_VIOLATED,
+                                        "Chưa xác nhận được tên khóa học của chứng chỉ")));
+            }
+            certificateDetails.captureIfMissing(certificate, currentUserId, courseTitle);
+        }
+        return CertificateResponse.from(certificate, enrollment.getUserId(), enrollment.getCourseId(), certificate.getCourseTitle());
     }
 
     private void saveEnrollmentCreatedOutboxEvent(Enrollment enrollment, String courseTitle) {

@@ -2,7 +2,7 @@
 
 Đọc [gateway.md](gateway.md) để có token/fixture, cách đợi sự kiện và ghi kết quả.
 Tất cả request qua `{{baseUrl}}`. **Đây là kế hoạch chưa chạy Postman**.
-Ba endpoint giữ nguyên đường dẫn. Mọi tài khoản đã đăng nhập đọc hộp thư của chính mình,
+Sáu endpoint giữ nguyên đường dẫn. Mọi tài khoản đã đăng nhập đọc hộp thư của chính mình,
 không có vai trò riêng được đọc hộp thư người khác; ADM cũng không có ngoại lệ.
 NotificationResponse trả `read` (boolean), không trả status hay userId.
 
@@ -61,6 +61,42 @@ Không kết luận S và B dùng chung dữ liệu chỉ vì hai số đếm t�
 | 7 | Gọi lặp | S | PATCH lần hai cùng thông báo | 200; readAt giữ thời điểm lần đầu, không tạo bản ghi mới |
 | 8 | S dùng ID của B | S | PATCH /api/notifications/{{notificationBId}}/read | 404; B đọc hộp thư vẫn thấy trạng thái cũ |
 
+## NOTIFY-04 — PATCH /api/notifications/read (đọc tất cả)
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Còn N chưa đọc | S | PATCH /api/notifications/read, không body | 200; data=N; message "Đã đánh dấu đã đọc N thông báo"; unread-count sau đó = 0 |
+| 2 | Gọi lại khi đã đọc hết | S | PATCH lần hai | 200; data=0 |
+| 3 | Không đụng hộp thư người khác | S rồi B | S PATCH /read; B GET unread-count | 200; số của B không đổi |
+| 4 | Giả userId | S | PATCH /api/notifications/read?userId={{instructorBId}} | 200; chỉ hộp thư S đổi |
+| 5 | Không token | — | Cùng URL | 401 |
+| 6 | Giữ readAt cũ | S | Đọc một thông báo, ghi readAt; PATCH /read; GET hộp thư | readAt của thông báo đó không đổi |
+
+## NOTIFY-05 — GET /api/notifications/stream (tức thời)
+
+Postman không đọc được luồng Server-Sent Events; ca 2–5 chạy bằng `curl -N` hoặc trên web.
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Không token / token hỏng | — | GET /api/notifications/stream | 401 |
+| 2 | Mở luồng | S | `curl -N -H "Authorization: Bearer {{studentToken}}" {{baseUrl}}/api/notifications/stream` | 200 `text/event-stream`; sự kiện đầu `unread-count` đúng số hiện tại |
+| 3 | Có thông báo mới | S | Giữ ca 2, S nộp quiz | Trong vài giây có `notification` (type QUIZ_GRADED, linkUrl `/attempts/{id}`) rồi `unread-count` tăng 1 |
+| 4 | Không lọt sang người khác | B | Mở luồng của B, S ghi danh | Luồng B không có `notification` |
+| 5 | Đọc ở nơi khác | S | Giữ ca 2, PATCH /read | Luồng nhận `unread-count` 0 |
+
+## NOTIFY-06 — /api/notifications/preferences
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Chưa từng lưu | B | GET /api/notifications/preferences | 200; inAppEnabled=true, emailEnabled=true |
+| 2 | Tắt trong ứng dụng | B | PUT body `{"inAppEnabled":false,"emailEnabled":true}` | 200; data đúng body; message "Đã lưu cài đặt thông báo" |
+| 3 | Thiếu một cờ | B | PUT body `{"inAppEnabled":false}` | 400 VALIDATION_FAILED |
+| 4 | Sai kiểu | B | PUT body `{"inAppEnabled":"maybe","emailEnabled":true}` | 400 |
+| 5 | Không token | — | GET và PUT | 401 |
+| 6 | Đang tắt thì không tạo | B | Sau ca 2, B ghi danh hoặc nộp quiz; chờ; GET unread-count | 200; số không tăng |
+| 7 | Không ảnh hưởng người khác | S | GET preferences của S | 200; vẫn true/true |
+| 8 | Bật lại | B | PUT `{"inAppEnabled":true,"emailEnabled":true}` | 200; sự kiện sau đó lại tạo thông báo |
+
 ## NOTIFY-EVENT — Kiểm tra luồng sự kiện qua API
 
 Đây là các kịch bản liên service bổ sung, không phải API tạo thông báo mới.
@@ -80,6 +116,7 @@ Khi đếm, phân trang đến hết hoặc dùng title riêng không trùng; kh
 | 8 | Loại không tạo thông báo | S | A xuất bản/cập nhật khóa để phát course.updated; GET hộp thư S | 200; không có thông báo mới chỉ vì course.updated |
 | 9 | Kafka ngừng rồi hồi phục | S | Stop Kafka trong môi trường riêng, nộp quiz nhận 200; start Kafka; GET hộp thư | 200; thông báo tới một lần khi worker gửi được outbox |
 | 10 | Đọc thông báo không tạo sự kiện mới | S | PATCH notificationId/read 200 rồi GET hộp thư | 200; cùng tổng số bản ghi, chỉ read/readAt đổi |
+| 11 | Link mở đúng trang | S | Sau ca 1–4, GET hộp thư | linkUrl: ENROLLMENT_SUCCESS `/learn/{courseId}`; COURSE_COMPLETED và CERTIFICATE_ISSUED `/certificates/{enrollmentId}`; QUIZ_GRADED `/attempts/{attemptId}` |
 
 Replay là thao tác qua Kafka UI, **không thể làm bằng endpoint Postman notification**.
 Nếu người test không có Kafka UI/quyền vào môi trường dev, đánh dấu ca 7 BLOCKED, không giả lập

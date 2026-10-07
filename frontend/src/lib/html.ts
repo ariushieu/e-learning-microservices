@@ -11,3 +11,8 @@ export function safeNotificationHtml(content: string): string {
     .replace(/"/g, "&quot;")
     .replace(/&lt;(\/?)b&gt;/g, "<$1b>");
 }
+
+/** Nội dung thông báo dạng chữ thường, cho chỗ không hiện HTML (toast). */
+export function notificationText(content: string): string {
+  return content.replace(/<\/?b>/g, "");
+}

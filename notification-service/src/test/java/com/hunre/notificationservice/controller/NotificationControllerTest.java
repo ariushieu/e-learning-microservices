@@ -1,6 +1,9 @@
 package com.hunre.notificationservice.controller;
 
+import com.hunre.notificationservice.dto.NotificationPreferenceResponse;
 import com.hunre.notificationservice.dto.NotificationResponse;
+import com.hunre.notificationservice.dto.UpdateNotificationPreferenceRequest;
+import com.hunre.notificationservice.realtime.InboxStreamService;
 import com.hunre.notificationservice.service.NotificationService;
 import com.hunre.sharedcommon.dto.PageResponse;
 import com.hunre.sharedcommon.exception.GlobalExceptionHandler;
@@ -14,6 +17,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -26,6 +30,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -33,6 +38,7 @@ class NotificationControllerTest {
 
     private MockMvc mockMvc;
     private NotificationService notificationService;
+    private InboxStreamService inboxStreamService;
 
     private final AuthenticatedUser user = new AuthenticatedUser(
             42L, "sv@hunre.edu.vn", "Nguyễn Văn A", Set.of(Roles.STUDENT));
@@ -40,9 +46,10 @@ class NotificationControllerTest {
     @BeforeEach
     void setUp() {
         notificationService = Mockito.mock(NotificationService.class);
+        inboxStreamService = Mockito.mock(InboxStreamService.class);
 
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new NotificationController(notificationService))
+                .standaloneSetup(new NotificationController(notificationService, inboxStreamService))
                 .setCustomArgumentResolvers(
                         new AuthenticatedUserArgumentResolver(),
                         new PageableHandlerMethodArgumentResolver())
@@ -119,5 +126,80 @@ class NotificationControllerTest {
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, user))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
+    }
+
+    @Test
+    @DisplayName("đọc tất cả chỉ áp lên hộp thư của người trong token")
+    void docTatCa() throws Exception {
+        when(notificationService.markAllRead(42L)).thenReturn(4);
+
+        mockMvc.perform(patch("/api/notifications/read?userId=999")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, user))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(4))
+                .andExpect(jsonPath("$.message").value("Đã đánh dấu đã đọc 4 thông báo"));
+
+        Mockito.verify(notificationService).markAllRead(42L);
+    }
+
+    @Test
+    @DisplayName("đọc tất cả không đụng tới route /{id}/read")
+    void docTatCaKhongNhamVoiMotThongBao() throws Exception {
+        mockMvc.perform(patch("/api/notifications/abc/read")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, user))
+                .andExpect(status().isBadRequest());
+
+        Mockito.verify(notificationService, Mockito.never()).markAllRead(any());
+    }
+
+    @Test
+    @DisplayName("lấy tùy chọn nhận thông báo của người trong token")
+    void layTuyChon() throws Exception {
+        when(notificationService.getPreferences(42L))
+                .thenReturn(new NotificationPreferenceResponse(false, true));
+
+        mockMvc.perform(get("/api/notifications/preferences")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, user))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.inAppEnabled").value(false))
+                .andExpect(jsonPath("$.data.emailEnabled").value(true));
+    }
+
+    @Test
+    @DisplayName("lưu tùy chọn nhận thông báo")
+    void luuTuyChon() throws Exception {
+        UpdateNotificationPreferenceRequest request = new UpdateNotificationPreferenceRequest(false, true);
+        when(notificationService.updatePreferences(42L, request))
+                .thenReturn(new NotificationPreferenceResponse(false, true));
+
+        mockMvc.perform(put("/api/notifications/preferences")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, user)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"inAppEnabled\":false,\"emailEnabled\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.inAppEnabled").value(false))
+                .andExpect(jsonPath("$.message").value("Đã lưu cài đặt thông báo"));
+    }
+
+    @Test
+    @DisplayName("PUT tùy chọn thiếu một cờ thì 400, không coi là giữ nguyên")
+    void luuTuyChonThieuCo() throws Exception {
+        mockMvc.perform(put("/api/notifications/preferences")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, user)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"inAppEnabled\":false}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+
+        Mockito.verify(notificationService, Mockito.never()).updatePreferences(any(), any());
+    }
+
+    @Test
+    @DisplayName("luồng tức thời không có token thì 401")
+    void luongKhongCoToken() throws Exception {
+        mockMvc.perform(get("/api/notifications/stream"))
+                .andExpect(status().isUnauthorized());
+
+        Mockito.verify(inboxStreamService, Mockito.never()).open(any());
     }
 }

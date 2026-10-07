@@ -36,6 +36,10 @@ Các đường dẫn cũ tương ứng đã được bỏ. Gateway hiện bao ph
 `categoryId`, `level`, `keyword`, `page`, `size`, `sort`. Khách/người khác chỉ thấy
 khóa đã xuất bản; chủ giảng viên hoặc admin mới thấy khóa nháp trong kết quả lọc.
 
+`categoryId` của danh mục gốc lấy cả khóa trực tiếp và khóa trong các danh mục con
+(cây hai cấp). Chọn ID danh mục con chỉ lấy khóa của danh mục đó; danh mục không tồn tại
+trả trang rỗng. Quyền xem, các bộ lọc còn lại và tổng phân trang vẫn áp dụng cùng nhau.
+
 Body tạo chương không chứa `courseId`:
 
 ```json
@@ -224,10 +228,11 @@ message sai và việc sửa khóa không ghi đè số đếm. `EnrollmentEvent
 dùng Kafka thật trong JVM để kiểm retry, DLT, chống trùng và việc message sau vẫn
 được xử lý. `KafkaErrorHandlingConfigTest` kiểm cả trường hợp gửi DLT thất bại.
 
-Collection cập nhật: `docs/postman/course-service-v2.postman_collection.json` cùng
-environment V2. Import lại collection, chọn environment, nhập mật khẩu rồi chạy
-theo thứ tự. URL trong collection đã điền trực tiếp `http://127.0.0.1:8080`.
-`runCleanup=true` chỉ xóa dữ liệu thử do collection tạo.
+Collection cập nhật: `docs/postman/course.postman_collection.json`. Import duy nhất
+file này, chọn **No environment** và chạy từ **0. Chuẩn bị**. Collection tự lưu token,
+ID và dùng `baseUrl=http://localhost:8080` qua gateway. Hướng dẫn và quy tắc giữ dữ liệu
+demo ở [README Postman](../docs/postman/README-course.md); biên bản ở
+[kết quả course](../docs/test-cases/ket-qua/course.md).
 
 Việc nạp `course_snapshots` là phần của enrollment-service. Nếu snapshot chưa có,
 API ghi danh có thể trả 404; course-service không tự coi người chưa ghi danh là có

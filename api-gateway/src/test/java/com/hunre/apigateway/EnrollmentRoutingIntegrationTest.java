@@ -91,6 +91,17 @@ class EnrollmentRoutingIntegrationTest {
         return client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
     }
 
+    @Test
+    void certificateVerificationIsPublicButOtherCertificateAccessStaysPrivate() throws Exception {
+        var response = request("GET", "/api/certificates/verify/CERT-test", false);
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.body()).startsWith("enrollment GET /api/certificates/verify/CERT-test null");
+        for (String path : List.of("/api/certificates", "/api/certificates/1", "/api/enrollments/1/certificate")) {
+            assertThat(request("GET", path, false).statusCode()).isEqualTo(401);
+        }
+        assertThat(request("POST", "/api/certificates/verify/CERT-test", false).statusCode()).isEqualTo(401);
+    }
+
     private static HttpServer backend(String name) {
         try {
             var server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);

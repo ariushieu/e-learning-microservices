@@ -1,0 +1,27 @@
+{
+  "tag": "catalog-ui-1791359413882",
+  "checks": [
+    "Chip giữ keyword/level/sort, đồng bộ ô chọn và về trang đầu",
+    "Giá tăng lọc đúng danh mục/trình độ, tối đa 12 khóa",
+    "Trang 2 giữ bộ lọc và thứ tự",
+    "Đổi sort price,desc qua form, về trang đầu; khóa bằng nhau xếp theo id",
+    "Đổi sort createdAt,desc qua form, về trang đầu; khóa bằng nhau xếp theo id",
+    "Đổi sort studentCount,desc qua form, về trang đầu; khóa bằng nhau xếp theo id",
+    "Tìm kiếm giữ danh mục/trình độ/sort",
+    "Chọn danh mục con chỉ trả khóa con, không lẫn khóa cha hoặc danh mục khác",
+    "Chọn danh mục con tô đúng một chip cha",
+    "URL danh mục con giữ kết quả và chip cha sau tải lại",
+    "Không tràn trang tại 375px",
+    "Chip cuộn ngang tại 375px",
+    "Không tràn trang tại 768px",
+    "Chip cuộn ngang tại 768px",
+    "Không tràn trang tại 1366px",
+    "Chip cuộn ngang tại 1366px",
+    "Chip Tất cả đồng bộ select sau điều hướng client",
+    "Tab chuyển tới chip tiếp theo",
+    "Trạng thái không có kết quả",
+    "URL sort lạ trở về Mới nhất",
+    "Không có lỗi JavaScript"
+  ],
+  "errors": []
+}
