@@ -60,6 +60,9 @@ class ProgressServiceTest {
     @Mock
     private CourseLessonClient courseLessonClient;
 
+    @Mock
+    private com.hunre.enrollmentservice.service.CertificateDetailsService certificateDetails;
+
     @InjectMocks
     private ProgressServiceImpl progressService;
 

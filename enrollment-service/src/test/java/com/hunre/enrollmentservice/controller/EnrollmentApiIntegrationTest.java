@@ -291,9 +291,81 @@ class EnrollmentApiIntegrationTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    void publicVerificationUsesIssuedIdentityAndDoesNotExposePrivateFields() throws Exception {
+        long id = enroll(1);
+        putProgress(101, "COMPLETED", 60);
+        putProgress(102, "COMPLETED", 60);
+        var cert = certificates.findByEnrollmentId(id).orElseThrow();
+        assertThat(cert.getCertificateCode()).matches("CERT-[A-F0-9]{32}");
+        var snapshot = snapshots.findById(10L).orElseThrow();
+        snapshot.setTitle("Renamed later");
+        snapshots.save(snapshot);
+        mvc.perform(get("/api/enrollments/{id}/certificate", id).header("Authorization", token(1)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.courseTitle").value("Java"));
+        var response = mvc.perform(get("/api/certificates/verify/{code}", cert.getCertificateCode())
+                        .param("learnerName", "Fake Name").param("userId", "2"))
+                .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(jsonPath("$.data.learnerName").value("Hoc vien 1"))
+                .andExpect(jsonPath("$.data.courseTitle").value("Java"))
+                .andExpect(jsonPath("$.data.certificateCode").value(cert.getCertificateCode()))
+                .andExpect(jsonPath("$.data.issuedAt").isNotEmpty()).andReturn();
+        var fields = mapper.readTree(response.getResponse().getContentAsString()).path("data").properties();
+        assertThat(fields).extracting(java.util.Map.Entry::getKey)
+                .containsExactlyInAnyOrder("learnerName", "courseTitle", "issuedAt", "certificateCode");
+        mvc.perform(get("/api/enrollments/{id}/certificate", id)).andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/certificates/verify/{code}", cert.getCertificateCode())).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/certificates/verify/CERT-missing")).andExpect(status().isNotFound());
+        mvc.perform(get("/api/certificates/verify/{code}", "CERT-" + "X".repeat(50))).andExpect(status().isNotFound());
+        mvc.perform(delete("/api/enrollments?courseId=10").header("Authorization", token(1))).andExpect(status().isOk());
+        mvc.perform(get("/api/certificates/verify/{code}", cert.getCertificateCode())).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void onlyOwnerCanSupplyMissingDetailsForAnOldCertificate() throws Exception {
+        long id = enroll(1);
+        putProgress(101, "COMPLETED", 60);
+        putProgress(102, "COMPLETED", 60);
+        var cert = certificates.findByEnrollmentId(id).orElseThrow();
+        cert.setCertificateCode("CERT-1-10-20261006-ABCDEF12");
+        cert.setLearnerName(null);
+        cert.setCourseTitle(null);
+        certificates.save(cert);
+        mvc.perform(get("/api/certificates/verify/{code}", cert.getCertificateCode()))
+                .andExpect(status().isUnprocessableEntity());
+        mvc.perform(get("/api/enrollments/{id}/certificate", id).header("Authorization", token(2)))
+                .andExpect(status().isForbidden());
+        assertThat(certificates.findById(cert.getId()).orElseThrow().getLearnerName()).isNull();
+        mvc.perform(get("/api/enrollments/{id}/certificate", id).header("Authorization", token(1)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.learnerName").value("Hoc vien 1"));
+        mvc.perform(get("/api/certificates/verify/{code}", cert.getCertificateCode()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.learnerName").value("Hoc vien 1"));
+    }
+
+    @Test
+    void missingTrustedNameDoesNotCommitCompletionOrAnUnverifiableCertificate() throws Exception {
+        long id = enroll(1);
+        putProgress(101, "COMPLETED", 60);
+        String unnamedToken = "Bearer " + Jwts.builder().subject("1")
+                .claim("roles", List.of("ROLE_STUDENT"))
+                .expiration(Date.from(Instant.now().plusSeconds(120)))
+                .signWith(Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8))).compact();
+        mvc.perform(put("/api/lessons/102/progress").header("Authorization", unnamedToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"courseId\":10,\"status\":\"COMPLETED\",\"watchedSeconds\":60,\"fullName\":\"Forged\"}"))
+                .andExpect(status().isUnauthorized());
+        assertThat(enrollments.findById(id).orElseThrow().getStatus().name()).isEqualTo("ACTIVE");
+        assertThat(progress.findAllByEnrollmentId(id)).hasSize(1);
+        assertThat(certificates.findByEnrollmentId(id)).isEmpty();
+        assertThat(outbox.findAll()).noneMatch(event -> "certificate.issued".equals(event.getEventType())
+                || "enrollment.completed".equals(event.getEventType()));
+        putProgress(102, "COMPLETED", 60);
+        assertThat(certificates.findByEnrollmentId(id).orElseThrow().getLearnerName()).isEqualTo("Hoc vien 1");
+    }
+
     private String token(long user, String... roles) {
         return "Bearer " + Jwts.builder().subject(Long.toString(user))
-                .claim("roles", roles.length == 0 ? List.of("ROLE_STUDENT") : List.of(roles))
+                .claim("fullName", "Hoc vien " + user).claim("roles", roles.length == 0 ? List.of("ROLE_STUDENT") : List.of(roles))
                 .expiration(Date.from(Instant.now().plusSeconds(120)))
                 .signWith(Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8))).compact();
     }

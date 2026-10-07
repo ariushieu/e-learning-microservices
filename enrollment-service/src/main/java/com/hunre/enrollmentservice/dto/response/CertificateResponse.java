@@ -12,6 +12,7 @@ public record CertificateResponse(
         Long userId,
         Long courseId,
         String courseTitle,
+        String learnerName,
         String certificateCode,
         String fileUrl,
         Instant issuedAt
@@ -23,6 +24,7 @@ public record CertificateResponse(
                 .userId(userId)
                 .courseId(courseId)
                 .courseTitle(courseTitle)
+                .learnerName(certificate.getLearnerName())
                 .certificateCode(certificate.getCertificateCode())
                 .fileUrl(certificate.getFileUrl())
                 .issuedAt(certificate.getIssuedAt())

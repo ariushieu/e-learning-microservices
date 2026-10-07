@@ -113,18 +113,21 @@ class GatewayRouteCoverageTest {
         Path goc = timThuMucGocRepo();
         Map<String, String> ketQua = new LinkedHashMap<>();
 
-        try (Stream<Path> files = Files.walk(goc)) {
-            List<Path> controllers = files
-                    .filter(p -> p.getFileName().toString().endsWith("Controller.java"))
-                    .filter(p -> p.toString().contains("src" + p.getFileSystem().getSeparator() + "main"))
-                    .sorted()
-                    .toList();
-
-            for (Path controller : controllers) {
-                String ma = CHU_THICH.matcher(Files.readString(controller)).replaceAll("");
-                Matcher m = DUONG_DAN_API.matcher(ma);
-                while (m.find()) {
-                    ketQua.putIfAbsent(tienToCapMot(m.group(1)), controller.getFileName().toString());
+        // Chỉ đọc source Java của các module, tránh đi vào junction của pnpm/node_modules.
+        try (Stream<Path> modules = Files.list(goc)) {
+            for (Path module : modules.sorted().toList()) {
+                Path source = module.resolve("src/main/java");
+                if (!Files.isDirectory(source)) continue;
+                try (Stream<Path> files = Files.walk(source)) {
+                    for (Path controller : files
+                            .filter(p -> p.getFileName().toString().endsWith("Controller.java"))
+                            .sorted().toList()) {
+                        String ma = CHU_THICH.matcher(Files.readString(controller)).replaceAll("");
+                        Matcher m = DUONG_DAN_API.matcher(ma);
+                        while (m.find()) {
+                            ketQua.putIfAbsent(tienToCapMot(m.group(1)), controller.getFileName().toString());
+                        }
+                    }
                 }
             }
         }
