@@ -125,11 +125,20 @@ Body hợp lệ: `{"fullName":"Nguyễn Văn Quốc","phone":"0901234567"}`. Dù
 | 3 | Token hỏng | Token sai chữ ký | Body hợp lệ | 401 |
 | 4 | Thiếu hoặc trắng họ tên | S | Bỏ fullName hoặc fullName="   " | 400 VALIDATION_FAILED; fieldErrors có fullName; dữ liệu không đổi |
 | 5 | Họ tên quá dài | S | fullName dài 151 ký tự | 400 VALIDATION_FAILED; fieldErrors có fullName |
-| 6 | Số điện thoại quá dài | S | phone dài 21 ký tự | 400 VALIDATION_FAILED; fieldErrors có phone |
-| 7 | Xóa số điện thoại | S | Lần lượt bỏ phone, phone=null hoặc phone="   " | 200; số điện thoại được xóa |
+| 6 | Số điện thoại quá dài | S | phone gồm 16 chữ số | 400 VALIDATION_FAILED; fieldErrors có phone bằng tiếng Việt |
+| 7 | Xóa số điện thoại | S | Lưu số hợp lệ trước mỗi lần; lần lượt bỏ phone, phone=null, phone="" hoặc phone="   " | 200; số điện thoại được xóa |
 | 8 | Giả danh và nâng quyền qua body | S | Thêm userId=adminId, roles=[ROLE_ADMIN], email và status khác; query ?userId=adminId | 200; chỉ tên/điện thoại của S đổi; admin, email, roles và status không đổi |
 | 9 | Chuẩn hóa khoảng trắng | S | fullName="  Quốc  ", phone=" 0901234567 " | 200; trả "Quốc" và "0901234567" |
 | 10 | Người gọi không còn tồn tại | JWT hợp lệ của tài khoản đã xóa trong môi trường riêng | Body hợp lệ | 404 RESOURCE_NOT_FOUND |
+| 11 | Số điện thoại hợp lệ, kiểm biên | S | Lần lượt phone="091234567" (9 ký tự), "123456789012345" (15), "+84912345678", "0912 345 678" | 200; trả đúng phone; GET /api/auth/me phản ánh số đã lưu |
+| 12 | Ký tự sai định dạng | S | Lưu hồ sơ gốc; gửi phone="abc", "0912abc678", "0912-345-678", chuỗi có tab/xuống dòng hoặc chữ số Unicode | 400 VALIDATION_FAILED; fieldErrors.phone tiếng Việt; GET xác nhận họ tên và số cũ không đổi |
+| 13 | Số điện thoại quá ngắn | S | phone="12345678" (8 ký tự) | 400 VALIDATION_FAILED; fieldErrors.phone tiếng Việt; họ tên và số cũ không đổi |
+
+Hợp đồng mới theo bảng phân công sau #57: số không rỗng chỉ chứa chữ số ASCII, dấu `+`
+và khoảng trắng thường, dài 9–15 ký tự tính trên chuỗi đầu vào (gồm dấu `+` và khoảng trắng).
+Thông báo `fieldErrors.phone`: "Số điện thoại phải có từ 9 đến 15 ký tự, chỉ gồm chữ số,
+dấu + và khoảng trắng". Ca 6 đổi mốc 21 → 16 để kiểm biên của hợp đồng mới; đây là thay đổi
+yêu cầu, không phải điều chỉnh kỳ vọng theo một lần chạy FAIL.
 
 ## AUTH-08 — POST /api/auth/change-password
 

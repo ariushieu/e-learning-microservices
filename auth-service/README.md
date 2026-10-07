@@ -58,8 +58,12 @@ Content-Type: application/json
 ```
 
 Trả 200 với `ApiResponse<UserResponse>` giống `GET /api/auth/me`. `fullName` bắt buộc,
-không trắng và tối đa 150 ký tự; `phone` tùy chọn, tối đa 20 ký tự. Hai trường được cắt
-khoảng trắng ở đầu/cuối. Bỏ `phone`, gửi `null` hoặc chuỗi trắng sẽ xóa số điện thoại.
+không trắng và tối đa 150 ký tự; `phone` tùy chọn, nếu có thì dài 9–15 ký tự và chỉ
+gồm chữ số ASCII (`0`–`9`), dấu `+` và khoảng trắng thường. Độ dài tính trên chuỗi gửi
+lên, gồm cả dấu `+` và khoảng trắng. Hai trường được cắt khoảng trắng ở đầu/cuối khi lưu.
+Bỏ `phone`, gửi `null`, chuỗi rỗng hoặc chỉ khoảng trắng thường sẽ xóa số điện thoại.
+Ví dụ `0912 345 678` hợp lệ; `abc`, số dài 8 hoặc 16 ký tự trả 400
+`VALIDATION_FAILED`, kèm thông báo tiếng Việt trong `fieldErrors.phone` và không đổi hồ sơ.
 API chỉ cập nhật hai trường này trên tài khoản lấy từ JWT; không đổi email, vai trò,
 trạng thái hay mật khẩu theo các trường gửi thêm. JWT đã phát vẫn mang tên cũ;
 `GET /api/auth/me` trả hồ sơ mới ngay, JWT mới có tên mới sau login/refresh.

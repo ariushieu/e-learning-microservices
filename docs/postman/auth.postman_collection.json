@@ -4100,7 +4100,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\"fullName\": \"Name\", \"phone\": \"111111111111111111111\"}",
+              "raw": "{\"fullName\": \"Phone validation baseline\", \"phone\": \"1111111111111111\"}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -4117,7 +4117,50 @@
                   "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
                   "const j = pm.response.json(); const d = j.data;",
                   "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
-                  "pm.test(\"Business expectations\", () => { pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.map(e=>e.field)).to.include(\"phone\"); });"
+                  "pm.test(\"Vietnamese phone field error\", () => { pm.expect(j.code).to.eql(\"VALIDATION_FAILED\"); pm.expect(j.fieldErrors).to.deep.include({field:\"phone\", message:\"Số điện thoại phải có từ 9 đến 15 ký tự, chỉ gồm chữ số, dấu + và khoảng trắng\"}); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.7 Lưu số trước Xóa phone bỏ",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Name\", \"phone\": \"0901234567\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Profile saved\", () => { pm.expect(d.fullName).to.eql(\"Name\"); pm.expect(d.phone).to.eql(\"0901234567\"); });"
                 ]
               }
             }
@@ -4167,6 +4210,49 @@
           ]
         },
         {
+          "name": "AUTH-07.7 Lưu số trước Xóa phone null",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Name\", \"phone\": \"0901234567\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Profile saved\", () => { pm.expect(d.fullName).to.eql(\"Name\"); pm.expect(d.phone).to.eql(\"0901234567\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "AUTH-07.7 Xóa phone null",
           "request": {
             "method": "PUT",
@@ -4204,6 +4290,49 @@
                   "const j = pm.response.json(); const d = j.data;",
                   "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
                   "pm.test(\"Business expectations\", () => { pm.expect(d.phone == null).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.7 Lưu số trước Xóa phone trắng",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Name\", \"phone\": \"0901234567\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Profile saved\", () => { pm.expect(d.fullName).to.eql(\"Name\"); pm.expect(d.phone).to.eql(\"0901234567\"); });"
                 ]
               }
             }
@@ -4385,6 +4514,698 @@
                   "const j = pm.response.json(); const d = j.data;",
                   "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
                   "pm.test(\"Business expectations\", () => { pm.expect(j.code).to.eql(\"RESOURCE_NOT_FOUND\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.7 Lưu số trước xóa phone rỗng",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Name\", \"phone\": \"0901234567\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Profile saved\", () => { pm.expect(d.fullName).to.eql(\"Name\"); pm.expect(d.phone).to.eql(\"0901234567\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.7 Xóa phone rỗng",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Name\", \"phone\": \"\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Profile saved\", () => { pm.expect(d.fullName).to.eql(\"Name\"); pm.expect(d.phone).to.eql(null); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.11 Số hợp lệ 9 ký tự",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Phone validation baseline\", \"phone\": \"091234567\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Profile saved\", () => { pm.expect(d.fullName).to.eql(\"Phone validation baseline\"); pm.expect(d.phone).to.eql(\"091234567\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.11 Số hợp lệ 15 ký tự",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Phone validation baseline\", \"phone\": \"123456789012345\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Profile saved\", () => { pm.expect(d.fullName).to.eql(\"Phone validation baseline\"); pm.expect(d.phone).to.eql(\"123456789012345\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.11 Số hợp lệ có dấu cộng",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Phone validation baseline\", \"phone\": \"+84912345678\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Profile saved\", () => { pm.expect(d.fullName).to.eql(\"Phone validation baseline\"); pm.expect(d.phone).to.eql(\"+84912345678\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.11 Số hợp lệ có khoảng trắng",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Phone validation baseline\", \"phone\": \"0912 345 678\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Profile saved\", () => { pm.expect(d.fullName).to.eql(\"Phone validation baseline\"); pm.expect(d.phone).to.eql(\"0912 345 678\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.11 Đọc số đã lưu",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Persisted profile unchanged\", () => { pm.expect(d.fullName).to.eql(\"Phone validation baseline\"); pm.expect(d.phone).to.eql(\"0912 345 678\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.12 Chuẩn bị hồ sơ gốc",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Phone validation baseline\", \"phone\": \"0912 345 678\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Profile saved\", () => { pm.expect(d.fullName).to.eql(\"Phone validation baseline\"); pm.expect(d.phone).to.eql(\"0912 345 678\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.12 Từ chối chữ cái",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Must not be saved\", \"phone\": \"abc\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Vietnamese phone field error\", () => { pm.expect(j.code).to.eql(\"VALIDATION_FAILED\"); pm.expect(j.fieldErrors).to.deep.include({field:\"phone\", message:\"Số điện thoại phải có từ 9 đến 15 ký tự, chỉ gồm chữ số, dấu + và khoảng trắng\"}); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.12 Từ chối trộn chữ",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Must not be saved\", \"phone\": \"0912abc678\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Vietnamese phone field error\", () => { pm.expect(j.code).to.eql(\"VALIDATION_FAILED\"); pm.expect(j.fieldErrors).to.deep.include({field:\"phone\", message:\"Số điện thoại phải có từ 9 đến 15 ký tự, chỉ gồm chữ số, dấu + và khoảng trắng\"}); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.12 Từ chối dấu gạch",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Must not be saved\", \"phone\": \"0912-345-678\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Vietnamese phone field error\", () => { pm.expect(j.code).to.eql(\"VALIDATION_FAILED\"); pm.expect(j.fieldErrors).to.deep.include({field:\"phone\", message:\"Số điện thoại phải có từ 9 đến 15 ký tự, chỉ gồm chữ số, dấu + và khoảng trắng\"}); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.12 Từ chối tab",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Must not be saved\", \"phone\": \"0912\\t345678\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Vietnamese phone field error\", () => { pm.expect(j.code).to.eql(\"VALIDATION_FAILED\"); pm.expect(j.fieldErrors).to.deep.include({field:\"phone\", message:\"Số điện thoại phải có từ 9 đến 15 ký tự, chỉ gồm chữ số, dấu + và khoảng trắng\"}); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.12 Từ chối xuống dòng",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Must not be saved\", \"phone\": \"091234567\\n\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Vietnamese phone field error\", () => { pm.expect(j.code).to.eql(\"VALIDATION_FAILED\"); pm.expect(j.fieldErrors).to.deep.include({field:\"phone\", message:\"Số điện thoại phải có từ 9 đến 15 ký tự, chỉ gồm chữ số, dấu + và khoảng trắng\"}); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.12 Từ chối chữ số Unicode",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Must not be saved\", \"phone\": \"０９１２３４５６７８\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Vietnamese phone field error\", () => { pm.expect(j.code).to.eql(\"VALIDATION_FAILED\"); pm.expect(j.fieldErrors).to.deep.include({field:\"phone\", message:\"Số điện thoại phải có từ 9 đến 15 ký tự, chỉ gồm chữ số, dấu + và khoảng trắng\"}); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.12 Hồ sơ không đổi sau lỗi",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Persisted profile unchanged\", () => { pm.expect(d.fullName).to.eql(\"Phone validation baseline\"); pm.expect(d.phone).to.eql(\"0912 345 678\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.13 Từ chối số dài 8 ký tự",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Must not be saved\", \"phone\": \"12345678\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Vietnamese phone field error\", () => { pm.expect(j.code).to.eql(\"VALIDATION_FAILED\"); pm.expect(j.fieldErrors).to.deep.include({field:\"phone\", message:\"Số điện thoại phải có từ 9 đến 15 ký tự, chỉ gồm chữ số, dấu + và khoảng trắng\"}); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.13 Hồ sơ không đổi sau số quá ngắn",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Persisted profile unchanged\", () => { pm.expect(d.fullName).to.eql(\"Phone validation baseline\"); pm.expect(d.phone).to.eql(\"0912 345 678\"); });"
                 ]
               }
             }
