@@ -7,7 +7,7 @@ import { isId } from "@/components/course/queries";
 import { CertificateCard } from "@/components/enrollment/certificate-card";
 import { PrintButton } from "@/components/enrollment/print-button";
 import { Button } from "@/components/ui/button";
-import { gatewayOrNull, getSession } from "@/lib/server/gateway";
+import { gatewayOrNull } from "@/lib/server/gateway";
 import type { Certificate } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Chứng chỉ" };
@@ -25,10 +25,9 @@ const printCss = `
 
 export default async function CertificatePage({ params }: PageProps<"/certificates/[enrollmentId]">) {
   const { enrollmentId } = await params;
-  const [certificate, session] = await Promise.all([
-    isId(enrollmentId) ? gatewayOrNull<Certificate>(`/api/enrollments/${enrollmentId}/certificate`) : null,
-    getSession(),
-  ]);
+  const certificate = isId(enrollmentId)
+    ? await gatewayOrNull<Certificate>(`/api/enrollments/${enrollmentId}/certificate`)
+    : null;
 
   if (!certificate) {
     return (
@@ -46,7 +45,7 @@ export default async function CertificatePage({ params }: PageProps<"/certificat
   }
 
   return (
-    <div>
+    <div className="[overflow-wrap:anywhere]">
       <style>{printCss}</style>
       <div className="print:hidden">
         <PageHeader
@@ -66,7 +65,7 @@ export default async function CertificatePage({ params }: PageProps<"/certificat
           }
         />
       </div>
-      <CertificateCard certificate={certificate} learnerName={session?.fullName || "Học viên"} />
+      <CertificateCard certificate={certificate} />
     </div>
   );
 }

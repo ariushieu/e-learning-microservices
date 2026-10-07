@@ -83,6 +83,44 @@ ghi danh giả lập), kiểm cả số dòng và trạng thái đã commit khi 
 Các test H2 không thay thế kiểm chứng schema MySQL hoặc chạy toàn bộ Docker stack.
 Các ca Postman chung nằm ở [docs/test-cases/quiz.md](../docs/test-cases/quiz.md).
 
+### Collection qua gateway và giao diện ghi danh (07/10/2026)
+
+Import [quiz.postman_collection.json](../docs/postman/quiz.postman_collection.json),
+chạy tuần tự từ **0. Chuẩn bị**. Collection tự đăng nhập/cấp vai trò cho tài khoản QA,
+tạo khóa và đề riêng theo `runId`, lưu token/ID bằng collection variables. Không cần
+environment; `baseUrl` mặc định là `http://localhost:8080`. File này thay collection
+`quiz-service.postman_collection.json` cũ gọi trực tiếp cổng 8084.
+
+- Chỉ dùng trên dữ liệu dev; cần auth, course, enrollment, quiz, gateway và Kafka để
+  đồng bộ snapshot khóa mới. Tài khoản QA cố định theo `docs/test-cases/gateway.md`.
+- Bật `runSlowTests=true` trong tab Variables của collection để chạy ca nộp quá giờ
+  (chờ **100 giây**: giới hạn 60 giây + ân hạn 30 giây + khoảng đệm cho Docker).
+  Cờ này đọc bằng `pm.variables.get`, nên Newman cũng nhận `--env-var runSlowTests=true`
+  (ưu tiên hơn giá trị trong collection). Đặt `--timeout-script 150000`, lớn hơn thời
+  gian chờ. Không tính ca đã bỏ qua là PASS.
+- `runKafkaRecovery` mặc định `false`: ca Kafka yêu cầu dừng/bật broker và kiểm
+  thông báo riêng theo hướng dẫn thư mục 6. Hai ca sort vẫn BLOCKED vì endpoint
+  trả List chưa hỗ trợ sort.
+- Dữ liệu thử được giữ để đối chiếu, mỗi lần chạy tạo bộ mới. Không export token
+  thật hoặc thông tin đăng nhập cá nhân vào Git.
+
+Chạy từ thư mục gốc repo, bật cả ca chậm:
+
+```bash
+newman run docs/postman/quiz.postman_collection.json --env-var runSlowTests=true --timeout-script 150000
+```
+
+`runKafkaRecovery` vẫn đọc collection variable; muốn chạy ca Kafka phải sửa biến
+trong collection và thực hiện dừng/bật broker theo hướng dẫn, không chỉ dùng `--env-var`.
+
+Trang `/quizzes/{id}` kiểm ghi danh trước khi hiện nút bắt đầu: chưa ghi danh hoặc
+đã hủy thì hiện thông báo và liên kết về khóa học. Chủ bài/admin được miễn kiểm tra.
+403 khi bắt đầu được chuyển thành thông báo ghi danh; 502/503/504 hiện lỗi kiểm tra
+ghi danh. Lỗi kiểm tra khi mở trang có nút thử lại. Backend vẫn quyết định quyền cuối cùng.
+
+Biên bản, ca lỗi còn mở và giới hạn môi trường nằm tại
+[ket-qua/quiz.md](../docs/test-cases/ket-qua/quiz.md).
+
 ### Kết quả kiểm chứng ngày 06/10/2026
 
 Phần kiểm ghi danh (sau thay đổi quyền sở hữu):

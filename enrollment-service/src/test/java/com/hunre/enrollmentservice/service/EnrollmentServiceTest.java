@@ -60,6 +60,9 @@ class EnrollmentServiceTest {
     @Mock
     private com.hunre.enrollmentservice.client.CourseLessonClient courseLessonClient;
 
+    @Mock
+    private com.hunre.enrollmentservice.service.CertificateDetailsService certificateDetails;
+
     @InjectMocks
     private EnrollmentServiceImpl enrollmentService;
 
@@ -224,13 +227,14 @@ class EnrollmentServiceTest {
                 .id(1L)
                 .enrollmentId(enrollmentId)
                 .certificateCode("CERT-2026-C3-U1-TEST1234")
+                .learnerName("Hoc vien")
+                .courseTitle("Docker")
                 .fileUrl("/cert.pdf")
                 .issuedAt(Instant.now())
                 .build();
 
         when(enrollmentRepository.findById(enrollmentId)).thenReturn(Optional.of(enrollment));
         when(certificateRepository.findByEnrollmentId(enrollmentId)).thenReturn(Optional.of(cert));
-        when(courseClient.getCourseById(3L)).thenReturn(Optional.of(CourseDto.builder().id(3L).title("Docker").build()));
 
         com.hunre.enrollmentservice.dto.response.CertificateResponse response = enrollmentService.getCertificate(userId, enrollmentId);
 

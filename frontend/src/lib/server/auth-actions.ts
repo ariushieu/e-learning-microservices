@@ -72,6 +72,14 @@ export async function registerAction(_prev: FormState, form: FormData): Promise<
 }
 
 export async function logoutAction(): Promise<void> {
+  await endSession("/");
+}
+
+export async function logoutToLoginAction(): Promise<void> {
+  await endSession("/login");
+}
+
+async function endSession(destination: "/" | "/login"): Promise<void> {
   const store = await cookies();
   const refreshToken = store.get(REFRESH_COOKIE)?.value;
   if (refreshToken) {
@@ -79,5 +87,5 @@ export async function logoutAction(): Promise<void> {
     await post("/api/auth/logout", { refreshToken }).catch(() => undefined);
   }
   clearAuthCookies(store);
-  redirect("/");
+  redirect(destination);
 }

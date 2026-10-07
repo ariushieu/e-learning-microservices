@@ -19,6 +19,7 @@ import com.hunre.enrollmentservice.repository.EnrollmentRepository;
 import com.hunre.enrollmentservice.repository.LessonProgressRepository;
 import com.hunre.enrollmentservice.repository.OutboxEventRepository;
 import com.hunre.enrollmentservice.service.ProgressService;
+import com.hunre.enrollmentservice.service.CertificateDetailsService;
 import com.hunre.sharedcommon.event.CertificateIssuedEvent;
 import com.hunre.sharedcommon.event.EnrollmentCompletedEvent;
 import com.hunre.sharedcommon.exception.BusinessException;
@@ -34,7 +35,6 @@ import tools.jackson.databind.json.JsonMapper;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -50,6 +50,7 @@ public class ProgressServiceImpl implements ProgressService {
     private final OutboxEventRepository outboxEventRepository;
     private final CourseClient courseClient;
     private final CourseLessonClient courseLessonClient;
+    private final CertificateDetailsService certificateDetails;
 
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
@@ -216,9 +217,8 @@ public class ProgressServiceImpl implements ProgressService {
 
     private void issueCertificateIfAbsent(Enrollment enrollment) {
         if (!certificateRepository.existsByEnrollmentId(enrollment.getId())) {
-            int year = LocalDate.now().getYear();
-            String uniquePart = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-            String certCode = String.format("CERT-%d-C%d-U%d-%s", year, enrollment.getCourseId(), enrollment.getUserId(), uniquePart);
+            // Mã công khai không nhúng ID người dùng/khóa học và không dễ đoán.
+            String certCode = "CERT-" + UUID.randomUUID().toString().replace("-", "").toUpperCase();
 
             Certificate certificate = Certificate.builder()
                     .enrollmentId(enrollment.getId())
@@ -227,18 +227,19 @@ public class ProgressServiceImpl implements ProgressService {
                     .issuedAt(Instant.now())
                     .build();
 
+            String issuedCourseTitle = courseSnapshotRepository.findById(enrollment.getCourseId())
+                    .map(CourseSnapshot::getTitle)
+                    .orElseGet(() -> courseClient.getCourseById(enrollment.getCourseId())
+                            .map(CourseDto::getTitle)
+                            .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông tin khóa học")));
+            certificateDetails.captureIfMissing(certificate, enrollment.getUserId(), issuedCourseTitle);
+
             Certificate savedCert = certificateRepository.save(certificate);
             if (savedCert == null) {
                 savedCert = certificate;
             }
 
-            String courseTitle = courseSnapshotRepository.findById(enrollment.getCourseId())
-                    .map(CourseSnapshot::getTitle)
-                    .orElseGet(() -> courseClient.getCourseById(enrollment.getCourseId())
-                            .map(CourseDto::getTitle)
-                            .orElse("Khóa học #" + enrollment.getCourseId()));
-
-            saveCertificateIssuedOutboxEvent(savedCert, enrollment, courseTitle);
+            saveCertificateIssuedOutboxEvent(savedCert, enrollment, issuedCourseTitle);
             log.info("Đã cấp chứng chỉ {} cho học viên id={} hoàn thành khóa học id={}",
                     certCode, enrollment.getUserId(), enrollment.getCourseId());
         }

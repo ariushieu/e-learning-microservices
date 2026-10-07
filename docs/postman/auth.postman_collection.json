@@ -1,0 +1,5488 @@
+{
+  "info": {
+    "name": "HUNRE · Auth API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Chạy 0. Chuẩn bị rồi toàn bộ collection qua gateway. Tắt rate limit tạm khi chạy Runner. Không cần environment. Ba fixture tùy chọn expiredAccessToken, expiredRefreshToken, deletedUserToken phải do môi trường test cấp thật; nếu trống request tương ứng được SKIP/BLOCKED, không tính PASS. Xem docs/postman/auth.md. Không xuất token thật vào Git."
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@elearning.hunre.edu.vn",
+      "type": "string"
+    },
+    {
+      "key": "adminPassword",
+      "value": "Admin@123456",
+      "type": "string"
+    },
+    {
+      "key": "testPassword",
+      "value": "Test@123456",
+      "type": "string"
+    },
+    {
+      "key": "changedPassword",
+      "value": "Changed@123456",
+      "type": "string"
+    },
+    {
+      "key": "studentEmail",
+      "value": "qa.student@example.com",
+      "type": "string"
+    },
+    {
+      "key": "emailA",
+      "value": "qa.instructor.a@example.com",
+      "type": "string"
+    },
+    {
+      "key": "emailB",
+      "value": "qa.instructor.b@example.com",
+      "type": "string"
+    },
+    {
+      "key": "missingId",
+      "value": "9223372036854775807",
+      "type": "string"
+    },
+    {
+      "key": "expiredAccessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "expiredRefreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "deletedUserToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminRefresh",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tokenA",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshA",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "instructorAId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tokenB",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshB",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "instructorBId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "studentToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "studentRefresh",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "studentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "runId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "beforeRoleRefresh",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "categoryId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "courseId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "logoutRefresh",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "logoutToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "oldInstructorToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "pwNewRefresh",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "pwNewToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "pwOneRefresh",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "pwOneToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "pwTwoRefresh",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "quizId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "restoreProfileBody",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "revokedRefresh",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "rotationRefresh",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "sessionOneRefresh",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "sessionTwoRefresh",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Chuẩn bị",
+      "item": [
+        {
+          "name": "Đăng nhập admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{adminEmail}}\", \"password\": \"{{adminPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"runId\", Date.now().toString()+\"-\"+Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"adminToken\",d.accessToken);pm.collectionVariables.set(\"adminRefresh\",d.refreshToken);pm.collectionVariables.set(\"adminId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chuẩn bị A (201 mới / 409 đã có)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{emailA}}\", \"password\": \"{{testPassword}}\", \"fullName\": \"Giảng viên A\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Account created or already exists; login follows\",()=>pm.expect([201,409]).to.include(pm.response.code));",
+                  "if(pm.response.code===409) pm.test(\"Existing email\",()=>pm.expect(pm.response.json().code).to.eql(\"DUPLICATE_RESOURCE\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Đăng nhập A",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{emailA}}\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"tokenA\",d.accessToken);pm.collectionVariables.set(\"refreshA\",d.refreshToken);pm.collectionVariables.set(\"instructorAId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chuẩn hóa quyền A",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{instructorAId}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": [\"ROLE_STUDENT\", \"ROLE_INSTRUCTOR\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lấy token đúng quyền A",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{emailA}}\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"tokenA\",d.accessToken);pm.collectionVariables.set(\"refreshA\",d.refreshToken);pm.collectionVariables.set(\"instructorAId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chuẩn bị B (201 mới / 409 đã có)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{emailB}}\", \"password\": \"{{testPassword}}\", \"fullName\": \"Giảng viên B\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Account created or already exists; login follows\",()=>pm.expect([201,409]).to.include(pm.response.code));",
+                  "if(pm.response.code===409) pm.test(\"Existing email\",()=>pm.expect(pm.response.json().code).to.eql(\"DUPLICATE_RESOURCE\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Đăng nhập B",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{emailB}}\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"tokenB\",d.accessToken);pm.collectionVariables.set(\"refreshB\",d.refreshToken);pm.collectionVariables.set(\"instructorBId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chuẩn hóa quyền B",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{instructorBId}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": [\"ROLE_STUDENT\", \"ROLE_INSTRUCTOR\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lấy token đúng quyền B",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{emailB}}\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"tokenB\",d.accessToken);pm.collectionVariables.set(\"refreshB\",d.refreshToken);pm.collectionVariables.set(\"instructorBId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chuẩn bị student (201 mới / 409 đã có)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{studentEmail}}\", \"password\": \"{{testPassword}}\", \"fullName\": \"Học viên kiểm thử\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Account created or already exists; login follows\",()=>pm.expect([201,409]).to.include(pm.response.code));",
+                  "if(pm.response.code===409) pm.test(\"Existing email\",()=>pm.expect(pm.response.json().code).to.eql(\"DUPLICATE_RESOURCE\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Đăng nhập student",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{studentEmail}}\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"studentToken\",d.accessToken);pm.collectionVariables.set(\"studentRefresh\",d.refreshToken);pm.collectionVariables.set(\"studentId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chuẩn hóa quyền student",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{studentId}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": [\"ROLE_STUDENT\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lấy token đúng quyền student",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{studentEmail}}\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"studentToken\",d.accessToken);pm.collectionVariables.set(\"studentRefresh\",d.refreshToken);pm.collectionVariables.set(\"studentId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lưu hồ sơ S để khôi phục",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"originalName\",d.fullName);pm.collectionVariables.set(\"originalPhone\",d.phone); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1. Đăng ký · AUTH-01",
+      "item": [
+        {
+          "name": "AUTH-01.1 Đăng ký công khai",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.new.{{runId}}@example.com\", \"password\": \"{{testPassword}}\", \"fullName\": \"Người dùng kiểm thử\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Only student role, no password\",()=>{pm.expect(d.id).to.be.above(0);pm.expect(d.roles).to.eql([\"ROLE_STUDENT\"]);pm.expect(d).not.to.have.property(\"passwordHash\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-01.2 Token admin không cấp quyền",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.admin-input.{{runId}}@example.com\", \"password\": \"{{testPassword}}\", \"fullName\": \"Người dùng kiểm thử\", \"roles\": [\"ROLE_ADMIN\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Cannot self assign admin\",()=>pm.expect(d.roles).to.eql([\"ROLE_STUDENT\"]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-01.3 Email trùng",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.new.{{runId}}@example.com\", \"password\": \"{{testPassword}}\", \"fullName\": \"Người dùng kiểm thử\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Duplicate\",()=>{pm.expect(j.code).to.eql(\"DUPLICATE_RESOURCE\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-01.4 Email sai",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"abc\", \"password\": \"{{testPassword}}\", \"fullName\": \"Người dùng kiểm thử\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-01.5 Mật khẩu ngắn",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.short.{{runId}}@example.com\", \"password\": \"12345\", \"fullName\": \"Người dùng kiểm thử\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-01.6 Thiếu tên",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.no-name.{{runId}}@example.com\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-01.7 Email chữ hoa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"QA.NEW.{{runId}}@EXAMPLE.COM\", \"password\": \"{{testPassword}}\", \"fullName\": \"Người dùng kiểm thử\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-01.8 JSON hỏng",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Đăng nhập · AUTH-02",
+      "item": [
+        {
+          "name": "AUTH-02.1 Đăng nhập công khai",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{studentEmail}}\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(d.tokenType).to.eql(\"Bearer\");pm.expect(d.accessToken).to.be.a(\"string\").and.not.empty;pm.expect(d.refreshToken).to.be.a(\"string\").and.not.empty;pm.expect(d.expiresIn).to.be.above(0); });",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"studentToken\",d.accessToken);pm.collectionVariables.set(\"studentRefresh\",d.refreshToken);pm.collectionVariables.set(\"studentId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-02.2 Admin seed",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{adminEmail}}\", \"password\": \"{{adminPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(d.user.roles).to.include(\"ROLE_ADMIN\"); });",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"adminToken\",d.accessToken);pm.collectionVariables.set(\"adminRefresh\",d.refreshToken);pm.collectionVariables.set(\"adminId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-02.3 Email không tồn tại",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.missing.{{runId}}@example.com\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
+                  "pm.collectionVariables.set(\"missingLoginMessage\",j.message);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-02.4 Sai mật khẩu",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{studentEmail}}\", \"password\": \"wrong-password\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(j.message).to.eql(pm.collectionVariables.get(\"missingLoginMessage\")); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-02.5 Thiếu mật khẩu",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{studentEmail}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-02.6 Email sai",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"abc\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-02.7 Token admin không đổi danh tính",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{studentEmail}}\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(d.user.id).to.eql(Number(pm.collectionVariables.get(\"studentId\")));pm.expect(d.user.roles).to.eql([\"ROLE_STUDENT\"]); });",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"studentToken\",d.accessToken);pm.collectionVariables.set(\"studentRefresh\",d.refreshToken);pm.collectionVariables.set(\"studentId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-02.8 Chuẩn bị cấp instructor",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{studentId}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": [\"ROLE_STUDENT\", \"ROLE_INSTRUCTOR\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-02.8 JWT mới nhận quyền",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{studentEmail}}\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(JSON.parse(require(\"buffer\").Buffer.from(d.accessToken.split(\".\")[1],\"base64\").toString()).roles).to.include(\"ROLE_INSTRUCTOR\"); });",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"studentToken\",d.accessToken);pm.collectionVariables.set(\"studentRefresh\",d.refreshToken);pm.collectionVariables.set(\"studentId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-02.8 Khôi phục quyền",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{studentId}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": [\"ROLE_STUDENT\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-02.8 Đăng nhập lại sau khôi phục",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{studentEmail}}\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"studentToken\",d.accessToken);pm.collectionVariables.set(\"studentRefresh\",d.refreshToken);pm.collectionVariables.set(\"studentId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Refresh · AUTH-03",
+      "item": [
+        {
+          "name": "AUTH-03.1 Chuẩn bị token riêng",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{studentEmail}}\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"rotationToken\",d.accessToken);pm.collectionVariables.set(\"rotationRefresh\",d.refreshToken);pm.collectionVariables.set(\"rotationId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-03.1 Refresh hợp lệ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{rotationRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(d.user.id).to.eql(Number(pm.collectionVariables.get(\"studentId\")));pm.expect(d.refreshToken).not.to.eql(pm.collectionVariables.get(\"rotationRefresh\")); });",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"rotatedRefresh\",d.refreshToken); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-03.2 Không dùng lại token đã rotate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{rotationRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-03.3 Token không tồn tại",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"not-a-real-refresh-token\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-03.4 Chuẩn bị token thu hồi",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{studentEmail}}\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"revokedToken\",d.accessToken);pm.collectionVariables.set(\"revokedRefresh\",d.refreshToken);pm.collectionVariables.set(\"revokedId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-03.4 Thu hồi token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/logout",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{revokedRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-03.4 Token đã thu hồi",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{revokedRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-03.5 Thiếu refreshToken",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-03.6 Refresh rỗng",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-03.7 Lưu JWT trước cấp quyền",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{studentEmail}}\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"beforeRoleToken\",d.accessToken);pm.collectionVariables.set(\"beforeRoleRefresh\",d.refreshToken);pm.collectionVariables.set(\"beforeRoleId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-03.7 Cấp instructor",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{studentId}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": [\"ROLE_STUDENT\", \"ROLE_INSTRUCTOR\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-03.7 Refresh nhận quyền hiện tại",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{beforeRoleRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(JSON.parse(require(\"buffer\").Buffer.from(d.accessToken.split(\".\")[1],\"base64\").toString()).roles).to.include(\"ROLE_INSTRUCTOR\");pm.expect(JSON.parse(require(\"buffer\").Buffer.from(pm.collectionVariables.get(\"beforeRoleToken\").split(\".\")[1],\"base64\").toString()).roles).not.to.include(\"ROLE_INSTRUCTOR\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-03.7 Khôi phục quyền",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{studentId}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": [\"ROLE_STUDENT\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-03.7 Đăng nhập lại S",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{studentEmail}}\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"studentToken\",d.accessToken);pm.collectionVariables.set(\"studentRefresh\",d.refreshToken);pm.collectionVariables.set(\"studentId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-03.8 Refresh hết hạn thật",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{expiredRefreshToken}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"expiredRefreshToken\")) { console.warn(\"BLOCKED: AUTH-03.8 Refresh hết hạn thật requires expiredRefreshToken\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-03.9 Không dùng access thay refresh",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{studentToken}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Đăng xuất · AUTH-04",
+      "item": [
+        {
+          "name": "AUTH-04.1 Chuẩn bị phiên đăng xuất",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{studentEmail}}\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"logoutToken\",d.accessToken);pm.collectionVariables.set(\"logoutRefresh\",d.refreshToken);pm.collectionVariables.set(\"logoutId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-04.1 Đăng xuất hợp lệ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/logout",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{logoutRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-04.1 Xác nhận token bị thu hồi",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{logoutRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-04.2 Đăng xuất lặp lại",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/logout",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{logoutRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-04.3 Token không tồn tại",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/logout",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"not-a-real-refresh-token\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-04.4 Không body",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/logout",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-04.5 Token rỗng",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/logout",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-04.6 JSON hỏng",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/logout",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-04.7 Access còn hạn sau logout",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{logoutToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-04.8 Phiên một",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{studentEmail}}\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"sessionOneToken\",d.accessToken);pm.collectionVariables.set(\"sessionOneRefresh\",d.refreshToken);pm.collectionVariables.set(\"sessionOneId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-04.8 Phiên hai",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{studentEmail}}\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"sessionTwoToken\",d.accessToken);pm.collectionVariables.set(\"sessionTwoRefresh\",d.refreshToken);pm.collectionVariables.set(\"sessionTwoId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-04.8 Đăng xuất phiên một",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/logout",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{sessionOneRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-04.8 Phiên hai vẫn hoạt động",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{sessionTwoRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Danh tính · AUTH-05",
+      "item": [
+        {
+          "name": "AUTH-05.1 Đúng danh tính",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(d.id).to.eql(Number(pm.collectionVariables.get(\"studentId\"))); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-05.2 Không token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-05.3 Giảng viên đọc mình",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(d.id).to.eql(Number(pm.collectionVariables.get(\"instructorAId\"))); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-05.4 Token hỏng",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-05.5 Access hết hạn thật",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{expiredAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"expiredAccessToken\")) { console.warn(\"BLOCKED: AUTH-05.5 Access hết hạn thật requires expiredAccessToken\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-05.6 Query không giả danh",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me?userId={{adminId}}",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(d.id).to.eql(Number(pm.collectionVariables.get(\"studentId\"))); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-05.7 Không lộ dữ liệu nhạy cảm",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business expectations\", () => { for(const key of [\"passwordHash\",\"tokenHash\",\"refreshTokens\"]) pm.expect(d).not.to.have.property(key); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. Quyền · AUTH-06",
+      "item": [
+        {
+          "name": "AUTH-06.1 Cấp instructor",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{studentId}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": [\"ROLE_STUDENT\", \"ROLE_INSTRUCTOR\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-06.1 Nhận JWT instructor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{studentEmail}}\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(JSON.parse(require(\"buffer\").Buffer.from(d.accessToken.split(\".\")[1],\"base64\").toString()).roles).to.include(\"ROLE_INSTRUCTOR\"); });",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"oldInstructorToken\",d.accessToken);pm.collectionVariables.set(\"oldInstructorRefresh\",d.refreshToken);pm.collectionVariables.set(\"oldInstructorId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-06.12 Chuẩn bị danh mục riêng",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/categories",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"Auth test {{runId}}\", \"slug\": \"auth-test-{{runId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 201) { pm.collectionVariables.set(\"categoryId\",d.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-06.12 Chuẩn bị khóa do S sở hữu",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{oldInstructorToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/courses",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"categoryId\": {{categoryId}}, \"title\": \"Auth permissions {{runId}}\", \"slug\": \"auth-permissions-{{runId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 201) { pm.collectionVariables.set(\"courseId\",d.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-06.2 Không token",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{studentId}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": [\"ROLE_STUDENT\", \"ROLE_INSTRUCTOR\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-06.3 Học viên không tự nâng quyền",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{studentId}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": [\"ROLE_ADMIN\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-06.4 Giảng viên không cấp quyền",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{studentId}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": [\"ROLE_ADMIN\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-06.5 Người dùng không tồn tại",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{missingId}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": [\"ROLE_STUDENT\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-06.6 ID sai kiểu",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/abc/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": [\"ROLE_STUDENT\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-06.7 Roles thiếu",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{studentId}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-06.7 Roles rỗng",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{studentId}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": []}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-06.7 Roles null",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{studentId}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": null}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-06.7 Roles phần tử null",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{studentId}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": [null]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-06.8 Vai trò không tồn tại",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{studentId}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": [\"ROLE_UNKNOWN\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-06.9 Gỡ instructor",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{studentId}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": [\"ROLE_STUDENT\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-06.9 Token mới chỉ STUDENT",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{studentEmail}}\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(d.user.roles).to.eql([\"ROLE_STUDENT\"]); });",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"studentToken\",d.accessToken);pm.collectionVariables.set(\"studentRefresh\",d.refreshToken);pm.collectionVariables.set(\"studentId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-06.9 JWT mới không tạo quiz",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/quizzes",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"courseId\": {{courseId}}, \"title\": \"Auth JWT check\", \"passScore\": 70, \"maxAttempts\": 1}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-06.10 Admin không tự hạ quyền",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{adminId}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": [\"ROLE_STUDENT\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 422\", () => pm.response.to.have.status(422));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-06.11 Admin giữ quyền ADMIN",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{adminId}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": [\"ROLE_ADMIN\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-06.12 JWT instructor cũ còn hiệu lực",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{oldInstructorToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/quizzes",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"courseId\": {{courseId}}, \"title\": \"Auth JWT check\", \"passScore\": 70, \"maxAttempts\": 1}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 201) { pm.collectionVariables.set(\"quizId\",d.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-06.12 Dọn quiz thử nghiệm",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/quizzes/{{quizId}}",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-06.12 Dọn khóa thử nghiệm",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/courses/{{courseId}}",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-06.12 Dọn danh mục thử nghiệm",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/categories/{{categoryId}}",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "7. Hồ sơ · AUTH-07",
+      "item": [
+        {
+          "name": "AUTH-07.1 Lưu hồ sơ",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Nguyễn Văn Quốc\", \"phone\": \"0901234567\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(d.fullName).to.eql(\"Nguyễn Văn Quốc\");pm.expect(d.phone).to.eql(\"0901234567\");pm.expect(d.id).to.eql(Number(pm.collectionVariables.get(\"studentId\"))); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.1 Đọc lại dữ liệu mới",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(d.fullName).to.eql(\"Nguyễn Văn Quốc\");pm.expect(d.phone).to.eql(\"0901234567\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.2 Không token",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Nguyễn Văn Quốc\", \"phone\": \"0901234567\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.3 Token hỏng",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Nguyễn Văn Quốc\", \"phone\": \"0901234567\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.4 Họ tên thiếu",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.map(e=>e.field)).to.include(\"fullName\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.4 Họ tên trắng",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"   \"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.map(e=>e.field)).to.include(\"fullName\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.5 Tên quá dài",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.map(e=>e.field)).to.include(\"fullName\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.6 Số điện thoại quá dài",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Name\", \"phone\": \"111111111111111111111\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.map(e=>e.field)).to.include(\"phone\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.7 Xóa phone bỏ",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Name\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(d.phone == null).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.7 Xóa phone null",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Name\", \"phone\": null}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(d.phone == null).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.7 Xóa phone trắng",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Name\", \"phone\": \"   \"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(d.phone == null).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.8 Không sửa trường nhạy cảm",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me?userId={{adminId}}",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Nguyễn Văn Quốc\", \"phone\": \"0901234567\", \"userId\": {{adminId}}, \"roles\": [\"ROLE_ADMIN\"], \"email\": \"hacker@example.com\", \"status\": \"LOCKED\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(d.id).to.eql(Number(pm.collectionVariables.get(\"studentId\")));pm.expect(d.email).to.eql(pm.collectionVariables.get(\"studentEmail\"));pm.expect(d.roles).to.eql([\"ROLE_STUDENT\"]);pm.expect(d.status).to.eql(\"ACTIVE\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.9 Cắt khoảng trắng",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"  Quốc  \", \"phone\": \" 0901234567 \"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(d.fullName).to.eql(\"Quốc\");pm.expect(d.phone).to.eql(\"0901234567\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-07.10 Người gọi đã bị xóa",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{deletedUserToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fullName\": \"Nguyễn Văn Quốc\", \"phone\": \"0901234567\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"deletedUserToken\")) { console.warn(\"BLOCKED: AUTH-07.10 Người gọi đã bị xóa requires deletedUserToken\"); pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(j.code).to.eql(\"RESOURCE_NOT_FOUND\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Khôi phục hồ sơ S",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{{restoreProfileBody}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set(\"restoreProfileBody\",JSON.stringify({fullName:pm.collectionVariables.get(\"originalName\"),phone:pm.collectionVariables.get(\"originalPhone\")}));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "8. Mật khẩu · AUTH-08",
+      "item": [
+        {
+          "name": "Chuẩn bị tài khoản riêng cho đổi mật khẩu",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.password.{{runId}}@example.com\", \"password\": \"{{testPassword}}\", \"fullName\": \"Người dùng kiểm thử\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chuẩn bị phiên một",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.password.{{runId}}@example.com\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"pwOneToken\",d.accessToken);pm.collectionVariables.set(\"pwOneRefresh\",d.refreshToken);pm.collectionVariables.set(\"pwOneId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chuẩn bị phiên hai",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.password.{{runId}}@example.com\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"pwTwoToken\",d.accessToken);pm.collectionVariables.set(\"pwTwoRefresh\",d.refreshToken);pm.collectionVariables.set(\"pwTwoId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.1 Đổi mật khẩu",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{pwOneToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/change-password",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"currentPassword\": \"{{testPassword}}\", \"newPassword\": \"{{changedPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.1 Mật khẩu cũ bị từ chối",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.password.{{runId}}@example.com\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.1 Mật khẩu mới dùng được",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.password.{{runId}}@example.com\", \"password\": \"{{changedPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"pwNewToken\",d.accessToken);pm.collectionVariables.set(\"pwNewRefresh\",d.refreshToken);pm.collectionVariables.set(\"pwNewId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.2 Phiên một bị thu hồi",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{pwOneRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.2 Phiên hai bị thu hồi",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{pwTwoRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.2 Phiên mới vẫn refresh được",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{pwNewRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"pwNewRefresh\",d.refreshToken); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.3 Lấy phiên của S",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{studentEmail}}\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"studentToken\",d.accessToken);pm.collectionVariables.set(\"studentRefresh\",d.refreshToken);pm.collectionVariables.set(\"studentId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.3 Tài khoản khác không ảnh hưởng",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{studentRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"studentRefresh\",d.refreshToken); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.4 Mật khẩu hiện tại sai",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{pwNewToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/change-password",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"currentPassword\": \"wrong\", \"newPassword\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.map(e=>e.field)).to.include(\"currentPassword\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.4 Mật khẩu không đổi",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.password.{{runId}}@example.com\", \"password\": \"{{changedPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"pwCheckToken\",d.accessToken);pm.collectionVariables.set(\"pwCheckRefresh\",d.refreshToken);pm.collectionVariables.set(\"pwCheckId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.4 Phiên không bị thu hồi",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{pwNewRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"pwNewRefresh\",d.refreshToken); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.5 Mật khẩu hiện tại thiếu",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{pwNewToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/change-password",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"newPassword\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.map(e=>e.field)).to.include(\"currentPassword\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.5 Mật khẩu hiện tại trắng",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{pwNewToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/change-password",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"currentPassword\": \" \", \"newPassword\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.map(e=>e.field)).to.include(\"currentPassword\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.6 Mật khẩu mới thiếu",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{pwNewToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/change-password",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"currentPassword\": \"{{changedPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.map(e=>e.field)).to.include(\"newPassword\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.6 Mật khẩu mới trắng",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{pwNewToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/change-password",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"currentPassword\": \"{{changedPassword}}\", \"newPassword\": \"      \"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.map(e=>e.field)).to.include(\"newPassword\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.7 Mật khẩu mới dài 5",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{pwNewToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/change-password",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"currentPassword\": \"{{changedPassword}}\", \"newPassword\": \"xxxxx\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.map(e=>e.field)).to.include(\"newPassword\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.7 Mật khẩu mới dài 51",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{pwNewToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/change-password",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"currentPassword\": \"{{changedPassword}}\", \"newPassword\": \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business expectations\", () => { pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.map(e=>e.field)).to.include(\"newPassword\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.8 Không token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/change-password",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"currentPassword\": \"{{testPassword}}\", \"newPassword\": \"{{changedPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.9 Token hỏng",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/change-password",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"currentPassword\": \"{{testPassword}}\", \"newPassword\": \"{{changedPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.10 Không đổi mật khẩu người khác",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{pwNewToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/change-password?userId={{studentId}}",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"currentPassword\": \"{{changedPassword}}\", \"newPassword\": \"{{testPassword}}\", \"userId\": {{studentId}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.10 Tài khoản test đổi đúng",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.password.{{runId}}@example.com\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"pwFinalToken\",d.accessToken);pm.collectionVariables.set(\"pwFinalRefresh\",d.refreshToken);pm.collectionVariables.set(\"pwFinalId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.10 S vẫn giữ mật khẩu cũ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"{{studentEmail}}\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));",
+                  "if(pm.response.code === 200) { pm.collectionVariables.set(\"studentToken\",d.accessToken);pm.collectionVariables.set(\"studentRefresh\",d.refreshToken);pm.collectionVariables.set(\"studentId\",d.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-08.11 Access cũ chưa hết hạn",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{pwOneToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json(); const d = j.data;",
+                  "pm.test(\"Response envelope\", () => pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,7 +1,8 @@
 # Tình huống test enrollment-service
 
 Đọc [gateway.md](gateway.md) để chuẩn bị tài khoản, token, ID và biên bản.
-Mọi request qua `{{baseUrl}}`. **Kế hoạch chưa chạy Postman.**
+Mọi request qua `{{baseUrl}}`. Collection và cách chạy ở [Postman enrollment](../postman/enrollment.md);
+kết quả thực tế và giới hạn môi trường ở [biên bản](ket-qua/enrollment.md).
 
 ## Điều kiện và đường dẫn
 
@@ -179,6 +180,31 @@ Chạy trên môi trường thử riêng; khôi phục MySQL và cấu hình ret
 | 3 | JSON hỏng | Gửi not-json rồi sự kiện khóa hợp lệ | JSON hỏng vào DLT; consumer vẫn xử lý khóa sau |
 | 4 | Hết ngân sách retry | Giảm max-elapsed-time trong môi trường test, giữ database lỗi quá ngân sách | Message được retry rồi chuyển DLT; khi database phục hồi, sự kiện sau xử lý được |
 | 5 | Gửi DLT thất bại | Làm DLT không ghi được, gửi message hỏng; khôi phục quyền/kết nối DLT | Không commit bỏ qua offset lỗi trước khi lưu được DLT; sau khôi phục lưu được payload gốc và xử lý tiếp |
+
+## ENROLL-10 — GET /api/certificates/verify/{code}
+
+Sau ENROLL-07.10/ENROLL-06.1, lưu certificateCode. Mọi ca dưới đi qua gateway.
+
+| # | Tình huống | Tài khoản | Mong đợi |
+|---|---|---|---|
+| 1 | Mã được cấp sau khi hoàn thành | — | 200; đúng bốn trường learnerName, courseTitle, issuedAt, certificateCode; không email/ID/fileUrl; Cache-Control no-store |
+| 2 | Người khác xác minh cùng mã | B | 200; cùng thông tin công khai với ca 1 |
+| 3 | Mã không tồn tại | — | 404 |
+| 4 | Mã sai định dạng | — | 404 |
+| 5 | Query thêm learnerName=Forged và userId của B | — | 200; dữ liệu không đổi |
+| 6 | POST vào URL xác minh, không token | — | 401; chỉ GET được công khai |
+| 7 | GET /api/certificates không token | — | 401; không mở danh sách |
+| 8 | Xóa lượt S rồi xác minh mã cũ | — | 404 |
+| 9 | A đổi tên khóa, chờ snapshot đổi; xác minh và đọc chứng chỉ riêng | — và S | 200; tên trên chứng chỉ vẫn là tên đã lưu lúc cấp |
+
+Hồi quy migration (test tích hợp và kiểm thủ công trên database có chứng chỉ cũ):
+chứng chỉ thiếu tên sau V2 trả 422 khi xác minh; B/admin không được backfill hộ; S mở chứng chỉ
+riêng thì tên được bổ sung từ JWT của S và snapshot, mã cũ/ngày cấp giữ nguyên.
+Không tạo dữ liệu migration giả bằng endpoint nhận tên từ người xác minh.
+
+Web: mở link ở cửa sổ chưa đăng nhập thấy Hợp lệ; mã lạ hiển thị EmptyState; gateway lỗi hiển thị
+ErrorAlert, không nhầm với mã không tồn tại. Kiểm 375/768/1366px và liên kết trên bản in chứng chỉ.
+
 
 ## Truy vết nguồn
 

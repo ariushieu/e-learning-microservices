@@ -91,6 +91,7 @@ Cổng nội bộ enrollment là 8083; demo và kiểm tra tích hợp đi qua g
 | PATCH | `/api/enrollments/{id}/status` | `{"status":"CANCELLED"}` |
 | DELETE | `/api/enrollments?courseId=10` | Xóa lượt ghi danh, tiến độ và chứng chỉ của mình trong khóa này |
 | GET | `/api/enrollments/{id}/certificate` | Xem chứng chỉ khi hoàn thành |
+| GET | `/api/certificates/verify/{code}` | Công khai: tên học viên, tên khóa, ngày cấp và mã chứng chỉ |
 | PUT | `/api/lessons/{lessonId}/progress` | `{"courseId":10,"status":"COMPLETED","watchedSeconds":300}` |
 | GET | `/api/progress?courseId=10` | Tiến độ tổng và từng bài học |
 
@@ -187,16 +188,12 @@ Snapshot mẫu phải khớp với khóa học PUBLISHED thật ở course-servi
 
 ## 5. Postman
 
-Import `docs/postman/enrollment-service.postman_collection.json`.
-
-- Điền `email`, `password` của học viên và `courseId`, `lessonId` có thật; giữ
-  `baseUrl=http://localhost:8080`.
-- Request đăng nhập tự lưu `accessToken`; ghi danh tự lưu `enrollmentId`.
-- Chạy từng thư mục theo trạng thái. Chứng chỉ chỉ trả 200 sau khi hoàn thành tất cả bài.
-- Thư mục hủy dùng lượt chưa COMPLETED. Thư mục xóa đặt riêng vì xóa cả tiến độ/chứng chỉ
-  của tài khoản đang đăng nhập trong khóa đã chọn.
-- Thử quyền sở hữu bằng tài khoản thứ hai, kể cả giảng viên/admin. Mọi vai trò đều được học
-  trên lượt ghi danh của mình; không được sửa hộ người khác. Không lưu mật khẩu/token thật vào Git.
+Import `docs/postman/enrollment.postman_collection.json`, chọn No environment và chạy toàn bộ
+từ **0. Chuẩn bị**. Setup tự đăng ký/login, cấp vai trò, tạo khóa/chương/bài, xuất bản và lưu ID.
+154 request qua gateway bao phủ các ca HTTP trong bảng tình huống, kể cả xác minh công khai.
+Các ca ENROLL-09 cần thao tác hạ tầng riêng. Hướng dẫn và giới hạn tại
+[docs/postman/enrollment.md](../docs/postman/enrollment.md); kết quả thực tế tại
+[biên bản enrollment](../docs/test-cases/ket-qua/enrollment.md).
 
 ## 6. Kiểm thử tự động
 
@@ -232,8 +229,8 @@ Trên Windows dùng `mvnw.cmd` thay cho `./mvnw`.
   và đề cương, CANCELLED/chưa ghi danh không được lộ nội dung. Đối chiếu cả mặc định
   production để tránh test dùng đúng URL nhưng cấu hình triển khai vẫn dùng URL cũ.
 
-Test tự động không thay thế kiểm thử toàn bộ Docker/MySQL/notification. Không sửa entity
-hay migration đã merge trong nhiệm vụ này; bước MySQL thật ở trên vẫn cần trước buổi demo.
+Test tự động không thay thế kiểm thử toàn bộ Docker/MySQL/notification. Bước MySQL thật
+ở trên vẫn cần trước buổi demo; các kết quả ngày 06/10 dưới đây là lịch sử của PR #50.
 
 ### Kết quả kiểm tra local ngày 06/10/2026
 
@@ -271,3 +268,29 @@ trong JVM; test gateway dùng HTTP thật với backend giả lập; test databa
 - Trước khi tạo/kích hoạt lại ghi danh, kiểm tra cả snapshot và trạng thái hiện tại qua `GET /api/courses/{id}`. Snapshot PUBLISHED cũ không đủ để ghi danh vào khóa đã ARCHIVED/DRAFT.
 - Nguồn không tìm thấy hoặc không PUBLISHED: 404. Nguồn timeout/lỗi/phản hồi sai: 502, không lưu lượt ghi danh hoặc outbox. Cần triển khai cùng bản course-service giữ quyền đọc ARCHIVED.
 - Sự kiện course-service được lưu bằng outbox để gửi bù sau lỗi Kafka. Ghi danh mới vẫn phụ thuộc khả năng truy cập course-service; đọc danh sách ghi danh không gọi lại bước xác minh này.
+
+## Xác minh chứng chỉ công khai
+
+`GET /api/certificates/verify/{code}` đi qua gateway, không cần đăng nhập. Dữ liệu trong
+ApiResponse chỉ gồm learnerName, courseTitle, issuedAt, certificateCode; không có email,
+userId, enrollmentId, courseId, fileUrl. Mã mới là CERT- + 32 ký tự hex ngẫu nhiên, không nhúng ID.
+Mã không tồn tại/sai định dạng trả 404; response hợp lệ có Cache-Control: no-store.
+
+Trang `/verify/[code]` hiển thị trạng thái Hợp lệ và thông tin trên. Trang chứng chỉ của chủ
+sở hữu có liên kết xác minh để gửi/in kèm; GET chứng chỉ riêng vẫn chỉ cho chính chủ.
+
+Migration **V2__certificate_public_details.sql** thêm learner_name và course_title nullable,
+không sửa migration V1. Khi cấp mới, tên học viên được lấy từ fullName của JWT đã xác thực
+của chính người hoàn thành, tên khóa lấy từ snapshot. Cả hai lưu cùng transaction tiến độ,
+chứng chỉ và outbox. Thiếu tên đáng tin cậy thì trả 401, yêu cầu đăng nhập lại và rollback.
+Body/query không quyết định tên trên chứng chỉ.
+
+Sau khi cấp, đổi tên khóa hoặc tên trong token không thay tên đã lưu trên chứng chỉ.
+Đây là thông tin tài khoản tự khai tại lúc cấp, không phải xác minh giấy tờ danh tính.
+Với chứng chỉ có trước V2, chính chủ mở trang chứng chỉ sau đăng nhập để bổ sung tên hiện tại;
+không thể khôi phục tên lịch sử vốn chưa từng lưu. Mã cũ và ngày cấp giữ nguyên.
+Trước bước đó, API public trả 422 với hướng dẫn, không suy đoán tên hoặc dùng email thay thế.
+Xóa lượt ghi danh vẫn xóa chứng chỉ; mã đã xóa trả 404 khi xác minh.
+
+Triển khai enrollment-service (Flyway V2), gateway và frontend cùng phiên bản. Kiểm tra schema
+MySQL bằng scripts/verify-schema.sh/CI; H2 không xác nhận được cú pháp migration MySQL.

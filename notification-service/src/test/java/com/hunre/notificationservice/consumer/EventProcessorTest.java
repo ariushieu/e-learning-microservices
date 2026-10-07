@@ -99,6 +99,8 @@ class EventProcessorTest {
         assertThat(notification.getTitle()).isEqualTo("Đã có kết quả bài kiểm tra");
         assertThat(notification.getContent())
                 .isEqualTo("Bài kiểm tra Chương 1: Microservices của bạn đạt 85.50 điểm.");
+        // Bấm vào thông báo mở trang kết quả của đúng lượt làm bài.
+        assertThat(notification.getLinkUrl()).isEqualTo("/attempts/1");
     }
 
     @Test
@@ -159,6 +161,7 @@ class EventProcessorTest {
 
         Notification notification = notificationRepository.findAll().get(0);
         assertThat(notification.getUserId()).isEqualTo(7L);
+        assertThat(notification.getLinkUrl()).isEqualTo("/learn/3");
         assertThat(notification.getContent())
                 .isEqualTo("Bạn đã ghi danh khóa học Kiến trúc Microservices.");
     }
