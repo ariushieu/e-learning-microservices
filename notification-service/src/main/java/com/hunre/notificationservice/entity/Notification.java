@@ -18,6 +18,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 /**
  * Một thông báo đã dựng xong cho một người dùng.
@@ -96,8 +97,17 @@ public class Notification {
     /** Đánh dấu đã đọc. Gọi nhiều lần cũng chỉ ghi nhận lần đầu. */
     public void markRead() {
         if (this.readAt == null) {
-            this.readAt = Instant.now();
+            this.readAt = now();
         }
         this.status = NotificationStatus.READ;
+    }
+
+    /**
+     * Thời điểm hiện tại cắt còn micro giây, đúng độ chính xác của cột {@code DATETIME(6)}. Để
+     * nguyên nano giây thì MySQL làm tròn khi lưu: response của lần đọc đầu trả một {@code readAt},
+     * mọi lần đọc sau trả một giá trị khác.
+     */
+    public static Instant now() {
+        return Instant.now().truncatedTo(ChronoUnit.MICROS);
     }
 }

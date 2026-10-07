@@ -1,0 +1,2657 @@
+{
+  "info": {
+    "name": "Demo flow — một vòng xuyên 5 service",
+    "description": "Luồng demo trọn vẹn qua gateway: admin cấp quyền, giảng viên dựng và xuất bản khóa có bài kiểm tra, học viên ghi danh, học, làm bài, hoàn thành, nhận chứng chỉ và thông báo; khách xác minh chứng chỉ. Mỗi bước kiểm cả dữ liệu đồng bộ qua Kafka (snapshot, thông báo, số học viên).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "missingId",
+      "value": "9223372036854775807"
+    },
+    {
+      "key": "runId",
+      "value": ""
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "adminId",
+      "value": ""
+    },
+    {
+      "key": "adminRefresh",
+      "value": ""
+    },
+    {
+      "key": "tokenA",
+      "value": ""
+    },
+    {
+      "key": "instructorAId",
+      "value": ""
+    },
+    {
+      "key": "refreshA",
+      "value": ""
+    },
+    {
+      "key": "tokenB",
+      "value": ""
+    },
+    {
+      "key": "instructorBId",
+      "value": ""
+    },
+    {
+      "key": "refreshB",
+      "value": ""
+    },
+    {
+      "key": "studentToken",
+      "value": ""
+    },
+    {
+      "key": "studentId",
+      "value": ""
+    },
+    {
+      "key": "studentRefresh",
+      "value": ""
+    },
+    {
+      "key": "categoryId",
+      "value": ""
+    },
+    {
+      "key": "courseId",
+      "value": ""
+    },
+    {
+      "key": "courseTitle",
+      "value": ""
+    },
+    {
+      "key": "sectionId",
+      "value": ""
+    },
+    {
+      "key": "lessonAId",
+      "value": ""
+    },
+    {
+      "key": "lesson2Id",
+      "value": ""
+    },
+    {
+      "key": "enrollmentId",
+      "value": ""
+    },
+    {
+      "key": "quizId",
+      "value": ""
+    },
+    {
+      "key": "quizTitle",
+      "value": ""
+    },
+    {
+      "key": "q1",
+      "value": ""
+    },
+    {
+      "key": "q1Correct",
+      "value": ""
+    },
+    {
+      "key": "q1Wrong",
+      "value": ""
+    },
+    {
+      "key": "q2",
+      "value": ""
+    },
+    {
+      "key": "q2Correct",
+      "value": ""
+    },
+    {
+      "key": "q2Wrong",
+      "value": ""
+    },
+    {
+      "key": "attemptId",
+      "value": ""
+    },
+    {
+      "key": "certificateCode",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Tài khoản",
+      "item": [
+        {
+          "name": "SETUP-01 Đăng nhập admin và bắt đầu lượt chạy",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@elearning.hunre.edu.vn\",\n  \"password\": \"Admin@123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('runId', Date.now().toString(36) + Math.random().toString(36).slice(2, 6));",
+                  "Object.keys(pm.collectionVariables.toObject()).filter(k => k.startsWith('poll:')).forEach(k => pm.collectionVariables.unset(k));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-01 Đăng nhập admin và bắt đầu lượt chạy — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"SETUP-01 Đăng nhập admin và bắt đầu lượt chạy — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([200].includes(pm.response.code)) {",
+                  "  pm.test(\"SETUP-01 Đăng nhập admin và bắt đầu lượt chạy — dữ liệu\", () => {",
+                  "    set(\"adminToken\", d.accessToken); set(\"adminRefresh\", d.refreshToken); set(\"adminId\", d.user.id);",
+                  "  });",
+                  "}",
+                  "if (![200].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-02.A Đăng ký (409 = đã có, đăng nhập ở bước sau)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa.instructor.a@example.com\",\n  \"fullName\": \"Giang vien A\",\n  \"password\": \"Test@123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-02.A Đăng ký (409 = đã có, đăng nhập ở bước sau) — HTTP 201,409\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201,409]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"SETUP-02.A Đăng ký (409 = đã có, đăng nhập ở bước sau) — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if (![201,409].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-03.A Đăng nhập lấy ID",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa.instructor.a@example.com\",\n  \"password\": \"Test@123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-03.A Đăng nhập lấy ID — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"SETUP-03.A Đăng nhập lấy ID — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([200].includes(pm.response.code)) {",
+                  "  pm.test(\"SETUP-03.A Đăng nhập lấy ID — dữ liệu\", () => {",
+                  "    set(\"instructorAId\", d.user.id);",
+                  "  });",
+                  "}",
+                  "if (![200].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-04.A Cấp vai trò bằng API",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{instructorAId}}/roles",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roles\": [\n    \"ROLE_STUDENT\",\n    \"ROLE_INSTRUCTOR\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-04.A Cấp vai trò bằng API — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"SETUP-04.A Cấp vai trò bằng API — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if (![200].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-05.A Đăng nhập lại lấy quyền mới",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa.instructor.a@example.com\",\n  \"password\": \"Test@123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-05.A Đăng nhập lại lấy quyền mới — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"SETUP-05.A Đăng nhập lại lấy quyền mới — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([200].includes(pm.response.code)) {",
+                  "  pm.test(\"SETUP-05.A Đăng nhập lại lấy quyền mới — dữ liệu\", () => {",
+                  "    set(\"tokenA\", d.accessToken); set(\"refreshA\", d.refreshToken);",
+                  "    pm.expect(d.user.roles).to.include.members([\"ROLE_STUDENT\", \"ROLE_INSTRUCTOR\"]);",
+                  "  });",
+                  "}",
+                  "if (![200].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-02.B Đăng ký (409 = đã có, đăng nhập ở bước sau)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa.instructor.b@example.com\",\n  \"fullName\": \"Giang vien B\",\n  \"password\": \"Test@123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-02.B Đăng ký (409 = đã có, đăng nhập ở bước sau) — HTTP 201,409\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201,409]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"SETUP-02.B Đăng ký (409 = đã có, đăng nhập ở bước sau) — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if (![201,409].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-03.B Đăng nhập lấy ID",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa.instructor.b@example.com\",\n  \"password\": \"Test@123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-03.B Đăng nhập lấy ID — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"SETUP-03.B Đăng nhập lấy ID — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([200].includes(pm.response.code)) {",
+                  "  pm.test(\"SETUP-03.B Đăng nhập lấy ID — dữ liệu\", () => {",
+                  "    set(\"instructorBId\", d.user.id);",
+                  "  });",
+                  "}",
+                  "if (![200].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-04.B Cấp vai trò bằng API",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{instructorBId}}/roles",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roles\": [\n    \"ROLE_STUDENT\",\n    \"ROLE_INSTRUCTOR\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-04.B Cấp vai trò bằng API — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"SETUP-04.B Cấp vai trò bằng API — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if (![200].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-05.B Đăng nhập lại lấy quyền mới",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa.instructor.b@example.com\",\n  \"password\": \"Test@123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-05.B Đăng nhập lại lấy quyền mới — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"SETUP-05.B Đăng nhập lại lấy quyền mới — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([200].includes(pm.response.code)) {",
+                  "  pm.test(\"SETUP-05.B Đăng nhập lại lấy quyền mới — dữ liệu\", () => {",
+                  "    set(\"tokenB\", d.accessToken); set(\"refreshB\", d.refreshToken);",
+                  "    pm.expect(d.user.roles).to.include.members([\"ROLE_STUDENT\", \"ROLE_INSTRUCTOR\"]);",
+                  "  });",
+                  "}",
+                  "if (![200].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-02.S Đăng ký (409 = đã có, đăng nhập ở bước sau)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa.student@example.com\",\n  \"fullName\": \"Hoc vien S\",\n  \"password\": \"Test@123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-02.S Đăng ký (409 = đã có, đăng nhập ở bước sau) — HTTP 201,409\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201,409]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"SETUP-02.S Đăng ký (409 = đã có, đăng nhập ở bước sau) — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if (![201,409].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-03.S Đăng nhập lấy ID",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa.student@example.com\",\n  \"password\": \"Test@123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-03.S Đăng nhập lấy ID — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"SETUP-03.S Đăng nhập lấy ID — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([200].includes(pm.response.code)) {",
+                  "  pm.test(\"SETUP-03.S Đăng nhập lấy ID — dữ liệu\", () => {",
+                  "    set(\"studentId\", d.user.id);",
+                  "  });",
+                  "}",
+                  "if (![200].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-04.S Cấp vai trò bằng API",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{studentId}}/roles",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roles\": [\n    \"ROLE_STUDENT\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-04.S Cấp vai trò bằng API — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"SETUP-04.S Cấp vai trò bằng API — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if (![200].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-05.S Đăng nhập lại lấy quyền mới",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa.student@example.com\",\n  \"password\": \"Test@123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-05.S Đăng nhập lại lấy quyền mới — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"SETUP-05.S Đăng nhập lại lấy quyền mới — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([200].includes(pm.response.code)) {",
+                  "  pm.test(\"SETUP-05.S Đăng nhập lại lấy quyền mới — dữ liệu\", () => {",
+                  "    set(\"studentToken\", d.accessToken); set(\"studentRefresh\", d.refreshToken);",
+                  "    pm.expect(d.user.roles).to.include.members([\"ROLE_STUDENT\"]);",
+                  "  });",
+                  "}",
+                  "if (![200].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Admin có sẵn; giảng viên A và học viên S (cùng B) là tài khoản QA cố định theo gateway.md."
+    },
+    {
+      "name": "1. Giảng viên dựng khóa",
+      "item": [
+        {
+          "name": "DEMO-01 Admin tạo danh mục",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/categories",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Demo {{runId}}\",\n  \"slug\": \"demo-{{runId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-01 Admin tạo danh mục — HTTP 201\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-01 Admin tạo danh mục — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([201].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-01 Admin tạo danh mục — dữ liệu\", () => {",
+                  "    set(\"categoryId\", d.id);",
+                  "  });",
+                  "}",
+                  "if (![201].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-02 Giảng viên tạo khóa nháp",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/courses",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": {{categoryId}},\n  \"title\": \"Nhập môn Kiến trúc Microservices {{runId}}\",\n  \"slug\": \"nhap-mon-microservices-{{runId}}\",\n  \"description\": \"Khóa học minh họa luồng demo: giảng viên dựng khóa, học viên học, làm bài và nhận chứng chỉ.\",\n  \"price\": 0,\n  \"level\": \"BEGINNER\",\n  \"language\": \"vi\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-02 Giảng viên tạo khóa nháp — HTTP 201\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-02 Giảng viên tạo khóa nháp — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([201].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-02 Giảng viên tạo khóa nháp — dữ liệu\", () => {",
+                  "    set(\"courseId\", d.id); set(\"courseTitle\", d.title);",
+                  "    pm.expect(d.status).to.eql('DRAFT');",
+                  "    pm.expect(d.instructorId).to.eql(id(\"instructorAId\"));",
+                  "  });",
+                  "}",
+                  "if (![201].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-03 Khách chưa thấy khóa nháp",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/courses/{{courseId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-03 Khách chưa thấy khóa nháp — HTTP 404\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([404]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-03 Khách chưa thấy khóa nháp — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-04 Thêm chương",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/courses/{{courseId}}/sections",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Tổng quan\",\n  \"position\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-04 Thêm chương — HTTP 201\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-04 Thêm chương — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([201].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-04 Thêm chương — dữ liệu\", () => {",
+                  "    set(\"sectionId\", d.id);",
+                  "  });",
+                  "}",
+                  "if (![201].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-05 Thêm bài 1 (học thử)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/sections/{{sectionId}}/lessons",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Microservices là gì\",\n  \"type\": \"ARTICLE\",\n  \"content\": \"Mỗi service một database, giao tiếp qua API và Kafka.\",\n  \"durationSeconds\": 300,\n  \"position\": 1,\n  \"isPreview\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-05 Thêm bài 1 (học thử) — HTTP 201\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-05 Thêm bài 1 (học thử) — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([201].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-05 Thêm bài 1 (học thử) — dữ liệu\", () => {",
+                  "    set(\"lessonAId\", d.id);",
+                  "  });",
+                  "}",
+                  "if (![201].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-06 Thêm bài 2",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/sections/{{sectionId}}/lessons",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"API Gateway\",\n  \"type\": \"ARTICLE\",\n  \"content\": \"Gateway kiểm token, định tuyến và giới hạn request.\",\n  \"durationSeconds\": 300,\n  \"position\": 2,\n  \"isPreview\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-06 Thêm bài 2 — HTTP 201\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-06 Thêm bài 2 — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([201].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-06 Thêm bài 2 — dữ liệu\", () => {",
+                  "    set(\"lesson2Id\", d.id);",
+                  "  });",
+                  "}",
+                  "if (![201].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-07 Xuất bản khóa",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/courses/{{courseId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"PUBLISHED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-07 Xuất bản khóa — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-07 Xuất bản khóa — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([200].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-07 Xuất bản khóa — dữ liệu\", () => {",
+                  "    pm.expect(d.status).to.eql('PUBLISHED');",
+                  "  });",
+                  "}",
+                  "if (![200].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-08 Khách thấy khóa trong danh mục",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/courses?categoryId={{categoryId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-08 Khách thấy khóa trong danh mục — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-08 Khách thấy khóa trong danh mục — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([200].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-08 Khách thấy khóa trong danh mục — dữ liệu\", () => {",
+                  "    pm.expect(d.content.map(c => c.id)).to.include(id(\"courseId\"));",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-09 Khách xem chi tiết khóa",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/courses/{{courseId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-09 Khách xem chi tiết khóa — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-09 Khách xem chi tiết khóa — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([200].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-09 Khách xem chi tiết khóa — dữ liệu\", () => {",
+                  "    pm.expect(d.title).to.eql(cv('courseTitle'));",
+                  "    pm.expect(d.status).to.eql('PUBLISHED');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-10 Tạo quiz",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/quizzes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{courseId}},\n  \"title\": \"Quiz QA {{runId}}\",\n  \"timeLimitMinutes\": 10,\n  \"passScore\": 70,\n  \"maxAttempts\": 0,\n  \"shuffleQuestions\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-10 Tạo quiz — HTTP 201\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-10 Tạo quiz — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([201].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-10 Tạo quiz — dữ liệu\", () => {",
+                  "    set(\"quizId\", d.id); set(\"quizTitle\", d.title);",
+                  "  });",
+                  "}",
+                  "if (![201].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-10 Câu 1 của quiz",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/quizzes/{{quizId}}/questions",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Câu 1: 1 + 1 = ?\",\n  \"type\": \"SINGLE_CHOICE\",\n  \"score\": 1,\n  \"position\": 1,\n  \"explanation\": \"1 + 1 = 2\",\n  \"options\": [\n    {\n      \"content\": \"2\",\n      \"isCorrect\": true,\n      \"position\": 1\n    },\n    {\n      \"content\": \"6\",\n      \"isCorrect\": false,\n      \"position\": 2\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-10 Câu 1 của quiz — HTTP 201\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-10 Câu 1 của quiz — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([201].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-10 Câu 1 của quiz — dữ liệu\", () => {",
+                  "    set(\"q1\", d.id);",
+                  "    set(\"q1Correct\", d.options.find(o => o.isCorrect === true).id);",
+                  "    set(\"q1Wrong\", d.options.find(o => o.isCorrect === false).id);",
+                  "  });",
+                  "}",
+                  "if (![201].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-10 Câu 2 của quiz",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/quizzes/{{quizId}}/questions",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Câu 2: 2 + 1 = ?\",\n  \"type\": \"SINGLE_CHOICE\",\n  \"score\": 1,\n  \"position\": 2,\n  \"explanation\": \"2 + 1 = 3\",\n  \"options\": [\n    {\n      \"content\": \"3\",\n      \"isCorrect\": true,\n      \"position\": 1\n    },\n    {\n      \"content\": \"7\",\n      \"isCorrect\": false,\n      \"position\": 2\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-10 Câu 2 của quiz — HTTP 201\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-10 Câu 2 của quiz — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([201].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-10 Câu 2 của quiz — dữ liệu\", () => {",
+                  "    set(\"q2\", d.id);",
+                  "    set(\"q2Correct\", d.options.find(o => o.isCorrect === true).id);",
+                  "    set(\"q2Wrong\", d.options.find(o => o.isCorrect === false).id);",
+                  "  });",
+                  "}",
+                  "if (![201].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-10 Xuất bản quiz",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/quizzes/{{quizId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"PUBLISHED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-10 Xuất bản quiz — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-10 Xuất bản quiz — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if (![200].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Học viên học, làm bài, nhận chứng chỉ",
+      "item": [
+        {
+          "name": "DEMO-11 Học viên ghi danh",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/enrollments",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{courseId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "const ready = (() => { try { return !!(pm.response.code !== 404); } catch (e) { return false; } })();",
+                  "const pollKey = 'poll:' + pm.info.requestName;",
+                  "const attempts = Number(pm.collectionVariables.get(pollKey) || 0);",
+                  "if (!ready && pm.response.code < 500 && attempts < 15) {",
+                  "  set(pollKey, attempts + 1);",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 2000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset(pollKey);",
+                  "  pm.test(\"DEMO-11 Học viên ghi danh — HTTP 201\", () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201]);",
+                  "  });",
+                  "  if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "    pm.test(\"DEMO-11 Học viên ghi danh — lỗi đúng định dạng chung\", () => {",
+                  "      pm.expect(response.success).to.eql(false);",
+                  "      pm.expect(response.code).to.be.a('string');",
+                  "      pm.expect(response.message).to.be.a('string');",
+                  "      pm.expect(response.path).to.be.a('string');",
+                  "    });",
+                  "  }",
+                  "  if ([201].includes(pm.response.code)) {",
+                  "    pm.test(\"DEMO-11 Học viên ghi danh — dữ liệu\", () => {",
+                  "      set(\"enrollmentId\", d.id);",
+                  "      pm.expect(d.userId).to.eql(id(\"studentId\"));",
+                  "    });",
+                  "  }",
+                  "  if (![201].includes(pm.response.code)) pm.execution.setNextRequest(null);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-12 Thông báo ghi danh tới",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/notifications?size=100"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "const ready = (() => { try { return !!(d.content.filter(n => n.type === 'ENROLLMENT_SUCCESS' && n.linkUrl === '/learn/' + cv('courseId')).length >= 1); } catch (e) { return false; } })();",
+                  "const pollKey = 'poll:' + pm.info.requestName;",
+                  "const attempts = Number(pm.collectionVariables.get(pollKey) || 0);",
+                  "if (!ready && pm.response.code < 500 && attempts < 15) {",
+                  "  set(pollKey, attempts + 1);",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 2000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset(pollKey);",
+                  "  pm.test(\"DEMO-12 Thông báo ghi danh tới — HTTP 200\", () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "  });",
+                  "  if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "    pm.test(\"DEMO-12 Thông báo ghi danh tới — lỗi đúng định dạng chung\", () => {",
+                  "      pm.expect(response.success).to.eql(false);",
+                  "      pm.expect(response.code).to.be.a('string');",
+                  "      pm.expect(response.message).to.be.a('string');",
+                  "      pm.expect(response.path).to.be.a('string');",
+                  "    });",
+                  "  }",
+                  "  if ([200].includes(pm.response.code)) {",
+                  "    pm.test(\"DEMO-12 Thông báo ghi danh tới — dữ liệu\", () => {",
+                  "      pm.expect(d.content.filter(n => n.type === 'ENROLLMENT_SUCCESS' && n.linkUrl === '/learn/' + cv('courseId'))).to.have.length(1);",
+                  "    });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-13 Khóa của tôi",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/enrollments"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-13 Khóa của tôi — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-13 Khóa của tôi — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([200].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-13 Khóa của tôi — dữ liệu\", () => {",
+                  "    const e = d.content.find(x => x.id === id('enrollmentId'));",
+                  "    pm.expect(e.status).to.eql('ACTIVE'); pm.expect(Number(e.progressPercent)).to.eql(0);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-14 Học xong bài 1",
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/lessons/{{lessonAId}}/progress",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{courseId}},\n  \"status\": \"COMPLETED\",\n  \"watchedSeconds\": 300\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-14 Học xong bài 1 — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-14 Học xong bài 1 — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([200].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-14 Học xong bài 1 — dữ liệu\", () => {",
+                  "    pm.expect(d.status).to.eql('COMPLETED');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-15 Tiến độ 50%",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/progress?courseId={{courseId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-15 Tiến độ 50% — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-15 Tiến độ 50% — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([200].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-15 Tiến độ 50% — dữ liệu\", () => {",
+                  "    pm.expect(Number(d.progressPercent)).to.eql(50);",
+                  "    pm.expect(d.completedLessonsCount).to.eql(1);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-16 Lấy đề không lộ đáp án",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/quizzes/{{quizId}}/take"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-16 Lấy đề không lộ đáp án — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-16 Lấy đề không lộ đáp án — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([200].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-16 Lấy đề không lộ đáp án — dữ liệu\", () => {",
+                  "    pm.expect(d.questions).to.have.length(2);",
+                  "    d.questions.forEach(q => { pm.expect(q.explanation == null).to.eql(true); q.options.forEach(o => pm.expect(o.isCorrect == null).to.eql(true)); });",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-17 Làm bài đúng cả hai câu — bắt đầu",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/quizzes/{{quizId}}/attempts"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-17 Làm bài đúng cả hai câu — bắt đầu — HTTP 201\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-17 Làm bài đúng cả hai câu — bắt đầu — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([201].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-17 Làm bài đúng cả hai câu — bắt đầu — dữ liệu\", () => {",
+                  "    set(\"attemptId\", d.id);",
+                  "  });",
+                  "}",
+                  "if (![201].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-17 Làm bài đúng cả hai câu — nộp bài",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/attempts/{{attemptId}}/submit",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": [\n    { \"questionId\": {{q1}}, \"selectedOptionIds\": [{{q1Correct}}] },\n    { \"questionId\": {{q2}}, \"selectedOptionIds\": [{{q2Correct}}] }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-17 Làm bài đúng cả hai câu — nộp bài — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-17 Làm bài đúng cả hai câu — nộp bài — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([200].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-17 Làm bài đúng cả hai câu — nộp bài — dữ liệu\", () => {",
+                  "    pm.expect(d.attemptId).to.eql(id(\"attemptId\"));",
+                  "    pm.expect(Number(d.score)).to.eql(100);",
+                  "    pm.expect(d.passed).to.eql(true);",
+                  "  });",
+                  "}",
+                  "if (![200].includes(pm.response.code)) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-18 Xem kết quả kèm đáp án",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/attempts/{{attemptId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-18 Xem kết quả kèm đáp án — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-18 Xem kết quả kèm đáp án — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([200].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-18 Xem kết quả kèm đáp án — dữ liệu\", () => {",
+                  "    pm.expect(Number(d.score)).to.eql(100); pm.expect(d.passed).to.eql(true);",
+                  "    pm.expect(d.questionResults).to.have.length(2);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-19 Thông báo kết quả bài kiểm tra",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/notifications?size=100"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "const ready = (() => { try { return !!(d.content.filter(n => n.type === 'QUIZ_GRADED' && n.linkUrl === '/attempts/' + cv('attemptId')).length >= 1); } catch (e) { return false; } })();",
+                  "const pollKey = 'poll:' + pm.info.requestName;",
+                  "const attempts = Number(pm.collectionVariables.get(pollKey) || 0);",
+                  "if (!ready && pm.response.code < 500 && attempts < 15) {",
+                  "  set(pollKey, attempts + 1);",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 2000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset(pollKey);",
+                  "  pm.test(\"DEMO-19 Thông báo kết quả bài kiểm tra — HTTP 200\", () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "  });",
+                  "  if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "    pm.test(\"DEMO-19 Thông báo kết quả bài kiểm tra — lỗi đúng định dạng chung\", () => {",
+                  "      pm.expect(response.success).to.eql(false);",
+                  "      pm.expect(response.code).to.be.a('string');",
+                  "      pm.expect(response.message).to.be.a('string');",
+                  "      pm.expect(response.path).to.be.a('string');",
+                  "    });",
+                  "  }",
+                  "  if ([200].includes(pm.response.code)) {",
+                  "    pm.test(\"DEMO-19 Thông báo kết quả bài kiểm tra — dữ liệu\", () => {",
+                  "      pm.expect(d.content.filter(n => n.type === 'QUIZ_GRADED' && n.linkUrl === '/attempts/' + cv('attemptId'))).to.have.length(1);",
+                  "    });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-20 Học xong bài 2",
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/lessons/{{lesson2Id}}/progress",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{courseId}},\n  \"status\": \"COMPLETED\",\n  \"watchedSeconds\": 300\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-20 Học xong bài 2 — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-20 Học xong bài 2 — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([200].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-20 Học xong bài 2 — dữ liệu\", () => {",
+                  "    pm.expect(d.status).to.eql('COMPLETED');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-21 Khóa hoàn thành 100%",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/enrollments/{{enrollmentId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-21 Khóa hoàn thành 100% — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-21 Khóa hoàn thành 100% — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([200].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-21 Khóa hoàn thành 100% — dữ liệu\", () => {",
+                  "    pm.expect(d.status).to.eql('COMPLETED');",
+                  "    pm.expect(Number(d.progressPercent)).to.eql(100);",
+                  "    pm.expect(d.completedAt).to.be.a('string');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-22 Nhận chứng chỉ",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/enrollments/{{enrollmentId}}/certificate"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-22 Nhận chứng chỉ — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-22 Nhận chứng chỉ — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([200].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-22 Nhận chứng chỉ — dữ liệu\", () => {",
+                  "    set('certificateCode', d.certificateCode);",
+                  "    pm.expect(d.courseId).to.eql(id('courseId'));",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-23 Thông báo hoàn thành và chứng chỉ",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/notifications?size=100"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "const ready = (() => { try { return !!(['COURSE_COMPLETED', 'CERTIFICATE_ISSUED'].every(t => d.content.some(n => n.type === t && n.linkUrl === '/certificates/' + cv('enrollmentId')))); } catch (e) { return false; } })();",
+                  "const pollKey = 'poll:' + pm.info.requestName;",
+                  "const attempts = Number(pm.collectionVariables.get(pollKey) || 0);",
+                  "if (!ready && pm.response.code < 500 && attempts < 15) {",
+                  "  set(pollKey, attempts + 1);",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 2000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset(pollKey);",
+                  "  pm.test(\"DEMO-23 Thông báo hoàn thành và chứng chỉ — HTTP 200\", () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "  });",
+                  "  if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "    pm.test(\"DEMO-23 Thông báo hoàn thành và chứng chỉ — lỗi đúng định dạng chung\", () => {",
+                  "      pm.expect(response.success).to.eql(false);",
+                  "      pm.expect(response.code).to.be.a('string');",
+                  "      pm.expect(response.message).to.be.a('string');",
+                  "      pm.expect(response.path).to.be.a('string');",
+                  "    });",
+                  "  }",
+                  "  if ([200].includes(pm.response.code)) {",
+                  "    pm.test(\"DEMO-23 Thông báo hoàn thành và chứng chỉ — dữ liệu\", () => {",
+                  "      const mine = d.content.filter(n => n.linkUrl === '/certificates/' + cv('enrollmentId'));",
+                  "      pm.expect(mine.map(n => n.type)).to.have.members(['COURSE_COMPLETED', 'CERTIFICATE_ISSUED']);",
+                  "      pm.expect(mine.find(n => n.type === 'CERTIFICATE_ISSUED').content).to.include(cv('certificateCode'));",
+                  "    });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Xác minh công khai và hộp thư",
+      "item": [
+        {
+          "name": "DEMO-24 Ai cũng xác minh được chứng chỉ",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/certificates/verify/{{certificateCode}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-24 Ai cũng xác minh được chứng chỉ — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-24 Ai cũng xác minh được chứng chỉ — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([200].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-24 Ai cũng xác minh được chứng chỉ — dữ liệu\", () => {",
+                  "    pm.expect(d.certificateCode).to.eql(cv('certificateCode'));",
+                  "    pm.expect(d.courseTitle).to.eql(cv('courseTitle'));",
+                  "    pm.expect(d.learnerName).to.eql('Hoc vien S');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-25 Khóa đếm được học viên",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/courses/{{courseId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "const ready = (() => { try { return !!(d.studentCount >= 1); } catch (e) { return false; } })();",
+                  "const pollKey = 'poll:' + pm.info.requestName;",
+                  "const attempts = Number(pm.collectionVariables.get(pollKey) || 0);",
+                  "if (!ready && pm.response.code < 500 && attempts < 15) {",
+                  "  set(pollKey, attempts + 1);",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 2000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset(pollKey);",
+                  "  pm.test(\"DEMO-25 Khóa đếm được học viên — HTTP 200\", () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "  });",
+                  "  if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "    pm.test(\"DEMO-25 Khóa đếm được học viên — lỗi đúng định dạng chung\", () => {",
+                  "      pm.expect(response.success).to.eql(false);",
+                  "      pm.expect(response.code).to.be.a('string');",
+                  "      pm.expect(response.message).to.be.a('string');",
+                  "      pm.expect(response.path).to.be.a('string');",
+                  "    });",
+                  "  }",
+                  "  if ([200].includes(pm.response.code)) {",
+                  "    pm.test(\"DEMO-25 Khóa đếm được học viên — dữ liệu\", () => {",
+                  "      pm.expect(d.studentCount).to.eql(1);",
+                  "    });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-26 Đọc tất cả thông báo",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/notifications/read"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-26 Đọc tất cả thông báo — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-26 Đọc tất cả thông báo — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([200].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-26 Đọc tất cả thông báo — dữ liệu\", () => {",
+                  "    pm.expect(d).to.be.at.least(4);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DEMO-27 Không còn thông báo chưa đọc",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/notifications/unread-count"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.variables.get(key);",
+                  "const id = (key) => Number(pm.variables.get(key));",
+                  "const set = (key, value) => pm.collectionVariables.set(key, value);",
+                  "let response; try { response = pm.response.json(); } catch (e) { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"DEMO-27 Không còn thông báo chưa đọc — HTTP 200\", () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) {",
+                  "  pm.test(\"DEMO-27 Không còn thông báo chưa đọc — lỗi đúng định dạng chung\", () => {",
+                  "    pm.expect(response.success).to.eql(false);",
+                  "    pm.expect(response.code).to.be.a('string');",
+                  "    pm.expect(response.message).to.be.a('string');",
+                  "    pm.expect(response.path).to.be.a('string');",
+                  "  });",
+                  "}",
+                  "if ([200].includes(pm.response.code)) {",
+                  "  pm.test(\"DEMO-27 Không còn thông báo chưa đọc — dữ liệu\", () => {",
+                  "    pm.expect(d).to.eql(0);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
