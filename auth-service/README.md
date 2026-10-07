@@ -58,12 +58,18 @@ Content-Type: application/json
 ```
 
 Trả 200 với `ApiResponse<UserResponse>` giống `GET /api/auth/me`. `fullName` bắt buộc,
-không trắng và tối đa 150 ký tự; `phone` tùy chọn, nếu có thì dài 9–15 ký tự và chỉ
-gồm chữ số ASCII (`0`–`9`), dấu `+` và khoảng trắng thường. Độ dài tính trên chuỗi gửi
-lên, gồm cả dấu `+` và khoảng trắng. Hai trường được cắt khoảng trắng ở đầu/cuối khi lưu.
-Bỏ `phone`, gửi `null`, chuỗi rỗng hoặc chỉ khoảng trắng thường sẽ xóa số điện thoại.
-Ví dụ `0912 345 678` hợp lệ; `abc`, số dài 8 hoặc 16 ký tự trả 400
-`VALIDATION_FAILED`, kèm thông báo tiếng Việt trong `fieldErrors.phone` và không đổi hồ sơ.
+không trắng và tối đa 150 ký tự. `phone` dùng cùng ràng buộc ở đăng ký và cập nhật:
+9–15 **chữ số ASCII** (`0`–`9`), dấu `+` tùy chọn chỉ ở đầu, giữa các chữ số tối đa
+một khoảng trắng thường. Không đếm dấu `+` hoặc khoảng trắng vào số chữ số.
+Cho phép khoảng trắng ở hai đầu; cả đăng ký và cập nhật đều cắt chúng trước khi lưu.
+Bỏ `phone`, gửi `null`, chuỗi rỗng hoặc toàn khoảng trắng thường sẽ lưu `null`
+(xóa số điện thoại ở API cập nhật).
+Ví dụ `0912 345 678`, `+84 912 345 678` hợp lệ. `abc`, `+++++++++`, `  12345678`,
+`0912  345678`, dấu `+` giữa/cuối chuỗi hoặc số có 16 chữ số trả 400
+`VALIDATION_FAILED`, kèm thông báo tiếng Việt trong `fieldErrors.phone`;
+không đổi hồ sơ hoặc tạo tài khoản nếu dữ liệu sai.
+Hai DTO dùng hằng số chung `PhoneConstraints`. Migration V4 mở rộng `users.phone`
+lên 30 ký tự để lưu đủ 15 chữ số + 14 dấu cách + dấu `+`, giữ nguyên định dạng bên trong.
 API chỉ cập nhật hai trường này trên tài khoản lấy từ JWT; không đổi email, vai trò,
 trạng thái hay mật khẩu theo các trường gửi thêm. JWT đã phát vẫn mang tên cũ;
 `GET /api/auth/me` trả hồ sơ mới ngay, JWT mới có tên mới sau login/refresh.

@@ -13,7 +13,6 @@ public class UpdateProfileRequest {
     @Size(max = 150, message = "Họ và tên không được vượt quá 150 ký tự")
     private String fullName;
 
-    @Pattern(regexp = "(?: *|[0-9+ ]{9,15})",
-            message = "Số điện thoại phải có từ 9 đến 15 ký tự, chỉ gồm chữ số, dấu + và khoảng trắng")
+    @Pattern(regexp = PhoneConstraints.REGEXP, message = PhoneConstraints.MESSAGE)
     private String phone;
 }

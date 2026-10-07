@@ -111,8 +111,22 @@ class ProfileManagementIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT phone FROM users WHERE id = ?", String.class, userId)).isNull();
     }
 
+    static Stream<String> validPhones() {
+        return Stream.of("091234567", "0912345678", "0912 345 678", "+84912345678",
+                "+84 912 345 678", "123456789012345", " 0901234567 ",
+                "  +1 2 3 4 5 6 7 8 9 0 1 2 3 4 5  ");
+    }
+
+    static Stream<String> invalidPhones() {
+        return Stream.of("abc", "0912abc678", "12345678", "1234567890123456",
+                "0912-345-678", "0912\t345678", "091234567\n", "０９１２３４５６７８",
+                "+++++++++", "  12345678", "09-12", "0912  345678",
+                "0912+345678", "0912345678+", "++84912345678", "+ 84912345678",
+                "+1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6");
+    }
+
     @ParameterizedTest
-    @ValueSource(strings = {"091234567", "0912 345 678", "+84912345678", "123456789012345", " 0901234567 "})
+    @MethodSource("validPhones")
     void acceptsPhoneFormatAndLengthBoundaries(String phone) throws Exception {
         JsonNode updated = request("PUT", "/api/auth/me", accessToken(),
                 Map.of("fullName", "Name", "phone", phone), 200).path("data");
@@ -124,21 +138,57 @@ class ProfileManagementIntegrationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"abc", "0912abc678", "12345678", "1234567890123456",
-            "0912-345-678", "0912\t345678", "091234567\n", "０９１２３４５６７８"})
+    @MethodSource("invalidPhones")
     void invalidPhoneReturnsVietnameseFieldErrorWithoutSaving(String phone) throws Exception {
         request("PUT", "/api/auth/me", accessToken(),
                 Map.of("fullName", "Original Name", "phone", "0901234567"), 200);
         JsonNode error = request("PUT", "/api/auth/me", accessToken(),
                 Map.of("fullName", "Must not be saved", "phone", phone), 400);
+        assertPhoneValidation(error);
+        JsonNode me = request("GET", "/api/auth/me", accessToken(), null, 200).path("data");
+        assertThat(me.path("fullName").asText()).isEqualTo("Original Name");
+        assertThat(me.path("phone").asText()).isEqualTo("0901234567");
+    }
+
+    @ParameterizedTest
+    @MethodSource("validPhones")
+    @NullAndEmptySource
+    @ValueSource(strings = {" ", "   "})
+    void registrationAcceptsAndNormalizesOptionalPhone(String phone) throws Exception {
+        Map<String, String> body = new HashMap<>();
+        body.put("email", "phone.registration@example.com");
+        body.put("password", OLD_PASSWORD);
+        body.put("fullName", "Phone Registration");
+        body.put("phone", phone);
+        JsonNode created = request("POST", "/api/auth/register", null, body, 201).path("data");
+        String expected = phone == null || phone.isBlank() ? null : phone.trim();
+        if (expected == null) assertThat(created.path("phone").isNull()).isTrue();
+        else assertThat(created.path("phone").asText()).isEqualTo(expected);
+        assertThat(jdbc.queryForObject("SELECT phone FROM users WHERE id = ?", String.class,
+                created.path("id").asLong())).isEqualTo(expected);
+        JsonNode loggedIn = login("phone.registration@example.com", OLD_PASSWORD, 200).path("data");
+        assertThat(request("GET", "/api/auth/me", loggedIn.path("accessToken").asText(), null, 200)
+                .path("data").path("phone")).isEqualTo(created.path("phone"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidPhones")
+    void registrationRejectsInvalidPhoneWithoutCreatingAccount(String phone) throws Exception {
+        Integer countBefore = jdbc.queryForObject("SELECT COUNT(*) FROM users", Integer.class);
+        JsonNode error = request("POST", "/api/auth/register", null,
+                Map.of("email", "phone.rejected@example.com", "password", OLD_PASSWORD,
+                        "fullName", "Must not be saved", "phone", phone), 400);
+        assertPhoneValidation(error);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM users", Integer.class)).isEqualTo(countBefore);
+        login("phone.rejected@example.com", OLD_PASSWORD, 401);
+    }
+
+    private void assertPhoneValidation(JsonNode error) {
         assertValidation(error, "phone");
         assertThat(error.path("fieldErrors").valueStream()
                 .filter(e -> "phone".equals(e.path("field").asText()))
                 .map(e -> e.path("message").asText()).toList())
-                .containsExactly("Số điện thoại phải có từ 9 đến 15 ký tự, chỉ gồm chữ số, dấu + và khoảng trắng");
-        JsonNode me = request("GET", "/api/auth/me", accessToken(), null, 200).path("data");
-        assertThat(me.path("fullName").asText()).isEqualTo("Original Name");
-        assertThat(me.path("phone").asText()).isEqualTo("0901234567");
+                .containsExactly("Số điện thoại phải có 9–15 chữ số, có thể bắt đầu bằng + và cách nhau bằng một khoảng trắng");
     }
 
     @Test
