@@ -1,7 +1,8 @@
 # Tình huống test gateway và chuẩn bị dữ liệu
 
 **Người phụ trách:** quocluibotre. **Mốc đối chiếu:** `main d7e77e3`, phân công ngày 06/10/2026.
-Đây là kế hoạch kiểm thử, **chưa phải biên bản các ca đã chạy qua Postman**.
+Collection: [`docs/postman/gateway.postman_collection.json`](../postman/gateway.postman_collection.json).
+Đã chạy trên Docker ngày 07/10/2026: [biên bản](ket-qua/gateway.md).
 
 ## Tài khoản cố định
 
@@ -148,9 +149,9 @@ Không sửa code nghiệp vụ trong nhiệm vụ tài liệu này.
 |---|---|---|---|---|
 | 1 | Route auth | ADM | PATCH /api/users/{{studentId}}/roles, {"roles":["ROLE_STUDENT"]} | 200 |
 | 2 | Route course | — | GET /api/categories | 200 |
-| 3 | Route enrollment mới [CHỜ ROUTE] | S | GET /api/enrollments | 200 |
-| 4 | Tiến độ không bị gửi nhầm course-service [CHỜ ROUTE] | S | PUT /api/lessons/{{lessonAId}}/progress + ENROLL-PROGRESS | 200; dữ liệu tiến độ của S |
-| 5 | Route attempts mới [CHỜ ROUTE] | S | GET /api/attempts/{{attemptId}} sau nộp bài | 200 |
+| 3 | Route enrollment mới | S | GET /api/enrollments | 200 |
+| 4 | Tiến độ không bị gửi nhầm course-service | S | PUT /api/lessons/{{lessonAId}}/progress + ENROLL-PROGRESS | 200; dữ liệu tiến độ của S |
+| 5 | Route attempts mới | S | GET /api/attempts/{{attemptId}} sau nộp bài | 200 |
 | 6 | Route notification | S | GET /api/notifications | 200 |
 | 7 | Downstream ngừng | S | Lần lượt stop auth/course/enrollment/quiz/notification; gọi /api/auth/me, /api/categories, /api/enrollments, /api/attempts/{{attemptId}}, /api/notifications tương ứng | 502; code=EXTERNAL_SERVICE_ERROR; các service còn lại vẫn trả kết quả bình thường |
 | 8 | Hồi phục | S | Start lại đúng service vừa stop, đợi health UP, gọi lại request ca 7 | 200 |
