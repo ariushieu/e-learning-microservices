@@ -85,7 +85,8 @@ export function QuizRunner({
   }
 
   if (session) {
-    return <QuizTaking quiz={quiz} attempt={session.attempt} deadline={session.deadline} />;
+    return <QuizTaking quiz={quiz} attempt={session.attempt} deadline={session.deadline}
+      onClose={() => refresh(() => { setSession(null); router.refresh(); })} />;
   }
 
   const noQuestions = quiz.questions.length === 0;
@@ -119,7 +120,7 @@ export function QuizRunner({
           </>
         ) : (
           <>
-            <Button size="lg" onClick={start} disabled={starting || !canStart || noQuestions} className="w-full">
+            <Button size="lg" onClick={start} disabled={starting || refreshing || !canStart || noQuestions} className="w-full">
               {starting ? <Loader2Icon className="animate-spin" /> : <PlayIcon />}
               {resuming ? "Làm tiếp" : "Bắt đầu làm bài"}
             </Button>
@@ -142,7 +143,9 @@ export function QuizRunner({
   );
 }
 
-function QuizTaking({ quiz, attempt, deadline }: { quiz: QuizDetail; attempt: QuizAttempt; deadline: number | null }) {
+function QuizTaking({ quiz, attempt, deadline, onClose }: {
+  quiz: QuizDetail; attempt: QuizAttempt; deadline: number | null; onClose: () => void;
+}) {
   const router = useRouter();
   const [answers, setAnswers] = useState<Record<number, number[]>>({});
   const [secondsLeft, setSecondsLeft] = useState<number | null>(attempt.remainingSeconds ?? null);
@@ -268,8 +271,8 @@ function QuizTaking({ quiz, attempt, deadline }: { quiz: QuizDetail; attempt: Qu
           {secondsLeft === null ? <span className="font-medium">Không giới hạn</span> : formatClock(secondsLeft)}
         </div>
         {error?.closed ? (
-          <Button asChild variant="outline" className="shrink-0">
-            <Link href={`/attempts/${attempt.id}`}>Xem kết quả lượt này</Link>
+          <Button onClick={onClose} variant="outline" className="shrink-0">
+            Về bài kiểm tra
           </Button>
         ) : (
           <Button onClick={requestSubmit} disabled={submitting || (locked && !timeUp)} className="shrink-0">

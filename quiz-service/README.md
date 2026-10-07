@@ -107,7 +107,7 @@ environment; `baseUrl` mặc định là `http://localhost:8080`. File này thay
 Chạy từ thư mục gốc repo, bật cả ca chậm:
 
 ```bash
-newman run docs/postman/quiz.postman_collection.json --env-var runSlowTests=true --timeout-script 150000
+pnpm dlx newman@6.2.2 run docs/postman/quiz.postman_collection.json --env-var runSlowTests=true --timeout-script 150000
 ```
 
 `runKafkaRecovery` vẫn đọc collection variable; muốn chạy ca Kafka phải sửa biến
@@ -120,6 +120,18 @@ ghi danh. Lỗi kiểm tra khi mở trang có nút thử lại. Backend vẫn qu
 
 Biên bản, ca lỗi còn mở và giới hạn môi trường nằm tại
 [ket-qua/quiz.md](../docs/test-cases/ket-qua/quiz.md).
+
+### Bảo vệ kết quả và lưu lượt hết giờ
+
+`GET /api/attempts/{id}` chỉ trả đáp án cho lượt `SUBMITTED` của chính người gọi;
+`IN_PROGRESS` và `EXPIRED` trả 422, không có dữ liệu đáp án. Nộp quá giờ vẫn trả
+422 nhưng lưu `EXPIRED`, điểm 0 và thời điểm kết thúc; không tạo sự kiện chấm điểm.
+Chỉ `AttemptExpiredException` được miễn rollback, các lỗi lưu bài/sự kiện khác
+vẫn rollback toàn bộ. Web chỉ mở kết quả lượt đã nộp, lượt hết giờ hiện trong lịch sử.
+
+`QuizAttemptResultIntegrationTest` kiểm HTTP với JWT và đọc lại dữ liệu đã commit
+sau lỗi (không bọc test trong transaction), gồm ẩn đáp án, quyền sở hữu, nộp lặp,
+lịch sử EXPIRED, và rollback khi lưu outbox thất bại.
 
 ### Kết quả kiểm chứng ngày 06/10/2026
 

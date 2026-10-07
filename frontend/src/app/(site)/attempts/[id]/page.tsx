@@ -17,19 +17,35 @@ import { formatDate, formatDuration } from "@/lib/format";
 import { gateway, gatewayOrNull } from "@/lib/server/gateway";
 import { isQuestionCorrect, type QuestionResult, type QuizAttempt, type QuizDetail, type QuizResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { ApiError } from "@/lib/errors";
 
-const loadResult = cache((id: string) => gatewayOrNull<QuizResult>(`/api/attempts/${id}`));
+const loadResult = cache(async (id: string): Promise<{ result: QuizResult | null; reason?: string }> => {
+  try {
+    return { result: await gatewayOrNull<QuizResult>(`/api/attempts/${id}`) };
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 422) return { result: null, reason: e.message };
+    throw e;
+  }
+});
 
 export async function generateMetadata({ params }: PageProps<"/attempts/[id]">): Promise<Metadata> {
   const { id } = await params;
-  const result = /^\d+$/.test(id) ? await loadResult(id) : null;
+  const { result } = /^\d+$/.test(id) ? await loadResult(id) : { result: null };
   return { title: result ? `Kết quả: ${result.quizTitle}` : "Kết quả bài kiểm tra" };
 }
 
 export default async function AttemptResultPage({ params }: PageProps<"/attempts/[id]">) {
   const { id } = await params;
   if (!/^\d+$/.test(id)) notFound();
-  const result = await loadResult(id);
+  const { result, reason } = await loadResult(id);
+  if (reason) {
+    return (
+      <div className="mx-auto w-full max-w-lg py-10">
+        <EmptyState icon={InfoIcon} title="Chưa có kết quả bài kiểm tra" description={reason}
+          action={<Button asChild variant="outline"><Link href="/my-courses">Về khóa học của tôi</Link></Button>} />
+      </div>
+    );
+  }
   if (!result) notFound();
 
   // QuizResult không có courseId và trạng thái lượt làm; lấy thêm, lỗi thì chỉ ẩn phần liên quan.

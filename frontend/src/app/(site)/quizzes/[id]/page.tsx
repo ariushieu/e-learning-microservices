@@ -176,7 +176,7 @@ export default async function QuizPage({ params }: PageProps<"/quizzes/[id]">) {
                   </TableCell>
                   <TableCell className="hidden text-muted-foreground tabular-nums sm:table-cell">{formatDate(a.submittedAt) || "—"}</TableCell>
                   <TableCell className="text-right">
-                    {a.status !== "IN_PROGRESS" && (
+                    {a.status === "SUBMITTED" && (
                       <Button asChild variant="link" size="sm" className="px-0">
                         <Link href={`/attempts/${a.id}`}>Xem kết quả</Link>
                       </Button>
