@@ -124,7 +124,7 @@ class CurriculumServiceTest {
                 .position(1)
                 .build();
 
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(course));
         when(sectionRepository.save(any(Section.class))).thenAnswer(i -> {
             Section s = i.getArgument(0);
             s.setId(10L);
@@ -161,6 +161,8 @@ class CurriculumServiceTest {
                 .isPreview(true)
                 .build();
 
+        when(sectionRepository.findCourseIdById(10L)).thenReturn(Optional.of(1L));
+        when(courseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(course));
         when(sectionRepository.findById(10L)).thenReturn(Optional.of(section));
         when(lessonRepository.save(any(Lesson.class))).thenAnswer(i -> {
             Lesson l = i.getArgument(0);
@@ -201,6 +203,8 @@ class CurriculumServiceTest {
                 .durationSeconds(500) // Tăng 200s
                 .build();
 
+        when(lessonRepository.findCourseIdById(100L)).thenReturn(Optional.of(1L));
+        when(courseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(course));
         when(lessonRepository.findById(100L)).thenReturn(Optional.of(lesson));
         when(lessonRepository.save(any(Lesson.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -225,6 +229,8 @@ class CurriculumServiceTest {
                 .durationSeconds(300)
                 .build();
 
+        when(lessonRepository.findCourseIdById(100L)).thenReturn(Optional.of(1L));
+        when(courseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(course));
         when(lessonRepository.findById(100L)).thenReturn(Optional.of(lesson));
 
         curriculumService.deleteLesson(100L, 50L, false);
@@ -273,6 +279,8 @@ class CurriculumServiceTest {
                 .durationSeconds(300)
                 .build();
 
+        when(sectionRepository.findCourseIdById(10L)).thenReturn(Optional.of(1L));
+        when(courseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(course));
         when(sectionRepository.findById(10L)).thenReturn(Optional.of(section));
         when(lessonRepository.save(any(Lesson.class))).thenAnswer(i -> {
             Lesson l = i.getArgument(0);
@@ -301,6 +309,8 @@ class CurriculumServiceTest {
                 .durationSeconds(300)
                 .build();
 
+        when(sectionRepository.findCourseIdById(10L)).thenReturn(Optional.of(1L));
+        when(courseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(course));
         when(sectionRepository.findById(10L)).thenReturn(Optional.of(section));
         when(lessonRepository.save(any(Lesson.class))).thenAnswer(i -> {
             Lesson l = i.getArgument(0);
@@ -329,6 +339,8 @@ class CurriculumServiceTest {
                 .durationSeconds(300)
                 .build();
 
+        when(lessonRepository.findCourseIdById(100L)).thenReturn(Optional.of(1L));
+        when(courseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(course));
         when(lessonRepository.findById(100L)).thenReturn(Optional.of(lesson));
         when(courseRepository.save(any(Course.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -352,6 +364,8 @@ class CurriculumServiceTest {
                 .durationSeconds(300)
                 .build();
 
+        when(lessonRepository.findCourseIdById(100L)).thenReturn(Optional.of(1L));
+        when(courseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(course));
         when(lessonRepository.findById(100L)).thenReturn(Optional.of(lesson));
         when(courseRepository.save(any(Course.class))).thenAnswer(i -> i.getArgument(0));
 

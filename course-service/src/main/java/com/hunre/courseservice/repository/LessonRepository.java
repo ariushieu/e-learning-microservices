@@ -7,9 +7,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface LessonRepository extends JpaRepository<Lesson, Long> {
+
+    @Query("SELECT l.course.id FROM Lesson l WHERE l.id = :id")
+    Optional<Long> findCourseIdById(@Param("id") Long id);
 
     List<Lesson> findBySectionIdOrderByPositionAsc(Long sectionId);
 

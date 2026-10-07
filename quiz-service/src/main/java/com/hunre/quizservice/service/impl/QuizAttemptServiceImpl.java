@@ -1,5 +1,6 @@
 package com.hunre.quizservice.service.impl;
 
+import com.hunre.quizservice.client.EnrollmentAccessClient;
 import com.hunre.quizservice.dto.AnswerOptionResponse;
 import com.hunre.quizservice.dto.QuestionResultResponse;
 import com.hunre.quizservice.dto.QuizAttemptResponse;
@@ -49,11 +50,15 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
     private final QuizAttemptRepository quizAttemptRepository;
     private final OutboxEventRepository outboxEventRepository;
     private final ObjectMapper objectMapper;
+    private final EnrollmentAccessClient enrollmentAccessClient;
 
     @Override
     @Transactional
-    public QuizAttemptResponse startAttempt(Long quizId, Long userId) {
+    public QuizAttemptResponse startAttempt(Long quizId, Long userId, boolean isAdmin, String authorization) {
         log.info("Bắt đầu lượt làm bài quizId: {} cho userId: {}", quizId, userId);
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "Không thể xác minh người làm bài");
+        }
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new ResourceNotFoundException("bài kiểm tra", "id", quizId));
 
@@ -65,6 +70,13 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         if (quiz.getQuestions() == null || quiz.getQuestions().isEmpty()) {
             throw new BusinessException(ErrorCode.BUSINESS_RULE_VIOLATED,
                     "Bài kiểm tra hiện chưa có câu hỏi");
+        }
+
+        // Kiểm tra cả khi tiếp tục lượt đang làm, trước mọi thao tác ghi (kể cả đánh dấu hết giờ).
+        if (!isAdmin && !userId.equals(quiz.getCreatedBy())
+                && !enrollmentAccessClient.hasEnrollment(quiz.getCourseId(), userId, authorization)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN,
+                    "Bạn cần ghi danh khóa học trước khi làm bài kiểm tra");
         }
 
         // Kiểm tra xem có lượt nào đang làm dở không

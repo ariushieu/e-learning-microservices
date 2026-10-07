@@ -1,0 +1,23 @@
+"use client";
+
+import { useEffect } from "react";
+import { StatusPage } from "@/components/common/status-page";
+import { Button } from "@/components/ui/button";
+
+export default function ErrorPage({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
+  return (
+    <StatusPage
+      code="Lỗi"
+      title="Có lỗi khi tải trang"
+      description={error.message || "Một dịch vụ có thể đang tạm ngưng."}
+      action={
+        <Button size="lg" onClick={() => retry()}>
+          Thử lại
+        </Button>
+      }
+    />
+  );
+}

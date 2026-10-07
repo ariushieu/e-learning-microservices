@@ -34,6 +34,32 @@ Không trường hợp xác minh thất bại nào được lưu bài vào datab
 quyền dựa trên `createdBy`; admin tạo bài trong khóa của người khác thì admin vẫn là
 người tạo bài đó.
 
+## Ghi danh trước khi làm bài
+
+`POST /api/quizzes/{quizId}/attempts` kiểm tra ghi danh trước khi tạo hoặc trả lại
+lượt làm dở. Quiz-service gọi `GET /api/enrollments` bằng nguyên token của người gọi,
+duyệt các trang theo `id` và chỉ chấp nhận dòng có đúng `userId`, `courseId` cùng
+trạng thái `ACTIVE` hoặc `COMPLETED`.
+
+- Chưa ghi danh, ghi danh đã `CANCELLED`, hoặc chỉ có ghi danh của người/khóa khác:
+  trả 403 `FORBIDDEN`.
+- Người tạo bài và admin được làm thử mà không gọi enrollment-service. Điều kiện
+  bài đã xuất bản, có câu hỏi và giới hạn lượt làm vẫn áp dụng.
+- Lỗi kết nối, timeout, phản hồi không hợp lệ hoặc lỗi server: trả 502
+  `EXTERNAL_SERVICE_ERROR`. Không tạo lượt, không đổi trạng thái lượt cũ sang hết giờ.
+- Nếu enrollment-service từ chối token với 401/403, quiz-service từ chối làm bài
+  bằng 403. Không chuyển token theo HTTP redirect.
+- Lượt làm dở cũng phải kiểm lại ghi danh: sau khi hủy ghi danh, gọi lại endpoint
+  bắt đầu không được dùng lượt cũ để vượt kiểm tra.
+
+Cấu hình `ENROLLMENT_SERVICE_URL` mặc định `http://localhost:8083`; Compose dùng
+`http://enrollment-service:8083`. `ENROLLMENT_TIMEOUT_MS` mặc định 2000 ms là hạn chờ
+chung cho toàn bộ các trang, không phải 2000 ms cho từng trang. Không nhận quyền admin
+hay danh tính người làm từ query/body.
+
+Phạm vi thay đổi này là endpoint bắt đầu/tiếp tục lượt làm; các API xem đề, nộp bài
+và đọc kết quả giữ nguyên hành vi hiện có.
+
 ## Kiểm thử
 
 Chạy từ thư mục gốc repository:
@@ -49,10 +75,31 @@ controller, service và database H2: kiểm từng thao tác với chủ bài, g
 học viên và admin; xác nhận request bị chặn không sửa dữ liệu; kiểm lọc trạng thái,
 giả danh qua body/query, ghép sai bài/câu hỏi và ẩn đáp án.
 
+`EnrollmentAccessClientTest` dùng HTTP server cục bộ để kiểm token, phân trang,
+trạng thái ghi danh, dữ liệu sai, lỗi mạng và hạn chờ tổng. `QuizEnrollmentIntegrationTest`
+chạy JWT, controller, service, HTTP client và database thật trong Spring (H2, server
+ghi danh giả lập), kiểm cả số dòng và trạng thái đã commit khi bị từ chối hoặc lỗi.
+
 Các test H2 không thay thế kiểm chứng schema MySQL hoặc chạy toàn bộ Docker stack.
 Các ca Postman chung nằm ở [docs/test-cases/quiz.md](../docs/test-cases/quiz.md).
 
 ### Kết quả kiểm chứng ngày 06/10/2026
+
+Phần kiểm ghi danh (sau thay đổi quyền sở hữu):
+
+- `clean verify`: 594 test toàn repository, gồm 188 test quiz-service; không lỗi hoặc
+  bỏ qua. Phần ghi danh bổ sung 56 ca tự động.
+- 34 request qua gateway đạt khi chạy course, enrollment, quiz và gateway thật với
+  H2 tạm và JWT có kiểm chữ ký. Ghi danh và hủy ghi danh qua API thật; dữ liệu mẫu
+  cho trường hợp `COMPLETED` và phân trang được nạp vào H2 trước khi chạy.
+- Kiểm tra được cả ghi danh ở trang thứ hai, ghi danh lại sau khi hủy, không thêm
+  lượt khi bị từ chối/502, giữ nguyên lượt đang làm khi mất kết nối, và chủ bài/admin
+  vẫn tạo lượt làm thử mới khi enrollment-service đã dừng.
+- Máy không có Docker: chưa kiểm phần ghi danh với MySQL/Docker; lượt HTTP này tắt
+  Kafka và giới hạn request bằng cấu hình tiến trình tạm. Không thay cấu hình bảo
+  mật mặc định và chưa thay thế đợt Postman chung.
+
+Phần quyền sở hữu đã kiểm trước đó:
 
 - `clean verify` trên Java 17: 503 test toàn repository, trong đó 132 test quiz-service;
   không lỗi, không bỏ qua. Phần quyền sở hữu bổ sung 84 ca tự động.
