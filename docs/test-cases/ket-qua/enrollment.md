@@ -119,10 +119,21 @@ Các mã có nhiều HTTP bao gồm request thay đổi trạng thái và GET ki
 mvn clean verify: **667 test đạt**, không failure/error/skipped. Theo module: shared-common 77, gateway 22, auth 50, course 207, enrollment 92, quiz 188, notification 31.
 Test tích hợp kiểm chứng chỉ cũ thiếu tên, quyền backfill của chủ sở hữu, giữ tên khóa tại lúc cấp, 401 và rollback khi token thiếu tên, cùng retry/DLT và request đồng thời. Các test database dùng H2; test Kafka lỗi database dùng exception mô phỏng, không thay cho ENROLL-09 trên MySQL thật.
 
-CI trên commit 583fd72 đã chạy [Schema matches entities (MySQL)](https://github.com/ariushieu/e-learning-microservices/actions/runs/37585013135/job/112673044487) thành công: Flyway tạo schema và Hibernate validate cả các cột mới. Đây là bằng chứng migration MySQL, không phải lượt chạy collection trên MySQL.
+CI trên commit d52ef44 đã chạy thành công [Build & Test (JDK 17)](https://github.com/ariushieu/e-learning-microservices/actions/runs/37588146168/job/112682987910), [Schema matches entities (MySQL)](https://github.com/ariushieu/e-learning-microservices/actions/runs/37588146168/job/112682987853), [Full stack in Docker](https://github.com/ariushieu/e-learning-microservices/actions/runs/37588146168/job/112682987511) và [Frontend](https://github.com/ariushieu/e-learning-microservices/actions/runs/37588146168/job/112682987796). Flyway tạo schema và Hibernate validate cả các cột mới. Đây là bằng chứng CI/migration, không phải lượt chạy toàn bộ collection trên MySQL.
+
+## Kiểm tra giao diện xác minh
+
+Chạy bản production bằng `pnpm start`, kết nối gateway L1; đã xem `/design` và kiểm tra trực tiếp trên trình duyệt:
+
+- Chưa đăng nhập: mã thật hiện đúng bốn thông tin và huy hiệu **Hợp lệ**; có quan sát trạng thái Skeleton trong lúc chờ API.
+- Mã không tồn tại hiện **Không tìm thấy chứng chỉ**. Gateway không kết nối được hiện **Chưa thể xác minh chứng chỉ**, không bị báo nhầm là mã không tồn tại.
+- Kiểm tra 375, 768 và 1366px; tên học viên 150 ký tự và tên khóa 200 ký tự (bao gồm chuỗi dài không có khoảng trắng) không làm tràn trang xác minh.
+- Chứng chỉ cá nhân dùng tên đã lưu; liên kết có đủ origin + `/verify/CERT-…`, bấm Enter mở đúng chứng chỉ. Focus có viền nhìn thấy; không có lỗi console.
+- Đã sửa thẻ chứng chỉ để tự tăng chiều cao khi nội dung dài. Ở 375/768/1366px, chiều cao nội dung bằng chiều cao thẻ và không tràn ngang; liên kết xác minh nằm trong thẻ. Tên dài dùng cỡ chữ nhỏ hơn, không cắt nội dung.
+- `pnpm next typegen`, `pnpm tsc --noEmit`, `pnpm lint`, `pnpm build` đạt. Chưa xuất/in PDF thực tế; cần kiểm tra bản in A4 ngang ở môi trường demo.
 
 ## Cần chạy tiếp trên môi trường nhóm
 
-1. Docker Compose + smoke-test, chạy lại collection không thay kỳ vọng. Kiểm Flyway V2 và Hibernate validate trên MySQL.
+1. Chạy lại toàn bộ collection trên Docker Compose/MySQL không thay kỳ vọng; CI đã kiểm schema và smoke-test nhưng không thay cho lượt chạy collection này.
 2. Đối chiếu snapshot ARCHIVED cho ENROLL-01.10 bằng database/log; thực hiện ENROLL-09.1–09.5 và lưu offset/payload/header DLT.
 3. Nếu có FAIL nghiệp vụ, mở PR sửa riêng và ghi đúng mã ca theo phan-cong.md.

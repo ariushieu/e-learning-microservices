@@ -45,7 +45,7 @@ export default async function CertificatePage({ params }: PageProps<"/certificat
   }
 
   return (
-    <div>
+    <div className="[overflow-wrap:anywhere]">
       <style>{printCss}</style>
       <div className="print:hidden">
         <PageHeader
