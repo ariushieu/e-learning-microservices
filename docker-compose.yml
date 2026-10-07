@@ -159,7 +159,8 @@ services:
   # ---------------------------------------------------------------- Redis
   # Gateway đếm số request của từng người ở đây để chặn gửi dồn dập (mã 429). Bộ đếm chỉ
   # sống vài chục giây nên không cần lưu xuống đĩa: tắt Redis là mất bộ đếm, và cũng chẳng
-  # ai cần lấy lại.
+  # ai cần lấy lại. notification-service dùng pub/sub để báo thông báo mới tới đúng bản
+  # đang giữ kết nối của người nhận — cũng không lưu gì.
   redis:
     image: redis:7.4-alpine
     container_name: elearning-redis
@@ -244,7 +245,11 @@ services:
     container_name: elearning-notification-service
     environment:
       <<: *backend-env
-    depends_on: *backend-depends
+      REDIS_HOST: redis
+    depends_on:
+      <<: *backend-depends
+      # Chỉ cần Redis đã chạy; Redis chết giữa chừng thì service vẫn phục vụ hộp thư.
+      redis: { condition: service_started }
     healthcheck:
       <<: *healthcheck-timing
       test: ["CMD", "curl", "-fsS", "http://localhost:8085/actuator/health"]

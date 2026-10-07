@@ -97,6 +97,16 @@
             <artifactId>spring-kafka</artifactId>
         </dependency>
 
+        <!--
+            Redis pub/sub cho thông báo tức thời: Kafka giao sự kiện cho một bản service bất kỳ
+            trong consumer group, còn kết nối SSE của người nhận có thể nằm ở bản khác. Xem
+            realtime/RedisRealtimeBroadcaster.
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
