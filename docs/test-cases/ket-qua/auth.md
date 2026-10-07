@@ -1,5 +1,24 @@
 # Biên bản kiểm thử auth-service
 
+## N3 — Lỗi phone trên form đăng ký và giới hạn 30 ký tự
+
+- **Thời gian:** 2026-10-07 22:02:15–22:02:44 (UTC+7).
+- **Frontend đã chạy:** `3f01ef9`, đã đồng bộ `main e92c686`; `pnpm --dir frontend build` và `pnpm --dir frontend lint` đều thành công. Bản production chạy tại `http://127.0.0.1:3100`.
+- **Backend thật:** dùng JAR auth/gateway đã build ở N2 (mã nguồn hai module không đổi), MySQL 8.0.43 với datadir mới riêng trên 13317, Flyway V1–V4; frontend gọi gateway 18080, xác thực bật. Rate limit chỉ tắt ở gateway test; tất cả tiến trình test đã dừng. Đây là lượt native, không phải Docker.
+- **Trình duyệt:** Playwright + Microsoft Edge, headless, viewport 1366×900 và 375×900. Không mock API. **10/10 ca PASS** (5 ca dưới đây × 2 viewport), không lỗi JavaScript, không tràn ngang ở các trạng thái được kiểm tra.
+- **Bằng chứng:** [kết quả từng ca](auth-ui/phone-results.json), [ảnh desktop](auth-ui/register-phone-error-1366.png), [ảnh mobile](auth-ui/register-phone-error-375.png).
+
+| Ca giao diện | Thao tác | Kết quả thực tế |
+|---|---|---|
+| Đăng ký với `abc` | Điền đủ form và bấm Tạo tài khoản | Vẫn ở `/register`; lỗi tiếng Việt hiện ngay dưới ô phone; `aria-invalid=true` |
+| Đăng ký với `+++++++++` | Gửi lại form đủ trường | Hiện cùng lỗi dưới ô phone |
+| Đăng ký với `  12345678` | Gửi lại form đủ trường | Hiện cùng lỗi dưới ô phone |
+| Đăng ký với số dài 30 ký tự | Gõ `+1 2 3 4 5 6 7 8 9 0 1 2 3 4 5` bằng bàn phím, sửa form lỗi rồi gửi | Không bị cắt ở ký tự 20; đăng ký/đăng nhập thành công, chuyển `/profile`; số đã lưu đúng |
+| Cập nhật hồ sơ với số dài 30 ký tự | Gõ `+9 8 7 6 5 4 3 2 1 0 9 8 7 6 5`, Lưu thông tin rồi tải lại | `maxLength=30`, có toast thành công; tải lại vẫn giữ đủ số |
+
+Thông báo quan sát được: “Số điện thoại phải có 9–15 chữ số, có thể bắt đầu bằng + và cách nhau bằng một khoảng trắng”.
+N3 bổ sung kiểm thử web cho lỗi reviewer phát hiện ở `5e64e99`; không coi collection N2 là bằng chứng kiểm thử giao diện.
+
 ## N2 — Đếm chữ số và dùng chung ràng buộc đăng ký/hồ sơ sau review PR #65
 
 - **Thời gian:** 2026-10-07T16:46:35.789343+07:00 đến 2026-10-07T16:47:48.754234+07:00.
