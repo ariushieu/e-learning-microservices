@@ -1,8 +1,9 @@
 # Tình huống test auth-service
 
 Đọc [gateway.md](gateway.md) để tạo ADM/A/B/S, lấy token, quy ước fixture và ghi kết quả.
-Mọi request qua `{{baseUrl}}=http://localhost:8080`; đây là **kế hoạch, chưa chạy Postman**.
-Sáu endpoint auth/user dưới đây không đổi đường dẫn trong đợt chuẩn hóa.
+Mọi request qua `{{baseUrl}}=http://localhost:8080`; đây là **kế hoạch kiểm thử**.
+Kết quả từng lượt chạy được ghi riêng trong [biên bản auth](ket-qua/auth.md).
+Các endpoint auth/user dưới đây không đổi đường dẫn trong đợt chuẩn hóa.
 Không endpoint nào hỗ trợ phân trang/sort; không áp ca sort=abcxyz cho chúng.
 Các endpoint login/register/refresh/logout là công khai, nên không token không mặc định là 401.
 
