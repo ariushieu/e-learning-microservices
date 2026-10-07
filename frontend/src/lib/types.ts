@@ -328,8 +328,15 @@ export interface Notification {
   title: string;
   /** Có thẻ <b>; hiển thị qua safeNotificationHtml(). */
   content: string;
+  /** Đường dẫn trên web, mở khi bấm; đi qua notificationHref() chứ không dùng thẳng. */
   linkUrl: string | null;
   read: boolean;
   createdAt: string;
   readAt: string | null;
+}
+
+/** GET/PUT /api/notifications/preferences. emailEnabled lưu sẵn, chưa có kênh email. */
+export interface NotificationPreference {
+  inAppEnabled: boolean;
+  emailEnabled: boolean;
 }
