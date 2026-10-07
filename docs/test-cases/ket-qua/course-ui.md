@@ -1,9 +1,9 @@
 # Kiểm tra trang chủ và hồi quy course
 
-Ngày 07/10/2026, commit `d3c98a1c57e32140c3aabaff7b27203dacd0ff8b`.
+Ngày 07/10/2026, commit `b8ce705b0ff953484387568df2a034fd657398e2`.
 Frontend production Next.js 16.3.8, Edge headless qua Playwright; dữ liệu tạo qua gateway 8080.
 
-**18 kiểm tra đạt**, không có lỗi JavaScript. Script tạo 16 khóa trong 2 danh mục riêng, có
+**21 kiểm tra đạt**, không có lỗi JavaScript. Script tạo 16 khóa trong 2 danh mục gốc và 1 danh mục con riêng, có
 khác biệt về giá/trình độ và đủ dữ liệu cho 2 trang; dọn đúng ID đã tạo sau khi chạy.
 
 - Chip danh mục giữ từ khóa, trình độ, sort; đặt lại trang đầu và đồng bộ select.
@@ -11,6 +11,8 @@ khác biệt về giá/trình độ và đủ dữ liệu cho 2 trang; dọn đ�
   Collection Postman kiểm riêng số học viên với fixture có giá trị khác nhau, không chỉ toàn số 0.
 - Trang 2 giữ bộ lọc và sort; đổi sort trở về trang đầu.
 - Tìm kiếm vẫn giữ danh mục, trình độ, sort.
+- Danh mục cha lấy cả khóa con trên hai trang; chọn danh mục con chỉ trả khóa con, tô chip cha và giữ trạng thái sau tải lại.
+- Test JPA tái hiện trước sửa: 2/4 ca thất bại (thiếu khóa con, sai tổng phân trang). Sau sửa: 4/4 đạt.
 - 375px, 768px, 1366px: trang không tràn ngang, hàng chip cuộn ngang.
 - Chip “Tất cả” cập nhật select sau điều hướng client; Tab đi tiếp được tới chip kế bên.
 - Có trạng thái không tìm thấy kết quả; sort lạ trên URL giao diện trở về Mới nhất.
@@ -23,7 +25,7 @@ khác biệt về giá/trình độ và đủ dữ liệu cho 2 trang; dọn đ�
 ## Kiểm tra build
 
 - Next route typegen, TypeScript `--noEmit`, ESLint và production build: đạt.
-- Maven `clean verify` cho toàn bộ 7 module: **663 test, 0 failure, 0 error, 0 skipped**.
+- Maven `clean verify` cho toàn bộ 7 module: **667 test, 0 failure, 0 error, 0 skipped**.
   Chạy rõ danh sách module để giữ báo cáo/runtime đang mở trong `target/` ở root:
 
 ```bash
@@ -46,4 +48,4 @@ của Playwright. Đổi `COURSE_GATEWAY_URL`, `COURSE_WEB_URL`, `COURSE_UI_OUTP
 nếu môi trường khác. Không chạy đồng thời script UI với collection vì cả hai tạo dữ liệu QA.
 
 Chọn giá trị trong ô Sắp xếp rồi bấm **Lọc**; form tìm kiếm cũng gửi toàn bộ bộ lọc đang chọn.
-Không thay Java/API/schema trong nhiệm vụ giao diện này.
+Bản sửa bổ sung lọc danh mục cha/con trong course-service; không đổi schema.

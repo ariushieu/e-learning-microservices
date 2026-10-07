@@ -36,6 +36,10 @@ Các đường dẫn cũ tương ứng đã được bỏ. Gateway hiện bao ph
 `categoryId`, `level`, `keyword`, `page`, `size`, `sort`. Khách/người khác chỉ thấy
 khóa đã xuất bản; chủ giảng viên hoặc admin mới thấy khóa nháp trong kết quả lọc.
 
+`categoryId` của danh mục gốc lấy cả khóa trực tiếp và khóa trong các danh mục con
+(cây hai cấp). Chọn ID danh mục con chỉ lấy khóa của danh mục đó; danh mục không tồn tại
+trả trang rỗng. Quyền xem, các bộ lọc còn lại và tổng phân trang vẫn áp dụng cùng nhau.
+
 Body tạo chương không chứa `courseId`:
 
 ```json
