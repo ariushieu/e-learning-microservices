@@ -22,8 +22,10 @@ async function run() {
     const c = await api('POST', '/api/categories', { name: `${tag} danh mục ${i}`, slug: `${tag}-${i}`, position: 0 }, 201);
     categories.push(c.id);
   }
+  const child = await api('POST', '/api/categories', { name: `${tag} danh mục con`, slug: `${tag}-child`, parentId: categories[0], position: 0 }, 201);
+  categories.push(child.id);
   for (let i = 0; i < 16; i++) {
-    const c = await api('POST', '/api/courses', { title: `${tag} khóa ${String(i).padStart(2, '0')}`, slug: `${tag}-${i}`, categoryId: categories[i === 15 ? 1 : 0], level: i === 14 ? 'ADVANCED' : 'BEGINNER', price: (15-i)*100, language: 'vi' }, 201);
+    const c = await api('POST', '/api/courses', { title: `${tag} khóa ${String(i).padStart(2, '0')}`, slug: `${tag}-${i}`, categoryId: categories[[1,3].includes(i) ? 2 : i === 15 ? 1 : 0], level: i === 14 ? 'ADVANCED' : 'BEGINNER', price: (15-i)*100, language: 'vi' }, 201);
     courses.push(c.id);
     await api('PATCH', `/api/courses/${c.id}/status`, { status: 'PUBLISHED' });
   }
@@ -64,6 +66,20 @@ async function run() {
   assert.deepEqual(await ids(), [courses[3]]);
   assert.equal(new URL(page.url()).searchParams.get('sort'), 'studentCount,desc');
   checks.push('Tìm kiếm giữ danh mục/trình độ/sort');
+  await page.goto(initial + `&categoryId=${categories[0]}`);
+  await page.getByRole('combobox', { name: 'Danh mục', exact: true }).selectOption(String(child.id));
+  await page.getByRole('button', { name: 'Lọc', exact: true }).click();
+  await page.waitForURL(u => u.searchParams.get('categoryId') === String(child.id));
+  await cards().first().waitFor();
+  assert.deepEqual(await ids(), [courses[3], courses[1]]);
+  checks.push('Chọn danh mục con chỉ trả khóa con, không lẫn khóa cha hoặc danh mục khác');
+  assert.equal(await chips().getByRole('link', { name: `${tag} danh mục 0`, exact: true }).getAttribute('aria-current'), 'true');
+  assert.equal(await chips().locator('[aria-current="true"]').count(), 1);
+  checks.push('Chọn danh mục con tô đúng một chip cha');
+  await page.reload(); await cards().first().waitFor();
+  assert.equal(await chips().getByRole('link', { name: `${tag} danh mục 0`, exact: true }).getAttribute('aria-current'), 'true');
+  assert.deepEqual(await ids(), [courses[3], courses[1]]);
+  checks.push('URL danh mục con giữ kết quả và chip cha sau tải lại');
   for (const width of [375,768,1366]) {
     await page.setViewportSize({ width, height: 900 }); await page.goto(initial + `&categoryId=${categories[0]}`); await cards().first().waitFor();
     const bounds = await page.evaluate(() => ({ client: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth }));
@@ -92,7 +108,7 @@ async function run() {
     if (browser) await browser.close();
     // Chỉ dọn ID đã tạo trong lần chạy này; không đụng dữ liệu sẵn có hoặc fixture Postman.
     for (const id of courses) { try { await api('PATCH', `/api/courses/${id}/status`, { status: 'DRAFT' }); await api('DELETE', `/api/courses/${id}`); } catch (e) { errors.push(`Cleanup course ${id}: ${e.message}`); process.exitCode=1; } }
-    for (const id of categories) { try { await api('DELETE', `/api/categories/${id}`); } catch (e) { errors.push(`Cleanup category ${id}: ${e.message}`); process.exitCode=1; } }
+    for (const id of [...categories].reverse()) { try { await api('DELETE', `/api/categories/${id}`); } catch (e) { errors.push(`Cleanup category ${id}: ${e.message}`); process.exitCode=1; } }
     fs.writeFileSync(path.join(output, 'catalog-ui-results.json'), JSON.stringify({tag, checks, errors}, null, 2));
     console.log(JSON.stringify({passed:checks.length, errors}));
   }

@@ -21,6 +21,10 @@ export const catalogSorts = [
 export function CategoryChips({ categories, categoryId, keyword, level, sort }: {
   categories: Category[]; categoryId: string; keyword: string; level: string; sort: string;
 }) {
+  const activeCategoryId = categories.find((category) =>
+    String(category.id) === categoryId || category.subCategories.some((child) => String(child.id) === categoryId)
+  )?.id;
+  const activeChipId = activeCategoryId === undefined ? categoryId : String(activeCategoryId);
   return (
     <nav aria-label="Lọc nhanh theo danh mục" className="mb-4 flex min-w-0 max-w-full gap-2 overflow-x-auto py-2">
       {[{ id: "", name: "Tất cả" }, ...categories.map((c) => ({ id: String(c.id), name: c.name }))].map((c) => {
@@ -28,7 +32,7 @@ export function CategoryChips({ categories, categoryId, keyword, level, sort }: 
         for (const [key, value] of Object.entries({ keyword, level, sort, categoryId: c.id })) {
           if (value) query.set(key, value);
         }
-        const selected = categoryId === c.id;
+        const selected = activeChipId === c.id;
         return (
           <Link key={c.id} href={`/?${query}`} aria-current={selected ? "true" : undefined}
             className={cn("shrink-0 rounded-full border px-4 py-2 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",

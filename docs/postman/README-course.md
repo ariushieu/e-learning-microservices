@@ -4,7 +4,7 @@ Import **`course.postman_collection.json`**, chọn **No environment** rồi ch�
 Runner, một iteration, theo thứ tự đã lưu. Không cần import environment hay nhập ID/token.
 
 Collection thực hiện 195 ca `COURSE-01.1`–`COURSE-24.8` trong
-[course.md](../test-cases/course.md), cộng 10 ca hồi quy về sắp xếp và khóa lưu trữ.
+[course.md](../test-cases/course.md), cộng 16 ca hồi quy về sắp xếp, khóa lưu trữ và lọc danh mục cha/con.
 Các thư mục đọc chạy trước các thư mục ghi để giữ fixture nền ổn định. Không sắp xếp lại các
 request theo tên. Những thao tác có thể xóa/đổi dữ liệu dùng bản sao riêng.
 
@@ -32,6 +32,10 @@ Mở **Test Results** để xem HTTP và kiểm tra nghiệp vụ. Ngoài HTTP, 
 không thay đổi dữ liệu khi bị từ chối, slug, cây danh mục, nội dung/tài liệu bài học, thống kê
 chương/bài, đồng bộ tên khóa vào snapshot, thứ tự sắp xếp và quyền học sau lưu trữ.
 
+`COURSE-CATEGORY.1`–`.6` tạo cây hai cấp để kiểm danh mục cha gồm khóa trực tiếp và khóa con;
+chọn danh mục con không lẫn khóa cha/anh em. Kiểm thêm lọc công khai, trình độ, từ khóa,
+giảng viên, sắp xếp và tổng phân trang. Khóa nháp/lưu trữ không xuất hiện trong danh sách khách.
+
 Ca bổ sung `COURSE-ARCHIVED.5` chấp nhận hai cách từ chối đang có trong enrollment-service:
 snapshot ARCHIVED trả **422**, snapshot chưa cập nhật nhưng kiểm nguồn thấy khóa bị ẩn trả **404**.
 Cả hai phải không tạo lượt ghi danh. Đây là ca bổ sung, không sửa kỳ vọng của 195 ca gốc.
@@ -51,7 +55,7 @@ rồi chạy lại, không sửa JSON một phía:
 
 ```bash
 node scripts/build-course-collection.cjs
-npx --package newman@6.2.2 newman run docs/postman/course.postman_collection.json \
+pnpm dlx newman@6.2.2 run docs/postman/course.postman_collection.json \
   --timeout-script 65000 --timeout-request 10000
 ```
 

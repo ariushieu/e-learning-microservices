@@ -22,6 +22,7 @@ import com.hunre.sharedcommon.exception.ResourceNotFoundException;
 import com.hunre.courseservice.security.CurrentUserProvider;
 import com.hunre.sharedcommon.security.Roles;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.JoinType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -66,7 +67,11 @@ public class CourseServiceImpl implements CourseService {
             }
 
             if (categoryId != null) {
-                predicates.add(cb.equal(root.get("category").get("id"), categoryId));
+                var category = root.join("category");
+                // LEFT JOIN giữ cả khóa nằm trực tiếp ở danh mục gốc (không có cha).
+                var parent = category.join("parent", JoinType.LEFT);
+                predicates.add(cb.or(cb.equal(category.get("id"), categoryId),
+                        cb.equal(parent.get("id"), categoryId)));
             }
 
             if (level != null) {

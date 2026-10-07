@@ -47,8 +47,7 @@ const text=`# Biên bản kiểm thử course-service
   auth/course/enrollment/gateway chạy JAR, request qua **http://localhost:8080**. JWT bật;
   rate limit tắt trong phiên kiểm thử. Máy không có Docker; không ghi nhận đã chạy smoke test toàn bộ
   stack Docker/Redis/quiz/notification. Auth dùng database dev đã khởi tạo, tắt Flyway lúc chạy local.
-- Backend ở commit này giống mã backend \`4f00a2c\` đã vào main qua #51; thay đổi hiện tại là
-  giao diện và tài liệu/collection, không sửa Java/migration.
+- Backend gồm bản sửa lọc danh mục cha lấy cả khóa thuộc danh mục con; không đổi migration.
 - Kết quả: **${expected.length}/${expected.length} mã ca gốc đã chạy**, cộng ${entries.length-expected.length} ca bổ sung;
   ${report.run.stats.items.total} request chính (bao gồm chuẩn bị), ${report.run.stats.requests.total} HTTP tính cả bước phụ,
   **${report.run.stats.assertions.total-report.run.stats.assertions.failed}/${report.run.stats.assertions.total} assertion đạt**;
@@ -80,7 +79,7 @@ ${rows}
 Import collection mới, chọn No environment, chạy từ **0. Chuẩn bị**. Hoặc:
 
 \`\`\`bash
-npx --package newman@6.2.2 newman run docs/postman/course.postman_collection.json --timeout-script 65000 --timeout-request 10000 --reporters cli,json --reporter-json-export /tmp/course-newman.json
+pnpm dlx newman@6.2.2 run docs/postman/course.postman_collection.json --timeout-script 65000 --timeout-request 10000 --reporters cli,json --reporter-json-export /tmp/course-newman.json
 node scripts/report-course-postman.cjs /tmp/course-newman.json
 \`\`\`
 

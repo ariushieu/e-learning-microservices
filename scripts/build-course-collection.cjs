@@ -266,6 +266,32 @@ request(extra,'COURSE-ARCHIVED.4 Học viên đọc được đề cương','GET
 // Snapshot đã cập nhật chặn bằng 422; snapshot còn cũ thì kiểm nguồn trả 404 vì khóa bị ẩn.
 request(extra,'COURSE-ARCHIVED.5 Không nhận ghi danh mới','POST','/api/enrollments','tokenB','{"courseId":{{publishedCourseId}}}',[404,422],
   "const enrollments=await call('GET','/api/enrollments?size=100',undefined,'tokenB');pm.test('Không tạo lượt ghi danh',()=>pm.expect(enrollments.content.map(e=>e.courseId)).not.include(id('publishedCourseId')));await status(id('publishedCourseId'),'PUBLISHED');");
+const categoryRegression=folder('26. Hồi quy danh mục cha và con');
+request(categoryRegression,'COURSE-CATEGORY.1 Danh mục cha gồm khóa trực tiếp và khóa con','GET','/api/courses?categoryId={{treeParentId}}&sort=price,asc',null,null,200,
+  "pm.test('Đủ ba khóa công khai, không lẫn danh mục khác/nháp/lưu trữ',()=>{pm.expect(d.content.map(c=>c.id)).eql(JSON.parse(get('treePublishedIds')));pm.expect(d.totalElements).eql(3);});",`
+  const parent=await category();set('treeParentId',parent.id);
+  const child=await category({...categoryBody(),parentId:parent.id});set('treeChildId',child.id);
+  const sibling=await category({...categoryBody(),parentId:parent.id});set('treeSiblingId',sibling.id);
+  const other=await category();
+  const published=[];
+  for(const [categoryId,price,level] of [[child.id,100,'BEGINNER'],[sibling.id,200,'ADVANCED'],[parent.id,300,'BEGINNER']]) {
+    const c=await course({...courseBody(),categoryId,price,level,title:'Tree regression '+unique()});published.push(c.id);await status(c.id,'PUBLISHED');
+  }
+  set('treePublishedIds',JSON.stringify(published));
+  await course({...courseBody(),categoryId:child.id});
+  const archived=await course({...courseBody(),categoryId:child.id});await status(archived.id,'PUBLISHED');await status(archived.id,'ARCHIVED');
+  const unrelated=await course({...courseBody(),categoryId:other.id});await status(unrelated.id,'PUBLISHED');
+`);
+request(categoryRegression,'COURSE-CATEGORY.2 Danh mục con không lấy khóa cha hoặc anh em','GET','/api/courses?categoryId={{treeChildId}}',null,null,200,
+  "pm.test('Chỉ khóa của danh mục con',()=>{pm.expect(d.content.map(c=>c.id)).eql([JSON.parse(get('treePublishedIds'))[0]]);pm.expect(d.totalElements).eql(1);});");
+request(categoryRegression,'COURSE-CATEGORY.3 Danh mục con cùng cha vẫn độc lập','GET','/api/courses?categoryId={{treeSiblingId}}',null,null,200,
+  "pm.test('Chỉ khóa của danh mục anh em',()=>pm.expect(d.content.map(c=>c.id)).eql([JSON.parse(get('treePublishedIds'))[1]]));");
+for(const [n,page,index] of [[4,0,0],[5,1,2]]) {
+  request(categoryRegression,`COURSE-CATEGORY.${n} Lọc phối hợp và phân trang ${page}`,'GET',`/api/courses?categoryId={{treeParentId}}&instructorId={{instructorAId}}&level=BEGINNER&keyword=Tree%20regression&sort=price,asc&sort=id,desc&size=1&page=${page}`,null,null,200,
+    `pm.test('Giữ bộ lọc và tổng phân trang, không trùng/mất khóa',()=>{pm.expect(d.content.map(c=>c.id)).eql([JSON.parse(get('treePublishedIds'))[${index}]]);pm.expect(d.totalElements).eql(2);pm.expect(d.totalPages).eql(2);});`);
+}
+request(categoryRegression,'COURSE-CATEGORY.6 Danh mục không tồn tại trả trang rỗng','GET','/api/courses?categoryId={{missingId}}',null,null,200,
+  "pm.test('Trang rỗng',()=>{pm.expect(d.content).eql([]);pm.expect(d.totalElements).eql(0);});");
 // Giữ thứ tự đọc trước ghi để các tình huống đọc luôn có fixture nền nguyên vẹn.
 fs.writeFileSync(path.join(root,'docs/postman/course.postman_collection.json'),JSON.stringify(collection,null,2)+'\n');
 console.log(`Generated ${seen.size} mapped cases in ${collection.item.length} folders`);
