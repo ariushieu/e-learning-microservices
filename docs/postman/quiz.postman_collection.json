@@ -5874,7 +5874,7 @@
                 "exec": [
                   "pm.test(\"HTTP 422\", () => { pm.expect(pm.response.code).to.be.oneOf([422]); });",
                   "const json = pm.response.json(); const d = json.data;",
-                  "pm.test(\"Response contract\", () => { pm.expect(json.success).to.eql(pm.response.code < 400); if(pm.response.code >= 400){pm.expect(json.code).to.be.a('string'); pm.expect(json.message).to.be.a('string'); pm.expect(json.path).to.be.a('string');} });",
+                  "pm.test(\"Response contract: no answers before submission\", () => { pm.expect(json.success).to.eql(false); pm.expect(json.code).to.eql(\"BUSINESS_RULE_VIOLATED\"); pm.expect(json.message).to.be.a(\"string\"); pm.expect(json.path).to.be.a(\"string\"); pm.expect(json.data == null).to.eql(true); pm.expect(pm.response.text()).not.to.include(\"correctOptionIds\"); pm.expect(pm.response.text()).not.to.include(\"questionResults\"); });",
                   "if ([422].includes(pm.response.code)) {  }"
                 ]
               }
