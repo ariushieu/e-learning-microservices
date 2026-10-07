@@ -361,6 +361,40 @@ Phân công chỉ chốt người lạ không được thấy nội dung, chưa 
 | 7 | Sai cha [CẦN CHỐT mã] | A | DELETE /api/lessons/{{lesson2Id}}/resources/{{resourceId}}, resource thuộc lessonAId | 404 đề xuất; tuyệt đối không xóa resource (B3) |
 | 8 | Admin xóa đúng cha | ADM | DELETE tài liệu riêng của A trong đúng bài | 200 |
 
+## COURSE-25 — Đánh giá khóa học
+
+Fixture riêng: khóa PUBLISHED mới, S và A ghi danh qua API, chờ sổ `course_learners` qua Kafka.
+PUT tạo/sửa trả 200; mỗi người một đánh giá. GET danh sách luôn mới nhất trước, cùng thời điểm dùng ID giảm dần.
+Không công khai email/userId. Quyền viết dựa trên lịch sử ghi danh, không mất khi hủy; không viết vào khóa nháp.
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Khách đọc khóa chưa có đánh giá | — | GET reviews | 200; danh sách rỗng |
+| 2 | Ghi thiếu token | — | PUT reviews/me rating 5 | 401 |
+| 3 | Chưa ghi danh | B | PUT reviews/me rating 5 | 403; điểm không đổi |
+| 4 | Đánh giá đầu tiên | S | PUT reviews/me rating 5 | 200; trung bình 5, số lượt 1 |
+| 5 | Người thứ hai | A | PUT reviews/me rating 3 | 200; trung bình 4, số lượt 2 |
+| 6 | Sửa đánh giá | S | PUT reviews/me rating 1 | 200; trung bình 2, vẫn 2 lượt |
+| 7 | Đọc đánh giá của mình | S | GET reviews/me | 200; canReview=true, rating=1 |
+| 8 | Phân trang và bảo vệ dữ liệu cá nhân | — | GET reviews?size=1 | 200; mới nhất trước, không email/userId |
+| 9 | Xóa khi chưa ghi danh | B | DELETE reviews/me | 403; dữ liệu không đổi |
+| 10 | Xóa đánh giá S | S | DELETE reviews/me | 200; còn 1 lượt, trung bình 3 |
+| 11 | Xóa đánh giá cuối | A | DELETE reviews/me | 200; số lượt và trung bình về 0 |
+| 12 | Xóa lại khi không còn | S | DELETE reviews/me | 404 |
+| 13 | Thiếu điểm | S | PUT reviews/me body rỗng | 400 |
+| 14 | Điểm 0 | S | PUT reviews/me rating 0 | 400 |
+| 15 | Điểm 6 | S | PUT reviews/me rating 6 | 400 |
+| 16 | Điểm lẻ | S | PUT reviews/me rating 2.5 | 400 |
+| 17 | Nhận xét quá dài | S | PUT reviews/me comment 2001 ký tự | 400 |
+| 18 | Khóa không tồn tại | S | PUT khóa missingId/reviews/me | 404 |
+| 19 | Đọc của mình thiếu token | — | GET reviews/me | 401 |
+| 20 | Khách đọc đánh giá khóa nháp | — | GET reviews của DRAFT | 404 |
+| 21 | Giả ID của người đã ghi danh | B | PUT reviews/me với userId của S | 403 |
+| 22 | Giả tên người viết | S | PUT reviews/me authorName/email/userId giả | 200; tên và chủ lấy token |
+| 23 | Học viên lịch sử sửa trên khóa lưu trữ | S | PUT reviews/me khi ARCHIVED | 200; vẫn 1 lượt |
+| 24 | Hai người ghi đồng thời | S,A | Hai PUT reviews/me rating 5 và 3 | 200; trung bình 4, đúng 2 lượt |
+| 25 | Cùng người gửi đồng thời nhiều lần | S | Sáu PUT reviews/me rating 2 | 200; vẫn 2 lượt, trung bình 2.5 |
+
 ## Truy vết nguồn
 
 - [Controllers](../../course-service/src/main/java/com/hunre/courseservice/controller).
