@@ -1,12 +1,12 @@
-import { AwardIcon, BookOpenIcon, InfoIcon, type LucideIcon } from "lucide-react";
+import { AwardIcon, BookOpenIcon, type LucideIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { RoleBadges } from "@/components/auth/role-badge";
-import { Callout } from "@/components/common/callout";
 import { Fact, FactList } from "@/components/common/fact-list";
 import { FormSection } from "@/components/common/form-field";
 import { IconTile } from "@/components/common/icon-tile";
 import { FormPage } from "@/components/templates/form-page";
+import { ChangePasswordForm, ProfileDetailsForm } from "@/components/auth/profile-forms";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -59,16 +59,15 @@ export default async function ProfilePage() {
         </CardContent>
       </Card>
 
-      <Callout icon={InfoIcon} tone="info" title="Sắp có: sửa hồ sơ và đổi mật khẩu">
-        Hiện bạn chỉ xem được thông tin. Cần sửa gấp, hãy liên hệ quản trị viên.
-      </Callout>
-
       <FormSection title="Thông tin cá nhân" description="Họ tên và liên hệ hiển thị cho giảng viên của khóa bạn học.">
-        <FactList>
-          <Fact label="Họ tên" value={me.fullName} />
-          <Fact label="Email" value={<span className="break-all">{me.email}</span>} />
-          <Fact label="Số điện thoại" value={me.phone || <span className="font-normal text-muted-foreground">Chưa có</span>} />
-        </FactList>
+        <ProfileDetailsForm user={me} />
+      </FormSection>
+
+      <FormSection
+        title="Đổi mật khẩu"
+        description="Dùng mật khẩu hiện tại để đặt mật khẩu mới. Các phiên đăng nhập trên thiết bị khác sẽ cần đăng nhập lại."
+      >
+        <ChangePasswordForm />
       </FormSection>
 
       <FormSection
