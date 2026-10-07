@@ -6,10 +6,30 @@ Collection: [`auth.postman_collection.json`](auth.postman_collection.json). Bộ
 
 1. Cập nhật mã nguồn, khởi động stack: `docker compose --profile app up -d --build --wait`.
 2. Chạy `bash scripts/smoke-test.sh`; bắt đầu khi các kiểm tra đều báo `OK`.
-3. Import `auth.postman_collection.json` vào Postman. Không import hoặc tạo environment cho collection này.
-4. Chạy folder **0. Chuẩn bị** một lần trước khi chạy các folder AUTH. Folder này đăng nhập admin, tạo hoặc đăng nhập A/B/S, đồng bộ vai trò theo bộ tình huống và lưu ID/token trong collection variables. Tài khoản dev mặc định được định nghĩa ở collection; không thay bằng tài khoản thật.
-5. Chạy từng folder AUTH-01 … AUTH-08 bằng Runner. Có thể chạy cả collection sau folder chuẩn bị. Giữ thứ tự request trong folder; một số ca đổi vai trò, xoay/thu hồi token, đổi mật khẩu hoặc xóa fixture mà các ca sau dùng.
-6. Rate limit của gateway có thể trả `429` khi Runner đăng nhập liên tục. Dùng hướng dẫn tắt tạm `RATE_LIMIT_ENABLED=false` trong [`phan-cong.md`](../phan-cong.md#khi-nào-test-toàn-bộ-api-bằng-postman), rồi bật lại sau khi test.
+3. Tắt rate limit trước khi chạy Runner (lệnh Bash/Git Bash): `RATE_LIMIT_ENABLED=false docker compose --profile app up -d --wait api-gateway`. Nếu không tắt, đăng nhập liên tục có thể nhận `429`; reviewer đã gặp tình huống này trong lần chạy đầu.
+4. Import `auth.postman_collection.json` vào Postman. Không import hoặc tạo environment cho collection này.
+5. Chạy folder **0. Chuẩn bị** một lần trước khi chạy các folder AUTH. Folder này đăng nhập admin, tạo hoặc đăng nhập A/B/S, đồng bộ vai trò theo bộ tình huống và lưu ID/token trong collection variables. Tài khoản dev mặc định được định nghĩa ở collection; không thay bằng tài khoản thật.
+6. Chạy từng folder AUTH-01 … AUTH-08 bằng Runner. Có thể chạy cả collection sau folder chuẩn bị. Giữ thứ tự request trong folder; một số ca đổi vai trò, xoay/thu hồi token, đổi mật khẩu hoặc xóa fixture mà các ca sau dùng.
+7. Bật lại rate limit sau khi chạy, kể cả khi có ca FAIL: `RATE_LIMIT_ENABLED=true docker compose --profile app up -d --wait api-gateway`. Kiểm tra lệnh kết thúc thành công; nếu lỗi, khắc phục và chạy lại bước này.
+
+## Chạy bằng Newman
+
+Chạy nguyên khối sau từ thư mục gốc bằng Bash/Git Bash. Collection chạy cả folder chuẩn bị, không cần file environment. Khối lệnh bật lại rate limit khi kết thúc, kể cả khi Newman báo lỗi:
+
+```bash
+(
+  set -e
+  docker compose --profile app up -d --build --wait
+  bash scripts/smoke-test.sh
+  trap 'RATE_LIMIT_ENABLED=true docker compose --profile app up -d --wait api-gateway' EXIT
+  RATE_LIMIT_ENABLED=false docker compose --profile app up -d --wait api-gateway
+  mkdir -p target
+  pnpm dlx newman@6.2.2 run docs/postman/auth.postman_collection.json \
+    --reporters cli,json --reporter-json-export target/auth-newman-report.json
+)
+```
+
+Lưu kết quả trước khi dọn dữ liệu test. File JSON Newman có thể chứa token và thông tin đăng nhập dev; giữ tại `target/`, không commit file thô. Chỉ đưa mã HTTP, kết quả assertion đã loại thông tin nhạy cảm, commit và môi trường chạy vào biên bản. Nếu thiếu fixture, request bị bỏ qua vẫn phải ghi `BLOCKED` dù Newman kết thúc thành công. Kiểm tra gateway được bật lại rate limit sau lệnh cuối; nếu quá trình bị tắt cưỡng bức, chạy thủ công bước 7 ở trên.
 
 ## Biến và dữ liệu
 
