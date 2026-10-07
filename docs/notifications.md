@@ -8,6 +8,7 @@ dùng. Nó không gọi service nào và không service nào gọi nó — chỉ
 - [Khi xử lý sự kiện bị lỗi](#khi-xử-lý-sự-kiện-bị-lỗi)
 - [Mẫu thông báo](#mẫu-thông-báo)
 - [API](#api)
+- [Thông báo tức thời](#thông-báo-tức-thời)
 - [Vì sao đọc chuỗi thô thay vì để Spring chuyển đổi sẵn](#vì-sao-đọc-chuỗi-thô-thay-vì-để-spring-chuyển-đổi-sẵn)
 - [Chạy thử ở máy mình](#chạy-thử-ở-máy-mình)
 - [Những chỗ còn thiếu](#những-chỗ-còn-thiếu)
@@ -25,17 +26,23 @@ quiz-service                     Kafka                    notification-service
                                    │            điền {quizTitle}, {score}
                                    │            lưu vào notifications
                                    │                              │
+                                   │            sau commit: phát qua Redis ──► chuông trên web
+                                   │                              │
                                    │       học viên gọi GET /api/notifications
 ```
 
 Sự kiện nào sinh ra thông báo nào:
 
-| Sự kiện | Topic | Mã mẫu |
-|---|---|---|
-| `enrollment.created` | `elearning.enrollment.events` | `ENROLLMENT_SUCCESS` |
-| `enrollment.completed` | `elearning.enrollment.events` | `COURSE_COMPLETED` |
-| `certificate.issued` | `elearning.enrollment.events` | `CERTIFICATE_ISSUED` |
-| `quiz.graded` | `elearning.quiz.events` | `QUIZ_GRADED` |
+| Sự kiện | Topic | Mã mẫu | Bấm vào mở (`link_url`) |
+|---|---|---|---|
+| `enrollment.created` | `elearning.enrollment.events` | `ENROLLMENT_SUCCESS` | `/learn/{courseId}` |
+| `enrollment.completed` | `elearning.enrollment.events` | `COURSE_COMPLETED` | `/certificates/{enrollmentId}` |
+| `certificate.issued` | `elearning.enrollment.events` | `CERTIFICATE_ISSUED` | `/certificates/{enrollmentId}` |
+| `quiz.graded` | `elearning.quiz.events` | `QUIZ_GRADED` | `/attempts/{attemptId}` |
+
+`link_url` là đường dẫn trên web, luôn bắt đầu bằng `/`. Web chỉ đi theo đường dẫn nội bộ;
+thiếu link thì mở trang Thông báo. `certificate.issued` có sẵn `certificateUrl` nhưng đó là
+đường dẫn file PDF chưa ai phục vụ, nên không dùng — V4 xóa những link PDF đã lưu trước đó.
 
 Loại sự kiện chưa có xử lý vẫn được ghi vào `processed_events` rồi bỏ qua. Service khác
 thêm sự kiện mới không làm hỏng service này.
@@ -131,10 +138,56 @@ từ client nên không thể đọc hộp thư của người khác.
 |---|---|---|
 | GET | `/api/notifications` | Hộp thư, mới nhất trước, có phân trang |
 | GET | `/api/notifications/unread-count` | Số thông báo chưa đọc |
+| GET | `/api/notifications/stream` | Luồng tức thời (Server-Sent Events), xem mục dưới |
 | PATCH | `/api/notifications/{id}/read` | Đánh dấu đã đọc |
+| PATCH | `/api/notifications/read` | Đánh dấu đã đọc **tất cả**; `data` là số thông báo vừa đổi |
+| GET | `/api/notifications/preferences` | Tùy chọn nhận thông báo: `{"inAppEnabled": true, "emailEnabled": true}` |
+| PUT | `/api/notifications/preferences` | Ghi đè tùy chọn; bắt buộc đủ hai cờ, thiếu một cờ là 400 |
+
+Tắt `inAppEnabled` thì sự kiện mới không sinh thông báo (bỏ hẳn, không để dành); thông báo cũ
+vẫn còn. `emailEnabled` được lưu sẵn cho lúc có kênh email.
 
 Đọc thông báo của người khác trả **404 chứ không phải 403**: trả 403 là gián tiếp xác nhận
 id đó có tồn tại.
+
+## Thông báo tức thời
+
+Web mở một kết nối `GET /api/notifications/stream` và giữ nó. Có thông báo mới là
+notification-service đẩy xuống ngay: chuông đổi số, hiện toast có nút "Xem". Trước đây web
+cứ 20 giây hỏi lại số chưa đọc một lần.
+
+Hai loại sự kiện, `data` đều là JSON:
+
+| Sự kiện | `data` | Khi nào |
+|---|---|---|
+| `unread-count` | `{"unreadCount": 3}` | Ngay khi mở luồng, và mỗi khi số chưa đọc đổi — kể cả khi đọc ở tab khác |
+| `notification` | Một phần tử giống `GET /api/notifications` | Có thông báo mới |
+
+```bash
+curl -N -H "Authorization: Bearer <token>" localhost:8080/api/notifications/stream
+# event:unread-count
+# data:{"unreadCount":0}
+```
+
+**Vì sao cần Redis.** Kafka giao mỗi sự kiện cho **một** bản service trong consumer group, còn
+trình duyệt của người nhận có thể đang nối vào một bản khác. Bản tạo thông báo đăng lên kênh
+Redis `elearning:notifications`; bản nào giữ luồng của người đó thì gửi xuống. Đã chạy thử hai
+bản cùng lúc: sự kiện chỉ một bản xử lý, luồng ở cả hai bản đều nhận.
+
+**Chỉ phát sau khi commit** (`@TransactionalEventListener`): phát sớm hơn thì trình duyệt có
+thể gọi lại API mà chưa thấy thông báo, hoặc thấy một thông báo mà rollback sau đó xóa mất.
+
+**Khi có gì hỏng:**
+
+| Chuyện gì | Hệ quả |
+|---|---|
+| Redis chết | Thông báo vẫn lưu; vẫn tới người đang nối vào chính bản đã tạo. Health vẫn UP. Redis sống lại thì tự đăng ký kênh lại |
+| Mất luồng (mạng, service khởi động lại) | Trình duyệt tự nối lại; trong lúc chờ, web hỏi số chưa đọc 30 giây một lần |
+| Token hết hạn | Luồng tự đóng sau 15 phút (`elearning.realtime.stream-timeout`), trình duyệt nối lại bằng token mới — luồng chỉ kiểm token lúc mở |
+
+Mỗi 25 giây service gửi một dòng rỗng để proxy ở giữa không cắt kết nối và để biết tab nào đã
+đóng. Một tài khoản giữ tối đa 5 luồng, quá thì đóng luồng cũ nhất. Route `/api` của Next.js
+chuyển tiếp luồng này nguyên trạng, không gom body như response JSON.
 
 ## Vì sao đọc chuỗi thô thay vì để Spring chuyển đổi sẵn
 
@@ -163,12 +216,13 @@ Jackson 3 — cùng một thư viện ở cả bên gửi lẫn bên nhận, và
 ## Chạy thử ở máy mình
 
 ```bash
-docker compose up -d mysql kafka
+docker compose up -d mysql kafka redis
 ./mvnw -pl notification-service -am spring-boot:run
 ```
 
 Không có Kafka thì đặt `spring.kafka.enabled=false`: service vẫn khởi động, chỉ không nghe
-sự kiện. Cùng công tắc với quiz-service.
+sự kiện. Cùng công tắc với quiz-service. Không có Redis thì đặt `REALTIME_REDIS_ENABLED=false`:
+luồng tức thời chỉ phát cho người nối vào chính bản này, đủ khi chạy một bản.
 
 Thử cả chuỗi (cần thêm auth-service và quiz-service):
 
@@ -182,7 +236,5 @@ curl -H "Authorization: Bearer <token>" localhost:8085/api/notifications
 - **Kênh EMAIL chưa gửi gì.** Chưa có máy chủ mail, và các mẫu EMAIL cần `{fullName}` mà sự
   kiện cố ý không mang theo thông tin cá nhân (xem [shared-contracts.md](shared-contracts.md)).
   Muốn gửi email thì phải hỏi auth-service để lấy tên và địa chỉ.
-- **Chưa có API sửa tùy chọn nhận thông báo.** Bảng `notification_preferences` đã được tôn
-  trọng khi tạo thông báo, nhưng chưa có endpoint để người dùng tự bật tắt.
 - **Chưa dọn `processed_events`.** Bảng này chỉ lớn thêm. Cần một job xóa bản ghi cũ hơn
   vài tháng; cột `processed_at` đã có index sẵn cho việc đó.

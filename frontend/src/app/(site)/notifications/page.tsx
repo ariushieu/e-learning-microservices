@@ -1,16 +1,18 @@
-import { BellIcon } from "lucide-react";
+import { BellIcon, BellOffIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Callout } from "@/components/common/callout";
 import { EmptyState } from "@/components/common/empty-state";
 import { ErrorAlert } from "@/components/common/error-alert";
 import { PrevNextPagination } from "@/components/common/pagination";
+import { EnableInAppButton, NotificationActions } from "@/components/notification/notification-actions";
 import { NotificationItem } from "@/components/notification/notification-item";
 import { ListPage } from "@/components/templates/list-page";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { errorMessage } from "@/lib/errors";
 import { gateway } from "@/lib/server/gateway";
-import type { Notification, Page } from "@/lib/types";
+import type { Notification, NotificationPreference, Page } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Thông báo" };
 
@@ -19,13 +21,16 @@ const PAGE_SIZE = 20;
 export default async function NotificationsPage({ searchParams }: PageProps<"/notifications">) {
   const { page } = await searchParams;
   const current = Math.max(0, Number(page ?? 0) || 0);
-  let data: Page<Notification> | null = null;
-  let loadError: string | null = null;
-  try {
-    data = await gateway<Page<Notification>>(`/api/notifications?page=${current}&size=${PAGE_SIZE}`);
-  } catch (e) {
-    loadError = errorMessage(e);
-  }
+  const [inbox, unreadCount, preferences] = await Promise.all([
+    gateway<Page<Notification>>(`/api/notifications?page=${current}&size=${PAGE_SIZE}`).then(
+      (page) => ({ data: page, loadError: null }),
+      (e: unknown) => ({ data: null, loadError: errorMessage(e) }),
+    ),
+    // Số chưa đọc và cài đặt chỉ là phần phụ: lỗi thì vẫn hiện hộp thư, chỉ thiếu nút tương ứng.
+    gateway<number>("/api/notifications/unread-count").catch(() => null),
+    gateway<NotificationPreference>("/api/notifications/preferences").catch(() => null),
+  ]);
+  const { data, loadError } = inbox;
 
   if (!data) {
     return (
@@ -35,11 +40,12 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/no
     );
   }
 
-  const unread = data.content.filter((n) => !n.read).length;
+  const unread = unreadCount ?? data.content.filter((n) => !n.read).length;
   return (
     <ListPage
       title="Thông báo"
-      description={unread ? `${unread} thông báo chưa đọc trên trang này` : `${data.totalElements} thông báo`}
+      description={unread ? `${unread} thông báo chưa đọc` : `${data.totalElements} thông báo`}
+      actions={<NotificationActions unread={unread} preferences={preferences} />}
       width="narrow"
       pagination={
         data.totalPages > 1 && (
@@ -54,6 +60,17 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/no
         )
       }
     >
+      {preferences && !preferences.inAppEnabled && (
+        <Callout
+          icon={BellOffIcon}
+          tone="warning"
+          className="mb-6"
+          title="Bạn đang tắt thông báo trong ứng dụng"
+          action={<EnableInAppButton preferences={preferences} />}
+        >
+          Ghi danh, kết quả bài kiểm tra và chứng chỉ mới sẽ không hiện ở đây cho tới khi bật lại.
+        </Callout>
+      )}
       {data.content.length === 0 ? (
         <EmptyState
           icon={BellIcon}

@@ -26,8 +26,13 @@ const BLOCKED = new Set(["auth/login", "auth/register", "auth/refresh-token", "a
 // Header của gateway mà màn hình cần đọc (thông báo 429, hạn mức còn lại).
 const PASS_HEADERS = ["content-type", "retry-after", "x-ratelimit-remaining", "x-ratelimit-burst-capacity"];
 
+// Luồng thông báo tức thời (Server-Sent Events): trả về từng đoạn ngay khi gateway gửi, không
+// gom cả body như response JSON.
+const EVENT_STREAM = "text/event-stream";
+
 async function forward(request: NextRequest, path: string, body: string | undefined, token?: string) {
-  const headers: Record<string, string> = { Accept: "application/json" };
+  const wantsStream = request.headers.get("accept")?.includes(EVENT_STREAM);
+  const headers: Record<string, string> = { Accept: wantsStream ? EVENT_STREAM : "application/json" };
   const contentType = request.headers.get("content-type");
   if (contentType) headers["Content-Type"] = contentType;
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -39,6 +44,9 @@ async function forward(request: NextRequest, path: string, body: string | undefi
     headers,
     body,
     cache: "no-store",
+    // Trình duyệt đóng tab thì cắt luôn kết nối tới gateway, nếu không luồng SSE ở
+    // notification-service cứ mở mãi cho một người đã đi.
+    signal: request.signal,
   });
 }
 
@@ -82,10 +90,15 @@ async function handle(request: NextRequest, ctx: RouteContext<"/api/[...path]">)
     const value = upstream.headers.get(name);
     if (value) headers.set(name, value);
   }
-  const response = new NextResponse(upstream.status === 204 ? null : await upstream.arrayBuffer(), {
-    status: upstream.status,
-    headers,
-  });
+  const streaming = upstream.ok && upstream.headers.get("content-type")?.startsWith(EVENT_STREAM);
+  if (streaming) {
+    // no-transform: không cho nén gzip, vì nén thì phải gom đủ một khối mới gửi, sự kiện đến trễ.
+    headers.set("cache-control", "no-cache, no-transform");
+  }
+  const response = new NextResponse(
+    streaming ? upstream.body : upstream.status === 204 ? null : await upstream.arrayBuffer(),
+    { status: upstream.status, headers },
+  );
 
   if (refreshed) writeAuthCookies(response.cookies, refreshed);
   else if (upstream.status === 401 && refresh) clearAuthCookies(response.cookies);
