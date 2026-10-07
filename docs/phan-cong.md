@@ -1,6 +1,6 @@
 # Bảng theo dõi công việc
 
-> **Cập nhật lần cuối:** 07/10/2026 — `main` ở `04f3d16`
+> **Cập nhật lần cuối:** 07/10/2026 (chiều) — `main` ở `ee05eff`
 >
 > File này là nơi duy nhất ghi ai đang làm gì. Xong một việc thì nhóm trưởng cập nhật ngay
 > tại đây, nên **cứ `git pull` là biết việc tiếp theo của mình**, không phải hỏi ai.
@@ -19,11 +19,11 @@
 
 | Người | Service | Việc đang mở | Ưu tiên | Cỡ |
 |---|---|---|---|---|
-| **Cả nhóm** | service của mình | [Collection Postman của service mình + tự test](#cả-nhóm--collection-postman-của-service-mình) | **Cao** — demo mỗi người tự test service mình | ~2h/người |
-| quocluibotre | auth (web) | [Trang hồ sơ: sửa thông tin, đổi mật khẩu](#quocluibotre--trang-hồ-sơ-sửa-thông-tin-đổi-mật-khẩu) | **Cao** — API #48 đã có nhưng web chưa dùng | ~1h30 |
-| hiepdeptrai0111 | quiz (web) | [Báo "cần ghi danh" trên trang bài kiểm tra](#hiepdeptrai0111--báo-cần-ghi-danh-trên-trang-bài-kiểm-tra) | Trung bình — phần web của #49 | ~45 phút |
-| duyd92689-debug | course (web) | [Lọc nhanh và sắp xếp ở trang chủ](#duyd92689-debug--lọc-nhanh-và-sắp-xếp-ở-trang-chủ) | Trung bình | ~1h |
-| phamquyet19042005-netizen | enrollment | [Trang xác minh chứng chỉ công khai](#phamquyet19042005-netizen--trang-xác-minh-chứng-chỉ-công-khai) | Trung bình | ~2h |
+| hiepdeptrai0111 | quiz | [Không lộ đáp án khi đang làm bài (QUIZ-14.8), lưu đúng EXPIRED](#hiepdeptrai0111--không-lộ-đáp-án-khi-đang-làm-bài) | **Cao — lỗ hổng gian lận, xong trước demo** | ~1h |
+| quocluibotre | auth | [Kiểm định dạng số điện thoại khi sửa hồ sơ](#quocluibotre--kiểm-định-dạng-số-điện-thoại) | Trung bình | ~45 phút |
+| duyd92689-debug | course | [Đánh giá khóa học: sao + nhận xét](#duyd92689-debug--đánh-giá-khóa-học) | Trung bình — tính năng mới cho demo | ~3h |
+| phamquyet19042005-netizen | enrollment | [Dọn sau #60](#phamquyet19042005-netizen--dọn-sau-60) | Thấp | ~30 phút |
+| Hiếu | web (khung chung) | Tên trên header đổi ngay sau khi sửa hồ sơ, không phải đăng nhập lại | Trung bình | ~30 phút |
 | Hiếu | gateway, notification | Collection Postman `gateway`, `notification` và `demo-flow` (luồng xuyên service) | **Cao** | ~2h |
 | Hiếu | api-gateway | Giới hạn đăng nhập theo IP thật của người dùng khi đi qua frontend | Thấp — sau demo | ~1h |
 
@@ -31,9 +31,10 @@
 và trang `/design`. Chạy cả hệ thống: `docker compose --profile app up -d --build --wait` rồi mở
 http://localhost:3000.
 
-**Mỗi người tự test service của mình bằng Postman** — mỗi người một collection riêng, theo quy ước
-chung ở [mục dưới](#cả-nhóm--collection-postman-của-service-mình) để file nào import vào cũng chạy
-ngay, không phải sửa gì.
+**Collection Postman:** auth, course, enrollment, quiz đã có và đã chạy thật trên Docker (#56, #57,
+#59, #60). Còn `gateway`, `notification`, `demo-flow` của Hiếu. Quy ước chung ở
+[mục dưới](#cả-nhóm--collection-postman-của-service-mình). Ca FAIL hay việc mới sinh ra khi chạy
+collection thì sửa ở PR riêng như các việc trong bảng trên.
 
 **Tài khoản giảng viên và admin tạo bằng API** (#27), không cần SQL:
 
@@ -55,7 +56,7 @@ chưa xong. `.github/CODEOWNERS` tự gắn đúng người review khi pull requ
 |---|---|---|
 | quocluibotre | Đăng nhập, đăng ký, hồ sơ, cấp quyền (`/admin/users`) | `components/auth/`, `app/(auth)/`, `app/(site)/profile/`, `app/(dashboard)/admin/users/` |
 | duyd92689-debug | Trang chủ (danh mục khóa), chi tiết khóa, khu giảng dạy (khóa, chương, bài), danh mục (`/admin/categories`) | `components/course/`, `app/(site)/page.tsx`, `app/(site)/courses/`, `app/(dashboard)/instructor/` (trừ `quizzes/`), `app/(dashboard)/admin/categories/` |
-| phamquyet19042005-netizen | Ghi danh, trang học + tiến độ, khóa của tôi, chứng chỉ | `components/enrollment/`, `app/(learn)/`, `app/(site)/my-courses/`, `app/(site)/certificates/` |
+| phamquyet19042005-netizen | Ghi danh, trang học + tiến độ, khóa của tôi, chứng chỉ, xác minh chứng chỉ | `components/enrollment/`, `app/(learn)/`, `app/(site)/my-courses/`, `app/(site)/certificates/`, `app/(site)/verify/` |
 | hiepdeptrai0111 | Làm bài, kết quả, soạn đề | `components/quiz/`, `app/(site)/quizzes/`, `app/(site)/attempts/`, `app/(dashboard)/instructor/quizzes/` |
 | Hiếu | Khung chung: hệ thống giao diện (`/design`), layout, header, sidebar, đăng nhập/cookie, `proxy.ts`, route `/api`, thông báo | `components/ui/`, `components/common/`, `components/templates/`, `components/layout/`, `components/notification/`, `lib/`, `app/layout.tsx`, `app/(site)/design/`, `proxy.ts` |
 
@@ -131,7 +132,7 @@ Bốn trong năm quy tắc này sinh ra từ lỗi có thật trong repo, ghi r�
 ## Trạng thái hệ thống
 
 Năm service đã có code, database chạy tự động bằng Flyway, xác thực JWT hoạt động ở cả
-gateway lẫn từng service. Gateway giới hạn số request bằng Redis. Toàn bộ 419 test xanh. Cả hệ thống chạy được bằng một lệnh
+gateway lẫn từng service. Gateway giới hạn số request bằng Redis. Toàn bộ test Maven xanh trên CI. Cả hệ thống chạy được bằng một lệnh
 `docker compose --profile app up -d --build --wait`, xem
 [README](../README.md#cách-nhanh-nhất-chạy-cả-hệ-thống-bằng-docker).
 
@@ -145,6 +146,10 @@ học viên ghi danh → xem nội dung bài → cập nhật tiến độ tới
 học viên làm bài kiểm tra → nộp → thông báo "đạt 50.00 điểm"
 ```
 
+Từ #58 thông báo tới **ngay lập tức** (SSE, Redis pub/sub giữa các bản notification-service): chuông
+nhảy số và hiện toast, bấm vào mở đúng trang. Từ #60 ai cũng tra được chứng chỉ ở `/verify/<mã>`
+mà không cần đăng nhập.
+
 **Không mất sự kiện khi một phần hệ thống chết:**
 
 - Nộp bài đi qua outbox (#32): tắt Kafka thì bài làm vẫn lưu, bật lại là thông báo tới.
@@ -154,9 +159,15 @@ học viên làm bài kiểm tra → nộp → thông báo "đạt 50.00 điểm
   thường (#37). Sự kiện khóa học giờ cũng đi qua outbox (#44): Kafka chết thì sự kiện nằm chờ, và
   snapshot cũ không cho người lạ ghi danh vào khóa đã lưu trữ.
 
-**Lỗ hổng đang mở:** không còn. Chưa ghi danh thì không làm được bài kiểm tra (#49); bài đã hoàn
-thành không bị hạ về "đang học" (#50); số học viên đếm mỗi người một lần dù hủy rồi ghi danh lại
-(#51). Cả ba đã chạy thử thật trước khi merge.
+**Lỗ hổng đang mở:**
+
+- **Lộ đáp án khi đang làm bài (QUIZ-14.8).** Học viên gọi `GET /api/attempts/{id}` trong lúc làm là
+  thấy `correctOptionIds`, tức gian lận được. Collection quiz đã bắt được, đã chạy thật xác nhận.
+  Giao hiepdeptrai0111, xong trước demo.
+- `PUT /api/auth/me` nhận số điện thoại bất kỳ (`"abc"` → 200). Giao quocluibotre.
+
+Đã đóng: chưa ghi danh thì không làm được bài (#49), bài đã hoàn thành không bị hạ trạng thái (#50),
+số học viên đếm mỗi người một lần (#51), lọc theo danh mục cha thấy cả khóa ở danh mục con (#56).
 
 ---
 
@@ -168,13 +179,24 @@ Mỗi người làm **một file collection cho service mình** và tự chạy 
 service đó. Không gộp chung một file: năm người cùng sửa một JSON lớn thì lần merge nào cũng xung
 đột.
 
-| Người | File | Chạy tình huống |
-|---|---|---|
-| quocluibotre | `docs/postman/auth.postman_collection.json` | [auth.md](test-cases/auth.md) |
-| duyd92689-debug | `docs/postman/course.postman_collection.json` (chuyển từ `course-service-v2`) | [course.md](test-cases/course.md) |
-| phamquyet19042005-netizen | `docs/postman/enrollment.postman_collection.json` | [enrollment.md](test-cases/enrollment.md) |
-| hiepdeptrai0111 | `docs/postman/quiz.postman_collection.json` | [quiz.md](test-cases/quiz.md) |
-| Hiếu | `gateway`, `notification`, `demo-flow` | [gateway.md](test-cases/gateway.md), [notification.md](test-cases/notification.md) |
+| Người | File | Chạy tình huống | Trạng thái (chạy thật trên Docker, 07/10) |
+|---|---|---|---|
+| quocluibotre | `docs/postman/auth.postman_collection.json` | [auth.md](test-cases/auth.md) | Xong #57 — 294/294 assertion |
+| duyd92689-debug | `docs/postman/course.postman_collection.json` | [course.md](test-cases/course.md) | Xong #56 — 703/703 |
+| phamquyet19042005-netizen | `docs/postman/enrollment.postman_collection.json` | [enrollment.md](test-cases/enrollment.md) | Xong #60 — 310/310 |
+| hiepdeptrai0111 | `docs/postman/quiz.postman_collection.json` | [quiz.md](test-cases/quiz.md) | Xong #59 — 416/417, còn QUIZ-14.8 (lỗ hổng thật) |
+| Hiếu | `gateway`, `notification`, `demo-flow` | [gateway.md](test-cases/gateway.md), [notification.md](test-cases/notification.md) | Đang làm |
+
+Chạy collection bằng dòng lệnh (chỉ dùng pnpm):
+
+```bash
+RATE_LIMIT_ENABLED=false docker compose --profile app up -d --wait api-gateway
+pnpm dlx newman@6.2.2 run docs/postman/<service>.postman_collection.json
+docker compose --profile app up -d --wait api-gateway     # bật lại giới hạn request
+```
+
+Collection tạo dữ liệu thật (tài khoản QA, khóa, danh mục). Chạy trên máy mình rồi dọn, đừng chạy
+trước giờ demo trên máy demo.
 
 **Quy ước chung** — để file của ai import vào máy ai cũng chạy ngay:
 
@@ -213,83 +235,82 @@ với nguyên dữ liệu cũ là khóa được đồng bộ. Hoặc dùng khó
 
 ---
 
-### quocluibotre — trang hồ sơ: sửa thông tin, đổi mật khẩu
+### hiepdeptrai0111 — không lộ đáp án khi đang làm bài
 
-> API đã có ở #48 (chạy thử 18/18 ca). Một API không có chỗ dùng trên web coi như chưa xong.
+> Lỗ hổng thật, collection của bạn đã bắt được (QUIZ-14.8). Đang làm bài mà mở DevTools gọi
+> `GET /api/attempts/{id}` là thấy đáp án đúng.
 
-**Cần làm** trong `app/(site)/profile/` + `components/auth/`, theo khuôn `FormPage` (xem `/design`):
+**Cần làm** ở `QuizAttemptServiceImpl`:
 
-- Thẻ **"Thông tin cá nhân"** (`FormSection`): họ tên, số điện thoại → `PUT /api/auth/me`.
-  Lưu xong `toast.success` và `router.refresh()`. Lỗi 400 hiện dưới đúng ô bằng `fieldErrorMap`.
-- Thẻ **"Đổi mật khẩu"**: mật khẩu hiện tại, mật khẩu mới, nhập lại (so khớp ngay trên trình duyệt)
-  → `POST /api/auth/change-password`. Sai mật khẩu cũ → lỗi dưới ô "Mật khẩu hiện tại"
-  (`fieldErrors.currentPassword`). Thành công → gọi `logoutAction` (refresh token đã bị thu hồi)
-  và về `/login`.
-- Bỏ `Callout` "sắp có" đang đặt tạm ở trang hồ sơ.
+- `getAttemptResult`: lượt chưa `SUBMITTED` (đang làm, hết giờ chưa nộp) thì trả **422**, không dựng
+  `correctOptionIds`. Lượt đã nộp vẫn trả đầy đủ như cũ.
+- Nộp quá giờ: hiện trả 422 nhưng lượt **vẫn `IN_PROGRESS`**, vì `markAttemptExpired` lưu EXPIRED rồi
+  ném `BusinessException` trong cùng transaction nên bị rollback. Lưu EXPIRED phải còn sau khi trả lỗi
+  (ví dụ `@Transactional(noRollbackFor = …)` hoặc tách phần lưu ra transaction riêng).
+- Test cho cả hai, và QUIZ-14.8 trong collection chuyển sang PASS.
+- Biên bản: chép kết quả chạy Docker trong review #59 (193 request, 416/417, QUIZ-13.7 nhận 422) vào
+  chỗ đang ghi BLOCKED. README: `newman run …` → `pnpm dlx newman@6.2.2 run …`.
 
-**Lưu ý.** Tên trên menu tài khoản đọc từ access token, nên sau khi sửa họ tên menu vẫn hiện tên cũ
-tới khi token được làm mới (tối đa 15 phút). Trang hồ sơ đọc `GET /api/auth/me` nên hiện tên mới ngay.
-
-**Tự kiểm.** Sửa tên → trang hồ sơ hiện tên mới. Đổi mật khẩu sai mật khẩu cũ → lỗi dưới ô, vẫn đăng
-nhập. Đổi đúng → bị đăng xuất; đăng nhập mật khẩu cũ → báo sai, mật khẩu mới → vào được.
-
----
-
-### hiepdeptrai0111 — báo "cần ghi danh" trên trang bài kiểm tra
-
-> Phần web của #49. Backend đã trả 403 khi chưa ghi danh, nhưng web đang hiện thông báo lỗi chung.
-
-**Cần làm** ở `app/(site)/quizzes/[id]/`:
-
-- Trang giới thiệu bài kiểm tra kiểm trước bằng `gatewayOrNull("/api/progress?courseId=…")`
-  (404 = chưa ghi danh). Chưa ghi danh (và không phải người tạo bài hay admin) thì thay nút
-  "Bắt đầu làm bài" bằng `Callout` tone="info" *"Bạn cần ghi danh khóa học để làm bài kiểm tra"* kèm
-  nút **Ghi danh** dẫn về `/courses/{courseId}`.
-- Bấm "Bắt đầu" mà vẫn nhận 403 (ví dụ vừa hủy ghi danh ở tab khác) → hiện đúng `Callout` đó thay vì
-  lỗi chung. Nhận 502 → `ErrorAlert` *"Không kiểm tra được ghi danh, thử lại sau"*.
-
-**Tự kiểm.** Tài khoản chưa ghi danh mở bài kiểm tra → thấy Callout, không có nút Bắt đầu. Ghi danh
-xong quay lại → làm được. Giảng viên tạo bài → làm thử được.
+**Tự kiểm.** Bắt đầu một lượt, gọi `GET /api/attempts/{id}` → 422, response không có đáp án. Nộp xong
+gọi lại → 200 có đáp án. Đề có giới hạn thời gian, chờ quá giờ rồi nộp → 422 và lịch sử làm bài hiện
+"Hết giờ" chứ không phải "Đang làm". Chạy lại collection quiz → 417/417.
 
 ---
 
-### duyd92689-debug — lọc nhanh và sắp xếp ở trang chủ
+### quocluibotre — kiểm định dạng số điện thoại
 
-> `studentCount` giờ đã đúng (#51), nên sắp xếp theo số học viên có ý nghĩa.
-
-**Cần làm** ở `app/(site)/page.tsx` + `components/course/catalog-filters.tsx`:
-
-- Hàng **chip danh mục** (danh mục gốc) phía trên lưới khóa học: bấm là lọc, chip đang chọn tô
-  `bg-primary-soft text-primary-strong`, có chip "Tất cả". Vẫn là link GET (`?categoryId=`), giữ
-  `keyword` và `level` đang có.
-- Ô **Sắp xếp**: Mới nhất, Nhiều học viên, Giá thấp → cao, Giá cao → thấp. Dùng `?sort=` của
-  backend (kiểm lại các trường cho phép sort ở course-service; trường sai phải trả 400 chứ không 500).
-
-**Tự kiểm.** Chọn chip → URL có `categoryId`, lưới chỉ còn khóa của danh mục đó; đổi sắp xếp → thứ
-tự đúng; tìm kiếm vẫn giữ bộ lọc. Xem ở 375px: chip cuộn ngang được, không tràn trang.
-
----
-
-### phamquyet19042005-netizen — trang xác minh chứng chỉ công khai
-
-Chứng chỉ có mã `CERT-…` nhưng chưa ai kiểm được mã đó là thật. Nhà tuyển dụng cần một trang công
-khai để tra.
+> Phát hiện khi chạy thật #57: gửi `"phone": "abc"` vào `PUT /api/auth/me` → 200 và lưu thẳng vào DB.
 
 **Cần làm.**
 
-- enrollment-service: `GET /api/certificates/verify/{code}` **không cần đăng nhập** — trả tên học
-  viên, tên khóa, ngày cấp, mã; không trả email hay id nội bộ. Mã không tồn tại → 404. Khai đường dẫn
-  công khai ở cả service lẫn gateway (`elearning.security.public-paths`), và route ở gateway (A4).
-- Web: trang `/verify/[code]` theo khuôn `DetailPage` (dải tiêu đề "Xác minh chứng chỉ"), hiện thông
-  tin chứng chỉ với `StatusBadge` "Hợp lệ", hoặc `EmptyState` khi không tìm thấy. Trên trang chứng chỉ
-  thêm dòng "Xác minh tại …/verify/CERT-…".
-- Trang `/verify` không nằm trong danh sách cần đăng nhập ở `src/proxy.ts`.
+- `UpdateProfileRequest.phone`: thêm `@Pattern` — chỉ chữ số, `+`, khoảng trắng, 9–15 ký tự; rỗng
+  hoặc `null` vẫn hợp lệ (xóa số). Sai thì 400 `VALIDATION_FAILED`, `fieldErrors.phone` bằng tiếng Việt.
+- Test controller cho số đúng, số sai, chuỗi rỗng. Thêm ca vào `auth.md` và collection.
+- Web không phải sửa: form hồ sơ đã hiện lỗi dưới ô theo `fieldErrors`.
 
-**Tự kiểm.** Đăng xuất, mở `/verify/<mã thật>` → thấy đúng tên và khóa. Mã sai → không tìm thấy.
-Gọi API không token qua gateway → 200; response không có email.
+**Tự kiểm.** Trên `/profile` nhập "abc" → lỗi dưới ô Số điện thoại, không lưu. Nhập `0912 345 678`
+→ lưu được. Tự chạy collection auth trên máy mình và ghi biên bản (lần trước biên bản dựa vào lượt
+chạy của reviewer). Máy không chạy được Docker thì nhắn Hiếu để chạy chung.
 
-**Dọn thêm (tùy chọn).** #50 đã chặn hạ trạng thái ở backend, nên đoạn chờ `starting.current` trong
-`components/enrollment/lesson-actions.tsx` có thể bỏ — giữ cũng không sao.
+---
+
+### duyd92689-debug — đánh giá khóa học
+
+> Bảng `course_reviews` (mỗi người một đánh giá, 1–5 sao) và cột `rating_avg`, `rating_count` của
+> `courses` đã có từ V1 nhưng chưa có API nào dùng. Bảng `course_learners` (#51) cho biết ai đã ghi
+> danh, nên không phải gọi sang enrollment-service.
+
+**Cần làm.**
+
+- course-service:
+  - `GET /api/courses/{id}/reviews` công khai, phân trang, mới nhất trước. Trả `rating`, `comment`,
+    `createdAt` và tên người viết; không trả email.
+  - `PUT /api/courses/{id}/reviews/me` (tạo hoặc sửa đánh giá của mình), `DELETE /api/courses/{id}/reviews/me`.
+    Chỉ người có trong `course_learners` của khóa mới được viết, còn lại trả 403. `rating` 1–5,
+    `comment` tối đa 2000 ký tự.
+  - Mỗi lần ghi hoặc xóa thì tính lại `rating_avg`, `rating_count` trong cùng transaction, khóa dòng
+    khóa học (`lockForLearnerUpdate` như #51) để hai người đánh giá cùng lúc không làm lệch số.
+  - Tên người viết: lấy từ token lúc ghi và lưu kèm (thêm cột bằng migration mới), giống cách #60 lưu
+    tên trên chứng chỉ.
+  - Khai đường dẫn công khai `GET` ở cả gateway lẫn course-service.
+- Web, trang chi tiết khóa:
+  - Mục **"Đánh giá"**: điểm trung bình, số lượt, danh sách nhận xét.
+  - Người đã ghi danh thấy form chọn sao và nhận xét; đã viết rồi thì hiện để sửa hoặc xóa.
+  - Thẻ khóa học trên trang chủ hiện số sao khi `ratingCount > 0`.
+
+**Tự kiểm.** Học viên chưa ghi danh gửi đánh giá → 403. Ghi danh rồi đánh giá 5 sao → trung bình 5.0,
+1 lượt. Người thứ hai 3 sao → 4.0, 2 lượt. Sửa lại → số tính lại đúng. Xóa → trở về như trước. Có
+test cho hai người đánh giá song song. Thêm ca vào `course.md` và collection.
+
+---
+
+### phamquyet19042005-netizen — dọn sau #60
+
+- `docs/postman/enrollment.md`: `npx --yes newman…` → `pnpm dlx newman@6.2.2 run …` (dự án chỉ dùng pnpm).
+- Trang chứng chỉ: mã `CERT-…` đang bị ngắt giữa dòng ("…F5 / 8E"). Cho cột mã rộng hơn hoặc không
+  ngắt ở màn rộng.
+- Biên bản: chép kết quả chạy trên MySQL trong review #60 (161 request, 310/310) vào biên bản. Lần
+  trước bạn chạy H2.
 
 ---
 
@@ -297,6 +318,11 @@ Gọi API không token qua gateway → 200; response không có email.
 
 | Ngày | PR | Việc | Người |
 |---|---|---|---|
+| 07/10 | #58 | Thông báo tức thời (SSE + Redis pub/sub), đọc tất cả, bấm thông báo mở đúng trang, cài đặt nhận thông báo | Hiếu |
+| 07/10 | #60 | Xác minh chứng chỉ công khai `/verify/<mã>`, mã chứng chỉ không lộ id, collection enrollment | phamquyet19042005-netizen |
+| 07/10 | #56 | Chip danh mục và sắp xếp ở trang chủ, lọc danh mục cha gồm cả danh mục con, collection course | duyd92689-debug |
+| 07/10 | #59 | Trang bài kiểm tra báo "cần ghi danh", collection quiz | hiepdeptrai0111 |
+| 07/10 | #57 | Trang hồ sơ: sửa thông tin, đổi mật khẩu; collection auth | quocluibotre |
 | 07/10 | #51 | Đếm mỗi học viên một lần kể cả hủy rồi ghi danh lại (`course_learners`), khóa khi sửa đề cương, chặn xóa khóa có học viên | duyd92689-debug |
 | 07/10 | #54 | Khung giao diện: token màu xanh lá, 5 khuôn trang, khối dùng chung, trang `/design`, `DESIGN.md` | Hiếu |
 | 06/10 | #50 | Không hạ trạng thái bài đã hoàn thành; thử lại có giới hạn, message hỏng sang `.DLT` | phamquyet19042005-netizen |

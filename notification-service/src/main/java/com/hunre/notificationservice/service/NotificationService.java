@@ -1,9 +1,13 @@
 package com.hunre.notificationservice.service;
 
+import com.hunre.notificationservice.dto.NotificationPreferenceResponse;
 import com.hunre.notificationservice.dto.NotificationResponse;
+import com.hunre.notificationservice.dto.UpdateNotificationPreferenceRequest;
 import com.hunre.notificationservice.entity.Notification;
 import com.hunre.notificationservice.entity.NotificationChannel;
+import com.hunre.notificationservice.entity.NotificationPreference;
 import com.hunre.notificationservice.entity.NotificationStatus;
+import com.hunre.notificationservice.realtime.InboxChanged;
 import com.hunre.notificationservice.repository.NotificationPreferenceRepository;
 import com.hunre.notificationservice.repository.NotificationRepository;
 import com.hunre.notificationservice.repository.NotificationTemplateRepository;
@@ -12,6 +16,7 @@ import com.hunre.sharedcommon.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -35,6 +40,7 @@ public class NotificationService {
     private final NotificationTemplateRepository templateRepository;
     private final NotificationPreferenceRepository preferenceRepository;
     private final TemplateRenderer templateRenderer;
+    private final ApplicationEventPublisher events;
 
     /**
      * Tạo một thông báo trong ứng dụng từ mẫu tương ứng.
@@ -80,6 +86,7 @@ public class NotificationService {
 
         Notification saved = notificationRepository.save(notification);
         log.info("Đã tạo thông báo {} id={} cho người dùng {}", code, saved.getId(), userId);
+        events.publishEvent(InboxChanged.created(userId, NotificationResponse.from(saved)));
         return Optional.of(saved);
     }
 
@@ -104,8 +111,46 @@ public class NotificationService {
         Notification notification = notificationRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("thông báo", "id", id));
 
+        boolean wasUnread = notification.getStatus() != NotificationStatus.READ;
         notification.markRead();
-        return NotificationResponse.from(notificationRepository.save(notification));
+        NotificationResponse response = NotificationResponse.from(notificationRepository.save(notification));
+        if (wasUnread) {
+            events.publishEvent(InboxChanged.read(userId));
+        }
+        return response;
+    }
+
+    /**
+     * Đánh dấu đã đọc mọi thông báo của người dùng bằng một câu UPDATE.
+     *
+     * @return số thông báo vừa chuyển sang đã đọc; 0 nếu vốn không còn cái nào chưa đọc
+     */
+    @Transactional
+    public int markAllRead(Long userId) {
+        int updated = notificationRepository.markAllRead(userId, NotificationStatus.READ, Instant.now());
+        if (updated > 0) {
+            events.publishEvent(InboxChanged.read(userId));
+        }
+        return updated;
+    }
+
+    public NotificationPreferenceResponse getPreferences(Long userId) {
+        return preferenceRepository.findById(userId)
+                .map(NotificationPreferenceResponse::from)
+                .orElse(NotificationPreferenceResponse.DEFAULTS);
+    }
+
+    /**
+     * Ghi đè cả bộ tùy chọn. Chưa có bản ghi thì tạo — "không có bản ghi" vốn nghĩa là bật hết,
+     * nên lần đầu tắt một kênh mới sinh ra dòng trong bảng.
+     */
+    @Transactional
+    public NotificationPreferenceResponse updatePreferences(Long userId, UpdateNotificationPreferenceRequest request) {
+        NotificationPreference preference = preferenceRepository.findById(userId)
+                .orElseGet(() -> NotificationPreference.builder().userId(userId).build());
+        preference.setInAppEnabled(request.inAppEnabled());
+        preference.setEmailEnabled(request.emailEnabled());
+        return NotificationPreferenceResponse.from(preferenceRepository.save(preference));
     }
 
     private boolean inAppEnabledFor(Long userId) {

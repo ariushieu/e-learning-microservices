@@ -68,7 +68,7 @@ public class EventProcessor {
                 "ENROLLMENT_SUCCESS",
                 event.userId(),
                 variables("courseTitle", event.courseTitle()),
-                null);
+                "/learn/" + event.courseId());
     }
 
     private void handleEnrollmentCompleted(String payload) {
@@ -77,7 +77,9 @@ public class EventProcessor {
                 "COURSE_COMPLETED",
                 event.userId(),
                 variables("courseTitle", event.courseTitle()),
-                null);
+                // enrollment-service cấp chứng chỉ trong cùng transaction với lúc hoàn thành,
+                // nên khi thông báo này tới thì trang chứng chỉ đã có.
+                certificatePage(event.enrollmentId()));
     }
 
     private void handleQuizGraded(String payload) {
@@ -88,7 +90,8 @@ public class EventProcessor {
         // toPlainString giữ nguyên 85.50 thay vì đổi thành 85.5 hay ký hiệu mũ.
         variables.put("score", event.score() == null ? "0" : event.score().toPlainString());
 
-        notificationService.createInApp("QUIZ_GRADED", event.userId(), variables, null);
+        notificationService.createInApp(
+                "QUIZ_GRADED", event.userId(), variables, "/attempts/" + event.attemptId());
     }
 
     private void handleCertificateIssued(String payload) {
@@ -99,8 +102,18 @@ public class EventProcessor {
         variables.put("certificateCode", event.certificateCode());
         variables.put("certificateUrl", event.certificateUrl());
 
+        // Không dùng event.certificateUrl(): đó là đường dẫn file PDF chưa ai phục vụ, bấm vào
+        // là trang lỗi. Trang chứng chỉ của web đi theo mã ghi danh.
         notificationService.createInApp(
-                "CERTIFICATE_ISSUED", event.userId(), variables, event.certificateUrl());
+                "CERTIFICATE_ISSUED", event.userId(), variables, certificatePage(event.enrollmentId()));
+    }
+
+    /**
+     * {@code link_url} là đường dẫn trên web (frontend), luôn bắt đầu bằng "/" — frontend chỉ đi
+     * theo đường dẫn nội bộ, không mở ra trang ngoài.
+     */
+    private static String certificatePage(Long enrollmentId) {
+        return "/certificates/" + enrollmentId;
     }
 
     private Map<String, String> variables(String key, String value) {

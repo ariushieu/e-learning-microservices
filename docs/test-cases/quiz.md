@@ -1,9 +1,14 @@
 # Tình huống test quiz-service
 
 Dùng [gateway.md](gateway.md) cho tài khoản, token, fixture và biên bản.
-Mọi request qua `{{baseUrl}}`. **Kế hoạch chưa chạy Postman**.
-Các API quản lý quiz/câu hỏi cho A/B/ADM gọi theo vai trò; S bị 403. Chưa có hợp đồng
-giới hạn quản lý quiz theo tác giả, nên không tự đặt B=403 như với khóa học.
+Mọi request qua `{{baseUrl}}`. Collection: `docs/postman/quiz.postman_collection.json`.
+Biên bản thực chạy và giới hạn môi trường: [ket-qua/quiz.md](ket-qua/quiz.md).
+
+**Đối chiếu ngày 07/10/2026 với main `e17520b`:** #42 chuẩn hóa route, #45 kiểm
+quyền chủ bài/ẩn bài nháp, #49 kiểm ghi danh. Những kỳ vọng cập nhật dưới đây dựa
+trên các thay đổi đã merge, không dựa vào việc muốn làm xanh bộ kiểm thử.
+Các API quản lý quiz/câu hỏi chỉ cho chủ bài hoặc ADM; S và B thao tác bài A đều 403 (#45).
+Bắt đầu/tiếp tục lượt làm cần ghi danh ACTIVE hoặc COMPLETED đúng khóa; chủ bài/ADM được miễn (#49).
 Làm bài và đọc kết quả kiểm danh tính người làm, không bắt buộc chỉ ROLE_STUDENT.
 
 ## Đường dẫn đích
@@ -14,11 +19,9 @@ Làm bài và đọc kết quả kiểm danh tính người làm, không bắt b
 | PATCH /api/quizzes/{id}/publish và /archive | PATCH /api/quizzes/{id}/status + body status |
 | GET /api/quizzes/{id}/attempts/history | GET /api/quizzes/{id}/attempts |
 | GET /api/quizzes/attempts/{attemptId} | GET /api/attempts/{attemptId} |
-| POST /api/quizzes/attempts/{attemptId}/submit | POST /api/attempts/{attemptId}/submit — **[CẦN CHỐT]**, suy ra B7 |
+| POST /api/quizzes/attempts/{attemptId}/submit | POST /api/attempts/{attemptId}/submit |
 
-Bốn dòng đầu **[CHỜ ROUTE]** theo phân công. Dòng submit chưa được ghi riêng trong bảng
-phân công: cần nhóm quiz xác nhận trước khi viết collection. Không thử URL đích này rồi
-kết luận backend đã hỏng khi thay đổi chưa được thực hiện. Gateway cần thêm /api/attempts/**.
+Các route đích đã có ở #42, gồm POST /api/attempts/{attemptId}/submit và route gateway /api/attempts/**.
 
 Danh sách quiz theo course và lịch sử attempt hiện trả List, chưa Pageable (cần chuẩn hóa C1).
 Các ca sort của hai endpoint được đánh dấu CẦN CHỐT; không giả định sort đang được xử lý.
@@ -67,7 +70,7 @@ Quiz kiểm timeout đặt timeLimitMinutes=1, đợi **hơn 90 giây** từ sta
 | 6 | Điểm đạt quá 100 | A | Body passScore=101 | 400 |
 | 7 | Giả tác giả | A | Body thêm createdBy={{instructorBId}} | 201; createdBy vẫn instructorAId |
 | 8 | Admin tạo | ADM | Body hợp lệ | 201; createdBy=adminId |
-| 9 | Course không tồn tại [CẦN CHỐT] | A | Body courseId={{missingId}} | 404 đề xuất nếu yêu cầu xác thực course; code hiện không tra course, ghi BLOCKED chờ hợp đồng |
+| 9 | Course không tồn tại | A | Body courseId={{missingId}} | 404; kiểm course đã có ở #45 |
 
 ## QUIZ-02 — PUT /api/quizzes/{id}
 
@@ -82,7 +85,7 @@ Quiz kiểm timeout đặt timeLimitMinutes=1, đợi **hơn 90 giây** từ sta
 | 7 | Title trống | A | QUIZ-UPDATE title="" | 400 |
 | 8 | Admin sửa | ADM | PUT quiz của A + body hợp lệ | 200 |
 
-## QUIZ-03 — PATCH /api/quizzes/{id}/status [CHỜ ROUTE]
+## QUIZ-03 — PATCH /api/quizzes/{id}/status
 
 | # | Tình huống | Tài khoản | Request | Mong đợi |
 |---|---|---|---|---|
@@ -93,7 +96,7 @@ Quiz kiểm timeout đặt timeLimitMinutes=1, đợi **hơn 90 giây** từ sta
 | 5 | Sai ID | A | PATCH /api/quizzes/abc/status + {"status":"PUBLISHED"} | 400 |
 | 6 | Quiz chưa có câu hỏi | A | Xuất bản quiz DRAFT rỗng riêng | 422 |
 | 7 | Lưu trữ | A | PATCH quiz riêng + {"status":"ARCHIVED"} | 200; status=ARCHIVED |
-| 8 | Sai/thiếu enum [CẦN CHỐT DTO] | A | Lần lượt {"status":"UNKNOWN"}, {} | 400 |
+| 8 | Sai/thiếu enum | A | Lần lượt {"status":"UNKNOWN"}, {} | 400 |
 | 9 | Admin xuất bản | ADM | Xuất bản quiz có câu hỏi | 200 |
 
 ## QUIZ-04 — GET /api/quizzes/{id}
@@ -106,7 +109,7 @@ Quiz kiểm timeout đặt timeLimitMinutes=1, đợi **hơn 90 giây** từ sta
 | 4 | Không tồn tại | A | GET /api/quizzes/{{missingId}} | 404 |
 | 5 | Sai ID | A | GET /api/quizzes/abc | 400 |
 | 6 | Admin xem | ADM | GET /api/quizzes/{{quizId}} | 200 |
-| 7 | Giảng viên B xem theo vai trò | B | GET quiz của A | 200 theo hợp đồng hiện tại; không dùng ca này làm kiểm quyền chủ khóa |
+| 7 | Giảng viên B xem bài A | B | GET quiz của A | 403 theo quyền chủ bài (#45) |
 
 ## QUIZ-05 — GET /api/quizzes/{id}/take
 
@@ -121,9 +124,9 @@ Quiz kiểm timeout đặt timeLimitMinutes=1, đợi **hơn 90 giây** từ sta
 | 7 | Đề đã lưu trữ | S | GET quiz ARCHIVED/take | 422 |
 | 8 | Xáo trộn | S | Với shuffleQuestions=true, gọi nhiều lần | 200; cùng tập ID/câu hỏi, vẫn không đáp án; không bắt buộc mỗi lần thứ tự phải khác |
 
-## QUIZ-06 — GET /api/quizzes?courseId={id} [CHỜ ROUTE]
+## QUIZ-06 — GET /api/quizzes?courseId={id}
 
-Mảng hiện tại có cả quiz DRAFT/ARCHIVED và không chứa câu hỏi. Nếu nhóm muốn lọc trạng thái cho học viên thì cần chốt hợp đồng trước khi đổi kỳ vọng; không suy diễn từ quy tắc endpoint course công khai.
+Theo #45: học viên/B chỉ thấy bài PUBLISHED của A; A thấy cả bài nháp của mình. Mảng không chứa câu hỏi/đáp án.
 
 | # | Tình huống | Tài khoản | Request | Mong đợi |
 |---|---|---|---|---|
@@ -189,14 +192,14 @@ Mảng hiện tại có cả quiz DRAFT/ARCHIVED và không chứa câu hỏi. N
 
 ## QUIZ-11 — GET /api/quizzes/{quizId}/questions
 
-Danh sách câu hỏi có trần theo quiz, không Pageable. Nếu nhóm quyết định kiểm cha và trả 404 cho quiz không tồn tại, cập nhật ca 4 trước chạy; không ghi 404 là hành vi hiện có.
+Danh sách câu hỏi không Pageable. #45 kiểm quiz cha và quyền chủ bài trước khi trả danh sách.
 
 | # | Tình huống | Tài khoản | Request | Mong đợi |
 |---|---|---|---|---|
 | 1 | Giảng viên xem | A | GET /api/quizzes/{{quizId}}/questions | 200; theo position; có isCorrect/explanation |
 | 2 | Không token | — | Cùng URL | 401 |
 | 3 | Sai vai trò | S | Cùng URL | 403 |
-| 4 | Quiz không tồn tại | A | GET /api/quizzes/{{missingId}}/questions | 200; data=[] theo truy vấn hiện tại không kiểm cha |
+| 4 | Quiz không tồn tại | A | GET /api/quizzes/{{missingId}}/questions | 404; quiz cha không tồn tại (#45) |
 | 5 | Sai ID | A | GET /api/quizzes/abc/questions | 400 |
 | 6 | Admin xem | ADM | GET /api/quizzes/{{quizId}}/questions | 200 |
 | 7 | Quiz rỗng có thật | A | GET questions của quiz mới chưa thêm câu | 200; data=[] |
@@ -216,9 +219,9 @@ Danh sách câu hỏi có trần theo quiz, không Pageable. Nếu nhóm quyết
 | 9 | Giả userId | S | POST URL thêm ?userId={{instructorBId}} | 201; vẫn thuộc S |
 | 10 | Không giới hạn lượt | S | Quiz riêng maxAttempts=0; nộp và bắt đầu lượt mới | 201; attemptNo tăng |
 
-## QUIZ-13 — POST /api/attempts/{attemptId}/submit [CẦN CHỐT ROUTE B7]
+## QUIZ-13 — POST /api/attempts/{attemptId}/submit
 
-Ca Kafka dùng quy trình khôi phục trong gateway.md; không có Kafka thì vẫn phải lưu bài và outbox. Không kết luận định dạng chuỗi điểm 50.00 đã đúng: lỗi payload JSON đang được giao sửa.
+Ca Kafka dùng quy trình khôi phục trong gateway.md; không có Kafka thì vẫn phải lưu bài và outbox. #42 đã sửa giữ nguyên payload điểm; vẫn cần kiểm thực tế khôi phục Kafka để nghiệm thu cả ca.
 
 | # | Tình huống | Tài khoản | Request | Mong đợi |
 |---|---|---|---|---|
@@ -235,7 +238,7 @@ Ca Kafka dùng quy trình khôi phục trong gateway.md; không có Kafka thì v
 | 11 | Kafka ngừng | S | Trong môi trường riêng, stop Kafka, nộp attempt hợp lệ mới rồi start lại Kafka | Nộp 200; kết quả vẫn đọc 200; sau Kafka hồi phục, hộp thư có đúng một thông báo |
 | 12 | Giả người nộp | S | QUIZ-SUBMIT-50 thêm userId=instructorBId | 200; kết quả vẫn userId=studentId |
 
-## QUIZ-14 — GET /api/attempts/{attemptId} [CHỜ ROUTE]
+## QUIZ-14 — GET /api/attempts/{attemptId}
 
 | # | Tình huống | Tài khoản | Request | Mong đợi |
 |---|---|---|---|---|
@@ -246,9 +249,9 @@ Ca Kafka dùng quy trình khôi phục trong gateway.md; không có Kafka thì v
 | 5 | Sai ID | S | GET /api/attempts/abc | 400 |
 | 6 | Admin đọc hộ | ADM | GET kết quả của S | 404; API hiện chỉ dành cho người làm |
 | 7 | Giả userId | B | GET /api/attempts/{{attemptId}}?userId={{studentId}} | 404 |
-| 8 | Lộ đáp án trước khi nộp [CẦN CHỐT] | S | GET attempt IN_PROGRESS vừa tạo | 422 đề xuất; không trả đáp án; code hiện dựng đáp án cả khi chưa SUBMITTED, cần chủ service chốt/sửa |
+| 8 | Lộ đáp án trước khi nộp [CẦN CHỐT] | S | GET attempt IN_PROGRESS vừa tạo | 422; không được trả đáp án khi đang làm. Giữ kỳ vọng này để phát hiện lỗi, ghi FAIL nếu backend vẫn trả đáp án; cần PR sửa riêng |
 
-## QUIZ-15 — GET /api/quizzes/{quizId}/attempts [CHỜ ROUTE]
+## QUIZ-15 — GET /api/quizzes/{quizId}/attempts
 
 | # | Tình huống | Tài khoản | Request | Mong đợi |
 |---|---|---|---|---|
@@ -260,6 +263,21 @@ Ca Kafka dùng quy trình khôi phục trong gateway.md; không có Kafka thì v
 | 6 | Giả danh | B | GET /api/quizzes/{{publishedQuizId}}/attempts?userId={{studentId}} | 200; vẫn chỉ B |
 | 7 | Chưa từng làm quiz có thật | ADM | GET /api/quizzes/{{publishedQuizId}}/attempts | 200; data=[] nếu ADM chưa làm |
 | 8 | Sort bịa sau C1 [CẦN CHỐT] | S | GET /api/quizzes/{{publishedQuizId}}/attempts?sort=abcxyz | 400 sau khi có Pageable; hiện không hỗ trợ sort nên BLOCKED |
+
+## QUIZ-16 — ghi danh và quyền sở hữu bổ sung
+
+Collection thêm các ca #45/#49: B tạo bài trong khóa A, B sửa/thêm/xem/lưu trữ/xóa
+bài A bị 403; học viên chưa ghi danh bị 403 và không tạo lượt; hủy ghi danh chặn
+resume mà giữ nguyên lượt; ghi danh lại tiếp tục đúng lượt; chủ bài/admin làm thử.
+Các request chuẩn bị mang tên riêng, không tính là ca nghiệm thu.
+
+QUIZ-06.8 và QUIZ-15.8 vẫn BLOCKED vì List chưa hỗ trợ sort; collection không tự
+coi việc bỏ qua sort là PASS. QUIZ-13.7 bật `runSlowTests=true` trong collection hoặc
+Newman `--env-var runSlowTests=true`, chờ **100 giây**, với `--timeout-script 150000`.
+Sau review #59, tăng khoảng chờ vì giới hạn 60 giây + ân hạn 30 giây và phép so sánh
+`elapsedSeconds > 90` cắt phần lẻ; chờ 92 giây trên host có thể chưa đủ trong Docker.
+Giữ nguyên kỳ vọng HTTP 422, không đổi backend hoặc coi ca bỏ qua là PASS.
+QUIZ-13.11 phải chủ động dừng/bật Kafka và xác minh thông báo; mặc định bỏ qua.
 
 ## Truy vết nguồn
 
