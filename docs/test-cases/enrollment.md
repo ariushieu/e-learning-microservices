@@ -146,6 +146,10 @@ Không yêu cầu fileUrl luôn có PDF: hiện hệ thống có mã chứng ch�
 | 11 | Giây xem không giảm | S | Đã xem 60, PUT watchedSeconds=10, cùng status | 200; watchedSeconds vẫn 60 |
 | 12 | Giả danh trong body | B (đã ghi danh) | ENROLL-PROGRESS thêm userId=studentId | 200; chỉ tiến độ B thay đổi |
 | 13 | Bài không tồn tại hoặc khác khóa | S | PUT missingId hoặc bài khóa B với courseId khóa A | 404; không tăng tiến độ; CourseLessonClient kiểm bài học thuộc đúng khóa |
+| 14 | Không hạ trạng thái bài đã hoàn thành | S | Sau ca 1, gửi IN_PROGRESS với watchedSeconds lớn hơn rồi nhỏ hơn | 200; bài vẫn COMPLETED, completedAt không đổi, watchedSeconds chỉ tăng; tiến độ khóa vẫn 50% |
+| 15 | Không thu hồi hoàn thành/chứng chỉ | S | Sau ca 10, lưu certificateCode rồi gửi IN_PROGRESS cho bài đã hoàn thành; GET tiến độ và chứng chỉ | 200; khóa vẫn COMPLETED, 100%, completedAt và certificateCode không đổi; không thêm thông báo hoàn thành/cấp chứng chỉ |
+| 16 | Hai request tiến độ đồng thời | S | Trên lượt mới, gửi COMPLETED và IN_PROGRESS gần đồng thời cho cùng bài | Cả hai 200; chỉ một dòng tiến độ, trạng thái cuối COMPLETED, watchedSeconds bằng giá trị lớn nhất; không cấp trùng chứng chỉ |
+| 17 | Bổ sung bài sau khi đã cấp chứng chỉ | A rồi S | Sau ca 10, A thêm bài vào khóa; đợi snapshot; S gửi IN_PROGRESS rồi GET tiến độ | 200; totalLessonsCount tăng nhưng lượt đã hoàn thành vẫn COMPLETED, 100%, mã chứng chỉ giữ nguyên |
 
 Ca 13 đã có client kiểm bài học qua course-service và test tự động. Khi course-service
 không truy cập được, API trả 502 và không ghi tiến độ. Vẫn cần chạy ca này qua gateway thật.
@@ -163,6 +167,18 @@ không truy cập được, API trả 502 và không ghi tiến độ. Vẫn c�
 | 7 | Giả userId | B (đã ghi danh) | GET /api/progress?courseId={{publishedCourseId}}&userId={{studentId}} | 200; enrollmentId=enrollmentBId |
 | 8 | Chưa học bài nào | S | GET tiến độ lượt mới chưa có lesson_progress | 200; progressPercent=0, completedLessonsCount=0 |
 | 9 | Đọc sau hoàn thành | S | GET sau hoàn thành 2/2 bài, gọi hai lần | 200; progressPercent=100, certificateCode không đổi |
+
+## ENROLL-09 — Retry Kafka và DLT
+
+Chạy trên môi trường thử riêng; khôi phục MySQL và cấu hình retry sau khi kiểm tra.
+
+| # | Tình huống | Thao tác | Mong đợi |
+|---|---|---|---|
+| 1 | Mất MySQL tạm thời | Tắt MySQL, xuất bản khóa, bật MySQL sau 40 giây | Snapshot cuối cùng cập nhật sau khi database hoạt động; không mất message |
+| 2 | Tiêu đề vượt độ dài | Kafka UI gửi course.updated hợp lệ trừ title dài 300 ký tự; gửi khóa hợp lệ ngay sau trên cùng partition | Message lỗi giữ trong elearning.course.events.DLT với key/payload/header nguồn; khóa sau vẫn đồng bộ |
+| 3 | JSON hỏng | Gửi not-json rồi sự kiện khóa hợp lệ | JSON hỏng vào DLT; consumer vẫn xử lý khóa sau |
+| 4 | Hết ngân sách retry | Giảm max-elapsed-time trong môi trường test, giữ database lỗi quá ngân sách | Message được retry rồi chuyển DLT; khi database phục hồi, sự kiện sau xử lý được |
+| 5 | Gửi DLT thất bại | Làm DLT không ghi được, gửi message hỏng; khôi phục quyền/kết nối DLT | Không commit bỏ qua offset lỗi trước khi lưu được DLT; sau khôi phục lưu được payload gốc và xử lý tiếp |
 
 ## Truy vết nguồn
 

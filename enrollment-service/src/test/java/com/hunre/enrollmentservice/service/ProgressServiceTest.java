@@ -85,7 +85,7 @@ class ProgressServiceTest {
                 .progressPercent(BigDecimal.ZERO)
                 .build();
 
-        when(enrollmentRepository.findByUserIdAndCourseId(userId, courseId))
+        when(enrollmentRepository.findForProgressUpdate(userId, courseId))
                 .thenReturn(Optional.of(enrollment));
         when(lessonProgressRepository.findByEnrollmentIdAndLessonId(1L, lessonId))
                 .thenReturn(Optional.empty());
@@ -142,7 +142,7 @@ class ProgressServiceTest {
                 .progressPercent(BigDecimal.valueOf(50))
                 .build();
 
-        when(enrollmentRepository.findByUserIdAndCourseId(userId, courseId))
+        when(enrollmentRepository.findForProgressUpdate(userId, courseId))
                 .thenReturn(Optional.of(enrollment));
         when(lessonProgressRepository.findByEnrollmentIdAndLessonId(1L, lessonId))
                 .thenReturn(Optional.empty());
@@ -193,7 +193,7 @@ class ProgressServiceTest {
                 .status(LessonProgressStatus.IN_PROGRESS)
                 .build();
 
-        when(enrollmentRepository.findByUserIdAndCourseId(userId, courseId))
+        when(enrollmentRepository.findForProgressUpdate(userId, courseId))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> progressService.updateLessonProgress(userId, request))
@@ -204,7 +204,7 @@ class ProgressServiceTest {
     void updateLessonProgress_invalidLesson_doesNotWriteProgressOrIssueCertificate() {
         Enrollment enrollment = Enrollment.builder().id(1L).userId(1L).courseId(10L)
                 .status(EnrollmentStatus.ACTIVE).progressPercent(BigDecimal.ZERO).build();
-        when(enrollmentRepository.findByUserIdAndCourseId(1L, 10L)).thenReturn(Optional.of(enrollment));
+        when(enrollmentRepository.findForProgressUpdate(1L, 10L)).thenReturn(Optional.of(enrollment));
         org.mockito.Mockito.doThrow(new ResourceNotFoundException("Bài học không thuộc khóa học"))
                 .when(courseLessonClient).validateLesson(10L, 999L);
 
@@ -224,7 +224,7 @@ class ProgressServiceTest {
     void updateLessonProgress_courseServiceUnavailable_doesNotWriteProgress() {
         Enrollment enrollment = Enrollment.builder().id(1L).userId(1L).courseId(10L)
                 .status(EnrollmentStatus.ACTIVE).progressPercent(BigDecimal.ZERO).build();
-        when(enrollmentRepository.findByUserIdAndCourseId(1L, 10L)).thenReturn(Optional.of(enrollment));
+        when(enrollmentRepository.findForProgressUpdate(1L, 10L)).thenReturn(Optional.of(enrollment));
         org.mockito.Mockito.doThrow(new com.hunre.sharedcommon.exception.BusinessException(
                 com.hunre.sharedcommon.exception.ErrorCode.EXTERNAL_SERVICE_ERROR, "Không thể kết nối"))
                 .when(courseLessonClient).validateLesson(10L, 101L);
@@ -252,7 +252,7 @@ class ProgressServiceTest {
                 .progressPercent(BigDecimal.valueOf(50))
                 .build();
 
-        when(enrollmentRepository.findByUserIdAndCourseId(userId, courseId))
+        when(enrollmentRepository.findForProgressUpdate(userId, courseId))
                 .thenReturn(Optional.of(enrollment));
 
         LessonProgress lp1 = LessonProgress.builder()
@@ -307,7 +307,7 @@ class ProgressServiceTest {
                 .progressPercent(BigDecimal.ZERO)
                 .build();
 
-        when(enrollmentRepository.findByUserIdAndCourseId(userId, courseId)).thenReturn(Optional.of(enrollment));
+        when(enrollmentRepository.findForProgressUpdate(userId, courseId)).thenReturn(Optional.of(enrollment));
         when(lessonProgressRepository.findByEnrollmentIdAndLessonId(1L, lessonId)).thenReturn(Optional.empty());
 
         LessonProgress saved = LessonProgress.builder()

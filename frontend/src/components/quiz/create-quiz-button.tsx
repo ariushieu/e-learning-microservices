@@ -1,8 +1,20 @@
 "use client";
 
+import { Loader2Icon, PlusIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { Alert, Button, Card } from "@/components/ui";
+import { ErrorAlert } from "@/components/common/error-alert";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { api } from "@/lib/client";
 import { errorMessage } from "@/lib/errors";
 import type { Quiz } from "@/lib/types";
@@ -15,7 +27,7 @@ import {
   type FieldErrors,
 } from "./quiz-settings-fields";
 
-/** Nút "Tạo bài kiểm tra" mở form ngay tại chỗ; tạo xong chuyển sang trang soạn câu hỏi. */
+/** Nút "Tạo bài kiểm tra" mở hộp thoại tạo mới; tạo xong chuyển sang trang soạn câu hỏi. */
 export function CreateQuizButton({ courseId }: { courseId: number }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -24,11 +36,14 @@ export function CreateQuizButton({ courseId }: { courseId: number }) {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  function close() {
-    setOpen(false);
-    setValues(emptyQuizSettings);
-    setErrors({});
-    setError(null);
+  function onOpenChange(next: boolean) {
+    if (saving) return;
+    setOpen(next);
+    if (!next) {
+      setValues(emptyQuizSettings);
+      setErrors({});
+      setError(null);
+    }
   }
 
   async function submit(e: FormEvent) {
@@ -52,26 +67,42 @@ export function CreateQuizButton({ courseId }: { courseId: number }) {
     }
   }
 
-  if (!open) {
-    return <Button onClick={() => setOpen(true)}>+ Tạo bài kiểm tra</Button>;
-  }
-
   return (
-    <Card className="w-full">
-      <form onSubmit={submit} className="space-y-4" noValidate>
-        <h3 className="text-lg font-semibold text-slate-900">Bài kiểm tra mới</h3>
-        {error && <Alert>{error}</Alert>}
-        <QuizSettingsFields values={values} errors={errors} onChange={setValues} disabled={saving} showShuffle={false} />
-        <p className="text-xs text-slate-500">Bài kiểm tra được tạo ở trạng thái nháp, thêm câu hỏi rồi mới xuất bản.</p>
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="secondary" onClick={close} disabled={saving}>
-            Hủy
-          </Button>
-          <Button type="submit" loading={saving}>
-            Tạo và soạn câu hỏi
-          </Button>
-        </div>
-      </form>
-    </Card>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>
+        <Button>
+          <PlusIcon /> Tạo bài kiểm tra
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-xl">
+        <form onSubmit={submit} className="space-y-5" noValidate>
+          <DialogHeader>
+            <DialogTitle>Bài kiểm tra mới</DialogTitle>
+            <DialogDescription>
+              Bài kiểm tra được tạo ở trạng thái nháp, thêm câu hỏi rồi mới xuất bản.
+            </DialogDescription>
+          </DialogHeader>
+          {error && <ErrorAlert message={error} />}
+          <QuizSettingsFields
+            values={values}
+            errors={errors}
+            onChange={setValues}
+            disabled={saving}
+            showShuffle={false}
+          />
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline" disabled={saving}>
+                Hủy
+              </Button>
+            </DialogClose>
+            <Button type="submit" disabled={saving}>
+              {saving && <Loader2Icon className="animate-spin" />}
+              Tạo và soạn câu hỏi
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
