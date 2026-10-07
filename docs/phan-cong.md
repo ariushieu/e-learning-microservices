@@ -1,6 +1,6 @@
 # Bảng theo dõi công việc
 
-> **Cập nhật lần cuối:** 06/10/2026 — `main` ở `43b07a2`
+> **Cập nhật lần cuối:** 07/10/2026 — `main` ở `04f3d16`
 >
 > File này là nơi duy nhất ghi ai đang làm gì. Xong một việc thì nhóm trưởng cập nhật ngay
 > tại đây, nên **cứ `git pull` là biết việc tiếp theo của mình**, không phải hỏi ai.
@@ -19,26 +19,21 @@
 
 | Người | Service | Việc đang mở | Ưu tiên | Cỡ |
 |---|---|---|---|---|
-| phamquyet19042005-netizen | enrollment-service | [Không hạ trạng thái bài đã hoàn thành](#phamquyet19042005-netizen--không-hạ-trạng-thái-bài-đã-hoàn-thành) | **Cao** — sai dữ liệu tiến độ, chứng chỉ | ~30 phút |
-| phamquyet19042005-netizen | enrollment-service | [Thử lại có giới hạn, message hỏng sang `.DLT`](#phamquyet19042005-netizen--thử-lại-có-giới-hạn-message-hỏng-sang-dlt) | Thấp | ~45 phút |
-| hiepdeptrai0111 | quiz-service | [Chỉ người đã ghi danh mới làm bài kiểm tra](#hiepdeptrai0111--chỉ-người-đã-ghi-danh-mới-làm-bài-kiểm-tra) | Trung bình | ~1h |
-| duyd92689-debug | course-service | [Đếm số học viên của khóa](#duyd92689-debug--đếm-số-học-viên-của-khóa) | Trung bình — web đang hiện "0 học viên" | ~1h30 |
-| quocluibotre | auth-service | [Sửa hồ sơ và đổi mật khẩu](#quocluibotre--sửa-hồ-sơ-và-đổi-mật-khẩu) | Thấp | ~1h |
-| Hiếu | cả hệ thống | [Collection Postman chung](#hiếu--collection-postman-chung) | **Cao** — đợt test chờ việc này | ~2h |
-| Hiếu | api-gateway | Giới hạn đăng nhập theo IP thật của người dùng khi đi qua frontend | Trung bình | ~1h |
-| **Cả nhóm** | service của mình | [Đợt test Postman](#cả-nhóm--đợt-test-postman) | Sau khi có collection chung | ~2h/người |
+| **Cả nhóm** | service của mình | [Collection Postman của service mình + tự test](#cả-nhóm--collection-postman-của-service-mình) | **Cao** — demo mỗi người tự test service mình | ~2h/người |
+| quocluibotre | auth (web) | [Trang hồ sơ: sửa thông tin, đổi mật khẩu](#quocluibotre--trang-hồ-sơ-sửa-thông-tin-đổi-mật-khẩu) | **Cao** — API #48 đã có nhưng web chưa dùng | ~1h30 |
+| hiepdeptrai0111 | quiz (web) | [Báo "cần ghi danh" trên trang bài kiểm tra](#hiepdeptrai0111--báo-cần-ghi-danh-trên-trang-bài-kiểm-tra) | Trung bình — phần web của #49 | ~45 phút |
+| duyd92689-debug | course (web) | [Lọc nhanh và sắp xếp ở trang chủ](#duyd92689-debug--lọc-nhanh-và-sắp-xếp-ở-trang-chủ) | Trung bình | ~1h |
+| phamquyet19042005-netizen | enrollment | [Trang xác minh chứng chỉ công khai](#phamquyet19042005-netizen--trang-xác-minh-chứng-chỉ-công-khai) | Trung bình | ~2h |
+| Hiếu | gateway, notification | Collection Postman `gateway`, `notification` và `demo-flow` (luồng xuyên service) | **Cao** | ~2h |
+| Hiếu | api-gateway | Giới hạn đăng nhập theo IP thật của người dùng khi đi qua frontend | Thấp — sau demo | ~1h |
 
-**Đã có giao diện web** (#46): `docker compose --profile app up -d --build --wait` rồi mở
-http://localhost:3000, hoặc chạy riêng trong `frontend/` bằng `pnpm dev` — xem
-[frontend/README.md](../frontend/README.md). Ba việc mới của phamquyet, hiep, duyd đều do chạy
-thử giao diện web mà lộ ra.
+**Khung giao diện đã có** (#54): mọi việc web ở trên làm theo [frontend/DESIGN.md](../frontend/DESIGN.md)
+và trang `/design`. Chạy cả hệ thống: `docker compose --profile app up -d --build --wait` rồi mở
+http://localhost:3000.
 
-**Đã đủ bốn điều kiện để test toàn bộ API** (#41, #42). Thứ tự:
-
-1. Hiếu dựng collection chung — báo trong nhóm khi xong.
-2. Mỗi người chạy file tình huống test của **service mình** (thầy yêu cầu mỗi người tự kiểm
-   service mình) và ghi biên bản.
-3. Ca nào FAIL thì người phụ trách service sửa trong PR riêng.
+**Mỗi người tự test service của mình bằng Postman** — mỗi người một collection riêng, theo quy ước
+chung ở [mục dưới](#cả-nhóm--collection-postman-của-service-mình) để file nào import vào cũng chạy
+ngay, không phải sửa gì.
 
 **Tài khoản giảng viên và admin tạo bằng API** (#27), không cần SQL:
 
@@ -74,8 +69,8 @@ Chạy thử bằng `pnpm dev` trong `frontend/` với backend đang chạy.
 
 ## Khi nào test toàn bộ API bằng Postman
 
-**Sẵn sàng — đủ 4/4.** Bắt đầu khi có collection chung, cách làm ở
-[Đợt test Postman](#cả-nhóm--đợt-test-postman).
+**Sẵn sàng — đủ 4/4.** Mỗi người làm collection của service mình rồi tự test, cách làm ở
+[Collection Postman của service mình](#cả-nhóm--collection-postman-của-service-mình).
 
 | # | Điều kiện | Xong ở |
 |---|---|---|
@@ -108,10 +103,10 @@ RATE_LIMIT_ENABLED=false docker compose --profile app up -d api-gateway
 Bật lại bằng cùng lệnh, bỏ `RATE_LIMIT_ENABLED=false`. Chi tiết ở
 [README](../README.md#giới-hạn-request).
 
-**Collection Postman:** đang dựng một collection chung cho cả 5 service (việc của Hiếu). Trong
-lúc chờ, `docs/postman/course-service-v2.*` (#37) dùng được cho course-service. Hai collection
-cũ `course-service.*` và `enrollment-service.*` **không dùng lại được** — gọi thẳng cổng service
-hoặc dùng đường dẫn cũ.
+**Collection Postman:** mỗi service một file trong `docs/postman/`, mỗi người giữ file của service
+mình — quy ước ở [Collection Postman của service mình](#cả-nhóm--collection-postman-của-service-mình).
+Hai collection cũ `course-service.*` và `enrollment-service.*` **không dùng lại được** (gọi thẳng cổng
+service hoặc đường dẫn cũ) — xóa khi có file mới.
 
 **Danh sách tình huống test** (#36): `docs/test-cases/` — mỗi service một file, đọc
 [gateway.md](test-cases/gateway.md) trước để tạo bốn tài khoản cố định.
@@ -159,153 +154,41 @@ học viên làm bài kiểm tra → nộp → thông báo "đạt 50.00 điểm
   thường (#37). Sự kiện khóa học giờ cũng đi qua outbox (#44): Kafka chết thì sự kiện nằm chờ, và
   snapshot cũ không cho người lạ ghi danh vào khóa đã lưu trữ.
 
-**Lỗ hổng đang mở:** không còn lỗ hổng phân quyền. Lỗ hổng bài kiểm tra đóng ở #45 — chạy thật,
-giảng viên B tạo/sửa/xóa/xem đáp án bài của A đều 403. Còn một chỗ hở nghiệp vụ: chưa ghi danh vẫn
-làm được bài kiểm tra (việc của hiep).
+**Lỗ hổng đang mở:** không còn. Chưa ghi danh thì không làm được bài kiểm tra (#49); bài đã hoàn
+thành không bị hạ về "đang học" (#50); số học viên đếm mỗi người một lần dù hủy rồi ghi danh lại
+(#51). Cả ba đã chạy thử thật trước khi merge.
 
 ---
 
 ## Chi tiết từng việc
 
-### phamquyet19042005-netizen — không hạ trạng thái bài đã hoàn thành
+### Cả nhóm — collection Postman của service mình
 
-> Tìm ra khi chạy thử giao diện web (#46): học viên mở bài rồi bấm "Đánh dấu hoàn thành" nhanh,
-> bài vừa xong bị trả về "đang học".
+Mỗi người làm **một file collection cho service mình** và tự chạy hết file tình huống test của
+service đó. Không gộp chung một file: năm người cùng sửa một JSON lớn thì lần merge nào cũng xung
+đột.
 
-**Vấn đề.** `ProgressServiceImpl.updateLessonProgress` ghi đè trạng thái theo request:
+| Người | File | Chạy tình huống |
+|---|---|---|
+| quocluibotre | `docs/postman/auth.postman_collection.json` | [auth.md](test-cases/auth.md) |
+| duyd92689-debug | `docs/postman/course.postman_collection.json` (chuyển từ `course-service-v2`) | [course.md](test-cases/course.md) |
+| phamquyet19042005-netizen | `docs/postman/enrollment.postman_collection.json` | [enrollment.md](test-cases/enrollment.md) |
+| hiepdeptrai0111 | `docs/postman/quiz.postman_collection.json` | [quiz.md](test-cases/quiz.md) |
+| Hiếu | `gateway`, `notification`, `demo-flow` | [gateway.md](test-cases/gateway.md), [notification.md](test-cases/notification.md) |
 
-```java
-} else if (request.getStatus() != null) {
-    lessonProgress.setStatus(request.getStatus());      // IN_PROGRESS đè lên COMPLETED
-}
-```
+**Quy ước chung** — để file của ai import vào máy ai cũng chạy ngay:
 
-Gửi `IN_PROGRESS` cho bài đã `COMPLETED` là bài lùi về "đang học". Tệ hơn, đoạn tính lại phía
-dưới kéo luôn lượt ghi danh đã `COMPLETED` — đã cấp chứng chỉ — về `ACTIVE`. Frontend đã tránh
-(chỉ gửi `IN_PROGRESS` khi bài chưa có tiến độ, và chờ request đó xong mới gửi `COMPLETED`), nhưng
-Postman hay bất kỳ client nào khác vẫn làm hỏng được.
+- **Không dùng file environment.** Mọi biến là *collection variable*, có sẵn giá trị mặc định:
+  `baseUrl` = `http://localhost:8080` (luôn đi qua gateway).
+- **Thư mục đầu tiên "0. Chuẩn bị"**: đăng nhập admin, đăng ký và đăng nhập các tài khoản cố định
+  theo [gateway.md](test-cases/gateway.md#môi-trường-và-cách-ghi-kết-quả). Script tự lưu token:
+  `pm.collectionVariables.set("studentToken", pm.response.json().data.accessToken)`.
+  Tên biến dùng đúng như gateway.md: `adminToken`, `tokenA`, `tokenB`, `studentToken`, các `...Id`.
+- **Tên request = mã ca** trong file tình huống (ví dụ `AUTH-07.4 Họ tên trắng`), và mỗi request có
+  `pm.test` kiểm mã HTTP mong đợi — để Runner chạy cả thư mục là ra PASS/FAIL.
+- Request tạo dữ liệu thì lưu id vào biến cho request sau; không gõ tay id.
 
-**Cần làm.** Bài đã `COMPLETED` thì nhận `IN_PROGRESS` chỉ cập nhật `watchedSeconds` (vẫn chỉ tăng),
-không đổi trạng thái. Lượt ghi danh đã `COMPLETED` không bao giờ quay về `ACTIVE` vì một request
-tiến độ.
-
-**Tự kiểm.** Học xong cả khóa (có chứng chỉ), rồi `PUT /api/lessons/{id}/progress` với
-`IN_PROGRESS`: bài vẫn `COMPLETED`, `GET /api/progress?courseId=` vẫn 100% và còn `certificateCode`.
-
-**Phần web.** Sửa xong backend thì bỏ được đoạn chờ `starting.current` trong
-`components/enrollment/lesson-actions.tsx` (đang có để tránh lỗi này) — giữ cũng không sao.
-
----
-
-### hiepdeptrai0111 — chỉ người đã ghi danh mới làm bài kiểm tra
-
-**Vấn đề.** `POST /api/quizzes/{id}/attempts` không kiểm ghi danh: tài khoản nào đăng nhập cũng làm
-được bài kiểm tra của mọi khóa, kể cả khóa trả phí chưa mua.
-
-**Cần làm.** Trước khi tạo lượt làm, hỏi enrollment-service bằng chính token của người gọi — chép
-cách `EnrollmentAccessClient` bên course-service đang làm (`GET /api/enrollments`, tìm `courseId`,
-trạng thái `ACTIVE` hoặc `COMPLETED`). Người tạo bài và admin được làm thử không cần ghi danh.
-Chưa ghi danh → 403. enrollment-service không trả lời → 502, không tạo lượt làm.
-
-**Tự kiểm.** Học viên chưa ghi danh bắt đầu làm bài → 403. Ghi danh xong → 201. Người tạo bài làm
-thử → 201. Tắt enrollment-service → 502 và bảng `quiz_attempts` không thêm dòng nào.
-
-**Phần web.** Trang `/quizzes/[id]`: khi nhận 403 thì hiện "Bạn cần ghi danh khóa học để làm bài"
-kèm nút "Ghi danh" dẫn về `/courses/{courseId}`, thay vì thông báo lỗi chung.
-
----
-
-### duyd92689-debug — đếm số học viên của khóa
-
-**Vấn đề.** `courses.student_count` chỉ được gán 0 lúc tạo khóa, không chỗ nào tăng. Trang danh mục
-và trang khóa học trên web luôn hiện "0 học viên", và điều kiện "chỉ xóa khóa chưa có học viên"
-lúc nào cũng đúng — khóa đã có người học vẫn xóa được nếu chuyển về `DRAFT`.
-
-**Cần làm.** course-service nghe topic `elearning.enrollment.events`, sự kiện `enrollment.created`
-thì cộng 1 vào `student_count` của khóa. Kafka gửi trùng là chuyện bình thường nên phải có bảng
-`processed_events` chống đếm hai lần — chép cách notification-service làm (#18,
-[notifications.md](notifications.md#một-sự-kiện-chỉ-tạo-đúng-một-thông-báo)), kể cả xử lý lỗi
-sang `.DLT` (#38). Cần migration mới cho bảng đó.
-
-Hủy ghi danh hiện không phát sự kiện, nên con số là "số lượt từng ghi danh". Ghi rõ điều này trong
-README; muốn trừ đi khi hủy thì bàn với phamquyet thêm sự kiện `enrollment.cancelled`.
-
-**Tự kiểm.** Hai học viên ghi danh → `studentCount` = 2 trên `GET /api/courses/{id}` và trên web.
-Gửi lại đúng message `enrollment.created` bằng Kafka UI → vẫn 2.
-
-**Phần web.** Thẻ khóa học ở trang chủ, trang chi tiết và bảng ở `/instructor` đã đọc
-`studentCount` — kiểm lại con số hiện đúng; không cần sửa gì nếu backend đúng.
-
----
-
-### quocluibotre — sửa hồ sơ và đổi mật khẩu
-
-**Vấn đề.** Trang "Hồ sơ" trên web chỉ xem được: auth-service chưa có API sửa họ tên, số điện
-thoại, hay đổi mật khẩu.
-
-**Cần làm.**
-
-- `PUT /api/auth/me` body `{fullName, phone}` — chỉ sửa chính mình, danh tính từ token (A1).
-- `POST /api/auth/change-password` body `{currentPassword, newPassword}` — sai mật khẩu cũ → 400
-  `VALIDATION_FAILED` kèm `fieldErrors`; đổi xong **thu hồi mọi refresh token** của người đó để
-  các phiên khác phải đăng nhập lại.
-
-**Phần web** (trong cùng pull request): trang `/profile` thêm hai thẻ "Sửa thông tin" và "Đổi
-mật khẩu" — form theo mẫu `components/auth/user-roles-form.tsx` (shadcn, `toast` khi lưu xong).
-Đổi mật khẩu xong thì đăng xuất (gọi `logoutAction`) vì refresh token đã bị thu hồi.
-
-**Tự kiểm.** Đổi mật khẩu xong: đăng nhập bằng mật khẩu cũ → 401, mật khẩu mới → 200; refresh
-token cũ → 401.
-
----
-
-### phamquyet19042005-netizen — thử lại có giới hạn, message hỏng sang `.DLT`
-
-> Ghi chú không chặn merge từ review #41.
-
-**Vấn đề.** `KafkaConsumerConfig` thử lại **vô hạn** với mọi lỗi. Message hỏng thì
-`CourseSnapshotConsumer` đã tự bắt và bỏ qua nên không sao, nhưng một lỗi không phải tạm thời
-lọt qua `validate()` — ví dụ vi phạm ràng buộc cột — sẽ làm consumer đứng mãi ở message đó, và
-mọi khóa học sau nó không đồng bộ được nữa.
-
-**Cần làm.** Chép cách của notification-service (#38): `KafkaErrorHandlingConfig` và
-`KafkaRetryProperties`. Lỗi tạm thời thử lại với khoảng chờ tăng dần tới giới hạn, rồi chuyển
-message sang `elearning.course.events.DLT`. Tài liệu ở
-[notifications.md](notifications.md#khi-xử-lý-sự-kiện-bị-lỗi).
-
-**Tự kiểm.** Tắt MySQL 40 giây rồi xuất bản một khóa: snapshot vẫn cập nhật khi MySQL lên
-(như lúc review #41). Gửi một `course.updated` có `title` dài 300 ký tự bằng Kafka UI: không
-kẹt consumer, khóa xuất bản ngay sau đó vẫn có snapshot.
-
----
-
-### Hiếu — collection Postman chung
-
-Một collection duy nhất cho cả 5 service, đi qua gateway `http://localhost:8080`:
-
-- Thư mục "0. Chuẩn bị": đăng nhập admin, đăng ký bốn tài khoản cố định theo
-  [gateway.md](test-cases/gateway.md), admin cấp quyền, đăng nhập lại — token tự lưu vào biến.
-- Mỗi service một thư mục, đặt tên request theo mã ca trong `docs/test-cases/`, mỗi request có
-  `pm.test` kiểm mã HTTP mong đợi.
-- Gộp `course-service-v2` của duyd vào; bỏ hai collection cũ.
-
-Xong thì báo trong nhóm và cập nhật bảng này.
-
----
-
-### Cả nhóm — đợt test Postman
-
-Thầy yêu cầu mỗi người tự kiểm service của mình:
-
-| Người | Chạy file |
-|---|---|
-| quocluibotre | [auth.md](test-cases/auth.md) |
-| duyd92689-debug | [course.md](test-cases/course.md) |
-| phamquyet19042005-netizen | [enrollment.md](test-cases/enrollment.md) |
-| hiepdeptrai0111 | [quiz.md](test-cases/quiz.md) |
-| Hiếu | [gateway.md](test-cases/gateway.md), [notification.md](test-cases/notification.md) |
-
-**Cách làm.**
+**Cách chạy.**
 
 ```bash
 git pull
@@ -313,28 +196,116 @@ docker compose --profile app up -d --build --wait
 bash scripts/smoke-test.sh        # 12 dòng OK mới bắt đầu
 ```
 
-Import collection chung, chạy thư mục "0. Chuẩn bị" trước, rồi chạy thư mục service của mình.
+Import file của mình, chạy "0. Chuẩn bị" rồi chạy cả collection bằng Runner. Gateway chặn đăng nhập
+dồn dập (429) — xem cách tắt tạm ở [mục trên](#khi-nào-test-toàn-bộ-api-bằng-postman).
 
 **Ghi biên bản** vào `docs/test-cases/ket-qua/<service>.md` theo bảng mẫu ở đầu
-[gateway.md](test-cases/gateway.md#môi-trường-và-cách-ghi-kết-quả): mã ca, commit đã chạy, mã
-HTTP thực tế, PASS / FAIL / BLOCKED, bằng chứng. Mở pull request riêng cho biên bản.
+[gateway.md](test-cases/gateway.md#môi-trường-và-cách-ghi-kết-quả): mã ca, commit đã chạy, mã HTTP
+thực tế, PASS / FAIL / BLOCKED. Collection + biên bản chung một pull request.
 
-**Ca FAIL** thì sửa trong pull request khác, ghi mã ca trong mô tả (ví dụ "sửa QUIZ-03.4").
-Đừng sửa mong đợi trong file tình huống cho khớp với kết quả — trừ khi chắc chắn tình huống
-viết sai, và khi đó ghi lý do.
+**Ca FAIL** thì sửa trong pull request khác, ghi mã ca trong mô tả (ví dụ "sửa QUIZ-03.4"). Đừng sửa
+mong đợi trong file tình huống cho khớp với kết quả — trừ khi chắc chắn tình huống viết sai, và khi
+đó ghi lý do.
 
-**Khóa id 1 ("Kien truc Microservices") chưa ghi danh được:** khóa này xuất bản trước khi có
-sự kiện đồng bộ nên enrollment-service chưa biết nó. Giảng viên của khóa hoặc admin gọi
-`PUT /api/courses/1` với nguyên dữ liệu cũ là khóa được đồng bộ (sửa khóa đang `PUBLISHED`
-luôn phát `course.updated`). Hoặc dùng khóa mới tạo trong thư mục "0. Chuẩn bị".
+**Khóa id 1 ("Kien truc Microservices") chưa ghi danh được:** khóa này xuất bản trước khi có sự kiện
+đồng bộ nên enrollment-service chưa biết nó. Giảng viên của khóa hoặc admin gọi `PUT /api/courses/1`
+với nguyên dữ liệu cũ là khóa được đồng bộ. Hoặc dùng khóa mới tạo trong "0. Chuẩn bị".
 
 ---
 
+### quocluibotre — trang hồ sơ: sửa thông tin, đổi mật khẩu
+
+> API đã có ở #48 (chạy thử 18/18 ca). Một API không có chỗ dùng trên web coi như chưa xong.
+
+**Cần làm** trong `app/(site)/profile/` + `components/auth/`, theo khuôn `FormPage` (xem `/design`):
+
+- Thẻ **"Thông tin cá nhân"** (`FormSection`): họ tên, số điện thoại → `PUT /api/auth/me`.
+  Lưu xong `toast.success` và `router.refresh()`. Lỗi 400 hiện dưới đúng ô bằng `fieldErrorMap`.
+- Thẻ **"Đổi mật khẩu"**: mật khẩu hiện tại, mật khẩu mới, nhập lại (so khớp ngay trên trình duyệt)
+  → `POST /api/auth/change-password`. Sai mật khẩu cũ → lỗi dưới ô "Mật khẩu hiện tại"
+  (`fieldErrors.currentPassword`). Thành công → gọi `logoutAction` (refresh token đã bị thu hồi)
+  và về `/login`.
+- Bỏ `Callout` "sắp có" đang đặt tạm ở trang hồ sơ.
+
+**Lưu ý.** Tên trên menu tài khoản đọc từ access token, nên sau khi sửa họ tên menu vẫn hiện tên cũ
+tới khi token được làm mới (tối đa 15 phút). Trang hồ sơ đọc `GET /api/auth/me` nên hiện tên mới ngay.
+
+**Tự kiểm.** Sửa tên → trang hồ sơ hiện tên mới. Đổi mật khẩu sai mật khẩu cũ → lỗi dưới ô, vẫn đăng
+nhập. Đổi đúng → bị đăng xuất; đăng nhập mật khẩu cũ → báo sai, mật khẩu mới → vào được.
+
+---
+
+### hiepdeptrai0111 — báo "cần ghi danh" trên trang bài kiểm tra
+
+> Phần web của #49. Backend đã trả 403 khi chưa ghi danh, nhưng web đang hiện thông báo lỗi chung.
+
+**Cần làm** ở `app/(site)/quizzes/[id]/`:
+
+- Trang giới thiệu bài kiểm tra kiểm trước bằng `gatewayOrNull("/api/progress?courseId=…")`
+  (404 = chưa ghi danh). Chưa ghi danh (và không phải người tạo bài hay admin) thì thay nút
+  "Bắt đầu làm bài" bằng `Callout` tone="info" *"Bạn cần ghi danh khóa học để làm bài kiểm tra"* kèm
+  nút **Ghi danh** dẫn về `/courses/{courseId}`.
+- Bấm "Bắt đầu" mà vẫn nhận 403 (ví dụ vừa hủy ghi danh ở tab khác) → hiện đúng `Callout` đó thay vì
+  lỗi chung. Nhận 502 → `ErrorAlert` *"Không kiểm tra được ghi danh, thử lại sau"*.
+
+**Tự kiểm.** Tài khoản chưa ghi danh mở bài kiểm tra → thấy Callout, không có nút Bắt đầu. Ghi danh
+xong quay lại → làm được. Giảng viên tạo bài → làm thử được.
+
+---
+
+### duyd92689-debug — lọc nhanh và sắp xếp ở trang chủ
+
+> `studentCount` giờ đã đúng (#51), nên sắp xếp theo số học viên có ý nghĩa.
+
+**Cần làm** ở `app/(site)/page.tsx` + `components/course/catalog-filters.tsx`:
+
+- Hàng **chip danh mục** (danh mục gốc) phía trên lưới khóa học: bấm là lọc, chip đang chọn tô
+  `bg-primary-soft text-primary-strong`, có chip "Tất cả". Vẫn là link GET (`?categoryId=`), giữ
+  `keyword` và `level` đang có.
+- Ô **Sắp xếp**: Mới nhất, Nhiều học viên, Giá thấp → cao, Giá cao → thấp. Dùng `?sort=` của
+  backend (kiểm lại các trường cho phép sort ở course-service; trường sai phải trả 400 chứ không 500).
+
+**Tự kiểm.** Chọn chip → URL có `categoryId`, lưới chỉ còn khóa của danh mục đó; đổi sắp xếp → thứ
+tự đúng; tìm kiếm vẫn giữ bộ lọc. Xem ở 375px: chip cuộn ngang được, không tràn trang.
+
+---
+
+### phamquyet19042005-netizen — trang xác minh chứng chỉ công khai
+
+Chứng chỉ có mã `CERT-…` nhưng chưa ai kiểm được mã đó là thật. Nhà tuyển dụng cần một trang công
+khai để tra.
+
+**Cần làm.**
+
+- enrollment-service: `GET /api/certificates/verify/{code}` **không cần đăng nhập** — trả tên học
+  viên, tên khóa, ngày cấp, mã; không trả email hay id nội bộ. Mã không tồn tại → 404. Khai đường dẫn
+  công khai ở cả service lẫn gateway (`elearning.security.public-paths`), và route ở gateway (A4).
+- Web: trang `/verify/[code]` theo khuôn `DetailPage` (dải tiêu đề "Xác minh chứng chỉ"), hiện thông
+  tin chứng chỉ với `StatusBadge` "Hợp lệ", hoặc `EmptyState` khi không tìm thấy. Trên trang chứng chỉ
+  thêm dòng "Xác minh tại …/verify/CERT-…".
+- Trang `/verify` không nằm trong danh sách cần đăng nhập ở `src/proxy.ts`.
+
+**Tự kiểm.** Đăng xuất, mở `/verify/<mã thật>` → thấy đúng tên và khóa. Mã sai → không tìm thấy.
+Gọi API không token qua gateway → 200; response không có email.
+
+**Dọn thêm (tùy chọn).** #50 đã chặn hạ trạng thái ở backend, nên đoạn chờ `starting.current` trong
+`components/enrollment/lesson-actions.tsx` có thể bỏ — giữ cũng không sao.
+
+---
 
 ## Đã xong
 
 | Ngày | PR | Việc | Người |
 |---|---|---|---|
+| 07/10 | #51 | Đếm mỗi học viên một lần kể cả hủy rồi ghi danh lại (`course_learners`), khóa khi sửa đề cương, chặn xóa khóa có học viên | duyd92689-debug |
+| 07/10 | #54 | Khung giao diện: token màu xanh lá, 5 khuôn trang, khối dùng chung, trang `/design`, `DESIGN.md` | Hiếu |
+| 06/10 | #50 | Không hạ trạng thái bài đã hoàn thành; thử lại có giới hạn, message hỏng sang `.DLT` | phamquyet19042005-netizen |
+| 06/10 | #49 | Chỉ người đã ghi danh mới làm bài kiểm tra | hiepdeptrai0111 |
+| 06/10 | #48 | API sửa hồ sơ và đổi mật khẩu (thu hồi mọi refresh token) | quocluibotre |
+| 06/10 | #53 | Giao diện shadcn/ui, chia trang web theo service | Hiếu |
+| 06/10 | #52 | `pnpm start` chạy được, bỏ script dữ liệu mẫu | Hiếu |
+| 06/10 | #47 | Giao việc phát hiện khi làm giao diện web | Hiếu |
+| 06/10 | #46 | Giao diện web Next.js nối qua gateway | Hiếu |
 | 06/10 | #45 | Chặn giảng viên sửa bài kiểm tra của người khác, ẩn bài nháp với học viên | hiepdeptrai0111 |
 | 06/10 | #44 | Học viên giữ quyền học khi khóa bị lưu trữ; course-service gửi sự kiện qua outbox | duyd92689-debug |
 | 06/10 | #41 | enrollment-service tự nạp `course_snapshots` từ Kafka, kiểm bài học trước khi ghi tiến độ, chuẩn hóa đường dẫn | phamquyet19042005-netizen |
