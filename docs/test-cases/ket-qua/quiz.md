@@ -1,6 +1,64 @@
 # Biên bản kiểm thử quiz — 07/10/2026
 
-## Phiên bản và môi trường
+## Bản sửa bảo vệ kết quả và lưu EXPIRED — `194f5ef`
+
+Code và collection: **`194f5ef305d5bcc2fe54fbcdd8e0aa41986e4347`**, đồng bộ
+`main` **`1873f06`**. Các mục phía dưới phần này giữ lịch sử #59 để đối chiếu.
+
+- `./mvnw -B -ntp clean verify`: **695 test, 0 failure/error/skipped**, BUILD SUCCESS,
+  kết thúc 16:05:23 +07:00. Có **8 ca tích hợp mới** trong `QuizAttemptResultIntegrationTest`.
+- Đã chạy test mới trước khi sửa: **3 FAIL**, đúng hai trạng thái trả đáp án 200
+  (IN_PROGRESS/EXPIRED) và EXPIRED bị rollback thành IN_PROGRESS. Sau sửa **8/8 PASS**.
+  Test không có transaction bao ngoài, đọc lại DB sau HTTP 422 để xác minh commit.
+  Có kiểm mất xác thực, người khác/admin đọc hộ, kết quả đã nộp, nộp lặp, không
+  tạo answers/outbox khi hết giờ, tạo lượt tiếp theo và rollback khi lưu outbox lỗi.
+- Frontend: `pnpm next typegen`, `pnpm tsc --noEmit`, `pnpm lint`, `pnpm build`: PASS.
+- Kiểm cấu hình bảo mật, migration, tiêu đề commit và diff: PASS.
+
+### Chạy thật qua gateway tại máy sửa
+
+Auth/course/enrollment/quiz/gateway là **5 tiến trình Java thật**, xác thực bật,
+JWT lấy qua API đăng nhập; frontend dùng build production riêng ở cổng 3001.
+Database **H2 tạm**, Hibernate dựng schema, Flyway tắt trong tiến trình thử.
+Máy chưa có Docker/WSL; không chạy MySQL/Kafka/Redis. Snapshot khóa 1/2 được nạp
+trước, Kafka listener/outbox publisher và rate limit tắt chỉ trong môi trường thử.
+Dữ liệu khởi tạo H2 và khóa ký JWT được cấu hình nhất quán ở tiến trình thử,
+không sửa cấu hình hoặc migration đã commit.
+
+Newman **6.2.2**, `runSlowTests=true` qua environment override, timeout script
+150000 ms: **192 request, 417/417 assertions PASS**, 0 lỗi request/script,
+thời gian **2 phút 40,2 giây**, gồm ca đợi 100 giây. 7 request Kafka bỏ qua có chủ
+đích, không tính PASS. Số request khác lượt Docker #59 do môi trường đồng bộ khác;
+không gộp số liệu hai lượt.
+
+| Kiểm tra | HTTP / dữ liệu quan sát | Kết quả |
+|---|---|---|
+| QUIZ-14.8 — lượt đang làm | 422 BUSINESS_RULE_VIOLATED; không có data/correctOptionIds/questionResults | PASS |
+| QUIZ-13.7 — nộp sau 100 giây | 422; timeoutAttempt=9, quiz=14 | PASS |
+| Lịch sử ngay sau lỗi quá giờ | Lượt 9 EXPIRED, score=0, passed=false, submittedAt đã lưu | PASS |
+| Đọc kết quả lượt EXPIRED | 422, không trả đáp án | PASS |
+| Nộp lại lượt EXPIRED | 422; lịch sử vẫn EXPIRED, submittedAt không đổi | PASS |
+| Lượt hợp lệ mới để kiểm web | Lượt 10: trước nộp GET 422, nộp 200 với score=100 | PASS |
+
+### Kiểm tra trình duyệt với frontend production
+
+- Đăng nhập học viên bằng form; mở trực tiếp `/attempts/9` khi còn IN_PROGRESS
+  và sau khi EXPIRED: hiện "Chưa có kết quả bài kiểm tra", không có đáp án.
+- `/quizzes/14`: lịch sử hiện **Hết giờ**, không có "Xem kết quả"; hết 1/1 lượt
+  thì khóa nút bắt đầu. Không tràn ngang tại **375 / 768 / 1366 px**; đã xem ảnh
+  desktop và mobile.
+- `/quizzes/15`: bắt đầu từ UI, nộp lượt 10 bằng API từ phiên khác, rồi nộp lại
+  trên UI → 422, khóa câu trả lời, hiện nút **Về bài kiểm tra**. Bấm nút tải lại
+  lịch sử thành SUBMITTED, 100%, khóa bắt đầu vì hết lượt; liên kết kết quả hoạt động.
+- `/attempts/10`: vẫn có 100%, đáp án đúng và giải thích. Không có lỗi console
+  ở phiên kiểm giao diện cuối.
+
+**Giới hạn:** bản backend `194f5ef` chưa được chạy trên Docker/MySQL/Kafka tại máy
+này. Kết quả Docker `c55a9f2` bên dưới chỉ nghiệm thu collection/giao diện của #59.
+Kafka recovery và hai ca sort vẫn chưa nghiệm thu. Các tiến trình thử được dừng
+sau kiểm tra, database H2 tạm không được giữ lại.
+
+## Lịch sử #59 — phiên bản và môi trường
 
 - Người phụ trách: hiepdeptrai0111. Code/collection đã chạy: **`b2aceaf`**, dựa trên main `e17520b`.
 - Newman **6.2.2** chạy collection Postman v2.1 qua **http://localhost:8080**.
@@ -65,13 +123,17 @@ Kiểm tra cục bộ sau sửa collection:
   **663 test, 0 failure/error/skipped**. Kiểm bảo mật, migration, tiêu đề commit
   và diff đạt. Không chạy lại frontend vì lần sửa này chỉ đổi collection/tài liệu.
 
-**Chạy lại Docker tại máy sửa: BLOCKED** — không có Docker CLI/Desktop; WSL báo
-chưa được cài. Kết quả Docker 422 ở trên là bằng chứng do reviewer cung cấp, không
-được ghi thành lượt nghiệm thu Docker mới của commit này.
+**Nghiệm thu Docker của bản sửa collection: đã có kết quả từ reviewer.**
+Theo [review phê duyệt #59](https://github.com/ariushieu/e-learning-microservices/pull/59#pullrequestreview-5439270481),
+ariushieu chạy tại **`c55a9f2`**, MySQL/Kafka/Redis, gateway 8080, tạm tắt rate limit,
+bật ca chậm: **193 request, 416/417 assertions PASS**, QUIZ-13.7 nhận **422** và
+`--env-var runSlowTests=true` hoạt động. Chỉ QUIZ-14.8 còn FAIL tại phiên bản đó.
+Kết quả này thay trạng thái BLOCKED cũ của lượt nghiệm thu #59; không phải Docker
+do tác giả chạy tại máy này, cũng không chứng minh bản sửa backend sau #59.
 
-### Lỗi còn mở — QUIZ-14.8
+### Lỗi tái hiện tại #59 — QUIZ-14.8 (lịch sử)
 
-**FAIL, cần sửa riêng trước khi nghiệm thu bảo mật.** Với lượt IN_PROGRESS thuộc
+**FAIL tại bản #59, yêu cầu sửa riêng trước khi nghiệm thu bảo mật.** Với lượt IN_PROGRESS thuộc
 chính người gọi, `GET /api/attempts/{id}` trả **200** và có đáp án đúng trước khi
 nộp; kỳ vọng **422**. Kiểm chứng thêm trên lượt của B: `submittedAt=null`,
 `correctOptionIds=[[1],[3]]`. Không đổi kỳ vọng thành 200 để làm xanh collection.
@@ -93,7 +155,7 @@ chưa đánh dấu hai lỗi này đã được sửa trong #59.
 | QUIZ-06.8 | b2aceaf | Chưa chạy | BLOCKED | API trả List, chưa có hợp đồng hỗ trợ sort |
 | QUIZ-15.8 | b2aceaf | Chưa chạy | BLOCKED | Lịch sử trả List, chưa có hợp đồng hỗ trợ sort |
 | QUIZ-13.11 | H2, không Kafka | Chưa chạy | BLOCKED | Phải dừng/bật Kafka và xác minh đúng một thông báo sau khôi phục |
-| Docker/MySQL | Máy hiện tại | Chưa chạy | BLOCKED | Không có Docker/MySQL; H2 không chứng minh schema/migration |
+| Docker/MySQL của #59 | c55a9f2 / reviewer ariushieu | QUIZ-13.7: 422 | Đã chạy | 193 request, 416/417; chỉ QUIZ-14.8 FAIL, nguồn review phê duyệt ở trên |
 
 ### Từng ca đã chạy
 
@@ -273,5 +335,5 @@ Các kỳ vọng đã cập nhật theo #42/#45/#49 được giải thích ở [
 4. Ca Kafka chạy riêng: dừng broker ở môi trường thử, bật runKafkaRecovery và chạy
    thư mục 6; bật broker lại, kiểm hộp thư đúng một thông báo của lượt vừa nộp.
    Chỉ nộp/đọc kết quả 200 chưa đủ kết luận toàn ca PASS.
-5. Ghi thêm commit, môi trường, kết quả MySQL/Kafka vào biên bản; giữ nguyên ca
-   QUIZ-14.8 đang FAIL cho tới khi có PR sửa và kiểm thử lại.
+5. Ghi thêm commit, môi trường, kết quả MySQL/Kafka vào biên bản; giữ nguyên kỳ vọng
+   422 của QUIZ-14.8 và xác nhận PASS sau bản sửa bảo vệ kết quả.

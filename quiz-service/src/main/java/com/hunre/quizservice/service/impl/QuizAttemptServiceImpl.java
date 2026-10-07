@@ -15,6 +15,7 @@ import com.hunre.quizservice.entity.Quiz;
 import com.hunre.quizservice.entity.QuizAttempt;
 import com.hunre.quizservice.entity.QuizStatus;
 import com.hunre.quizservice.entity.OutboxEvent;
+import com.hunre.quizservice.exception.AttemptExpiredException;
 import com.hunre.quizservice.repository.OutboxEventRepository;
 import com.hunre.quizservice.repository.QuizAttemptRepository;
 import com.hunre.quizservice.repository.QuizRepository;
@@ -114,7 +115,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
     }
 
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = AttemptExpiredException.class)
     public QuizResultResponse submitAttempt(Long attemptId, Long userId, SubmitQuizAttemptRequest request) {
         log.info("Nộp bài kiểm tra attemptId: {} cho userId: {}", attemptId, userId);
         QuizAttempt attempt = quizAttemptRepository.findByIdAndUserId(attemptId, userId)
@@ -130,8 +131,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         // Kiểm tra thời gian làm bài (cho phép dư 30 giây bù độ trễ mạng)
         if (isAttemptTimeExpired(attempt)) {
             markAttemptExpired(attempt);
-            throw new BusinessException(ErrorCode.BUSINESS_RULE_VIOLATED,
-                    "Thời gian làm bài đã kết thúc, bài thi không được chấm");
+            throw new AttemptExpiredException();
         }
 
         // Map câu trả lời của học viên: questionId -> Set<optionId>
@@ -256,6 +256,11 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
     public QuizResultResponse getAttemptResult(Long attemptId, Long userId) {
         QuizAttempt attempt = quizAttemptRepository.findByIdAndUserId(attemptId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("lượt làm bài", "id", attemptId));
+
+        if (attempt.getStatus() != AttemptStatus.SUBMITTED) {
+            throw new BusinessException(ErrorCode.BUSINESS_RULE_VIOLATED,
+                    "Chỉ xem được kết quả sau khi đã nộp bài kiểm tra");
+        }
 
         Quiz quiz = attempt.getQuiz();
 
