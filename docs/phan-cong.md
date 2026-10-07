@@ -23,16 +23,15 @@
 | quocluibotre | auth | [Kiểm định dạng số điện thoại khi sửa hồ sơ](#quocluibotre--kiểm-định-dạng-số-điện-thoại) | Trung bình | ~45 phút |
 | duyd92689-debug | course | [Đánh giá khóa học: sao + nhận xét](#duyd92689-debug--đánh-giá-khóa-học) | Trung bình — tính năng mới cho demo | ~3h |
 | phamquyet19042005-netizen | enrollment | [Dọn sau #60](#phamquyet19042005-netizen--dọn-sau-60) | Thấp | ~30 phút |
-| Hiếu | web (khung chung) | Tên trên header đổi ngay sau khi sửa hồ sơ, không phải đăng nhập lại | Trung bình | ~30 phút |
-| Hiếu | gateway, notification | Collection Postman `gateway`, `notification` và `demo-flow` (luồng xuyên service) | **Cao** | ~2h |
 | Hiếu | api-gateway | Giới hạn đăng nhập theo IP thật của người dùng khi đi qua frontend | Thấp — sau demo | ~1h |
 
 **Khung giao diện đã có** (#54): mọi việc web ở trên làm theo [frontend/DESIGN.md](../frontend/DESIGN.md)
 và trang `/design`. Chạy cả hệ thống: `docker compose --profile app up -d --build --wait` rồi mở
 http://localhost:3000.
 
-**Collection Postman:** auth, course, enrollment, quiz đã có và đã chạy thật trên Docker (#56, #57,
-#59, #60). Còn `gateway`, `notification`, `demo-flow` của Hiếu. Quy ước chung ở
+**Collection Postman: đủ cả 7 file**, đều đã chạy thật trên Docker — auth, course, enrollment, quiz
+(#56, #57, #59, #60) và gateway, notification, demo-flow (#66). Trước buổi demo, chạy
+`demo-flow` trên máy mình để xem cả chuỗi còn thông (81 assertion, khoảng 12 giây). Quy ước chung ở
 [mục dưới](#cả-nhóm--collection-postman-của-service-mình). Ca FAIL hay việc mới sinh ra khi chạy
 collection thì sửa ở PR riêng như các việc trong bảng trên.
 
@@ -185,7 +184,7 @@ service đó. Không gộp chung một file: năm người cùng sửa một JSO
 | duyd92689-debug | `docs/postman/course.postman_collection.json` | [course.md](test-cases/course.md) | Xong #56 — 703/703 |
 | phamquyet19042005-netizen | `docs/postman/enrollment.postman_collection.json` | [enrollment.md](test-cases/enrollment.md) | Xong #60 — 310/310 |
 | hiepdeptrai0111 | `docs/postman/quiz.postman_collection.json` | [quiz.md](test-cases/quiz.md) | Xong #59 — 416/417, còn QUIZ-14.8 (lỗ hổng thật) |
-| Hiếu | `gateway`, `notification`, `demo-flow` | [gateway.md](test-cases/gateway.md), [notification.md](test-cases/notification.md) | Đang làm |
+| Hiếu | `gateway`, `notification`, `demo-flow` | [gateway.md](test-cases/gateway.md), [notification.md](test-cases/notification.md) | Xong #66 — gateway 31/31 ca, notification 55/55 ca, demo-flow 81/81 |
 
 Chạy collection bằng dòng lệnh (chỉ dùng pnpm):
 
@@ -318,6 +317,8 @@ test cho hai người đánh giá song song. Thêm ca vào `course.md` và colle
 
 | Ngày | PR | Việc | Người |
 |---|---|---|---|
+| 07/10 | #66 | Collection gateway, notification, demo-flow; `readAt` khớp giá trị đã lưu (MySQL làm tròn nano giây) | Hiếu |
+| 07/10 | #62 | Tên trên header đổi ngay sau khi sửa hồ sơ | Hiếu |
 | 07/10 | #58 | Thông báo tức thời (SSE + Redis pub/sub), đọc tất cả, bấm thông báo mở đúng trang, cài đặt nhận thông báo | Hiếu |
 | 07/10 | #60 | Xác minh chứng chỉ công khai `/verify/<mã>`, mã chứng chỉ không lộ id, collection enrollment | phamquyet19042005-netizen |
 | 07/10 | #56 | Chip danh mục và sắp xếp ở trang chủ, lọc danh mục cha gồm cả danh mục con, collection course | duyd92689-debug |

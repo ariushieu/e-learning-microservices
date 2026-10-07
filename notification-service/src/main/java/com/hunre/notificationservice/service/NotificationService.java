@@ -127,7 +127,7 @@ public class NotificationService {
      */
     @Transactional
     public int markAllRead(Long userId) {
-        int updated = notificationRepository.markAllRead(userId, NotificationStatus.READ, Instant.now());
+        int updated = notificationRepository.markAllRead(userId, NotificationStatus.READ, Notification.now());
         if (updated > 0) {
             events.publishEvent(InboxChanged.read(userId));
         }

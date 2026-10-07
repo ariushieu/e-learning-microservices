@@ -1,0 +1,93 @@
+{
+  "browser": "Microsoft Edge",
+  "mode": "production",
+  "results": [
+    {
+      "width": 1366,
+      "case": "register invalid phone",
+      "input": "abc",
+      "visibleMessage": "Số điện thoại phải có 9–15 chữ số, có thể bắt đầu bằng + và cách nhau bằng một khoảng trắng",
+      "errorBelowInput": true,
+      "ariaInvalid": true,
+      "status": "PASS"
+    },
+    {
+      "width": 1366,
+      "case": "register invalid phone",
+      "input": "+++++++++",
+      "visibleMessage": "Số điện thoại phải có 9–15 chữ số, có thể bắt đầu bằng + và cách nhau bằng một khoảng trắng",
+      "errorBelowInput": true,
+      "ariaInvalid": true,
+      "status": "PASS"
+    },
+    {
+      "width": 1366,
+      "case": "register invalid phone",
+      "input": "  12345678",
+      "visibleMessage": "Số điện thoại phải có 9–15 chữ số, có thể bắt đầu bằng + và cách nhau bằng một khoảng trắng",
+      "errorBelowInput": true,
+      "ariaInvalid": true,
+      "status": "PASS"
+    },
+    {
+      "width": 1366,
+      "case": "register 30-character phone and read profile",
+      "phone": "+1 2 3 4 5 6 7 8 9 0 1 2 3 4 5",
+      "status": "PASS"
+    },
+    {
+      "width": 1366,
+      "case": "profile types/saves 30 characters, reload persists",
+      "phone": "+9 8 7 6 5 4 3 2 1 0 9 8 7 6 5",
+      "pageErrors": [],
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "case": "register invalid phone",
+      "input": "abc",
+      "visibleMessage": "Số điện thoại phải có 9–15 chữ số, có thể bắt đầu bằng + và cách nhau bằng một khoảng trắng",
+      "errorBelowInput": true,
+      "ariaInvalid": true,
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "case": "register invalid phone",
+      "input": "+++++++++",
+      "visibleMessage": "Số điện thoại phải có 9–15 chữ số, có thể bắt đầu bằng + và cách nhau bằng một khoảng trắng",
+      "errorBelowInput": true,
+      "ariaInvalid": true,
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "case": "register invalid phone",
+      "input": "  12345678",
+      "visibleMessage": "Số điện thoại phải có 9–15 chữ số, có thể bắt đầu bằng + và cách nhau bằng một khoảng trắng",
+      "errorBelowInput": true,
+      "ariaInvalid": true,
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "case": "register 30-character phone and read profile",
+      "phone": "+1 2 3 4 5 6 7 8 9 0 1 2 3 4 5",
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "case": "profile types/saves 30 characters, reload persists",
+      "phone": "+9 8 7 6 5 4 3 2 1 0 9 8 7 6 5",
+      "pageErrors": [],
+      "status": "PASS"
+    }
+  ],
+  "metadata": {
+    "sourceCommit": "3f01ef9fe366a2b92b2725521defc02a2121173d",
+    "baseUrl": "http://127.0.0.1:18080",
+    "startedAt": "2026-10-07T22:02:15.461531+07:00",
+    "finishedAt": "2026-10-07T22:02:44.977001+07:00",
+    "testProcessesStopped": true
+  }
+}

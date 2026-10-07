@@ -1,8 +1,9 @@
 # Tình huống test auth-service
 
 Đọc [gateway.md](gateway.md) để tạo ADM/A/B/S, lấy token, quy ước fixture và ghi kết quả.
-Mọi request qua `{{baseUrl}}=http://localhost:8080`; đây là **kế hoạch, chưa chạy Postman**.
-Sáu endpoint auth/user dưới đây không đổi đường dẫn trong đợt chuẩn hóa.
+Mọi request qua `{{baseUrl}}=http://localhost:8080`; đây là **kế hoạch kiểm thử**.
+Kết quả từng lượt chạy được ghi riêng trong [biên bản auth](ket-qua/auth.md).
+Các endpoint auth/user dưới đây không đổi đường dẫn trong đợt chuẩn hóa.
 Không endpoint nào hỗ trợ phân trang/sort; không áp ca sort=abcxyz cho chúng.
 Các endpoint login/register/refresh/logout là công khai, nên không token không mặc định là 401.
 
@@ -34,6 +35,9 @@ Ca tạo mới cần email chưa tồn tại; ca refresh phải lấy một cặ
 | 6 | Thiếu tên | — | AUTH-REGISTER bỏ fullName | 400 |
 | 7 | Chuẩn hóa email | — | Sau khi tạo qa.new.{{runId}}@example.com, đăng ký lại bằng chữ HOA | 409; không tạo tài khoản thứ hai |
 | 8 | JSON hỏng | — | POST /api/auth/register, body chỉ là dấu { | 400; không 500 |
+| 9 | Đăng ký với phone sai | — | Lần lượt abc, +++++++++, hai dấu cách đầu + 8 chữ số, 09-12, 0912  345678, dấu + giữa chuỗi/lặp, 16 chữ số, tab, số Unicode; email mới | 400 VALIDATION_FAILED; fieldErrors.phone tiếng Việt; login 401; đăng ký lại cùng email bằng số hợp lệ được 201 |
+| 10 | Phone hợp lệ khi đăng ký | — | 9/15 chữ số; 0912345678; 0912 345 678; +84 912 345 678; 15 chữ số cách nhau một dấu cách, có + và khoảng trắng ngoài | 201; trim hai đầu, giữ định dạng bên trong; đăng nhập rồi GET /me trả đúng số (tối đa 30 ký tự sau trim) |
+| 11 | Phone tùy chọn khi đăng ký | — | Lần lượt null, chuỗi rỗng, toàn dấu cách (bỏ trường đã kiểm ở ca 1) | 201; phone=null cả phản hồi đăng ký và GET sau đăng nhập |
 
 Không có ID tài nguyên để thử 404 ở endpoint tạo tài khoản; thay bằng trùng email.
 Không ghi kết quả 201 nếu chỉ nhận 200 hoặc user mới có quyền admin.
@@ -125,11 +129,20 @@ Body hợp lệ: `{"fullName":"Nguyễn Văn Quốc","phone":"0901234567"}`. Dù
 | 3 | Token hỏng | Token sai chữ ký | Body hợp lệ | 401 |
 | 4 | Thiếu hoặc trắng họ tên | S | Bỏ fullName hoặc fullName="   " | 400 VALIDATION_FAILED; fieldErrors có fullName; dữ liệu không đổi |
 | 5 | Họ tên quá dài | S | fullName dài 151 ký tự | 400 VALIDATION_FAILED; fieldErrors có fullName |
-| 6 | Số điện thoại quá dài | S | phone dài 21 ký tự | 400 VALIDATION_FAILED; fieldErrors có phone |
-| 7 | Xóa số điện thoại | S | Lần lượt bỏ phone, phone=null hoặc phone="   " | 200; số điện thoại được xóa |
+| 6 | Số điện thoại quá dài | S | phone gồm 16 chữ số | 400 VALIDATION_FAILED; fieldErrors có phone bằng tiếng Việt |
+| 7 | Xóa số điện thoại | S | Lưu số hợp lệ trước mỗi lần; lần lượt bỏ phone, phone=null, phone="" hoặc phone="   " | 200; số điện thoại được xóa |
 | 8 | Giả danh và nâng quyền qua body | S | Thêm userId=adminId, roles=[ROLE_ADMIN], email và status khác; query ?userId=adminId | 200; chỉ tên/điện thoại của S đổi; admin, email, roles và status không đổi |
 | 9 | Chuẩn hóa khoảng trắng | S | fullName="  Quốc  ", phone=" 0901234567 " | 200; trả "Quốc" và "0901234567" |
 | 10 | Người gọi không còn tồn tại | JWT hợp lệ của tài khoản đã xóa trong môi trường riêng | Body hợp lệ | 404 RESOURCE_NOT_FOUND |
+| 11 | Số điện thoại hợp lệ, kiểm biên | S | Lần lượt phone="091234567" (9 chữ số), "123456789012345" (15), "+84912345678", "0912 345 678", "+84 912 345 678", "  +1 2 3 4 5 6 7 8 9 0 1 2 3 4 5  " | 200; trim hai đầu, trả đúng phone; GET /api/auth/me phản ánh số đã lưu |
+| 12 | Ký tự sai định dạng | S | Lưu hồ sơ gốc; gửi phone="abc", "0912abc678", "0912-345-678", chuỗi có tab/xuống dòng hoặc chữ số Unicode | 400 VALIDATION_FAILED; fieldErrors.phone tiếng Việt; GET xác nhận họ tên và số cũ không đổi |
+| 13 | Số điện thoại quá ngắn | S | phone="12345678" hoặc "  12345678" (8 chữ số) | 400 VALIDATION_FAILED; fieldErrors.phone tiếng Việt; họ tên và số cũ không đổi |
+| 14 | Dấu cộng/khoảng trắng sai vị trí | S | Lần lượt +++++++++, 0912  345678, 0912+345678, 0912345678+, ++84912345678, + 84912345678, 09-12 | 400 VALIDATION_FAILED; fieldErrors.phone tiếng Việt; GET xác nhận hồ sơ cũ không đổi |
+
+Hợp đồng sau review PR #65 áp dụng cho cả đăng ký và sửa hồ sơ: 9–15 **chữ số** ASCII,
+dấu `+` tùy chọn ở đầu, giữa các chữ số tối đa một dấu cách; khoảng trắng hai đầu được trim.
+Null, rỗng hoặc toàn dấu cách được phép. Không dùng khoảng trắng/dấu cộng để bù thiếu chữ số.
+Thông báo `fieldErrors.phone`: "Số điện thoại phải có 9–15 chữ số, có thể bắt đầu bằng + và cách nhau bằng một khoảng trắng".
 
 ## AUTH-08 — POST /api/auth/change-password
 

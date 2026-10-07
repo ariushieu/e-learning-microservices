@@ -31,6 +31,12 @@ public interface CourseRepository extends JpaRepository<Course, Long>, JpaSpecif
     @Query(value = "UPDATE courses SET student_count = student_count + 1 WHERE id = :id", nativeQuery = true)
     int incrementStudentCount(@Param("id") Long id);
 
+    // Gọi sau khi khóa dòng cha và flush đánh giá, trong cùng transaction.
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(value = "UPDATE courses SET rating_avg = (SELECT COALESCE(ROUND(AVG(rating), 2), 0) FROM course_reviews WHERE course_id = :id), "
+            + "rating_count = (SELECT COUNT(*) FROM course_reviews WHERE course_id = :id) WHERE id = :id", nativeQuery = true)
+    int recalculateRating(@Param("id") Long id);
+
     // Kiểm tra ngay tại lệnh ghi, không dựa vào entity có thể đã đọc trước consumer.
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = "DELETE FROM courses WHERE id = :id AND status = 'DRAFT' AND student_count = 0", nativeQuery = true)
