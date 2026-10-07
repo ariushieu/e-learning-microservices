@@ -14,8 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ApiError } from "@/lib/errors";
 import { formatDate } from "@/lib/format";
-import { gateway } from "@/lib/server/gateway";
-import type { Course, QuizAttempt, QuizDetail } from "@/lib/types";
+import { gateway, gatewayOrNull, getSession } from "@/lib/server/gateway";
+import type { Course, CourseProgress, QuizAttempt, QuizDetail } from "@/lib/types";
 import { QuizRunner } from "./quiz-runner";
 
 /** Đề cho học viên; null kèm lý do khi bài chưa xuất bản (422) hoặc không tồn tại (404). */
@@ -65,6 +65,21 @@ export default async function QuizPage({ params }: PageProps<"/quizzes/[id]">) {
   const inProgress = attempts.some((a) => a.status === "IN_PROGRESS");
   // Server đếm cả lượt đang làm và lượt hết giờ vào số lần đã dùng.
   const exhausted = !inProgress && quiz.maxAttempts > 0 && attempts.length >= quiz.maxAttempts;
+
+  const session = await getSession();
+  let enrollmentAccess: "allowed" | "required" | "unavailable" = "allowed";
+  // Chỉ là hướng dẫn trên web; POST attempts vẫn kiểm quyền và ghi danh ở backend.
+  if (!session || (session.userId !== quiz.createdBy && !session.roles.includes("ROLE_ADMIN"))) {
+    try {
+      const progress = await gatewayOrNull<CourseProgress>(`/api/progress?courseId=${quiz.courseId}`);
+      enrollmentAccess = progress && (progress.status === "ACTIVE" || progress.status === "COMPLETED")
+        ? "allowed"
+        : "required";
+    } catch (e) {
+      if (!(e instanceof ApiError) || ![502, 503, 504].includes(e.status)) throw e;
+      enrollmentAccess = "unavailable";
+    }
+  }
 
   const hero = (
     <DetailHero
@@ -125,7 +140,7 @@ export default async function QuizPage({ params }: PageProps<"/quizzes/[id]">) {
   );
 
   return (
-    <QuizRunner quiz={quiz} canStart={!exhausted} resuming={inProgress} hero={hero} summary={summary}>
+    <QuizRunner key={`${quiz.id}:${enrollmentAccess}`} quiz={quiz} enrollmentAccess={enrollmentAccess} canStart={!exhausted} resuming={inProgress} hero={hero} summary={summary}>
       <Section title="Các lần làm trước" count={attempts.length}>
         <DataTableCard
           isEmpty={attempts.length === 0}

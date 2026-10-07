@@ -3,7 +3,8 @@
 import { CircleAlertIcon, ClockIcon, InfoIcon, Loader2Icon, PlayIcon, SendIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useRef, useState, useTransition, type ReactNode } from "react";
+import { Callout } from "@/components/common/callout";
 import { FullBleed } from "@/components/common/decor";
 import { ErrorAlert } from "@/components/common/error-alert";
 import { formatClock, formatPoints, QuestionTypeTag } from "@/components/quiz/labels";
@@ -34,6 +35,7 @@ import { cn } from "@/lib/utils";
  */
 export function QuizRunner({
   quiz,
+  enrollmentAccess,
   canStart,
   resuming,
   hero,
@@ -41,6 +43,7 @@ export function QuizRunner({
   children,
 }: {
   quiz: QuizDetail;
+  enrollmentAccess: "allowed" | "required" | "unavailable";
   canStart: boolean;
   resuming: boolean;
   /** DetailHero của bài: tiêu đề, mô tả, số liệu. */
@@ -53,8 +56,13 @@ export function QuizRunner({
   const [session, setSession] = useState<{ attempt: QuizAttempt; deadline: number | null } | null>(null);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [enrollmentDenied, setEnrollmentDenied] = useState(false);
+  const router = useRouter();
+  const [refreshing, refresh] = useTransition();
+  const needsEnrollment = enrollmentAccess === "required" || enrollmentDenied;
 
   async function start() {
+    if (starting || needsEnrollment || enrollmentAccess !== "allowed" || !canStart || quiz.questions.length === 0) return;
     setStarting(true);
     setError(null);
     try {
@@ -64,7 +72,13 @@ export function QuizRunner({
       setSession({ attempt, deadline });
       window.scrollTo({ top: 0 });
     } catch (e) {
-      setError(errorMessage(e));
+      if (e instanceof ApiError && e.status === 403) {
+        setEnrollmentDenied(true);
+      } else {
+        setError(e instanceof ApiError && [502, 503, 504].includes(e.status)
+          ? "Không kiểm tra được ghi danh, thử lại sau"
+          : errorMessage(e));
+      }
     } finally {
       setStarting(false);
     }
@@ -88,14 +102,33 @@ export function QuizRunner({
   const aside = (
     <Card>
       <CardContent className="space-y-4">
-        <Button size="lg" onClick={start} disabled={starting || !canStart || noQuestions} className="w-full">
-          {starting ? <Loader2Icon className="animate-spin" /> : <PlayIcon />}
-          {resuming ? "Làm tiếp" : "Bắt đầu làm bài"}
-        </Button>
-        <p className="flex items-start gap-2 text-sm text-muted-foreground">
-          <InfoIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
-          {hint}
-        </p>
+        {needsEnrollment ? (
+          <div aria-live="polite">
+            <Callout icon={InfoIcon} tone="info" title="Bạn cần ghi danh khóa học để làm bài kiểm tra">
+              <Button asChild size="lg" className="mt-3">
+                <Link href={`/courses/${quiz.courseId}`}>Ghi danh</Link>
+              </Button>
+            </Callout>
+          </div>
+        ) : enrollmentAccess === "unavailable" ? (
+          <>
+            <ErrorAlert message="Không kiểm tra được ghi danh, thử lại sau" />
+            <Button variant="outline" disabled={refreshing} onClick={() => refresh(() => router.refresh())}>
+              {refreshing && <Loader2Icon className="animate-spin" />} Thử lại
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button size="lg" onClick={start} disabled={starting || !canStart || noQuestions} className="w-full">
+              {starting ? <Loader2Icon className="animate-spin" /> : <PlayIcon />}
+              {resuming ? "Làm tiếp" : "Bắt đầu làm bài"}
+            </Button>
+            <p className="flex items-start gap-2 text-sm text-muted-foreground">
+              <InfoIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
+              {hint}
+            </p>
+          </>
+        )}
         {error && <ErrorAlert message={error} />}
         <div className="space-y-4 border-t pt-4">{summary}</div>
       </CardContent>
