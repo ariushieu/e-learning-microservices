@@ -44,13 +44,14 @@ export function RegisterForm({ next }: { next: string }) {
       </FormField>
       <FormField
         id="phone"
+        error={err.phone}
         label={
           <>
             Số điện thoại <span className="font-normal text-muted-foreground">(không bắt buộc)</span>
           </>
         }
       >
-        <Input id="phone" name="phone" maxLength={20} autoComplete="tel" defaultValue={state.values?.phone} />
+        <Input id="phone" name="phone" maxLength={30} autoComplete="tel" aria-invalid={Boolean(err.phone)} defaultValue={state.values?.phone} />
       </FormField>
       <div className="space-y-2">
         <div className="grid gap-5 sm:grid-cols-2 sm:gap-4">
