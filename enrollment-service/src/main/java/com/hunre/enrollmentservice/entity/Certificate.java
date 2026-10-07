@@ -34,6 +34,12 @@ public class Certificate {
     @Column(name = "certificate_code", nullable = false, unique = true, length = 40)
     private String certificateCode;
 
+    @Column(name = "learner_name", length = 150)
+    private String learnerName;
+
+    @Column(name = "course_title", length = 200)
+    private String courseTitle;
+
     @Column(name = "file_url", length = 500)
     private String fileUrl;
 
