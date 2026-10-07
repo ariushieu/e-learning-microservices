@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/common/empty-state";
 import { ErrorAlert } from "@/components/common/error-alert";
 import { Pagination } from "@/components/common/pagination";
 import { Toolbar } from "@/components/common/toolbar";
-import { CatalogFilters, CatalogSearch, levels } from "@/components/course/catalog-filters";
+import { CatalogFilters, CatalogSearch, CategoryChips, catalogSorts, levels } from "@/components/course/catalog-filters";
 import { CourseCard } from "@/components/course/course-card";
 import { attempt } from "@/components/course/queries";
 import { CardGrid } from "@/components/templates/list-page";
@@ -29,14 +29,17 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   const keyword = one(sp.keyword);
   const categoryId = /^\d+$/.test(one(sp.categoryId)) ? one(sp.categoryId) : "";
   const level = levels.some((l) => l.value === one(sp.level)) ? one(sp.level) : "";
+  const sort = catalogSorts.find((s) => s.value === one(sp.sort))?.value ?? "createdAt,desc";
   // Trên URL trang đếm từ 1 cho dễ đọc, backend đếm từ 0.
   const pageParam = Number(one(sp.page));
   const page = Number.isInteger(pageParam) && pageParam > 1 ? pageParam - 1 : 0;
 
-  const filters = { keyword, categoryId, level };
+  const filters = { keyword, categoryId, level, sort };
   const filtered = Boolean(keyword || categoryId || level);
   const query = new URLSearchParams({ page: String(page), size: String(PAGE_SIZE) });
   for (const [k, v] of Object.entries(filters)) if (v) query.set(k, v);
+  // Khóa cùng giá/số học viên vẫn có thứ tự ổn định khi chuyển trang.
+  query.append("sort", "id,desc");
 
   const [categories, courses] = await Promise.all([
     attempt(gateway<Category[]>("/api/categories/tree")),
@@ -81,7 +84,12 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
         </div>
       </FullBleed>
 
-      <section aria-label="Danh sách khóa học">
+      <section aria-label="Danh sách khóa học" className="min-w-0">
+        {categories.error !== null ? (
+          <ErrorAlert title="Không tải được danh mục" message={categories.error} />
+        ) : (
+          <CategoryChips categories={categories.data} {...filters} />
+        )}
         <Toolbar
           start={<CatalogFilters categories={categories.data ?? []} {...filters} />}
           end={
