@@ -144,6 +144,8 @@ Nút:
 
 Khung và các trang hiện có đã chuyển sang hệ thống này. Phần còn lại là component riêng của từng
 service. Mỗi người thiết kế trong thư mục của mình, theo khuôn và khối ở trên.
+Việc đang giao cụ thể (có hạn, có cách tự kiểm) nằm ở
+[docs/phan-cong.md](../docs/phan-cong.md#việc-của-bạn); bảng dưới là hướng đi dài hơn.
 
 | Người | Việc |
 |---|---|
