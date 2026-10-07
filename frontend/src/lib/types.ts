@@ -199,9 +199,18 @@ export interface Certificate {
   userId: number;
   courseId: number;
   courseTitle: string;
+  learnerName: string;
   certificateCode: string;
   fileUrl: string;
   issuedAt: string;
+}
+
+/** Thông tin công khai; không chứa email hay ID nội bộ. */
+export interface CertificateVerification {
+  learnerName: string;
+  courseTitle: string;
+  issuedAt: string;
+  certificateCode: string;
 }
 
 // ---------------------------------------------------------------- quiz-service

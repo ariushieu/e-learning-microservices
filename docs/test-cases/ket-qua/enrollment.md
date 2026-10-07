@@ -119,6 +119,8 @@ Các mã có nhiều HTTP bao gồm request thay đổi trạng thái và GET ki
 mvn clean verify: **667 test đạt**, không failure/error/skipped. Theo module: shared-common 77, gateway 22, auth 50, course 207, enrollment 92, quiz 188, notification 31.
 Test tích hợp kiểm chứng chỉ cũ thiếu tên, quyền backfill của chủ sở hữu, giữ tên khóa tại lúc cấp, 401 và rollback khi token thiếu tên, cùng retry/DLT và request đồng thời. Các test database dùng H2; test Kafka lỗi database dùng exception mô phỏng, không thay cho ENROLL-09 trên MySQL thật.
 
+CI trên commit 583fd72 đã chạy [Schema matches entities (MySQL)](https://github.com/ariushieu/e-learning-microservices/actions/runs/37585013135/job/112673044487) thành công: Flyway tạo schema và Hibernate validate cả các cột mới. Đây là bằng chứng migration MySQL, không phải lượt chạy collection trên MySQL.
+
 ## Cần chạy tiếp trên môi trường nhóm
 
 1. Docker Compose + smoke-test, chạy lại collection không thay kỳ vọng. Kiểm Flyway V2 và Hibernate validate trên MySQL.
