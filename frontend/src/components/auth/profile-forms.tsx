@@ -71,7 +71,7 @@ export function ProfileDetailsForm({ user }: { user: User }) {
           type="tel"
           autoComplete="tel"
           inputMode="tel"
-          maxLength={20}
+          maxLength={30}
           value={phone}
           aria-invalid={Boolean(errors.phone)}
           onChange={(event) => setPhone(event.target.value)}
