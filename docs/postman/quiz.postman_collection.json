@@ -7392,7 +7392,7 @@
     },
     {
       "name": "5. Quá giờ (bật runSlowTests=true)",
-      "description": "Runner mặc định bỏ qua rõ ràng. Bật runSlowTests=true để đợi 92 giây và chạy QUIZ-13.7; không được ghi PASS khi bỏ qua.",
+      "description": "Runner mặc định bỏ qua rõ ràng. Bật runSlowTests=true trong collection hoặc Newman --env-var runSlowTests=true để đợi 100 giây và chạy QUIZ-13.7. Newman cần --timeout-script 150000; không được ghi PASS khi bỏ qua.",
       "item": [
         {
           "name": "Chuẩn bị timeoutQuizId",
@@ -7601,7 +7601,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "setTimeout(()=>{},92000);"
+                  "// 60s limit + 30s grace; allow margin for Docker/host clock drift and whole-second truncation.",
+                  "setTimeout(()=>{},100000);"
                 ]
               }
             },
@@ -7626,7 +7627,7 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "if(pm.collectionVariables.get('runSlowTests')!=='true'){console.warn('BLOCKED QUIZ-13.7: runSlowTests=false');pm.execution.skipRequest();}"
+              "if(String(pm.variables.get('runSlowTests'))!=='true'){console.warn('BLOCKED QUIZ-13.7: runSlowTests=false');pm.execution.skipRequest();}"
             ]
           }
         }

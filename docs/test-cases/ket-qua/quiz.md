@@ -19,13 +19,55 @@
 
 ## Kết quả
 
+Các số liệu dưới đây là lượt chạy H2 ban đầu tại `b2aceaf`; kết quả review Docker
+và sửa collection được ghi riêng ở mục tiếp theo, không gộp hai lượt chạy.
+
 - Collection có **199 request**; chạy **192**, **191 request đạt toàn bộ kiểm tra**,
   **1 request FAIL**. Tổng **417 assertions: 416 PASS, 1 FAIL**; không lỗi script hoặc
-  lỗi gửi HTTP. Thời gian 1 phút 55 giây (gồm đợi quá giờ 92 giây).
+  lỗi gửi HTTP. Thời gian 1 phút 55 giây (lượt H2 cũ tại `b2aceaf` đợi 92 giây;
+  collection sau review #59 đã đổi thành 100 giây, không suy diễn thành kết quả chạy mới).
 - 7 request thư mục Kafka bỏ qua có chủ đích (`runKafkaRecovery=false`).
   QUIZ-13.7 đã chạy với `runSlowTests=true`, không tính skip là PASS.
 - **663 test Maven: 0 failure/error/skipped**. Frontend route typegen, TypeScript,
   ESLint và production build đều đạt. Kiểm cấu hình bảo mật, migration và diff: đạt.
+
+### Review Docker của #59 và sửa ca chậm (07/10/2026)
+
+**Nguồn: phản hồi review do người dùng cung cấp**, chạy bản gộp `main` + #59 với
+MySQL/Kafka/Redis trong Docker, gateway 8080 và frontend production riêng. Không
+phải lượt chạy Docker của tác giả bản sửa collection này; chưa có SHA bản gộp
+hoặc báo cáo máy đọc được để lưu kèm.
+
+- Reviewer báo **16/16 ca giao diện PASS**, gồm ghi danh/hủy/ghi danh lại,
+  lỗi dịch vụ và thử lại, quyền làm thử của chủ bài/admin, nộp bài và 375 px.
+- Collection mặc định: **188 request, 406/407 assertions PASS**; chỉ QUIZ-14.8 FAIL.
+  Ca chậm mặc định bị bỏ qua nên số này không chứng minh QUIZ-13.7 PASS.
+- QUIZ-13.7 với khoảng chờ cũ: **200, FAIL giả của collection**. Reviewer ghi DB
+  `started_at 07:02:07.60` → `submitted_at 07:03:38.55` (khoảng 90,9 giây).
+  Backend cắt phần lẻ rồi so sánh `elapsedSeconds > 90`, nên chưa quá giờ.
+- Reviewer đổi `setTimeout` thành **100000 ms**, chạy lại trên Docker nhận **422**.
+  Dữ liệu thử đã được reviewer xóa.
+
+Bản sửa sau review tăng khoảng chờ lên **100 giây**, hướng dẫn Newman dùng
+`--timeout-script 150000`, giữ kỳ vọng 422. `runSlowTests` đọc qua `pm.variables.get`
+để `--env-var runSlowTests=true` có tác dụng, vẫn mặc định bỏ qua ca chậm.
+
+Kiểm tra cục bộ sau sửa collection:
+
+- Newman 6.2.2 chạy script trích nguyên từ thư mục ca chậm với HTTP server giả lập:
+  mặc định false bỏ qua; collection true chạy; environment false ghi đè collection
+  true và bỏ qua; environment true ghi đè collection false và chạy. **4/4 đạt**.
+- Lượt cuối giữ nguyên timer, mất **100242 ms**, không lỗi script với timeout
+  150000 ms. Server giả lập trả 422 chỉ để kiểm tra luồng script, **không phải bằng
+  chứng backend từ chối quá giờ**. Ba lượt kiểm cờ đầu bỏ timer để chạy nhanh.
+- JSON đọc được; **203 script Postman** biên dịch cú pháp được.
+- `./mvnw -B -ntp clean verify`: **BUILD SUCCESS**, kết thúc 14:33:27 +07:00;
+  **663 test, 0 failure/error/skipped**. Kiểm bảo mật, migration, tiêu đề commit
+  và diff đạt. Không chạy lại frontend vì lần sửa này chỉ đổi collection/tài liệu.
+
+**Chạy lại Docker tại máy sửa: BLOCKED** — không có Docker CLI/Desktop; WSL báo
+chưa được cài. Kết quả Docker 422 ở trên là bằng chứng do reviewer cung cấp, không
+được ghi thành lượt nghiệm thu Docker mới của commit này.
 
 ### Lỗi còn mở — QUIZ-14.8
 
@@ -37,6 +79,12 @@ nộp; kỳ vọng **422**. Kiểm chứng thêm trên lượt của B: `submitt
 Nguồn: `QuizAttemptServiceImpl.getAttemptResult` dựng đáp án mà chưa kiểm trạng
 thái lượt làm. Phân công yêu cầu ca FAIL sửa ở PR khác; bộ thay đổi này chỉ cập nhật
 web ghi danh và collection/biên bản, chưa sửa hành vi backend đó.
+
+Reviewer còn xác nhận nộp quá giờ trả 422 nhưng trạng thái vẫn `IN_PROGRESS`:
+`markAttemptExpired` lưu `EXPIRED` rồi ném `BusinessException` trong cùng transaction,
+nên thay đổi bị rollback. Lần bắt đầu sau mới đánh dấu lại hết hạn. Cần PR backend
+riêng cùng QUIZ-14.8, kiểm cả HTTP 422 lẫn trạng thái đã commit và lịch sử lượt làm;
+chưa đánh dấu hai lỗi này đã được sửa trong #59.
 
 ### Ca cần môi trường hoặc hợp đồng bổ sung
 
@@ -219,8 +267,9 @@ Các kỳ vọng đã cập nhật theo #42/#45/#49 được giải thích ở [
    trường dev; tài khoản QA có thể được cấp lại vai trò trong thư mục chuẩn bị.
 2. Import `docs/postman/quiz.postman_collection.json`; baseUrl mặc định 8080,
    không cần environment. Có thể đặt lại thông tin admin trong collection variables.
-3. Bật `runSlowTests=true`, chạy tuần tự cả collection. Nếu dùng Newman, thêm
-   `--timeout-script 120000`. Mặc định false sẽ bỏ qua thư mục 5, không được ghi PASS.
+3. Bật `runSlowTests=true` trong collection, chạy tuần tự cả collection; ca quá giờ
+   chờ 100 giây. Newman có thể dùng `--env-var runSlowTests=true --timeout-script 150000`.
+   Mặc định false sẽ bỏ qua thư mục 5, không được ghi PASS.
 4. Ca Kafka chạy riêng: dừng broker ở môi trường thử, bật runKafkaRecovery và chạy
    thư mục 6; bật broker lại, kiểm hộp thư đúng một thông báo của lượt vừa nộp.
    Chỉ nộp/đọc kết quả 200 chưa đủ kết luận toàn ca PASS.

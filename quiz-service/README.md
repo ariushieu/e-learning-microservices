@@ -93,13 +93,25 @@ environment; `baseUrl` mặc định là `http://localhost:8080`. File này thay
 
 - Chỉ dùng trên dữ liệu dev; cần auth, course, enrollment, quiz, gateway và Kafka để
   đồng bộ snapshot khóa mới. Tài khoản QA cố định theo `docs/test-cases/gateway.md`.
-- Bật `runSlowTests=true` để chạy ca nộp quá giờ (chờ 92 giây). Với Newman, đặt
-  `--timeout-script 120000`. Không tính ca đã bỏ qua là PASS.
+- Bật `runSlowTests=true` trong tab Variables của collection để chạy ca nộp quá giờ
+  (chờ **100 giây**: giới hạn 60 giây + ân hạn 30 giây + khoảng đệm cho Docker).
+  Cờ này đọc bằng `pm.variables.get`, nên Newman cũng nhận `--env-var runSlowTests=true`
+  (ưu tiên hơn giá trị trong collection). Đặt `--timeout-script 150000`, lớn hơn thời
+  gian chờ. Không tính ca đã bỏ qua là PASS.
 - `runKafkaRecovery` mặc định `false`: ca Kafka yêu cầu dừng/bật broker và kiểm
   thông báo riêng theo hướng dẫn thư mục 6. Hai ca sort vẫn BLOCKED vì endpoint
   trả List chưa hỗ trợ sort.
 - Dữ liệu thử được giữ để đối chiếu, mỗi lần chạy tạo bộ mới. Không export token
   thật hoặc thông tin đăng nhập cá nhân vào Git.
+
+Chạy từ thư mục gốc repo, bật cả ca chậm:
+
+```bash
+newman run docs/postman/quiz.postman_collection.json --env-var runSlowTests=true --timeout-script 150000
+```
+
+`runKafkaRecovery` vẫn đọc collection variable; muốn chạy ca Kafka phải sửa biến
+trong collection và thực hiện dừng/bật broker theo hướng dẫn, không chỉ dùng `--env-var`.
 
 Trang `/quizzes/{id}` kiểm ghi danh trước khi hiện nút bắt đầu: chưa ghi danh hoặc
 đã hủy thì hiện thông báo và liên kết về khóa học. Chủ bài/admin được miễn kiểm tra.

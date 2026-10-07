@@ -272,7 +272,11 @@ resume mà giữ nguyên lượt; ghi danh lại tiếp tục đúng lượt; ch
 Các request chuẩn bị mang tên riêng, không tính là ca nghiệm thu.
 
 QUIZ-06.8 và QUIZ-15.8 vẫn BLOCKED vì List chưa hỗ trợ sort; collection không tự
-coi việc bỏ qua sort là PASS. QUIZ-13.7 bật `runSlowTests=true`, chờ 92 giây.
+coi việc bỏ qua sort là PASS. QUIZ-13.7 bật `runSlowTests=true` trong collection hoặc
+Newman `--env-var runSlowTests=true`, chờ **100 giây**, với `--timeout-script 150000`.
+Sau review #59, tăng khoảng chờ vì giới hạn 60 giây + ân hạn 30 giây và phép so sánh
+`elapsedSeconds > 90` cắt phần lẻ; chờ 92 giây trên host có thể chưa đủ trong Docker.
+Giữ nguyên kỳ vọng HTTP 422, không đổi backend hoặc coi ca bỏ qua là PASS.
 QUIZ-13.11 phải chủ động dừng/bật Kafka và xác minh thông báo; mặc định bỏ qua.
 
 ## Truy vết nguồn
