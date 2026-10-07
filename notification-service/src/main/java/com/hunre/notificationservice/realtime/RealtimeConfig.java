@@ -6,8 +6,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.listener.ChannelTopic;
-import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import tools.jackson.databind.ObjectMapper;
 
@@ -29,18 +27,12 @@ public class RealtimeConfig {
         return new RedisRealtimeBroadcaster(redis, hub, objectMapper);
     }
 
-    /**
-     * Mất kết nối Redis thì container tự nối lại và đăng ký kênh lại, service không phải
-     * khởi động lại.
-     */
+    /** Nghe kênh Redis; Redis chưa lên lúc khởi động thì tự thử lại, xem RedisSubscription. */
     @Bean
     @ConditionalOnProperty(name = REDIS_ENABLED, havingValue = "true", matchIfMissing = true)
-    RedisMessageListenerContainer realtimeListenerContainer(
+    RedisSubscription realtimeRedisSubscription(
             RedisConnectionFactory connectionFactory, RedisRealtimeBroadcaster broadcaster) {
-        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
-        container.setConnectionFactory(connectionFactory);
-        container.addMessageListener(broadcaster, new ChannelTopic(RedisRealtimeBroadcaster.CHANNEL));
-        return container;
+        return new RedisSubscription(connectionFactory, broadcaster);
     }
 
     /** Chạy một bản hoặc không có Redis: gửi thẳng cho kết nối tại chỗ. */
