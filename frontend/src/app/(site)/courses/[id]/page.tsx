@@ -27,6 +27,9 @@ import { Section } from "@/components/common/section";
 import { StatusBadge } from "@/components/common/status-badge";
 import { PriceTag } from "@/components/course/course-card";
 import { CurriculumList } from "@/components/course/curriculum-list";
+import { CourseReviews } from "@/components/course/course-reviews";
+import { Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { attempt, getCourse, getMyEnrollments, isId } from "@/components/course/queries";
 import { EnrollButton } from "@/components/enrollment/enroll-button";
 import { QuizList } from "@/components/quiz/course-quizzes";
@@ -48,8 +51,11 @@ function languageName(code: string) {
   return code === "vi" ? "Tiếng Việt" : code === "en" ? "Tiếng Anh" : code;
 }
 
-export default async function CourseDetailPage({ params }: PageProps<"/courses/[id]">) {
+export default async function CourseDetailPage({ params, searchParams }: PageProps<"/courses/[id]">) {
   const { id } = await params;
+  const query = await searchParams;
+  const rawReviewPage = Array.isArray(query.reviewPage) ? query.reviewPage[0] : query.reviewPage;
+  const reviewPage = rawReviewPage && /^\d{1,6}$/.test(rawReviewPage) ? Math.max(0, Number(rawReviewPage) - 1) : 0;
   if (!isId(id)) notFound();
   const [course, session] = await Promise.all([getCourse(id), getSession()]);
   if (!course) notFound();
@@ -166,6 +172,10 @@ export default async function CourseDetailPage({ params }: PageProps<"/courses/[
           </Card>
         </Section>
       )}
+
+      <Suspense fallback={<div role="status" aria-label="Đang tải đánh giá"><Skeleton className="h-64 rounded-xl" /></div>}>
+        <CourseReviews course={course} loggedIn={session !== null} page={reviewPage} />
+      </Suspense>
 
       {showQuizzes && (
         <Section title="Bài kiểm tra" count={publishedQuizzes.length}>

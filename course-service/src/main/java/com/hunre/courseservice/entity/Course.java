@@ -104,11 +104,12 @@ public class Course {
     @Builder.Default
     private Integer studentCount = 0;
 
-    @Column(name = "rating_avg", nullable = false, precision = 3, scale = 2)
+    // Số liệu đánh giá được cập nhật bằng SQL dưới khóa dòng, không nhận từ PUT khóa học.
+    @Column(name = "rating_avg", nullable = false, precision = 3, scale = 2, updatable = false)
     @Builder.Default
     private BigDecimal ratingAvg = BigDecimal.ZERO;
 
-    @Column(name = "rating_count", nullable = false)
+    @Column(name = "rating_count", nullable = false, updatable = false)
     @Builder.Default
     private Integer ratingCount = 0;
 

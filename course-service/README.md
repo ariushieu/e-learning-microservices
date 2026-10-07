@@ -67,7 +67,30 @@ migration V1; thay đổi này bổ sung mapping entity, không sửa migration 
 Khi xóa tài liệu, `resourceId` phải thuộc đúng `lessonId` trong URL; sai quan hệ trả
 `404`, người không phải chủ/admin trả `403`.
 
-## Kiểm tra ghi danh
+## Đánh giá khóa học
+
+| Endpoint | Quyền và kết quả |
+|---|---|
+| `GET /api/courses/{id}/reviews?page=0&size=5` | Theo quyền xem khóa học hiện có; khách chỉ thấy khóa PUBLISHED. Mới nhất trước, ID giảm dần khi cùng thời điểm. |
+| `GET /api/courses/{id}/reviews/me` | Cần token hợp lệ; trả `canReview` và đánh giá của chính người gọi, không phụ thuộc trang đang đọc. |
+| `PUT /api/courses/{id}/reviews/me` | Tạo/sửa đánh giá của mình, trả 200. Body `{"rating":5,"comment":"Nội dung hữu ích"}`. |
+| `DELETE /api/courses/{id}/reviews/me` | Xóa đánh giá của mình, trả 200; chưa có đánh giá trả 404. |
+
+Quyền viết yêu cầu có trong `course_learners` của đúng khóa (không gọi enrollment-service).
+Chủ khóa hoặc admin cũng không được bỏ qua điều kiện này. Đây là **lịch sử từng ghi danh**:
+hủy hoặc xóa ghi danh không mất quyền viết. Khóa PUBLISHED/ARCHIVED nhận đánh giá; khóa nháp
+không nhận đánh giá. GET danh sách giữ nguyên quyền đọc khóa hiện tại, bao gồm quyền đọc ARCHIVED.
+
+`rating` phải là số nguyên 1–5, `comment` tối đa 2000 ký tự. Không nhận danh tính/tên từ body:
+lấy ID và tên đã xác thực trong token, lưu tên tại lần ghi gần nhất bằng migration V5.
+Response không có email/userId; nhận xét là văn bản thuần, giao diện không render HTML.
+
+Mỗi cặp khóa/người dùng chỉ có một dòng. Khóa dòng `courses` trước khi đọc/ghi đánh giá;
+flush rồi tính lại trung bình (2 chữ số thập phân) và số lượt trong cùng transaction.
+Hai cột thống kê không cho JPA cập nhật từ PUT khóa học. Xóa lượt cuối đưa cả hai số về 0.
+Collection và kiểm thử đồng thời có trong `COURSE-25` và `CourseReviewConcurrencyTest`.
+
+## Kiểm tra ghi danh cho quyền đọc nội dung
 
 Course-service sử dụng API đọc hiện có của enrollment-service:
 `GET /api/enrollments?page=0&size=100&sort=id,asc`.

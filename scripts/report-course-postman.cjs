@@ -47,7 +47,7 @@ const text=`# Biên bản kiểm thử course-service
   auth/course/enrollment/gateway chạy JAR, request qua **http://localhost:8080**. JWT bật;
   rate limit tắt trong phiên kiểm thử. Máy không có Docker; không ghi nhận đã chạy smoke test toàn bộ
   stack Docker/Redis/quiz/notification. Auth dùng database dev đã khởi tạo, tắt Flyway lúc chạy local.
-- Backend gồm bản sửa lọc danh mục cha lấy cả khóa thuộc danh mục con; không đổi migration.
+- Backend có đánh giá khóa học, tính lại số sao dưới khóa dòng và migration V5 lưu tên người viết.
 - Kết quả: **${expected.length}/${expected.length} mã ca gốc đã chạy**, cộng ${entries.length-expected.length} ca bổ sung;
   ${report.run.stats.items.total} request chính (bao gồm chuẩn bị), ${report.run.stats.requests.total} HTTP tính cả bước phụ,
   **${report.run.stats.assertions.total-report.run.stats.assertions.failed}/${report.run.stats.assertions.total} assertion đạt**;
@@ -63,6 +63,8 @@ const text=`# Biên bản kiểm thử course-service
   HTTP 200 của PUT một mình không đủ để chứng minh Kafka đã đồng bộ.
 - Ca bổ sung COURSE-ARCHIVED.5 cho phép 422 từ snapshot đã ARCHIVED hoặc 404 từ bước kiểm nguồn
   khi snapshot còn trễ. Phải xác nhận không có lượt ghi danh mới. Không chấp nhận 2xx/5xx.
+- COURSE-25 kiểm vòng đời đánh giá, quyền theo sổ học viên, dữ liệu đầu vào, tên từ token,
+  phân trang và ghi đồng thời qua gateway trên MySQL. Điểm lẻ không được tự làm tròn thành số sao.
 - Fixture riêng theo runId; các ca xóa dùng bản sao. Tài khoản QA cố định theo gateway.md.
   Dữ liệu được giữ cho demo. Không có token/password/header đăng nhập trong bằng chứng đã xuất.
 - Đây là biên bản API của course-service. Không suy ra các service khác hay mọi tình huống đồng thời
