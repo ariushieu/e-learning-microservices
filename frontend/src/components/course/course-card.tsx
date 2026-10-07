@@ -1,4 +1,4 @@
-import { ClockIcon, ListVideoIcon } from "lucide-react";
+import { ClockIcon, ListVideoIcon, StarIcon } from "lucide-react";
 import Link from "next/link";
 import { CourseCover } from "@/components/common/course-cover";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ export function CourseCard({ course }: { course: CourseSummary }) {
         <p className="truncate text-caption font-medium text-primary">{course.categoryName}</p>
         <h3 className="line-clamp-2 text-subheading transition-colors group-hover:text-primary">{course.title}</h3>
         <p className="truncate text-sm text-muted-foreground">{course.instructorName || "Giảng viên HUNRE"}</p>
+        {course.ratingCount > 0 && <p className="inline-flex items-center gap-1.5 text-sm text-primary" aria-label={`${Number(course.ratingAvg).toFixed(1)} trên 5 sao, ${course.ratingCount} đánh giá`}><StarIcon className="size-4 fill-current" aria-hidden /><span className="font-semibold tabular-nums">{Number(course.ratingAvg).toFixed(1)}</span><span className="text-muted-foreground">({course.ratingCount} đánh giá)</span></p>}
         <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-3 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1 tabular-nums">
             <ListVideoIcon className="size-3.5" aria-hidden />

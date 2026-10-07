@@ -242,7 +242,6 @@ for(const [gText,[method,kind,codes]] of Object.entries(writeGroups)) {
   });
 }
 function targetType(k){return ['category','course','status'].includes(k);}
-for(const key of cases.keys())if(!seen.has(key))throw Error('Missing case '+key);
 const extra=folder('25. Hồi quy sắp xếp và quyền học khóa lưu trữ');
 request(extra,'COURSE-SORT.1 Giá tăng và dữ liệu phân biệt','GET','/api/courses?categoryId={{sortCategoryId}}&sort=price,asc&sort=id,desc',null,null,200,
   "pm.test('Giá tăng đúng',()=>pm.expect(d.content.map(c=>c.price)).eql([0,100,300]));",`
@@ -292,6 +291,38 @@ for(const [n,page,index] of [[4,0,0],[5,1,2]]) {
 }
 request(categoryRegression,'COURSE-CATEGORY.6 Danh mục không tồn tại trả trang rỗng','GET','/api/courses?categoryId={{missingId}}',null,null,200,
   "pm.test('Trang rỗng',()=>{pm.expect(d.content).eql([]);pm.expect(d.totalElements).eql(0);});");
+const reviewFolder=folder('COURSE-25 — Đánh giá khóa học');
+const reviewUrl='/api/courses/{{reviewCourseId}}/reviews';
+const stats=(count,avg)=>`const c=await call('GET','/api/courses/'+id('reviewCourseId'));pm.test('Điểm và số lượt chính xác',()=>{pm.expect(c.ratingCount).eql(${count});pm.expect(c.ratingAvg).eql(${avg});});`;
+add(reviewFolder,25,1,'GET',reviewUrl,'',200,null,`
+  const c=await course();set('reviewCourseId',c.id);await status(c.id,'PUBLISHED');
+  for(const who of ['studentToken','tokenA']) {
+    await eventually(()=>call('POST','/api/enrollments',{courseId:c.id},who,201),'Ghi danh khóa đánh giá');
+    await eventually(async()=>pm.expect((await call('GET','/api/courses/'+c.id+'/reviews/me',undefined,who)).canReview).eql(true),'Chờ quyền đánh giá qua Kafka');
+  }
+`,"pm.test('Chưa có đánh giá',()=>{pm.expect(d.content).eql([]);pm.expect(d.totalElements).eql(0);});");
+add(reviewFolder,25,2,'PUT',reviewUrl+'/me','',401,{rating:5});
+add(reviewFolder,25,3,'PUT',reviewUrl+'/me','B',403,{rating:5},'',stats(0,0));
+add(reviewFolder,25,4,'PUT',reviewUrl+'/me','S',200,{rating:5,comment:'Hữu ích'},'',stats(1,5)+"set('firstReviewId',d.id);");
+add(reviewFolder,25,5,'PUT',reviewUrl+'/me','A',200,{rating:3,comment:'Khá tốt'},'',stats(2,4)+"set('secondReviewId',d.id);");
+add(reviewFolder,25,6,'PUT',reviewUrl+'/me','S',200,{rating:1,comment:'Đã sửa'},'',stats(2,2)+"pm.test('Sửa đúng bản ghi',()=>pm.expect(d.id).eql(id('firstReviewId')));");
+add(reviewFolder,25,7,'GET',reviewUrl+'/me','S',200,null,'',"pm.test('Đúng đánh giá của mình',()=>{pm.expect(d.canReview).eql(true);pm.expect(d.review.rating).eql(1);});");
+add(reviewFolder,25,8,'GET',reviewUrl+'?size=1','',200,null,'',"pm.test('Mới nhất trước, không lộ email/ID người viết',()=>{pm.expect(d.totalElements).eql(2);pm.expect(d.content[0].id).eql(id('secondReviewId'));pm.expect(d.content[0]).not.have.property('email');pm.expect(d.content[0]).not.have.property('userId');});const next=await call('GET','/api/courses/'+id('reviewCourseId')+'/reviews?size=1&page=1',undefined,null);pm.test('Trang hai không trùng',()=>pm.expect(next.content[0].id).eql(id('firstReviewId')));");
+add(reviewFolder,25,9,'DELETE',reviewUrl+'/me','B',403,null,'',stats(2,2));
+add(reviewFolder,25,10,'DELETE',reviewUrl+'/me','S',200,null,'',stats(1,3));
+add(reviewFolder,25,11,'DELETE',reviewUrl+'/me','A',200,null,'',stats(0,0));
+add(reviewFolder,25,12,'DELETE',reviewUrl+'/me','S',404,null);
+for(const [n,body] of [[13,{}],[14,{rating:0}],[15,{rating:6}],[16,{rating:2.5}],[17,{rating:5,comment:'x'.repeat(2001)}]])
+  add(reviewFolder,25,n,'PUT',reviewUrl+'/me','S',400,body,'',stats(0,0));
+add(reviewFolder,25,18,'PUT','/api/courses/{{missingId}}/reviews/me','S',404,{rating:5});
+add(reviewFolder,25,19,'GET',reviewUrl+'/me','',401,null);
+add(reviewFolder,25,20,'GET',reviewUrl,'',404,null,"await status(id('reviewCourseId'),'DRAFT');","await status(id('reviewCourseId'),'PUBLISHED');");
+add(reviewFolder,25,21,'PUT',reviewUrl+'/me?userId={{studentId}}','B',403,'{"rating":5,"userId":{{studentId}}}','',stats(0,0));
+add(reviewFolder,25,22,'PUT',reviewUrl+'/me','S',200,'{"rating":5,"userId":{{instructorAId}},"authorName":"Forged","email":"fake@example.com"}','',stats(1,5)+"const me=await call('GET','/api/auth/me',undefined,'studentToken');pm.test('Tên lấy từ tài khoản đã xác thực',()=>pm.expect(d.authorName).eql(me.fullName));");
+add(reviewFolder,25,23,'PUT',reviewUrl+'/me','S',200,{rating:4},"await status(id('reviewCourseId'),'ARCHIVED');",stats(1,4)+"await status(id('reviewCourseId'),'PUBLISHED');");
+add(reviewFolder,25,24,'GET',reviewUrl,'',200,null,"await Promise.all([call('PUT','/api/courses/'+id('reviewCourseId')+'/reviews/me',{rating:5},'studentToken'),call('PUT','/api/courses/'+id('reviewCourseId')+'/reviews/me',{rating:3},'tokenA')]);",stats(2,4)+"pm.test('Đúng hai người',()=>pm.expect(d.totalElements).eql(2));");
+add(reviewFolder,25,25,'GET',reviewUrl,'',200,null,"await Promise.all(Array.from({length:6},()=>call('PUT','/api/courses/'+id('reviewCourseId')+'/reviews/me',{rating:2},'studentToken')));",stats(2,2.5)+"pm.test('Không nhân đôi bản ghi',()=>pm.expect(d.totalElements).eql(2));");
+for(const key of cases.keys())if(!seen.has(key))throw Error('Missing case '+key);
 // Giữ thứ tự đọc trước ghi để các tình huống đọc luôn có fixture nền nguyên vẹn.
 fs.writeFileSync(path.join(root,'docs/postman/course.postman_collection.json'),JSON.stringify(collection,null,2)+'\n');
 console.log(`Generated ${seen.size} mapped cases in ${collection.item.length} folders`);
