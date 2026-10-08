@@ -1,6 +1,10 @@
 # Ai giữ phần nào. Pull request đụng vào phần của ai thì GitHub tự gắn người đó vào review.
-# Không chặn merge (ruleset không bật "Require review from Code Owners") — chỉ để đúng người
-# được hỏi ý kiến. Dòng viết sau thắng dòng viết trước.
+# Dòng viết sau thắng dòng viết trước.
+#
+# Ruleset của main bật "Require review from Code Owners": mỗi file trong pull request phải được
+# một chủ của nó duyệt. Mỗi dòng đều có nhóm trưởng (@ariushieu), và GitHub không cho tự duyệt
+# pull request của mình, nên thành viên không tự merge được phần của mình — nhóm trưởng chạy thử
+# rồi duyệt. Pull request của nhóm trưởng merge bằng quyền bypass của admin.
 #
 # Nguyên tắc: ai giữ service nào thì giữ luôn phần giao diện gọi API của service đó. Sửa API
 # là sửa giao diện tương ứng trong cùng pull request.
@@ -9,33 +13,33 @@
 *                                                 @ariushieu
 
 # ---------------------------------------------------------------- auth — quocluibotre
-/auth-service/                                    @quocluibotre
-/frontend/src/components/auth/                    @quocluibotre
-/frontend/src/app/(auth)/                         @quocluibotre
-/frontend/src/app/(site)/profile/                 @quocluibotre
-/frontend/src/app/(dashboard)/admin/users/        @quocluibotre
+/auth-service/                                    @quocluibotre @ariushieu
+/frontend/src/components/auth/                    @quocluibotre @ariushieu
+/frontend/src/app/(auth)/                         @quocluibotre @ariushieu
+/frontend/src/app/(site)/profile/                 @quocluibotre @ariushieu
+/frontend/src/app/(dashboard)/admin/users/        @quocluibotre @ariushieu
 
-# ---------------------------------------------------------------- course — duyd
-/course-service/                                  @duyd92689-debug
-/frontend/src/components/course/                  @duyd92689-debug
-/frontend/src/app/(site)/page.tsx                 @duyd92689-debug
-/frontend/src/app/(site)/courses/                 @duyd92689-debug
-/frontend/src/app/(dashboard)/instructor/         @duyd92689-debug
-/frontend/src/app/(dashboard)/admin/categories/   @duyd92689-debug
+# ---------------------------------------------------------------- course — DuyJunior
+/course-service/                                  @DuyJunior @ariushieu
+/frontend/src/components/course/                  @DuyJunior @ariushieu
+/frontend/src/app/(site)/page.tsx                 @DuyJunior @ariushieu
+/frontend/src/app/(site)/courses/                 @DuyJunior @ariushieu
+/frontend/src/app/(dashboard)/instructor/         @DuyJunior @ariushieu
+/frontend/src/app/(dashboard)/admin/categories/   @DuyJunior @ariushieu
 
-# ---------------------------------------------------------------- enrollment — phamquyet
-/enrollment-service/                              @phamquyet19042005-netizen
-/frontend/src/components/enrollment/              @phamquyet19042005-netizen
-/frontend/src/app/(learn)/                        @phamquyet19042005-netizen
-/frontend/src/app/(site)/my-courses/              @phamquyet19042005-netizen
-/frontend/src/app/(site)/certificates/            @phamquyet19042005-netizen
+# ---------------------------------------------------------------- enrollment — Quytsdragon
+/enrollment-service/                              @Quytsdragon @ariushieu
+/frontend/src/components/enrollment/              @Quytsdragon @ariushieu
+/frontend/src/app/(learn)/                        @Quytsdragon @ariushieu
+/frontend/src/app/(site)/my-courses/              @Quytsdragon @ariushieu
+/frontend/src/app/(site)/certificates/            @Quytsdragon @ariushieu
 
 # ---------------------------------------------------------------- quiz — hiep
-/quiz-service/                                    @hiepdeptrai0111
-/frontend/src/components/quiz/                    @hiepdeptrai0111
-/frontend/src/app/(site)/quizzes/                 @hiepdeptrai0111
-/frontend/src/app/(site)/attempts/                @hiepdeptrai0111
-/frontend/src/app/(dashboard)/instructor/quizzes/ @hiepdeptrai0111
+/quiz-service/                                    @hiepdeptrai0111 @ariushieu
+/frontend/src/components/quiz/                    @hiepdeptrai0111 @ariushieu
+/frontend/src/app/(site)/quizzes/                 @hiepdeptrai0111 @ariushieu
+/frontend/src/app/(site)/attempts/                @hiepdeptrai0111 @ariushieu
+/frontend/src/app/(dashboard)/instructor/quizzes/ @hiepdeptrai0111 @ariushieu
 
 # ---------------------------------------------------------------- nhóm trưởng (Hiếu)
 # notification-service, gateway, hạ tầng, khung frontend: layout, đăng nhập/cookie, proxy.ts,
