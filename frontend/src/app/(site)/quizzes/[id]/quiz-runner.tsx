@@ -53,7 +53,7 @@ export function QuizRunner({
   /** Lịch sử các lần làm: cột nội dung chính. */
   children: ReactNode;
 }) {
-  const [session, setSession] = useState<{ attempt: QuizAttempt; deadline: number | null } | null>(null);
+  const [session, setSession] = useState<{ attempt: QuizAttempt; deadline: number | null; quiz: QuizDetail } | null>(null);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [enrollmentDenied, setEnrollmentDenied] = useState(false);
@@ -65,14 +65,20 @@ export function QuizRunner({
     if (starting || needsEnrollment || enrollmentAccess !== "allowed" || !canStart || quiz.questions.length === 0) return;
     setStarting(true);
     setError(null);
+    let attemptStarted = false;
     try {
       const attempt = await api<QuizAttempt>(`/api/quizzes/${quiz.id}/attempts`, { method: "POST" });
+      attemptStarted = true;
       // Mốc hết giờ tính theo đồng hồ máy người học, từ số giây còn lại server trả về.
       const deadline = attempt.remainingSeconds != null ? Date.now() + attempt.remainingSeconds * 1000 : null;
-      setSession({ attempt, deadline });
+      // Fetch after start/resume: the landing-page data has no attempt seed yet.
+      const activeQuiz = await api<QuizDetail>(`/api/quizzes/${quiz.id}/take`);
+      setSession({ attempt, deadline, quiz: activeQuiz });
       window.scrollTo({ top: 0 });
     } catch (e) {
-      if (e instanceof ApiError && e.status === 403) {
+      if (attemptStarted) {
+        setError("Lượt làm đã bắt đầu nhưng chưa tải được đề. Bấm lại nút bắt đầu/làm tiếp để tiếp tục lượt này.");
+      } else if (e instanceof ApiError && e.status === 403) {
         setEnrollmentDenied(true);
       } else {
         setError(e instanceof ApiError && [502, 503, 504].includes(e.status)
@@ -85,7 +91,7 @@ export function QuizRunner({
   }
 
   if (session) {
-    return <QuizTaking quiz={quiz} attempt={session.attempt} deadline={session.deadline}
+    return <QuizTaking quiz={session.quiz} attempt={session.attempt} deadline={session.deadline}
       onClose={() => refresh(() => { setSession(null); router.refresh(); })} />;
   }
 

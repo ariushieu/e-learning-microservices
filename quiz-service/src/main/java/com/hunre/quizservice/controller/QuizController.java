@@ -79,8 +79,8 @@ public class QuizController {
     }
 
     @GetMapping("/{id}/take")
-    public ApiResponse<QuizDetailResponse> getQuizForStudent(@PathVariable Long id) {
-        return ApiResponse.ok(quizService.getQuizForStudent(id));
+    public ApiResponse<QuizDetailResponse> getQuizForStudent(@PathVariable Long id, AuthenticatedUser user) {
+        return ApiResponse.ok(quizService.getQuizForStudent(id, user.userId()));
     }
 
     @GetMapping

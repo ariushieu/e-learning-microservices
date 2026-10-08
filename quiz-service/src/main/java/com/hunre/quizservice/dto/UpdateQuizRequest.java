@@ -41,4 +41,7 @@ public class UpdateQuizRequest {
 
     @Builder.Default
     private Boolean shuffleQuestions = false;
+
+    @Builder.Default
+    private Boolean shuffleOptions = false;
 }

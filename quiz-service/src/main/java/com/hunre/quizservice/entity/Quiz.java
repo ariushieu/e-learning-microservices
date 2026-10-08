@@ -65,6 +65,10 @@ public class Quiz {
     private boolean shuffleQuestions = false;
 
     @Builder.Default
+    @Column(name = "shuffle_options", nullable = false)
+    private boolean shuffleOptions = false;
+
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20, nullable = false)
     private QuizStatus status = QuizStatus.DRAFT;
@@ -80,7 +84,7 @@ public class Quiz {
 
     @Builder.Default
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("position ASC")
+    @OrderBy("position ASC, id ASC")
     private List<Question> questions = new ArrayList<>();
 
     @PrePersist

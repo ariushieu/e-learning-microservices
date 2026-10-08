@@ -17,6 +17,7 @@ export interface QuizSettingsValues {
   passScore: string;
   maxAttempts: string;
   shuffleQuestions: boolean;
+  shuffleOptions: boolean;
 }
 
 export type FieldErrors = Partial<Record<keyof QuizSettingsValues, string>>;
@@ -28,6 +29,7 @@ export const emptyQuizSettings: QuizSettingsValues = {
   passScore: "50",
   maxAttempts: "3",
   shuffleQuestions: false,
+  shuffleOptions: false,
 };
 
 export function quizToSettings(quiz: Quiz): QuizSettingsValues {
@@ -38,6 +40,7 @@ export function quizToSettings(quiz: Quiz): QuizSettingsValues {
     passScore: String(Number(quiz.passScore)),
     maxAttempts: String(quiz.maxAttempts),
     shuffleQuestions: quiz.shuffleQuestions,
+    shuffleOptions: quiz.shuffleOptions,
   };
 }
 
@@ -68,6 +71,7 @@ export function settingsToPayload(v: QuizSettingsValues) {
     passScore: Number(v.passScore),
     maxAttempts: Number(v.maxAttempts),
     shuffleQuestions: v.shuffleQuestions,
+    shuffleOptions: v.shuffleOptions,
   };
 }
 
@@ -175,17 +179,31 @@ export function QuizSettingsFields({
         </FormField>
       </div>
       {showShuffle && (
-        <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
-          <div className="space-y-1">
-            <Label htmlFor={`${id}-shuffle`}>Xáo trộn câu hỏi</Label>
-            <p className="text-xs text-muted-foreground">Đổi thứ tự câu hỏi mỗi lần làm bài</p>
+        <div className="space-y-3">
+          <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
+            <div className="space-y-1">
+              <Label htmlFor={`${id}-shuffle`}>Xáo trộn câu hỏi</Label>
+              <p className="text-xs text-muted-foreground">Giữ nguyên thứ tự khi tải lại trong cùng lượt làm</p>
+            </div>
+            <Switch
+              id={`${id}-shuffle`}
+              checked={values.shuffleQuestions}
+              onCheckedChange={(checked) => set("shuffleQuestions", checked)}
+              disabled={disabled}
+            />
           </div>
-          <Switch
-            id={`${id}-shuffle`}
-            checked={values.shuffleQuestions}
-            onCheckedChange={(checked) => set("shuffleQuestions", checked)}
-            disabled={disabled}
-          />
+          <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
+            <div className="space-y-1">
+              <Label htmlFor={`${id}-shuffle-options`}>Xáo trộn đáp án</Label>
+              <p className="text-xs text-muted-foreground">Giữ nguyên trong cùng lượt làm; câu Đúng/Sai không xáo</p>
+            </div>
+            <Switch
+              id={`${id}-shuffle-options`}
+              checked={values.shuffleOptions}
+              onCheckedChange={(checked) => set("shuffleOptions", checked)}
+              disabled={disabled}
+            />
+          </div>
         </div>
       )}
     </div>
