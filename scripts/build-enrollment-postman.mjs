@@ -74,6 +74,9 @@ const unchangedCertificate = eq("d.certificateCode", cv("certificateCode"));
 const completedLesson = eq("d.status", "'COMPLETED'") + eq("d.completedAt", cv("lessonCompletedAt"));
 const snapshotReady = { poll: "pm.response.code === 201", stopOnFailure: true,
   description: "Runner thử lại 404 tối đa 30 giây để chờ course.updated. Nếu vẫn 404: dừng lượt chạy, ghi BLOCKED do snapshot; không sửa SQL." };
+const learners = "/api/courses/" + V("publishedCourseId") + "/learners";
+const learnerFields = "pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store'); d.content.forEach(row => pm.expect(Object.keys(row).sort()).to.eql(['certificateCode','completedAt','enrolledAt','enrollmentId','lastAccessedAt','learnerName','progressPercent','status','userId']));";
+const studentRow = "d.content.find(row => row.enrollmentId === id('enrollmentId'))";
 
 folder("0. Chuẩn bị", "Tài khoản dev cố định theo gateway.md. Toàn bộ ID lấy từ API. Mỗi lần chạy tạo khóa mới có runId; chạy toàn collection theo thứ tự, một iteration. Có thể cần RATE_LIMIT_ENABLED=false trên gateway.");
 R("SETUP-01 Đăng nhập admin và bắt đầu lượt chạy", "POST", "/api/auth/login", 200,
@@ -94,7 +97,7 @@ for (const [label, email, fullName, idKey, tokenKey, refreshKey, roles] of users
     { roles }, "adminToken", "", { stopOnFailure: true });
   R("SETUP-05." + label + " Đăng nhập lại lấy quyền mới", "POST", "/api/auth/login", 200, { email, password: "Test@123456" }, null,
     save(tokenKey, "d.accessToken") + save(refreshKey, "d.refreshToken") + save(idKey, "d.user.id") +
-    (label === "S" ? save("studentName", "d.user.fullName") : ""), { stopOnFailure: true });
+    (label === "S" ? save("studentName", "d.user.fullName") : label === "B" ? save("instructorBName", "d.user.fullName") : ""), { stopOnFailure: true });
 }
 GET("SETUP-06 Xác nhận missingId không phải khóa thật", "/api/courses/" + V("missingId"), 404, "tokenA");
 R("SETUP-07 Tạo danh mục riêng", "POST", "/api/categories", 201,
@@ -126,7 +129,7 @@ for (const value of [0, -1]) enroll("ENROLL-01.6 ID " + value, 400, "studentToke
 R("ENROLL-01.6 Thiếu ID", "POST", "/api/enrollments", 400, {});
 enroll("ENROLL-01.7 Ghi danh trùng", 409);
 R("ENROLL-01.9 Không nhận userId từ body", "POST", "/api/enrollments", 201,
-  { courseId: V("auxCourseId"), userId: V("instructorBId") }, "studentToken",
+  { courseId: V("auxCourseId"), userId: V("instructorBId"), learnerName: "Forged", fullName: "Forged" }, "studentToken",
   save("auxEnrollmentId") + eq("d.userId", id("studentId")), snapshotReady);
 GET("ENROLL-01.11 Đúng một thông báo ghi danh", "/api/notifications?size=100", 200, "studentToken",
   "pm.expect(d.content.filter(n => n.type === 'ENROLLMENT_SUCCESS' && n.content.includes(cv('courseTitle')))).to.have.length(1);",
@@ -157,6 +160,31 @@ R("SETUP-12 Lưu trữ khóa riêng", "PATCH", "/api/courses/" + V("archivedCour
 enroll("ENROLL-01.10 Khóa đã lưu trữ", 404, "studentToken", V("archivedCourseId"), "", { pre: "setTimeout(() => {}, 5000);",
   description: "404 kiểm khóa đã lưu trữ tại API. Trạng thái snapshot cần đối chiếu consumer/log; riêng HTTP không chứng minh Kafka đã đồng bộ." });
 
+folder("1b. Học viên của khóa", "ENROLL-11: quyền theo snapshot, JWT tại service, tên từ token, phân trang và sort. Hai lượt S/B đã được tạo ở thư mục trước.");
+GET("ENROLL-11.1 A thấy S và B đúng khóa", learners, 200, "tokenA", learnerFields +
+  eq("d.totalElements", 2) + "pm.expect(d.content.map(row => row.enrollmentId)).to.have.members([id('enrollmentId'), id('enrollmentBId')]);" +
+  eq(studentRow + ".learnerName", cv("studentName")) + eq(studentRow + ".progressPercent", 0) +
+  "pm.expect(d.content.find(row => row.enrollmentId === id('enrollmentBId')).learnerName).to.eql(cv('instructorBName'));" +
+  "d.content.forEach(row => { pm.expect(row.status).to.eql('ACTIVE'); pm.expect(row.certificateCode).to.eql(null); });");
+GET("ENROLL-11.2 Không token qua đường dẫn public của gateway", learners, 401, null);
+GET("ENROLL-11.3 B là giảng viên khác đã ghi danh", learners + "?instructorId=" + V("instructorAId"), 403, "tokenB");
+GET("ENROLL-11.4 S không được đọc cả khóa", learners + "?userId=" + V("instructorAId"), 403);
+GET("ENROLL-11.5 Admin được xem danh sách", learners, 200, "adminToken", learnerFields + eq("d.totalElements", 2));
+GET("ENROLL-11.6 Khóa không có snapshot", "/api/courses/" + V("missingId") + "/learners", 404, "tokenA");
+for (const value of ["0", "-1", "abc"]) GET("ENROLL-11.7 ID khóa " + value, "/api/courses/" + value + "/learners", 400, "tokenA");
+GET("ENROLL-11.8 Trang đầu một học viên", learners + "?size=1&sort=enrolledAt,asc", 200, "tokenA",
+  eq("d.content.length", 1) + eq("d.totalElements", 2) + eq("d.totalPages", 2) + eq("d.first", true) + save("rosterFirstId", "d.content[0].enrollmentId"));
+GET("ENROLL-11.8 Trang sau không trùng học viên", learners + "?page=1&size=1&sort=enrolledAt,asc", 200, "tokenA",
+  eq("d.content.length", 1) + eq("d.last", true) + "pm.expect(d.content[0].enrollmentId).not.to.eql(id('rosterFirstId'));");
+GET("ENROLL-11.8 Trang vượt cuối", learners + "?page=99&size=1", 200, "tokenA", eq("d.content", "[]") + eq("d.totalElements", 2));
+for (const query of ["page=-1", "page=abc", "size=0", "size=101", "status=INVALID", "sort=learnerName", "sort=courseId", "sort=progressPercent,desc&sort=userId"]) {
+  GET("ENROLL-11.9 Query không hợp lệ " + query, learners + "?" + query, 400, "tokenA");
+}
+GET("ENROLL-11.10 Khóa chưa có học viên", "/api/courses/" + V("raceCourseId") + "/learners", 200, "tokenA",
+  eq("d.content", "[]") + eq("d.totalElements", 0), { poll: "pm.response.code === 200", stopOnFailure: true });
+GET("ENROLL-11.12 Tên không lấy từ body ghi danh", "/api/courses/" + V("auxCourseId") + "/learners", 200, "tokenA",
+  eq("d.content.length", 1) + eq("d.content[0].learnerName", cv("studentName")));
+
 folder("2. Hủy và kích hoạt lại", "Hủy trước khi hoàn thành, dùng lại cùng enrollmentId.");
 cancel("ENROLL-04.2 Không token", 401, null);
 cancel("ENROLL-04.3 B hủy hộ", 403, "tokenB");
@@ -171,7 +199,11 @@ GET("ENROLL-02.8 Danh sách giữ lượt đã hủy", "/api/enrollments?size=10
   "pm.expect(d.content.find(e => e.id === id('enrollmentId')).status).to.eql('CANCELLED');");
 GET("ENROLL-03.7 Đọc lượt đã hủy", own, 200, "studentToken", eq("d.status", "'CANCELLED'"));
 progress("ENROLL-07.8 Không cập nhật lượt đã hủy", 422);
+GET("ENROLL-11.11 Lọc lượt đã hủy", learners + "?status=CANCELLED", 200, "tokenA",
+  eq("d.totalElements", 1) + eq("d.content[0].enrollmentId", id("enrollmentId")) + eq("d.content[0].status", "'CANCELLED'"));
 enroll("ENROLL-01.8 Kích hoạt lại dùng ID cũ", 201, "studentToken", V("publishedCourseId"), eq("d.id", id("enrollmentId")) + eq("d.status", "'ACTIVE'"));
+GET("ENROLL-11.12 Kích hoạt lại giữ tên token và cùng ID", learners + "?status=ACTIVE", 200, "tokenA",
+  eq("d.totalElements", 2) + eq(studentRow + ".learnerName", cv("studentName")));
 
 folder("3. Tiến độ và chứng chỉ", "Các ca hoàn thành, không giảm tiến độ và phân quyền chứng chỉ; khóa chính có đúng hai bài.");
 GET("ENROLL-06.6 Lượt ACTIVE chưa có chứng chỉ", "/api/enrollments/" + V("auxEnrollmentId") + "/certificate", 404);
@@ -190,6 +222,10 @@ progress("ENROLL-07.1 Hoàn thành bài đầu", 200, {}, V("lessonAId"), "stude
 // Lấy mốc đã đọc lại từ DB (timestamp(6)), tránh so nano giây trước flush với micro giây đã lưu.
 progressGet("ENROLL-07.1 Tiến độ 50%", percent(50) + eq("d.completedLessonsCount", 1) +
   save("lessonCompletedAt", "d.lessons.find(l => l.lessonId === id('lessonAId')).completedAt"));
+GET("ENROLL-11.13 Học một trong hai bài hiện 50%", learners + "?sort=progressPercent,desc", 200, "tokenA",
+  eq("d.content[0].enrollmentId", id("enrollmentId")) + eq("d.content[0].progressPercent", 50) + eq("d.content[1].progressPercent", 0));
+GET("ENROLL-11.15 Sắp xếp tiến độ tăng dần", learners + "?sort=progressPercent,asc", 200, "tokenA",
+  eq("d.content[0].enrollmentId", id("enrollmentBId")) + eq("d.content[1].progressPercent", 50));
 progress("ENROLL-07.9 Gửi hoàn thành lần hai", 200, {}, V("lessonAId"), "studentToken", completedLesson);
 progressGet("ENROLL-07.9 Không đếm trùng", percent(50) + eq("d.completedLessonsCount", 1));
 progress("ENROLL-07.11 Giây xem không giảm", 200, { watchedSeconds: 10 }, V("lessonAId"), "studentToken", eq("d.watchedSeconds", 60));
@@ -207,6 +243,10 @@ progressGet("ENROLL-07.10 Hoàn thành 100%", percent(100) + eq("d.status", "'CO
 GET("ENROLL-07.10 Lưu mốc hoàn thành khóa", own, 200, "studentToken", save("enrollmentCompletedAt", "d.completedAt"));
 const certCheck = eq("d.userId", id("studentId")) + eq("d.courseId", id("publishedCourseId")) + unchangedCertificate;
 GET("ENROLL-06.1 Chứng chỉ được cấp", cert, 200, "studentToken", certCheck + save("certificateId") + save("issuedAt", "d.issuedAt"));
+GET("ENROLL-11.14 Hoàn thành có ngày và mã chứng chỉ", learners + "?status=COMPLETED", 200, "tokenA",
+  learnerFields + eq("d.totalElements", 1) + eq("d.content[0].enrollmentId", id("enrollmentId")) +
+  eq("d.content[0].progressPercent", 100) + eq("d.content[0].certificateCode", cv("certificateCode")) +
+  eq("d.content[0].completedAt", cv("enrollmentCompletedAt")));
 GET("ENROLL-06.2 Không token", cert, 401, null);
 GET("ENROLL-06.3 B đọc chứng chỉ của S", cert, 403, "tokenB");
 GET("ENROLL-06.4 Lượt không tồn tại", "/api/enrollments/" + V("missingId") + "/certificate", 404);
@@ -282,6 +322,7 @@ del("ENROLL-05.6 Thiếu courseId", 400, "studentToken", "/api/enrollments");
 del("ENROLL-05.7 B chỉ xóa lượt của B", 200, "tokenB");
 GET("ENROLL-05.7 S vẫn còn lượt", own, 200, "studentToken", eq("d.userId", id("studentId")));
 del("ENROLL-05.1 Xóa lượt S", 200);
+GET("ENROLL-11.16 Xóa lượt thì biến mất khỏi danh sách", learners, 200, "tokenA", eq("d.content", "[]") + eq("d.totalElements", 0));
 GET("ENROLL-05.1 ID cũ không còn", own, 404);
 GET("ENROLL-05.1 Tiến độ đã xóa", "/api/progress?courseId=" + V("publishedCourseId"), 404);
 GET("ENROLL-05.1 Chứng chỉ riêng đã xóa", cert, 404);

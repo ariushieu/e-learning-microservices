@@ -61,6 +61,26 @@ class EnrollmentRoutingIntegrationTest {
     }
 
     @Test
+    void learnerReadsReachEnrollmentWithQueryAndToken() throws Exception {
+        String path = "/api/courses/10/learners?status=ACTIVE&page=1&size=2&sort=progressPercent,desc";
+        var response = request("GET", path, true);
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.body()).startsWith("enrollment GET " + path + " Bearer ");
+    }
+
+    @Test
+    void anonymousLearnerReadsReachEnrollmentForServiceAuthentication() throws Exception {
+        // The actual service's JWT rejection is covered by CourseLearnerApiIntegrationTest.
+        assertThat(request("GET", "/api/courses/10/learners", false).body())
+                .startsWith("enrollment GET /api/courses/10/learners null");
+        for (String path : List.of("/api/courses/10", "/api/courses/10/curriculum", "/api/courses/10/reviews")) {
+            assertThat(request("GET", path, false).body()).startsWith("course GET " + path);
+        }
+        assertThat(request("POST", "/api/courses/10/learners", true).body())
+                .startsWith("course POST /api/courses/10/learners");
+    }
+
+    @Test
     void progressWritesRequireAuthentication() throws Exception {
         assertThat(request("PUT", "/api/lessons/101/progress", false).statusCode()).isEqualTo(401);
     }

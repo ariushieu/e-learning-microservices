@@ -68,7 +68,7 @@ class CourseSnapshotKafkaIntegrationTest {
         send(published);
         await().atMost(Duration.ofSeconds(20)).untilAsserted(() ->
                 assertThat(snapshots.findById(301L)).isPresent());
-        var enrolled = enrollments.enroll(901L, EnrollCourseRequest.builder().courseId(301L).build());
+        var enrolled = enrollments.enroll(901L, "Learner 901", EnrollCourseRequest.builder().courseId(301L).build());
         assertThat(enrolled.getCourseTitle()).isEqualTo("Java");
         assertThat(outbox.findAll()).anyMatch(e -> "enrollment.created".equals(e.getEventType()));
 
@@ -90,7 +90,7 @@ class CourseSnapshotKafkaIntegrationTest {
             assertThat(snapshot.getInstructorId()).isNull();
             assertThat(snapshot.getInstructorName()).isNull();
         });
-        assertThatThrownBy(() -> enrollments.enroll(902L, EnrollCourseRequest.builder().courseId(301L).build()))
+        assertThatThrownBy(() -> enrollments.enroll(902L, "Learner 902", EnrollCourseRequest.builder().courseId(301L).build()))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
