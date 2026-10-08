@@ -1,0 +1,50 @@
+[
+  {
+    "name": "Author downloads from page 2",
+    "pass": true
+  },
+  {
+    "name": "UTF-8 BOM preserved by frontend",
+    "pass": true
+  },
+  {
+    "name": "All 21 learners exported from page 2",
+    "pass": true
+  },
+  {
+    "name": "Vietnamese name preserved",
+    "pass": true
+  },
+  {
+    "name": "No horizontal page overflow 375",
+    "pass": true
+  },
+  {
+    "name": "CSV link visible 375",
+    "pass": true
+  },
+  {
+    "name": "No horizontal page overflow 768",
+    "pass": true
+  },
+  {
+    "name": "CSV link visible 768",
+    "pass": true
+  },
+  {
+    "name": "No horizontal page overflow 1366",
+    "pass": true
+  },
+  {
+    "name": "CSV link visible 1366",
+    "pass": true
+  },
+  {
+    "name": "Empty quiz downloads header only",
+    "pass": true
+  },
+  {
+    "name": "Other instructor has no CSV link",
+    "pass": true
+  }
+]
