@@ -48,6 +48,9 @@ public class CourseLearnerService {
                 throw new BusinessException(ErrorCode.BAD_REQUEST, "Chỉ sắp xếp theo enrolledAt hoặc progressPercent");
             }
         }
+        if (pageable.getOffset() > Integer.MAX_VALUE) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "Trang vượt quá giới hạn phân trang");
+        }
         // A unique tie-breaker keeps equal timestamps/progress stable across pages.
         var sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
                 pageable.getSort().and(Sort.by(Sort.Direction.DESC, "id")));

@@ -161,7 +161,7 @@ class CourseLearnerApiIntegrationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"status=UNKNOWN", "page=-1", "page=abc", "size=0", "size=101", "size=abc",
+    @ValueSource(strings = {"status=UNKNOWN", "page=-1", "page=abc", "page=2147483647", "size=0", "size=101", "size=abc",
             "sort=learnerName", "sort=userId", "sort=courseId", "sort=progressPercent,desc&sort=createdAt"})
     void invalidQueriesAre400(String query) throws Exception {
         mvc.perform(get(PATH + "?" + query).header("Authorization", owner())).andExpect(status().isBadRequest());

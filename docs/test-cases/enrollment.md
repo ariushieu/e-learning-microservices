@@ -218,6 +218,7 @@ Response `ApiResponse<PageResponse<...>>`: `enrollmentId`, `userId` (để web h
 `certificateCode` nullable. Không email, token hoặc thông tin tài khoản khác; `Cache-Control: no-store`.
 Mặc định page=0, size=10, sort=enrolledAt,desc; size 1–100; chỉ sort enrolledAt/progressPercent,
 có thể gửi nhiều tham số sort. ID giảm dần là thứ tự phụ khi giá trị bằng nhau.
+Offset page × size vượt giới hạn số nguyên của JPA trả 400 thay vì lỗi 500.
 
 | # | Tình huống | Tài khoản | Mong đợi |
 |---|---|---|---|
