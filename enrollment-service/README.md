@@ -337,3 +337,60 @@ học viên đã bỏ khóa. Lỗi summary không che danh sách học viên; l�
 
 Triển khai gateway, enrollment-service và frontend cùng phiên bản. Không đổi schema/migration.
 Các ca và cách tái hiện nằm ở ENROLL-12 trong `docs/test-cases/enrollment.md` và thư mục 7 của collection.
+
+## Hoàn thành bài học từ kết quả quiz
+
+`QuizGradedConsumer` nghe `elearning.quiz.events` bằng group riêng `enrollment-quiz-progress`
+(`app.quiz-progress.group-id`). Chỉ sự kiện `quiz.graded` đạt, có `lessonId`, ghi danh ACTIVE
+và bài nằm trong `course_snapshots.lesson_ids` mới cập nhật tiến độ. Sự kiện trượt, quiz cấp
+khóa học, tác giả làm thử, ghi danh CANCELLED/COMPLETED hoặc bài ngoài đề cương được ghi nhận
+là đã xét rồi bỏ qua. Không tạo ghi danh và không gọi HTTP bằng token giả trên luồng Kafka.
+
+`QuizProgressProcessor` ghi `processed_quiz_events` cùng transaction với tiến độ, chứng chỉ
+và hai sự kiện outbox. Khóa chính `event_id` chống trùng giữa các partition/bản service;
+chỉ lỗi trùng của INSERT sổ sự kiện được bỏ qua. Lỗi database khác vẫn rollback và retry.
+Khóa hàng enrollment dùng chung với cập nhật tay, hủy và xóa ghi danh. Bộ đếm tiến độ,
+ngày hoàn thành, chứng chỉ và outbox dùng chung hàm nghiệp vụ với PUT tiến độ; số giây đã
+xem chỉ tăng, bài đã hoàn thành không bị hạ trạng thái.
+
+Tên chứng chỉ tự cấp lấy từ `enrollments.learner_name`, đã được xác thực bằng JWT khi ghi
+danh. Với ghi danh cũ chưa có tên, vẫn cấp mã/ngày chứng chỉ; chủ sở hữu mở chứng chỉ sau
+đăng nhập để bổ sung tên theo cơ chế V2. Trước đó API xác minh công khai trả 422, không đoán
+tên từ email hay payload quiz.
+
+### Triển khai và dữ liệu cũ
+
+- Flyway **V4__add_quiz_progress_events.sql** thêm `lesson_ids` kiểu JSON và sổ sự kiện.
+  Không sửa các migration đã merge. Kiểm entity/schema trên MySQL bằng `scripts/verify-schema.sh`.
+- `QuizGradedEvent.lessonId` và `CourseUpdatedEvent.lessonIds` là trường tùy chọn mới.
+  Producer/consumer cũ đọc được nhờ `ignoreUnknown`; sự kiện quiz cũ thiếu lessonId không
+  làm thay đổi tiến độ. Snapshot cũ thiếu lessonIds được coi là chưa biết đề cương.
+- Triển khai course-service (phát ID bài), quiz-service (phát lessonId), enrollment-service
+  và web cùng lượt. Course publisher lấy danh sách ID sau flush trong transaction hiện có;
+  không truyền nội dung bài học hoặc đáp án qua snapshot.
+- **Khóa xuất bản trước bản này:** chủ khóa/admin gọi `PUT /api/courses/{id}` với dữ liệu
+  hiện tại để phát lại snapshot trước khi thử quiz; không tự ghi SQL. Không hoàn thành bài
+  bằng cách suy ra ID từ tổng số bài. Nếu quiz đến trước snapshot đủ dữ liệu thì bỏ qua
+  theo điều kiện nghiệp vụ; học viên có thể hoàn thành thủ công hoặc làm lượt quiz mới
+  sau khi snapshot đã đồng bộ.
+- Không xóa sổ `processed_quiz_events` khi reset offset/replay Kafka: xóa sẽ mất thông tin
+  chống trùng. Bản này chưa tự dọn sổ vì chưa có chính sách thời hạn replay của nhóm.
+- Lỗi JSON/định danh đi thẳng vào `elearning.quiz.events.DLT`; lỗi MySQL retry hữu hạn theo
+  `elearning.kafka.retry.*` (mặc định 5 phút). Chỉ qua offset lỗi khi broker xác nhận DLT.
+  Khi đọc DLT phải lọc header group `enrollment-quiz-progress` vì notification cũng dùng topic này.
+
+### Kiểm tra và giao diện
+
+Trang học hiện hướng dẫn dưới tiêu đề quiz; kiểm tiến độ tối đa 12 lần, cách nhau 1 giây,
+khi mở/quay lại trang hoặc trở lại tab. Chỉ refresh khi trạng thái đổi, dừng khi rời trang.
+Vẫn giữ nút hoàn thành thủ công; lỗi kiểm tra nền không che bài học.
+
+- `QuizProgressIntegrationTest`: giao dịch thật với H2, bản sao sự kiện, đồng thời, rollback,
+  điều kiện bỏ qua, dữ liệu cũ, thao tác thủ công sau sự kiện.
+- `QuizProgressKafkaIntegrationTest`: broker thật trong JVM, đồng bộ đề cương, retry, DLT,
+  không chặn sự kiện tiếp theo. Lỗi DB trong lớp này được mô phỏng, không phải tắt MySQL thật.
+- Collection enrollment nhóm ENROLL-13: tạo/làm/nộp quiz qua gateway và chờ bằng polling.
+- `scripts/check-enrollment-quiz-recovery.py`: MySQL/Kafka Docker thật, kiểm offset lúc mất
+  DB và replay nguyên byte của sự kiện quiz. Chỉ chạy trên overlay dùng riêng của workflow.
+- `scripts/check-enrollment-quiz-ui.cjs`: Chromium, quay lại bằng Back sau khi đạt quiz,
+  ảnh trước/sau ở 1366/768/375px. CI lưu bằng chứng đã loại token trong artifact.

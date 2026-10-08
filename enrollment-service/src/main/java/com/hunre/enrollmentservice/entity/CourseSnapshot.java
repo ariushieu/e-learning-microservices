@@ -12,6 +12,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.List;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "course_snapshots")
@@ -44,6 +47,11 @@ public class CourseSnapshot {
     @Column(name = "total_lessons", nullable = false)
     @Builder.Default
     private Integer totalLessons = 0;
+
+    /** Chỉ có id bài, không sao chép nội dung học hay đáp án. null = snapshot cũ. */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "lesson_ids", columnDefinition = "json")
+    private List<Long> lessonIds;
 
     @Column(name = "status", nullable = false, length = 20)
     @Builder.Default

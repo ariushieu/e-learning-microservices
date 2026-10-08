@@ -78,6 +78,29 @@ public class ProgressServiceImpl implements ProgressService {
         // Không dùng tổng số bài trong snapshot để suy đoán tính hợp lệ của lessonId.
         courseLessonClient.validateLesson(courseId, lessonId);
 
+        return applyLessonProgress(enrollment, request, false);
+    }
+
+    @Override
+    @Transactional
+    public void completeLessonFromQuiz(Long userId, Long courseId, Long lessonId) {
+        // Cùng khóa hàng với PUT/GET tiến độ: sự kiện và thao tác tay không cấp chứng chỉ hai lần.
+        Enrollment enrollment = enrollmentRepository.findForProgressUpdate(userId, courseId).orElse(null);
+        if (enrollment == null || enrollment.getStatus() != EnrollmentStatus.ACTIVE) return;
+        CourseSnapshot snapshot = courseSnapshotRepository.findById(courseId).orElse(null);
+        if (snapshot == null || snapshot.getLessonIds() == null || !snapshot.getLessonIds().contains(lessonId)
+                || snapshot.getTotalLessons() == null || snapshot.getTotalLessons() <= 0) return;
+
+        // Không gọi API cần JWT trên luồng Kafka. Danh tính và đề cương đều đến từ dữ liệu đã xác thực.
+        applyLessonProgress(enrollment, UpdateLessonProgressRequest.builder()
+                .courseId(courseId).lessonId(lessonId).status(LessonProgressStatus.COMPLETED).build(), true);
+    }
+
+    private LessonProgressResponse applyLessonProgress(Enrollment enrollment,
+                                                       UpdateLessonProgressRequest request, boolean fromQuiz) {
+        Long courseId = enrollment.getCourseId();
+        Long lessonId = request.getLessonId();
+
         // 2. Tìm hoặc tạo mới bản ghi tiến độ bài học
         LessonProgress lessonProgress = lessonProgressRepository
                 .findByEnrollmentIdAndLessonId(enrollment.getId(), lessonId)
@@ -125,7 +148,7 @@ public class ProgressServiceImpl implements ProgressService {
                 enrollment.setStatus(EnrollmentStatus.COMPLETED);
                 enrollment.setCompletedAt(Instant.now());
                 saveEnrollmentCompletedOutboxEvent(enrollment);
-                issueCertificateIfAbsent(enrollment);
+                issueCertificateIfAbsent(enrollment, fromQuiz);
             }
         }
 
@@ -134,7 +157,7 @@ public class ProgressServiceImpl implements ProgressService {
         enrollmentRepository.save(enrollment);
 
         log.info("Cập nhật tiến độ: user={}, course={}, lesson={}, courseProgress={}%",
-                currentUserId, courseId, lessonId, progressPercent);
+                enrollment.getUserId(), courseId, lessonId, progressPercent);
 
         return LessonProgressResponse.from(savedLessonProgress);
     }
@@ -216,6 +239,10 @@ public class ProgressServiceImpl implements ProgressService {
     }
 
     private void issueCertificateIfAbsent(Enrollment enrollment) {
+        issueCertificateIfAbsent(enrollment, false);
+    }
+
+    private void issueCertificateIfAbsent(Enrollment enrollment, boolean fromQuiz) {
         if (!certificateRepository.existsByEnrollmentId(enrollment.getId())) {
             // Mã công khai không nhúng ID người dùng/khóa học và không dễ đoán.
             String certCode = "CERT-" + UUID.randomUUID().toString().replace("-", "").toUpperCase();
@@ -232,7 +259,14 @@ public class ProgressServiceImpl implements ProgressService {
                     .orElseGet(() -> courseClient.getCourseById(enrollment.getCourseId())
                             .map(CourseDto::getTitle)
                             .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông tin khóa học")));
-            certificateDetails.captureIfMissing(certificate, enrollment.getUserId(), issuedCourseTitle);
+            if (fromQuiz) {
+                // learnerName đã lấy từ JWT khi ghi danh. Ghi danh cũ có thể chưa có tên:
+                // vẫn cấp mã, tên được bổ sung khi chính chủ mở chứng chỉ theo luồng hiện có.
+                certificate.setLearnerName(enrollment.getLearnerName());
+                certificate.setCourseTitle(issuedCourseTitle);
+            } else {
+                certificateDetails.captureIfMissing(certificate, enrollment.getUserId(), issuedCourseTitle);
+            }
 
             Certificate savedCert = certificateRepository.save(certificate);
             if (savedCert == null) {

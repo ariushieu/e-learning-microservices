@@ -53,6 +53,7 @@ class QuizOutboxIntegrationTest {
     void submittingAttemptCommitsResultAndPendingOutboxEventWithoutKafka() {
         Quiz quiz = Quiz.builder()
                 .courseId(12L)
+                .lessonId(1202L)
                 .title("Outbox test quiz")
                 .createdBy(7L)
                 .status(QuizStatus.PUBLISHED)
@@ -95,12 +96,13 @@ class QuizOutboxIntegrationTest {
         QuizGradedEvent expected = new QuizGradedEvent(
                 event.getEventId(), Instant.parse(payload.get("occurredAt").asString()),
                 attemptId, quiz.getId(), quiz.getCourseId(), 99L,
-                quiz.getTitle(), result.getScore(), result.isPassed());
+                quiz.getTitle(), result.getScore(), result.isPassed(), 1202L);
         // Compare the complete persisted text, not just parsed numeric values.
         assertThat(event.getPayload()).isEqualTo(objectMapper.writeValueAsString(expected));
         assertThat(payload.get("attemptId").asLong()).isEqualTo(attemptId);
         assertThat(payload.get("quizId").asLong()).isEqualTo(quiz.getId());
         assertThat(payload.get("userId").asLong()).isEqualTo(99L);
         assertThat(payload.get("passed").asBoolean()).isTrue();
+        assertThat(payload.get("lessonId").asLong()).isEqualTo(1202L);
     }
 }

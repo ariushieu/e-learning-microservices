@@ -6,6 +6,9 @@ import com.hunre.enrollmentservice.dto.response.LessonProgressResponse;
 
 public interface ProgressService {
 
+    /** Gọi từ consumer tin cậy, kiểm ghi danh ACTIVE và đề cương snapshot trong cùng transaction. */
+    void completeLessonFromQuiz(Long userId, Long courseId, Long lessonId);
+
     /**
      * Cập nhật tiến độ học tập cho một bài học và tự động tính toán lại % hoàn thành khóa học.
      *

@@ -1,6 +1,7 @@
 package com.hunre.enrollmentservice.config;
 
 import com.hunre.enrollmentservice.consumer.InvalidCourseEventException;
+import com.hunre.enrollmentservice.consumer.InvalidQuizEventException;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +44,7 @@ public class KafkaErrorHandlingConfig {
         var handler = new DefaultErrorHandler(recoverer, backOff);
         // Một outage có thể đổi loại exception; không cấp lại ngân sách retry từ đầu.
         handler.setResetStateOnExceptionChange(false);
-        handler.addNotRetryableExceptions(InvalidCourseEventException.class, JacksonException.class,
+        handler.addNotRetryableExceptions(InvalidCourseEventException.class, InvalidQuizEventException.class, JacksonException.class,
                 DataIntegrityViolationException.class);
         return handler;
     }

@@ -12,12 +12,9 @@ import type { LessonProgress, LessonProgressStatus } from "@/lib/types";
 /**
  * Ghi tiến độ cho bài đang mở.
  *
- * Chỉ báo IN_PROGRESS khi bài chưa có tiến độ: backend ghi đè trạng thái theo request, gửi
- * IN_PROGRESS cho bài đã xong sẽ hạ nó về "đang học" và có thể kéo khóa đã hoàn thành về ACTIVE.
- *
- * Cùng lý do, "Đánh dấu hoàn thành" phải chờ lệnh IN_PROGRESS gửi lúc mở bài chạy xong. Bấm
- * nhanh thì hai request đi song song, COMPLETED có thể tới backend trước rồi bị IN_PROGRESS
- * ghi đè — chạy thử E2E đã gặp đúng chuyện này.
+ * Chỉ báo IN_PROGRESS khi bài chưa có tiến độ để tránh ghi dư thừa. Chờ request mở bài
+ * trước khi hoàn thành giúp UI gửi theo đúng thứ tự; backend dùng khóa transaction và
+ * không hạ trạng thái COMPLETED, kể cả sự kiện quiz đến đồng thời với thao tác tay.
  */
 export function LessonActions({
   courseId,

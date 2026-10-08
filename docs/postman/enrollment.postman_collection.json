@@ -9854,7 +9854,1890 @@
       ]
     },
     {
-      "name": "8. ENROLL-09 — thao tác hạ tầng thủ công",
+      "name": "8. ENROLL-13 — quiz tự hoàn thành bài học",
+      "description": "Quiz → Kafka → tiến độ → chứng chỉ → thông báo. Poll có giới hạn; ENROLL-13.6 giao trùng và lỗi DB được kiểm bằng test Kafka/transaction, không giả lập bằng một lần submit HTTP khác.",
+      "item": [
+        {
+          "name": "ENROLL-13.SETUP Khóa hai bài",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/courses",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": {{categoryId}},\n  \"title\": \"Quiz tự hoàn thành {{runId}}\",\n  \"slug\": \"quiz-progress-{{runId}}\",\n  \"description\": \"Fixture Kafka progress\",\n  \"price\": 0,\n  \"level\": \"BEGINNER\",\n  \"language\": \"vi\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.SETUP Khóa hai bài — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.SETUP Khóa hai bài — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.collectionVariables.set(\"quizProgressCourseId\", d.id);pm.collectionVariables.set(\"quizProgressTitle\", d.title);",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.SETUP Chương",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/courses/{{quizProgressCourseId}}/sections",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Chương quiz\",\n  \"position\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.SETUP Chương — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.SETUP Chương — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.collectionVariables.set(\"quizProgressSectionId\", d.id);",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.SETUP Bài 1",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/sections/{{quizProgressSectionId}}/lessons",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Bài quiz 1\",\n  \"type\": \"ARTICLE\",\n  \"content\": \"Học bài rồi làm bài kiểm tra.\",\n  \"durationSeconds\": 60,\n  \"position\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.SETUP Bài 1 — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.SETUP Bài 1 — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.collectionVariables.set(\"quizProgressLesson1Id\", d.id);",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.SETUP Bài 2",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/sections/{{quizProgressSectionId}}/lessons",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Bài quiz 2\",\n  \"type\": \"ARTICLE\",\n  \"content\": \"Học bài rồi làm bài kiểm tra.\",\n  \"durationSeconds\": 60,\n  \"position\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.SETUP Bài 2 — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.SETUP Bài 2 — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.collectionVariables.set(\"quizProgressLesson2Id\", d.id);",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.SETUP Xuất bản đề cương",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/courses/{{quizProgressCourseId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"PUBLISHED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.SETUP Xuất bản đề cương — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.SETUP Xuất bản đề cương — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.SETUP Tạo quiz linked",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/quizzes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{quizProgressCourseId}},\n  \"lessonId\": {{quizProgressLesson2Id}},\n  \"title\": \"Quiz linked {{runId}}\",\n  \"passScore\": 50,\n  \"maxAttempts\": 0,\n  \"shuffleQuestions\": false,\n  \"shuffleOptions\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.SETUP Tạo quiz linked — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.SETUP Tạo quiz linked — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.collectionVariables.set(\"linkedQuizId\", d.id);pm.collectionVariables.set(\"linkedQuizTitle\", d.title);",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.SETUP Câu hỏi linked",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/quizzes/{{linkedQuizId}}/questions",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"2 + 2 = ?\",\n  \"type\": \"SINGLE_CHOICE\",\n  \"score\": 1,\n  \"position\": 0,\n  \"options\": [\n    {\n      \"content\": \"4\",\n      \"isCorrect\": true,\n      \"position\": 0\n    },\n    {\n      \"content\": \"5\",\n      \"isCorrect\": false,\n      \"position\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.SETUP Câu hỏi linked — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.SETUP Câu hỏi linked — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.collectionVariables.set(\"linkedQuestionId\", d.id);pm.collectionVariables.set(\"linkedCorrectId\", d.options.find(o => o.isCorrect).id);",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.SETUP Xuất bản quiz linked",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/quizzes/{{linkedQuizId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"PUBLISHED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.SETUP Xuất bản quiz linked — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.SETUP Xuất bản quiz linked — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.SETUP Tạo quiz unlinked",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/quizzes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{quizProgressCourseId}},\n  \"lessonId\": null,\n  \"title\": \"Quiz unlinked {{runId}}\",\n  \"passScore\": 50,\n  \"maxAttempts\": 0,\n  \"shuffleQuestions\": false,\n  \"shuffleOptions\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.SETUP Tạo quiz unlinked — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.SETUP Tạo quiz unlinked — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.collectionVariables.set(\"unlinkedQuizId\", d.id);pm.collectionVariables.set(\"unlinkedQuizTitle\", d.title);",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.SETUP Câu hỏi unlinked",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/quizzes/{{unlinkedQuizId}}/questions",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"2 + 2 = ?\",\n  \"type\": \"SINGLE_CHOICE\",\n  \"score\": 1,\n  \"position\": 0,\n  \"options\": [\n    {\n      \"content\": \"4\",\n      \"isCorrect\": true,\n      \"position\": 0\n    },\n    {\n      \"content\": \"5\",\n      \"isCorrect\": false,\n      \"position\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.SETUP Câu hỏi unlinked — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.SETUP Câu hỏi unlinked — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.collectionVariables.set(\"unlinkedQuestionId\", d.id);pm.collectionVariables.set(\"unlinkedCorrectId\", d.options.find(o => o.isCorrect).id);",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.SETUP Xuất bản quiz unlinked",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/quizzes/{{unlinkedQuizId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"PUBLISHED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.SETUP Xuất bản quiz unlinked — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.SETUP Xuất bản quiz unlinked — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.SETUP Ghi danh studentToken",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/enrollments",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{quizProgressCourseId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "const ready = (pm.response.code === 201);",
+                  "const pollKey = 'poll:' + pm.info.requestName;",
+                  "const attempts = Number(cv(pollKey) || 0);",
+                  "if (!ready && pm.response.code < 500 && attempts < 12) {",
+                  "  pm.collectionVariables.set(pollKey, attempts + 1);",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset(pollKey);",
+                  "pm.test(\"ENROLL-13.SETUP Ghi danh studentToken — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.SETUP Ghi danh studentToken — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.collectionVariables.set(\"quizProgressEnrollmentId\", d.id);",
+                  "});",
+                  "}",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409 && attempts >= 12) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.SETUP Ghi danh tokenB",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/enrollments",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{quizProgressCourseId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "const ready = (pm.response.code === 201);",
+                  "const pollKey = 'poll:' + pm.info.requestName;",
+                  "const attempts = Number(cv(pollKey) || 0);",
+                  "if (!ready && pm.response.code < 500 && attempts < 12) {",
+                  "  pm.collectionVariables.set(pollKey, attempts + 1);",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset(pollKey);",
+                  "pm.test(\"ENROLL-13.SETUP Ghi danh tokenB — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.SETUP Ghi danh tokenB — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.collectionVariables.set(\"quizCancelledEnrollmentId\", d.id);",
+                  "});",
+                  "}",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409 && attempts >= 12) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.SETUP S đã xong bài 1",
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/lessons/{{quizProgressLesson1Id}}/progress",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{quizProgressCourseId}},\n  \"status\": \"COMPLETED\",\n  \"watchedSeconds\": 60\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.SETUP S đã xong bài 1 — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.SETUP S đã xong bài 1 — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.2 Trượt Bắt đầu",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/quizzes/{{linkedQuizId}}/attempts"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.2 Trượt Bắt đầu — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.2 Trượt Bắt đầu — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.collectionVariables.set(\"quizProgressAttemptId\", d.id);",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.2 Trượt Nộp bài",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/attempts/{{quizProgressAttemptId}}/submit",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.2 Trượt Nộp bài — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.2 Trượt Nộp bài — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.expect(d.passed).to.eql(false);pm.expect(Number(d.score)).to.eql(0);",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.2 Sự kiện đã tới notification",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/notifications?size=100"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "const ready = (d && d.content && d.content.some(n => n.type === 'QUIZ_GRADED' && n.linkUrl === '/attempts/' + cv('quizProgressAttemptId')));",
+                  "const pollKey = 'poll:' + pm.info.requestName;",
+                  "const attempts = Number(cv(pollKey) || 0);",
+                  "if (!ready && pm.response.code < 500 && attempts < 12) {",
+                  "  pm.collectionVariables.set(pollKey, attempts + 1);",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset(pollKey);",
+                  "pm.test(\"ENROLL-13.2 Sự kiện đã tới notification — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.2 Sự kiện đã tới notification — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.expect(d.content.some(n => n.type === 'QUIZ_GRADED' && n.linkUrl === '/attempts/' + cv('quizProgressAttemptId'))).to.eql(true);",
+                  "});",
+                  "}",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.2 Tiến độ S không đổi",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/progress?courseId={{quizProgressCourseId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.2 Tiến độ S không đổi — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.2 Tiến độ S không đổi — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.expect(d.status).to.eql('ACTIVE');pm.expect(Number(d.progressPercent)).to.eql(50);pm.expect(d.lessons.some(l => l.lessonId === id('quizProgressLesson2Id') && l.status === 'COMPLETED')).to.eql(false);const key = 'observe:' + pm.info.requestName; const n = Number(cv(key) || 0); if (n < 4) { pm.collectionVariables.set(key, n + 1); setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000); } else { pm.collectionVariables.unset(key); }",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.3 Không gắn bài Bắt đầu",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/quizzes/{{unlinkedQuizId}}/attempts"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.3 Không gắn bài Bắt đầu — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.3 Không gắn bài Bắt đầu — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.collectionVariables.set(\"quizProgressAttemptId\", d.id);",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.3 Không gắn bài Nộp bài",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/attempts/{{quizProgressAttemptId}}/submit",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": [\n    {\n      \"questionId\": {{unlinkedQuestionId}},\n      \"selectedOptionIds\": [\n        {{unlinkedCorrectId}}\n      ]\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.3 Không gắn bài Nộp bài — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.3 Không gắn bài Nộp bài — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.expect(d.passed).to.eql(true);pm.expect(Number(d.score)).to.eql(100);",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.3 Sự kiện đã tới notification",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/notifications?size=100"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "const ready = (d && d.content && d.content.some(n => n.type === 'QUIZ_GRADED' && n.linkUrl === '/attempts/' + cv('quizProgressAttemptId')));",
+                  "const pollKey = 'poll:' + pm.info.requestName;",
+                  "const attempts = Number(cv(pollKey) || 0);",
+                  "if (!ready && pm.response.code < 500 && attempts < 12) {",
+                  "  pm.collectionVariables.set(pollKey, attempts + 1);",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset(pollKey);",
+                  "pm.test(\"ENROLL-13.3 Sự kiện đã tới notification — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.3 Sự kiện đã tới notification — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.expect(d.content.some(n => n.type === 'QUIZ_GRADED' && n.linkUrl === '/attempts/' + cv('quizProgressAttemptId'))).to.eql(true);",
+                  "});",
+                  "}",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.3 Tiến độ S không đổi",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/progress?courseId={{quizProgressCourseId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.3 Tiến độ S không đổi — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.3 Tiến độ S không đổi — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.expect(d.status).to.eql('ACTIVE');pm.expect(Number(d.progressPercent)).to.eql(50);pm.expect(d.lessons.some(l => l.lessonId === id('quizProgressLesson2Id') && l.status === 'COMPLETED')).to.eql(false);const key = 'observe:' + pm.info.requestName; const n = Number(cv(key) || 0); if (n < 4) { pm.collectionVariables.set(key, n + 1); setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000); } else { pm.collectionVariables.unset(key); }",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.4 Tác giả làm thử Bắt đầu",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/quizzes/{{linkedQuizId}}/attempts"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.4 Tác giả làm thử Bắt đầu — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.4 Tác giả làm thử Bắt đầu — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.collectionVariables.set(\"quizProgressAttemptId\", d.id);",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.4 Tác giả làm thử Nộp bài",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/attempts/{{quizProgressAttemptId}}/submit",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": [\n    {\n      \"questionId\": {{linkedQuestionId}},\n      \"selectedOptionIds\": [\n        {{linkedCorrectId}}\n      ]\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.4 Tác giả làm thử Nộp bài — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.4 Tác giả làm thử Nộp bài — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.expect(d.passed).to.eql(true);pm.expect(Number(d.score)).to.eql(100);",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.4 Sự kiện đã tới notification",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/notifications?size=100"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "const ready = (d && d.content && d.content.some(n => n.type === 'QUIZ_GRADED' && n.linkUrl === '/attempts/' + cv('quizProgressAttemptId')));",
+                  "const pollKey = 'poll:' + pm.info.requestName;",
+                  "const attempts = Number(cv(pollKey) || 0);",
+                  "if (!ready && pm.response.code < 500 && attempts < 12) {",
+                  "  pm.collectionVariables.set(pollKey, attempts + 1);",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset(pollKey);",
+                  "pm.test(\"ENROLL-13.4 Sự kiện đã tới notification — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.4 Sự kiện đã tới notification — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.expect(d.content.some(n => n.type === 'QUIZ_GRADED' && n.linkUrl === '/attempts/' + cv('quizProgressAttemptId'))).to.eql(true);",
+                  "});",
+                  "}",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.4 Không tự ghi danh tác giả",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/progress?courseId={{quizProgressCourseId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.4 Không tự ghi danh tác giả — HTTP 404\", () => {",
+                  "pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test('Lỗi có hợp đồng API', () => { pm.expect(response.success).to.eql(false); pm.expect(response.code).to.be.a('string'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.5 B bắt đầu trước khi hủy ghi danh Bắt đầu",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/quizzes/{{linkedQuizId}}/attempts"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.5 B bắt đầu trước khi hủy ghi danh Bắt đầu — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.5 B bắt đầu trước khi hủy ghi danh Bắt đầu — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.collectionVariables.set(\"quizProgressAttemptId\", d.id);",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.5 Hủy ghi danh B",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/enrollments/{{quizCancelledEnrollmentId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CANCELLED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.5 Hủy ghi danh B — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.5 Hủy ghi danh B — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.expect(d.status).to.eql('CANCELLED');",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.5 Đạt sau khi hủy ghi danh Nộp bài",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/attempts/{{quizProgressAttemptId}}/submit",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": [\n    {\n      \"questionId\": {{linkedQuestionId}},\n      \"selectedOptionIds\": [\n        {{linkedCorrectId}}\n      ]\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.5 Đạt sau khi hủy ghi danh Nộp bài — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.5 Đạt sau khi hủy ghi danh Nộp bài — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.expect(d.passed).to.eql(true);pm.expect(Number(d.score)).to.eql(100);",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.5 Sự kiện đã tới notification",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/notifications?size=100"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "const ready = (d && d.content && d.content.some(n => n.type === 'QUIZ_GRADED' && n.linkUrl === '/attempts/' + cv('quizProgressAttemptId')));",
+                  "const pollKey = 'poll:' + pm.info.requestName;",
+                  "const attempts = Number(cv(pollKey) || 0);",
+                  "if (!ready && pm.response.code < 500 && attempts < 12) {",
+                  "  pm.collectionVariables.set(pollKey, attempts + 1);",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset(pollKey);",
+                  "pm.test(\"ENROLL-13.5 Sự kiện đã tới notification — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.5 Sự kiện đã tới notification — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.expect(d.content.some(n => n.type === 'QUIZ_GRADED' && n.linkUrl === '/attempts/' + cv('quizProgressAttemptId'))).to.eql(true);",
+                  "});",
+                  "}",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.5 Không khôi phục ghi danh đã hủy",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/enrollments/{{quizCancelledEnrollmentId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.5 Không khôi phục ghi danh đã hủy — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.5 Không khôi phục ghi danh đã hủy — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.expect(d.status).to.eql('CANCELLED');pm.expect(Number(d.progressPercent)).to.eql(0);",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.5 Không cấp chứng chỉ cho B",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/enrollments/{{quizCancelledEnrollmentId}}/certificate"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.5 Không cấp chứng chỉ cho B — HTTP 404\", () => {",
+                  "pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test('Lỗi có hợp đồng API', () => { pm.expect(response.success).to.eql(false); pm.expect(response.code).to.be.a('string'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.1 S đạt bài cuối Bắt đầu",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/quizzes/{{linkedQuizId}}/attempts"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.1 S đạt bài cuối Bắt đầu — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.1 S đạt bài cuối Bắt đầu — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.collectionVariables.set(\"quizProgressAttemptId\", d.id);",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.1 S đạt bài cuối Nộp bài",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/attempts/{{quizProgressAttemptId}}/submit",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": [\n    {\n      \"questionId\": {{linkedQuestionId}},\n      \"selectedOptionIds\": [\n        {{linkedCorrectId}}\n      ]\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.1 S đạt bài cuối Nộp bài — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.1 S đạt bài cuối Nộp bài — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.expect(d.passed).to.eql(true);pm.expect(Number(d.score)).to.eql(100);",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.1 Khóa và bài tự hoàn thành",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/progress?courseId={{quizProgressCourseId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "const ready = (d && d.status === 'COMPLETED');",
+                  "const pollKey = 'poll:' + pm.info.requestName;",
+                  "const attempts = Number(cv(pollKey) || 0);",
+                  "if (!ready && pm.response.code < 500 && attempts < 12) {",
+                  "  pm.collectionVariables.set(pollKey, attempts + 1);",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset(pollKey);",
+                  "pm.test(\"ENROLL-13.1 Khóa và bài tự hoàn thành — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.1 Khóa và bài tự hoàn thành — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.expect(d.status).to.eql('COMPLETED');pm.expect(Number(d.progressPercent)).to.eql(100);pm.expect(d.completedLessonsCount).to.eql(2);pm.expect(d.lessons.find(l => l.lessonId === id('quizProgressLesson2Id')).status).to.eql('COMPLETED');pm.collectionVariables.set(\"quizProgressCertificateCode\", d.certificateCode);",
+                  "});",
+                  "}",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.1 Chứng chỉ lưu tên học viên",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/enrollments/{{quizProgressEnrollmentId}}/certificate"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-13.1 Chứng chỉ lưu tên học viên — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.1 Chứng chỉ lưu tên học viên — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.expect(d.learnerName).to.eql(pm.collectionVariables.get(\"studentName\"));pm.expect(d.certificateCode).to.eql(pm.collectionVariables.get(\"quizProgressCertificateCode\"));",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-13.1 Thông báo hoàn thành và chứng chỉ đúng một lần",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/notifications?size=100"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "const ready = (d && d.content && ['COURSE_COMPLETED','CERTIFICATE_ISSUED'].every(type => d.content.some(n => n.type === type && n.linkUrl === '/certificates/' + cv('quizProgressEnrollmentId'))));",
+                  "const pollKey = 'poll:' + pm.info.requestName;",
+                  "const attempts = Number(cv(pollKey) || 0);",
+                  "if (!ready && pm.response.code < 500 && attempts < 12) {",
+                  "  pm.collectionVariables.set(pollKey, attempts + 1);",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 1000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset(pollKey);",
+                  "pm.test(\"ENROLL-13.1 Thông báo hoàn thành và chứng chỉ đúng một lần — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-13.1 Thông báo hoàn thành và chứng chỉ đúng một lần — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "const matching = d.content.filter(n => n.linkUrl === '/certificates/' + cv('quizProgressEnrollmentId')); for (const type of ['COURSE_COMPLETED', 'CERTIFICATE_ISSUED']) pm.expect(matching.filter(n => n.type === type)).to.have.length(1);",
+                  "});",
+                  "}",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "9. ENROLL-09 — thao tác hạ tầng thủ công",
       "item": [],
       "description": "Không giả PASS bằng HTTP. Năm ca ENROLL-09.1–09.5 cần dừng MySQL, gửi Kafka và làm DLT lỗi trên môi trường thử riêng. Thực hiện đúng docs/test-cases/enrollment.md, khôi phục hạ tầng sau mỗi ca; ghi HTTP là N/A cùng log, offset và message DLT trong biên bản. Runner không thực hiện năm ca này."
     }

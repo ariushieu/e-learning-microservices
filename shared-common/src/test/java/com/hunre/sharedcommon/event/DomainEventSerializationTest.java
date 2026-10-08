@@ -65,7 +65,7 @@ class DomainEventSerializationTest {
 
         assertThat(fieldNamesOf(event)).containsExactlyInAnyOrder(
                 "eventId", "eventType", "occurredAt", "attemptId", "quizId",
-                "courseId", "userId", "quizTitle", "score", "passed");
+                "courseId", "userId", "quizTitle", "score", "passed", "lessonId");
     }
 
     @Test
@@ -77,7 +77,7 @@ class DomainEventSerializationTest {
 
         assertThat(fieldNamesOf(event)).containsExactlyInAnyOrder(
                 "eventId", "eventType", "occurredAt", "courseId", "title", "slug",
-                "thumbnailUrl", "instructorId", "instructorName", "totalLessons", "status");
+                "thumbnailUrl", "instructorId", "instructorName", "totalLessons", "status", "lessonIds");
     }
 
     /**
@@ -94,7 +94,7 @@ class DomainEventSerializationTest {
         // synced_at do database tự điền nên không có trong sự kiện
         List<String> cotCuaCourseSnapshots = List.of(
                 "courseId", "title", "slug", "thumbnailUrl",
-                "instructorId", "instructorName", "totalLessons", "status");
+                "instructorId", "instructorName", "totalLessons", "status", "lessonIds");
 
         assertThat(fieldNamesOf(event)).containsAll(cotCuaCourseSnapshots);
     }

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.List;
 
 /**
  * Trạng thái hiện tại của một khóa học mà service khác được phép biết.
@@ -52,7 +53,8 @@ public record CourseUpdatedEvent(
         Long instructorId,
         String instructorName,
         Integer totalLessons,
-        String status
+        String status,
+        List<Long> lessonIds
 ) implements DomainEvent {
 
     @Override
@@ -65,6 +67,13 @@ public record CourseUpdatedEvent(
     public static CourseUpdatedEvent of(
             Long courseId, String title, String slug, String thumbnailUrl,
             Long instructorId, String instructorName, Integer totalLessons, String status) {
+        return of(courseId, title, slug, thumbnailUrl, instructorId, instructorName, totalLessons, status, null);
+    }
+
+    /** null là snapshot cũ chưa biết đề cương; danh sách rỗng là đề cương không có bài. */
+    public static CourseUpdatedEvent of(
+            Long courseId, String title, String slug, String thumbnailUrl,
+            Long instructorId, String instructorName, Integer totalLessons, String status, List<Long> lessonIds) {
 
         return new CourseUpdatedEvent(
                 UUID.randomUUID().toString(),
@@ -76,6 +85,7 @@ public record CourseUpdatedEvent(
                 instructorId,
                 instructorName,
                 totalLessons,
-                status);
+                status,
+                lessonIds == null ? null : List.copyOf(lessonIds));
     }
 }
