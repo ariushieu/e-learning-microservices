@@ -1,0 +1,325 @@
+{
+  "sourceCommit": "046f321631841840f52431d146eb5b0b8bc37e0a",
+  "collectionSha256": "277b5b446b1720cb2487a2e11479284aee6a14e19be4e813468b91b3d1f471d1",
+  "startedAt": "2026-10-08T13:57:29.087Z",
+  "completedAt": "2026-10-08T13:57:48.094Z",
+  "requests": {
+    "total": 51,
+    "pending": 0,
+    "failed": 0
+  },
+  "assertions": {
+    "total": 81,
+    "pending": 0,
+    "failed": 0
+  },
+  "executions": [
+    {
+      "name": "SETUP-01 Đăng nhập admin và bắt đầu lượt chạy",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-02.A Đăng ký (409 = đã có, đăng nhập ở bước sau)",
+      "http": 201,
+      "assertions": 1,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-03.A Đăng nhập lấy ID",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-04.A Cấp vai trò bằng API",
+      "http": 200,
+      "assertions": 1,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-05.A Đăng nhập lại lấy quyền mới",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-02.B Đăng ký (409 = đã có, đăng nhập ở bước sau)",
+      "http": 201,
+      "assertions": 1,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-03.B Đăng nhập lấy ID",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-04.B Cấp vai trò bằng API",
+      "http": 200,
+      "assertions": 1,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-05.B Đăng nhập lại lấy quyền mới",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-02.S Đăng ký (409 = đã có, đăng nhập ở bước sau)",
+      "http": 201,
+      "assertions": 1,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-03.S Đăng nhập lấy ID",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-04.S Cấp vai trò bằng API",
+      "http": 200,
+      "assertions": 1,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-05.S Đăng nhập lại lấy quyền mới",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-01 Admin tạo danh mục",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-02 Giảng viên tạo khóa nháp",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-03 Khách chưa thấy khóa nháp",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-04 Thêm chương",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-05 Thêm bài 1 (học thử)",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-06 Thêm bài 2",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-07 Xuất bản khóa",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-08 Khách thấy khóa trong danh mục",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-09 Khách xem chi tiết khóa",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-10 Tạo quiz",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-10 Câu 1 của quiz",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-10 Câu 2 của quiz",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-10 Xuất bản quiz",
+      "http": 200,
+      "assertions": 1,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-11 Học viên ghi danh",
+      "http": 404,
+      "assertions": 0,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-11 Học viên ghi danh",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-12 Thông báo ghi danh tới",
+      "http": 200,
+      "assertions": 0,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-12 Thông báo ghi danh tới",
+      "http": 200,
+      "assertions": 0,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-12 Thông báo ghi danh tới",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-13 Khóa của tôi",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-14 Học xong bài 1",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-15 Tiến độ 50%",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-16 Lấy đề không lộ đáp án",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-17 Làm bài đúng cả hai câu — bắt đầu",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-17 Làm bài đúng cả hai câu — nộp bài",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-18 Xem kết quả kèm đáp án",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-19 Thông báo kết quả bài kiểm tra",
+      "http": 200,
+      "assertions": 0,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-19 Thông báo kết quả bài kiểm tra",
+      "http": 200,
+      "assertions": 0,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-19 Thông báo kết quả bài kiểm tra",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-20 Học xong bài 2",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-21 Khóa hoàn thành 100%",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-22 Nhận chứng chỉ",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-23 Thông báo hoàn thành và chứng chỉ",
+      "http": 200,
+      "assertions": 0,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-23 Thông báo hoàn thành và chứng chỉ",
+      "http": 200,
+      "assertions": 0,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-23 Thông báo hoàn thành và chứng chỉ",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-24 Ai cũng xác minh được chứng chỉ",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-25 Khóa đếm được học viên",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-26 Đọc tất cả thông báo",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "DEMO-27 Không còn thông báo chưa đọc",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    }
+  ],
+  "failures": []
+}
