@@ -176,3 +176,16 @@ Kiểm thử liên service theo phân công: đăng ký học viên, dùng admin
 `ROLE_INSTRUCTOR`, đăng nhập lại rồi gọi `POST /api/quizzes` bằng token mới với body hợp lệ.
 Giảng viên phải tạo được bài kiểm tra; gọi cùng endpoint bằng token học viên phải trả 403.
 Các service cần dùng cùng `JWT_SECRET`.
+
+### Quy tắc email
+
+Đăng ký chỉ nhận email ASCII hợp lệ, tối đa 255 ký tự; email Unicode trả 400
+`VALIDATION_FAILED` cùng `fieldErrors.email`. Đăng ký/đăng nhập chuẩn hóa bằng trim và
+lowercase `Locale.ROOT`. Migration V5 kiểm trùng khóa cuối, đổi `users.email` sang `utf8mb4_bin`
+rồi chuẩn hóa email cũ: dấu không còn bị bỏ qua khi đăng nhập, kiểm trùng hay admin tìm email.
+Tìm họ tên vẫn theo collation của cột họ tên.
+
+V5 kiểm toàn bộ khóa email sau chuẩn hóa trước khi sửa dữ liệu. Nếu báo duplicate key
+`uk_normalized_email_collision`, dừng triển khai và nhờ người quản trị xử lý các tài khoản
+xung đột; không tự xóa/gộp tài khoản. Sao lưu trước khi nâng cấp, dừng các instance auth
+cũ ghi dữ liệu trong lúc migration chạy. Migration không xóa dấu của email Unicode cũ.

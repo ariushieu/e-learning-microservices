@@ -56,3 +56,11 @@ target/auth-newman-report.json target/auth-acceptance.json` để tạo bản an
 AUTH-09/10 tạo ba tài khoản `qa.management.<runId>.*` để kiểm tra tìm kiếm, phân trang và khóa/mở khóa. Không khóa S chung. Cuối AUTH-10, A được mở khóa và quyền ADMIN của fixture được gỡ. Nếu Runner dừng giữa chừng, dùng admin mở khóa A và gỡ quyền ADMIN của fixture trước khi dọn dữ liệu; không dùng các tài khoản này ngoài môi trường kiểm thử.
 
 Ghi từng mã ca, commit/môi trường, HTTP thực tế, trạng thái PASS/FAIL/BLOCKED/NOT RUN và bằng chứng đã che token vào [`../test-cases/ket-qua/auth.md`](../test-cases/ket-qua/auth.md). Không sửa kỳ vọng của `test-cases/auth.md` để khớp kết quả API. Ca FAIL cần được sửa trong pull request riêng theo hướng dẫn trong bảng phân công.
+
+## Email so khớp chính xác (AUTH-12)
+
+Chạy cả collection để có `adminToken`, `testPassword`, `runId`. Thư mục 12 tự tạo email
+ASCII riêng; kiểm email có dấu không đăng nhập/tìm ra tài khoản không dấu, chữ hoa vẫn
+được chuẩn hóa, đăng ký Unicode bị chặn ở trường email. Các request này chạy tự động
+trong CI Docker; không cần fixture ngoài. Migration và trình duyệt có script riêng,
+xem [AUTH-12](../test-cases/auth.md#auth-12--email-so-khớp-chính-xác).

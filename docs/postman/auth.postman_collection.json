@@ -11264,6 +11264,422 @@
           ]
         }
       ]
+    },
+    {
+      "name": "12. Email so khớp chính xác · AUTH-12",
+      "item": [
+        {
+          "name": "AUTH-12.1 Tạo tài khoản email ASCII",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.hocvien.{{runId}}@example.com\", \"password\": \"{{testPassword}}\", \"fullName\": \"QA Exact Email\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\",()=>pm.response.to.have.status(201));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.collectionVariables.set(\"exactEmailUserId\",d.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-12.2 Email có dấu không vào tài khoản không dấu",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.hocviên.{{runId}}@example.com\", \"password\": \"{{testPassword}}\", \"fullName\": \"QA Exact Email\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business result\",()=>{pm.expect(j.code).to.eql(\"UNAUTHORIZED\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-12.3 Email chữ hoa đăng nhập đúng tài khoản",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"QA.HOCVIEN.{{runId}}@EXAMPLE.COM\", \"password\": \"{{testPassword}}\", \"fullName\": \"QA Exact Email\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.user.id).to.eql(Number(pm.collectionVariables.get(\"exactEmailUserId\")));pm.expect(d.user.email).to.eql(pm.variables.replaceIn(\"qa.hocvien.{{runId}}@example.com\"));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-12.4 Từ chối đăng ký thử.{{runId}}@example.com",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"thử.{{runId}}@example.com\", \"password\": \"{{testPassword}}\", \"fullName\": \"QA Exact Email\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business result\",()=>{pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.some(f=>f.field===\"email\"&&f.message.includes(\"ASCII\"))).to.eql(true);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-12.4 Từ chối đăng ký qa.hocviên.{{runId}}@example.com",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.hocviên.{{runId}}@example.com\", \"password\": \"{{testPassword}}\", \"fullName\": \"QA Exact Email\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business result\",()=>{pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.some(f=>f.field===\"email\"&&f.message.includes(\"ASCII\"))).to.eql(true);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-12.4 Từ chối đăng ký qa.{{runId}}@vídụ.com",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.{{runId}}@vídụ.com\", \"password\": \"{{testPassword}}\", \"fullName\": \"QA Exact Email\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business result\",()=>{pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.some(f=>f.field===\"email\"&&f.message.includes(\"ASCII\"))).to.eql(true);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-12.4 Từ chối đăng ký qa.tést.{{runId}}@example.com",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.tést.{{runId}}@example.com\", \"password\": \"{{testPassword}}\", \"fullName\": \"QA Exact Email\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business result\",()=>{pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.some(f=>f.field===\"email\"&&f.message.includes(\"ASCII\"))).to.eql(true);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-12.4 Từ chối đăng ký ｔest.{{runId}}@example.com",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"ｔest.{{runId}}@example.com\", \"password\": \"{{testPassword}}\", \"fullName\": \"QA Exact Email\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business result\",()=>{pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.some(f=>f.field===\"email\"&&f.message.includes(\"ASCII\"))).to.eql(true);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-12.5 Đăng ký chữ hoa trùng tài khoản cũ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"QA.HOCVIEN.{{runId}}@EXAMPLE.COM\", \"password\": \"{{testPassword}}\", \"fullName\": \"QA Exact Email\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\",()=>pm.response.to.have.status(409));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business result\",()=>{pm.expect(j.code).to.eql(\"DUPLICATE_RESOURCE\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-12.6 Admin tìm email có dấu không ra email không dấu",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?keyword=qa.hocvi%C3%AAn.{{runId}}%40example.com",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.totalElements).to.eql(0);pm.expect(d.content).to.eql([]);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-12.7 Admin tìm email chữ hoa và khoảng trắng",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?keyword=%20QA.HOCVIEN.{{runId}}%40EXAMPLE.COM%20",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.totalElements).to.eql(1);pm.expect(d.content[0].id).to.eql(Number(pm.collectionVariables.get(\"exactEmailUserId\")));});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }
