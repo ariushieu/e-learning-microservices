@@ -10703,6 +10703,537 @@
           ]
         }
       ]
+    },
+    {
+      "name": "11. Tổng quan quản trị · AUTH-11",
+      "item": [
+        {
+          "name": "AUTH-11.1 Thống kê đủ trường và lưu mốc ban đầu",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/stats",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d).to.have.all.keys(\"total\",\"byRole\",\"byStatus\",\"newLast7Days\");pm.expect(d.byRole).to.have.all.keys(\"ROLE_STUDENT\",\"ROLE_INSTRUCTOR\",\"ROLE_ADMIN\");pm.expect(d.byStatus).to.have.all.keys(\"ACTIVE\",\"LOCKED\",\"PENDING\");[d.total,d.newLast7Days,...Object.values(d.byRole),...Object.values(d.byStatus)].forEach(n=>{pm.expect(Number.isSafeInteger(n)).to.eql(true);pm.expect(n).to.be.at.least(0);});pm.expect(Object.values(d.byStatus).reduce((a,b)=>a+b,0)).to.eql(d.total);pm.expect(d.newLast7Days).to.be.at.most(d.total);});",
+                  "pm.collectionVariables.set(\"statsBaseline\",JSON.stringify(d));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-11.2 Đăng ký học viên a",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.stats.{{runId}}.a@example.com\", \"fullName\": \"QA Stats A\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\",()=>pm.response.to.have.status(201));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.collectionVariables.set(\"stats_a_id\",d.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-11.2 Đăng ký học viên b",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.stats.{{runId}}.b@example.com\", \"fullName\": \"QA Stats B\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\",()=>pm.response.to.have.status(201));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.collectionVariables.set(\"stats_b_id\",d.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-11.2 Tổng và mới 7 ngày tăng hai",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/stats",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{const b=JSON.parse(pm.collectionVariables.get(\"statsBaseline\"));pm.expect(d.total).to.eql(b.total+2);pm.expect(d.newLast7Days).to.eql(b.newLast7Days+2);pm.expect(d.byRole.ROLE_STUDENT).to.eql(b.byRole.ROLE_STUDENT+2);pm.expect(d.byStatus.ACTIVE).to.eql(b.byStatus.ACTIVE+2);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-11.3 Cấp thêm giảng viên cho A",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{stats_a_id}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": [\"ROLE_STUDENT\", \"ROLE_INSTRUCTOR\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-11.3 Đa vai trò không làm tăng tổng",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/stats",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{const b=JSON.parse(pm.collectionVariables.get(\"statsBaseline\"));pm.expect(d.total).to.eql(b.total+2);pm.expect(d.byRole.ROLE_INSTRUCTOR).to.eql(b.byRole.ROLE_INSTRUCTOR+1);pm.expect(d.byRole.ROLE_STUDENT).to.eql(b.byRole.ROLE_STUDENT+2);pm.expect(d.byRole.ROLE_ADMIN).to.eql(b.byRole.ROLE_ADMIN);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-11.4 Đổi trạng thái A thành LOCKED",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{stats_a_id}}/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"LOCKED\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-11.4 Thống kê trạng thái LOCKED",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/stats",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{const b=JSON.parse(pm.collectionVariables.get(\"statsBaseline\"));pm.expect(d.total).to.eql(b.total+2);pm.expect(d.newLast7Days).to.eql(b.newLast7Days+2);pm.expect(d.byStatus.PENDING).to.eql(b.byStatus.PENDING);pm.expect(d.byStatus.LOCKED).to.eql(b.byStatus.LOCKED+1);pm.expect(d.byStatus.ACTIVE).to.eql(b.byStatus.ACTIVE+1);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-11.4 Link bộ lọc trả đúng A",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?keyword=qa.stats.{{runId}}&status=LOCKED",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.totalElements).to.eql(1);pm.expect(d.content[0].id).to.eql(Number(pm.collectionVariables.get(\"stats_a_id\")));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-11.5 Đổi trạng thái A thành ACTIVE",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{stats_a_id}}/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"ACTIVE\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-11.5 Thống kê trạng thái ACTIVE",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/stats",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{const b=JSON.parse(pm.collectionVariables.get(\"statsBaseline\"));pm.expect(d.total).to.eql(b.total+2);pm.expect(d.newLast7Days).to.eql(b.newLast7Days+2);pm.expect(d.byStatus.PENDING).to.eql(b.byStatus.PENDING);pm.expect(d.byStatus.LOCKED).to.eql(b.byStatus.LOCKED);pm.expect(d.byStatus.ACTIVE).to.eql(b.byStatus.ACTIVE+2);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-11.6 Không xác thực None",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/users/stats",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-11.6 Không xác thực INVALID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid-token"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/stats",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-11.7 Không phải admin studentToken",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/stats",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\",()=>pm.response.to.have.status(403));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-11.7 Không phải admin tokenA",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/stats",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\",()=>pm.response.to.have.status(403));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-11.8 Năm tài khoản mới nhất",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?sort=createdAt,desc&size=5",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.content.length).to.eql(5);pm.expect(d.size).to.eql(5);pm.expect(d.content[0].id).to.eql(Number(pm.collectionVariables.get(\"stats_b_id\")));pm.expect(d.content[1].id).to.eql(Number(pm.collectionVariables.get(\"stats_a_id\")));for(let i=1;i<d.content.length;i++)pm.expect(Date.parse(d.content[i-1].createdAt)).to.be.at.least(Date.parse(d.content[i].createdAt));});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

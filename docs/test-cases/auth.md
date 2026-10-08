@@ -219,6 +219,27 @@ Không khóa tài khoản S chung. Khôi phục A về ACTIVE và bỏ quyền A
 - Học viên/giảng viên bị chặn khi mở trang; desktop và bề ngang 375px không tràn trang, bảng cuộn ngang
   trong khung; không lỗi JavaScript. Đọc lại trang phải phản ánh trạng thái/vai trò đã lưu.
 
+## AUTH-11 — GET /api/users/stats (tổng quan quản trị)
+
+Collection dùng số liệu ban đầu làm mốc, tạo hai học viên riêng `qa.stats.<runId>.*`,
+không giả định database rỗng. Giữ đúng thứ tự request và khôi phục A về ACTIVE khi xong.
+
+| # | Tình huống | Mong đợi |
+|---|---|---|
+| 1 | Admin lấy thống kê | 200; đủ total/byRole/byStatus/newLast7Days; đủ ba nhóm vai trò và trạng thái; số nguyên không âm, tổng trạng thái = total |
+| 2 | Đăng ký thêm hai học viên rồi đọc lại | 201 mỗi đăng ký; GET 200; total/newLast7Days/STUDENT/ACTIVE tăng 2 |
+| 3 | Thêm INSTRUCTOR cho A, vẫn giữ STUDENT | 200; INSTRUCTOR tăng 1, total và STUDENT không tăng thêm; ADMIN không đổi |
+| 4 | Khóa A và mở link danh sách bị khóa | 200; LOCKED tăng 1, ACTIVE giảm 1, total/mới 7 ngày/PENDING không đổi; danh sách lọc fixture chỉ có A |
+| 5 | Mở khóa A | 200; LOCKED/ACTIVE trở về số trước khi khóa |
+| 6 | Thiếu token hoặc token hỏng | 401 |
+| 7 | Học viên hoặc giảng viên | 403 |
+| 8 | Lấy 5 tài khoản mới nhất | 200; size=5; createdAt giảm dần, hai học viên vừa tạo nằm đầu |
+
+Controller còn kiểm DB rỗng trả đủ nhóm 0, trạng thái PENDING, cửa sổ 7 ngày gồm hai đầu,
+loại bản ghi cũ/tương lai. Trình duyệt kiểm `/admin`, link thống kê, sidebar, lỗi tải/thử lại;
+375/768/1366px không tràn, mobile thấy ngay nút Cấp quyền/Khóa trên thẻ; nội dung xác nhận
+không mất tên/email trong lúc đóng (thành công, hủy và Escape).
+
 ## Truy vết nguồn
 
 - [AuthController](../../auth-service/src/main/java/com/hunre/authservice/controller/AuthController.java),

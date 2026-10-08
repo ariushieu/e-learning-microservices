@@ -9,7 +9,7 @@ Collection: [`auth.postman_collection.json`](auth.postman_collection.json). Bộ
 3. Tắt rate limit trước khi chạy Runner (lệnh Bash/Git Bash): `RATE_LIMIT_ENABLED=false docker compose --profile app up -d --wait api-gateway`. Nếu không tắt, đăng nhập liên tục có thể nhận `429`; reviewer đã gặp tình huống này trong lần chạy đầu.
 4. Import `auth.postman_collection.json` vào Postman. Không import hoặc tạo environment cho collection này.
 5. Chạy folder **0. Chuẩn bị** một lần trước khi chạy các folder AUTH. Folder này đăng nhập admin, tạo hoặc đăng nhập A/B/S, đồng bộ vai trò theo bộ tình huống và lưu ID/token trong collection variables. Tài khoản dev mặc định được định nghĩa ở collection; không thay bằng tài khoản thật.
-6. Chạy từng folder AUTH-01 … AUTH-10 bằng Runner. Có thể chạy cả collection sau folder chuẩn bị. Giữ thứ tự request trong folder; một số ca đổi vai trò, xoay/thu hồi token, đổi mật khẩu hoặc xóa fixture mà các ca sau dùng. AUTH-10 cần chạy sau AUTH-09 để có các tài khoản quản trị kiểm thử riêng.
+6. Chạy từng folder AUTH-01 … AUTH-11 bằng Runner. Có thể chạy cả collection sau folder chuẩn bị. Giữ thứ tự request trong folder; một số ca đổi vai trò, xoay/thu hồi token, đổi mật khẩu hoặc xóa fixture mà các ca sau dùng. AUTH-10 cần chạy sau AUTH-09 để có các tài khoản quản trị kiểm thử riêng. AUTH-11 lưu mốc thống kê rồi tạo hai học viên riêng, cấp quyền và khóa/mở để đối chiếu mức tăng.
 7. Bật lại rate limit sau khi chạy, kể cả khi có ca FAIL: `RATE_LIMIT_ENABLED=true docker compose --profile app up -d --wait api-gateway`. Kiểm tra lệnh kết thúc thành công; nếu lỗi, khắc phục và chạy lại bước này.
 
 ## Chạy bằng Newman
@@ -40,6 +40,18 @@ Các biến token, ID và dữ liệu test là collection variables và được
 Các ca thay đổi hồ sơ lưu hồ sơ S cũ và có request khôi phục. Nhóm AUTH-08 dùng tài khoản test riêng để đổi mật khẩu; không dùng tài khoản cố định A/B/S cho thao tác này. Nếu dừng giữa folder, kiểm tra dữ liệu và collection variables trước khi chạy lại: token refresh cũ có thể đã bị rotate/thu hồi, quyền S có thể đang tạm đổi, hoặc fixture đã được tạo. Có thể chạy lại folder **0. Chuẩn bị** để nạp lại các tài khoản/token cố định, đặt `runId` mới rồi chạy lại chuỗi phụ thuộc từ đầu.
 
 ## Ghi nhận kết quả
+
+Kiểm tra giao diện (Edge, backend và frontend production đã chạy): cài Playwright vào thư mục
+test riêng bằng pnpm, rồi đặt `AUTH_PLAYWRIGHT_MODULE` tới đường dẫn tuyệt đối của `playwright/test`,
+`AUTH_GATEWAY_URL`, `AUTH_WEB_URL`, `AUTH_UI_OUTPUT` và chạy `node scripts/check-admin-overview.cjs`.
+Script tạo tài khoản QA riêng; chỉ chạy trên database kiểm thử, tắt rate limit tạm và dọn dữ liệu
+sau khi lưu kết quả. Script kiểm 1366/768/375px và lưu ảnh, kết quả đã bỏ token.
+
+Job CI `Full stack in Docker` cũng chạy nguyên collection qua gateway sau smoke test và bật lại
+rate limit bằng `trap`, kể cả khi Newman lỗi. Artifact `auth-docker-acceptance` chỉ chứa HTTP,
+số assertion, commit và mã ca BLOCKED, không chứa token/body. Ba fixture riêng vẫn BLOCKED trên CI
+nếu không được cấp; không tính các ca này là PASS. Chạy `node scripts/report-auth-newman.cjs
+target/auth-newman-report.json target/auth-acceptance.json` để tạo bản an toàn tương tự tại máy.
 
 AUTH-09/10 tạo ba tài khoản `qa.management.<runId>.*` để kiểm tra tìm kiếm, phân trang và khóa/mở khóa. Không khóa S chung. Cuối AUTH-10, A được mở khóa và quyền ADMIN của fixture được gỡ. Nếu Runner dừng giữa chừng, dùng admin mở khóa A và gỡ quyền ADMIN của fixture trước khi dọn dữ liệu; không dùng các tài khoản này ngoài môi trường kiểm thử.
 

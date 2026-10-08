@@ -5,6 +5,7 @@ import com.hunre.authservice.domain.UserStatus;
 import com.hunre.authservice.dto.UpdateUserStatusRequest;
 import com.hunre.authservice.dto.UpdateUserRolesRequest;
 import com.hunre.authservice.dto.UserResponse;
+import com.hunre.authservice.dto.UserStatsResponse;
 import com.hunre.authservice.service.AuthService;
 import com.hunre.authservice.service.UserManagementService;
 import com.hunre.sharedcommon.dto.PageResponse;
@@ -27,6 +28,12 @@ public class UserController {
 
     private final AuthService authService;
     private final UserManagementService userManagement;
+
+    @GetMapping("/stats")
+    public ApiResponse<UserStatsResponse> statistics(AuthenticatedUser caller) {
+        requireAdmin(caller);
+        return ApiResponse.ok(userManagement.statistics());
+    }
 
     @GetMapping
     public ApiResponse<PageResponse<UserResponse>> listUsers(
