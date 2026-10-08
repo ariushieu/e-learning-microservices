@@ -143,6 +143,18 @@ async function run() {
   await page.goto(`${web}/instructors/${teacherId}?page=999`);
   await page.waitForURL(url => url.searchParams.get('page') === '2');
   checks.push('Tải lại giữ phân trang; trang vượt tổng quay về trang hợp lệ cuối');
+  await api('PUT', `/api/courses/${first.id}/reviews/me`, { rating: 4, comment: 'Cập nhật đánh giá' }, s);
+  await api('PATCH', `/api/courses/${second.id}/status`, { status: 'ARCHIVED' }, teacher);
+  await page.goto(`${web}/instructors/${teacherId}`); await profileStats(page, 12, 2, '4,5/5', 2);
+  const stars = page.getByRole('img', { name: '4,5 trên 5 sao', exact: true });
+  const dimensions = await stars.locator(':scope > span').last().evaluate(el => ({
+    width: el.getBoundingClientRect().width,
+    icon: el.querySelector('svg').getBoundingClientRect().width,
+    fill: el.querySelector('span').getBoundingClientRect().width,
+  }));
+  assert.equal(dimensions.icon, dimensions.width);
+  assert.equal(dimensions.fill / dimensions.width, 0.5);
+  checks.push('Điểm 4,5: đúng nửa sao theo kích thước thực, nhãn đọc khớp số hiển thị');
   await page.goto(`${web}/instructor/reviews`); await page.waitForURL('**/login?**');
   checks.push('Sửa proxy không mở công khai khu /instructor/reviews');
   assert.deepEqual(errors, []); checks.push('Không có lỗi JavaScript');

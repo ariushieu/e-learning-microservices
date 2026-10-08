@@ -78,9 +78,9 @@ export default async function InstructorProfilePage({ params, searchParams }: Pa
           meta={
             <>
               <HeroMeta icon={<GraduationCapIcon />}>Giảng viên HUNRE E-Learning</HeroMeta>
-              {profile.ratingCount > 0 && <RatingStars rating={profile.ratingAvg} />}
             </>
           }
+          actions={profile.ratingCount > 0 ? <RatingStars rating={profile.ratingAvg} /> : undefined}
         />
       }
     >
