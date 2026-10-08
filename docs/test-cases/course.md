@@ -515,6 +515,38 @@ Fixture riêng: giảng viên IA sở hữu hai khóa có hai đánh giá chưa 
 Kiểm web: bộ lọc và phân trang, trả lời tại chỗ, số chờ ở sidebar/tổng quan, trường hợp trả lời
 dòng cuối trang, lỗi API, nội dung HTML dạng chữ; lỗi content mất ngay khi gõ lại và hint hiện lại.
 
+## COURSE-30 — Hồ sơ giảng viên công khai
+
+PA/PB là giảng viên riêng của lượt chạy. PA có hai khóa PUBLISHED (hai lượt 5 sao ở
+khóa 1, một lượt 2 sao ở khóa 2), một DRAFT và một ARCHIVED đã có đánh giá. PB chỉ có
+DRAFT ban đầu. Các số liệu chỉ tính khóa PUBLISHED; tổng học viên là tổng theo khóa.
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Khách đọc hồ sơ | — | GET /api/instructors/PA | 200; 2 khóa, 3 học viên, 3 lượt, điểm 4.00 |
+| 2 | Chủ khóa đọc hồ sơ | PA | GET profile | 200; không cộng DRAFT/ARCHIVED |
+| 3 | Admin đọc hồ sơ | ADM | GET profile | 200; giống khách |
+| 4 | Học viên đọc hồ sơ | S | GET profile | 200; giống khách |
+| 5 | Danh sách công khai | — | GET /api/courses?instructorId=PA | 200; đúng 2 khóa PUBLISHED |
+| 6 | Phân trang danh sách | — | GET courses size=1&page=1 | 200; khóa khác trang đầu, tổng 2 |
+| 7 | Chỉ có khóa nháp | — | GET /api/instructors/PB | 404 RESOURCE_NOT_FOUND |
+| 8 | ID không tồn tại | — | GET profile missingId | 404 |
+| 9 | ID sai kiểu | — | GET /api/instructors/abc | 400 |
+| 10 | Token không hợp lệ trên API công khai | — | GET profile, Bearer forged | 200; chỉ thống kê công khai như khách |
+| 11 | Khóa chưa có đánh giá | — | Xuất bản khóa PB rồi GET profile | 200; 1 khóa, 0 học viên, 0 lượt, điểm 0 |
+| 12 | Thêm khóa chưa đánh giá | — | PA xuất bản khóa rỗng rồi GET profile | 200; 3 khóa, 3 lượt, điểm vẫn 4.00 |
+| 13 | Học viên sửa sao | S | Đổi một lượt 5 thành 1 rồi GET profile | 200; 3 lượt, điểm 2.67 |
+| 14 | Học viên xóa đánh giá | PT | Xóa lượt 5 còn lại rồi GET profile | 200; 2 lượt, điểm 1.50; số học viên không giảm |
+| 15 | Lưu trữ khóa có đánh giá | PA | ARCHIVED khóa 2 rồi GET profile | 200; 2 khóa, 2 học viên, 1 lượt, điểm 1.00 |
+| 16 | Không còn khóa công khai | PA | ARCHIVED các khóa PUBLISHED rồi GET profile | 404 |
+| 17 | Chủ khóa không có khóa công khai | PA | GET profile với token chủ khóa | 404 |
+| 18 | Không mở quyền ghi theo route công khai | — | POST /api/instructors/PB | 401 |
+| 19 | Inbox vẫn cần đăng nhập | — | GET /api/instructor/reviews | 401 |
+
+Kiểm web: khách/giảng viên/admin đều không thấy khóa nháp trên `/instructors/{id}`;
+liên kết tên giảng viên từ thẻ và trang chi tiết, không lồng thẻ `<a>`; phân trang,
+404/lỗi máy chủ, trạng thái chưa có đánh giá và không tràn ngang ở 375px.
+
 ## Truy vết nguồn
 
 - [Controllers](../../course-service/src/main/java/com/hunre/courseservice/controller).
