@@ -417,6 +417,33 @@ POST /api/lessons/{lessonId}/resources, fixture bài xem thử riêng.
 
 Tự kiểm giao diện: thêm trong form sửa bài; trang học mở đúng liên kết; URL javascript báo lỗi dưới ô; xóa có xác nhận, hủy không xóa; lỗi mạng giữ dữ liệu; không tràn ở 375/768/1366px. Tổng điểm 4,5 hiển thị bốn sao và nửa sao.
 
+## COURSE-27 — Admin gỡ đánh giá vi phạm
+
+Fixture riêng: S đánh giá 5, B đánh giá 1; admin không ghi danh. Điểm ban đầu 3, hai lượt.
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Thiếu token | — | DELETE reviews/{id} | 401 |
+| 2 | Học viên không được gỡ người khác | S | DELETE đánh giá B | 403; không đổi điểm |
+| 3 | Tác giả không được dùng đường dẫn admin | B | DELETE đánh giá B | 403; vẫn dùng /me để tự xóa |
+| 4 | Giảng viên chủ khóa không được gỡ | A | DELETE đánh giá B | 403 |
+| 5 | Sai khóa cha | ADM | DELETE dùng courseId khác | 404; đánh giá còn nguyên |
+| 6 | Đánh giá không tồn tại | ADM | DELETE missingId | 404 |
+| 7 | Khóa không tồn tại | ADM | DELETE khóa missingId | 404 |
+| 8 | ID đánh giá sai kiểu | ADM | DELETE reviews/abc | 400 |
+| 9 | Admin gỡ đánh giá 1 sao | ADM | DELETE đánh giá B | 200; từ 3/2 lượt thành 5/1 lượt |
+| 10 | Gỡ lần hai | ADM | DELETE lại đánh giá B | 404 |
+| 11 | Người bị gỡ vẫn được viết | B | GET reviews/me | 200; canReview=true, review=null |
+| 12 | Người bị gỡ viết lại | B | PUT reviews/me rating 4 | 200; bản ghi mới, trung bình 4.5/2 lượt |
+| 13 | Gỡ đánh giá còn lại của S | ADM | DELETE đánh giá S | 200; trung bình 4/1 lượt |
+| 14 | Gỡ đánh giá cuối | ADM | DELETE đánh giá B mới | 200; trung bình 0/0 lượt |
+| 15 | Gỡ và sửa đồng thời | ADM,S | DELETE đánh giá B đồng thời S sửa 4 | 200; trung bình 4/1 lượt |
+| 16 | Gỡ sau khi khóa lưu trữ | ADM | DELETE đánh giá S khi ARCHIVED | 200; trung bình 0/0 lượt |
+| 17 | Gỡ sau khi khóa về nháp | ADM | DELETE đánh giá S khi DRAFT | 200; trung bình 0/0 lượt |
+
+Tự kiểm web: chỉ admin thấy nút Gỡ, giữ lại không xóa; gỡ xong cập nhật danh sách và tổng điểm;
+lỗi API giữ hộp xác nhận; gỡ đánh giá cuối trang trở về trang đầu; người bị gỡ viết lại được.
+
 ## Truy vết nguồn
 
 - [Controllers](../../course-service/src/main/java/com/hunre/courseservice/controller).

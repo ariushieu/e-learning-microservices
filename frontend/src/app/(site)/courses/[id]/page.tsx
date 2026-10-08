@@ -174,7 +174,7 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
       )}
 
       <Suspense fallback={<div role="status" aria-label="Đang tải đánh giá"><Skeleton className="h-64 rounded-xl" /></div>}>
-        <CourseReviews course={course} loggedIn={session !== null} page={reviewPage} />
+        <CourseReviews course={course} loggedIn={session !== null} page={reviewPage} isAdmin={hasRole(session, "ROLE_ADMIN")} />
       </Suspense>
 
       {showQuizzes && (

@@ -330,6 +330,38 @@ for(const [index,[title,fileUrl,code]] of urlCases.entries()) {
     code===201 ? "set('urlResourceId',d.id); const l=await call('GET','/api/lessons/'+id('urlLessonId'));pm.test('Đọc đúng liên kết',()=>pm.expect(l.resources.some(r=>r.id===d.id&&r.fileUrl===d.fileUrl)).eql(true));" : "pm.test('Lỗi nằm ở ô URL',()=>{pm.expect(json.code).eql('VALIDATION_FAILED');pm.expect(json.fieldErrors.some(e=>e.field==='fileUrl')).eql(true);}); const l=await call('GET','/api/lessons/'+id('urlLessonId'));pm.test('Không lưu URL sai',()=>pm.expect(l.resources.length).eql(2));");
 }
 add(urlFolder,26,13,'DELETE','/api/lessons/{{urlLessonId}}/resources/{{urlResourceId}}','A',200,null,'',"const l=await call('GET','/api/lessons/'+id('urlLessonId'));pm.test('Đã xóa tài liệu',()=>pm.expect(l.resources.map(r=>r.id)).not.include(id('urlResourceId')));");
+
+const moderation=folder('COURSE-27 — Admin gỡ đánh giá');
+const moderationUrl='/api/courses/{{moderationCourseId}}/reviews';
+const moderationStats=(count,avg)=>"const c=await call('GET','/api/courses/'+id('moderationCourseId'));pm.test('Tổng điểm sau kiểm duyệt',()=>{pm.expect(c.ratingCount).eql("+count+");pm.expect(c.ratingAvg).eql("+avg+");});";
+add(moderation,27,1,'DELETE',moderationUrl+'/{{moderationBId}}','',401,null,`
+  const c=await course();set('moderationCourseId',c.id);await status(c.id,'PUBLISHED');
+  for(const who of ['studentToken','tokenB']) {
+    await eventually(()=>call('POST','/api/enrollments',{courseId:c.id},who,201),'Ghi danh để đánh giá');
+    await eventually(async()=>pm.expect((await call('GET','/api/courses/'+c.id+'/reviews/me',undefined,who)).canReview).eql(true),'Chờ quyền đánh giá');
+  }
+  const s=await call('PUT','/api/courses/'+c.id+'/reviews/me',{rating:5},'studentToken');set('moderationSId',s.id);
+  const b=await call('PUT','/api/courses/'+c.id+'/reviews/me',{rating:1},'tokenB');set('moderationBId',b.id);
+`,moderationStats(2,3));
+for(const [n,role] of [[2,'S'],[3,'B'],[4,'A']])add(moderation,27,n,'DELETE',moderationUrl+'/{{moderationBId}}',role,403,null,'',moderationStats(2,3));
+add(moderation,27,5,'DELETE','/api/courses/{{reviewCourseId}}/reviews/{{moderationBId}}','ADM',404,null,'',moderationStats(2,3));
+add(moderation,27,6,'DELETE',moderationUrl+'/{{missingId}}','ADM',404,null,'',moderationStats(2,3));
+add(moderation,27,7,'DELETE','/api/courses/{{missingId}}/reviews/{{moderationBId}}','ADM',404,null);
+add(moderation,27,8,'DELETE',moderationUrl+'/abc','ADM',400,null);
+add(moderation,27,9,'DELETE',moderationUrl+'/{{moderationBId}}','ADM',200,null,'',moderationStats(1,5)+"const list=await call('GET','/api/courses/'+id('moderationCourseId')+'/reviews');pm.test('Danh sách không còn đánh giá bị gỡ',()=>{pm.expect(list.totalElements).eql(1);pm.expect(list.content[0].id).eql(id('moderationSId'));});");
+add(moderation,27,10,'DELETE',moderationUrl+'/{{moderationBId}}','ADM',404,null,'',moderationStats(1,5));
+add(moderation,27,11,'GET',moderationUrl+'/me','B',200,null,'',"pm.test('Vẫn được viết lại',()=>{pm.expect(d.canReview).eql(true);pm.expect(d.review).eql(null);});");
+add(moderation,27,12,'PUT',moderationUrl+'/me','B',200,{rating:4},'',moderationStats(2,4.5)+"pm.test('Đánh giá mới',()=>pm.expect(d.id).not.eql(id('moderationBId')));set('moderationBId',d.id);");
+add(moderation,27,13,'DELETE',moderationUrl+'/{{moderationSId}}','ADM',200,null,'',moderationStats(1,4));
+add(moderation,27,14,'DELETE',moderationUrl+'/{{moderationBId}}','ADM',200,null,'',moderationStats(0,0));
+add(moderation,27,15,'GET',moderationUrl,'',200,null,`
+  const u='/api/courses/'+id('moderationCourseId')+'/reviews';
+  const s=await call('PUT',u+'/me',{rating:5},'studentToken');set('moderationSId',s.id);
+  const b=await call('PUT',u+'/me',{rating:1},'tokenB');
+  await Promise.all([call('DELETE',u+'/'+b.id,undefined,'adminToken'),call('PUT',u+'/me',{rating:4},'studentToken')]);
+`,moderationStats(1,4)+"pm.test('Không lệch danh sách',()=>pm.expect(d.totalElements).eql(1));");
+add(moderation,27,16,'DELETE',moderationUrl+'/{{moderationSId}}','ADM',200,null,"await status(id('moderationCourseId'),'ARCHIVED');",moderationStats(0,0));
+add(moderation,27,17,'DELETE',moderationUrl+'/{{moderationSId}}','ADM',200,null,"await status(id('moderationCourseId'),'PUBLISHED');const s=await call('PUT','/api/courses/'+id('moderationCourseId')+'/reviews/me',{rating:5},'studentToken');set('moderationSId',s.id);await status(id('moderationCourseId'),'DRAFT');",moderationStats(0,0));
 for(const key of cases.keys())if(!seen.has(key))throw Error('Missing case '+key);
 // Giữ thứ tự đọc trước ghi để các tình huống đọc luôn có fixture nền nguyên vẹn.
 fs.writeFileSync(path.join(root,'docs/postman/course.postman_collection.json'),JSON.stringify(collection,null,2)+'\n');

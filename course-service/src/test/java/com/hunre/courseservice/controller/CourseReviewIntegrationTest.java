@@ -63,6 +63,90 @@ class CourseReviewIntegrationTest {
         assertThat(course.getRatingCount()).isEqualTo(count);
         assertThat(course.getRatingAvg()).isEqualByComparingTo(avg);
     }
+    Long reviewId(long user) {
+        return reviews.findByCourseIdAndUserId(id, user).orElseThrow().getId();
+    }
+
+    @Test void adminRemovesReviewAndLearnerCanWriteAgain() throws Exception {
+        save(60, 5);
+        save(61, 1);
+        stats(2, "3.00");
+        Long removedId = reviewId(61);
+        // Admin chưa ghi danh cũng được kiểm duyệt, nhưng quyền viết /me không thay đổi.
+        mvc.perform(delete(url()+"/"+removedId).header("Authorization", token(99, "ROLE_ADMIN")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.message").value("Đã gỡ đánh giá"));
+        stats(1, "5.00");
+        mvc.perform(get(url())).andExpect(jsonPath("$.data.totalElements").value(1));
+        mvc.perform(get(url()+"/me").header("Authorization", token(61, "ROLE_STUDENT")))
+                .andExpect(jsonPath("$.data.canReview").value(true)).andExpect(jsonPath("$.data.review").isEmpty());
+        save(61, 4);
+        assertThat(reviewId(61)).isNotEqualTo(removedId);
+        stats(2, "4.50");
+    }
+
+    @ParameterizedTest @ValueSource(strings={"ROLE_STUDENT", "ROLE_INSTRUCTOR", "ROLE_UNKNOWN"})
+    void moderationRejectsNonAdminEvenCourseOwner(String role) throws Exception {
+        save(60, 5);
+        mvc.perform(delete(url()+"/"+reviewId(60)).header("Authorization", token(50, role)))
+                .andExpect(status().isForbidden());
+        mvc.perform(delete(url()+"/"+reviewId(60)).header("Authorization", token(60, role)))
+                .andExpect(status().isForbidden());
+        stats(1, "5.00");
+    }
+
+    @Test void moderationRequiresSignedAdminToken() throws Exception {
+        save(60, 5);
+        String path = url()+"/"+reviewId(60);
+        mvc.perform(delete(path)).andExpect(status().isUnauthorized());
+        String[] parts = token(60, "ROLE_STUDENT").substring(7).split("\\.");
+        String payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8)
+                .replace("ROLE_STUDENT", "ROLE_ADMIN");
+        parts[1] = Base64.getUrlEncoder().withoutPadding().encodeToString(payload.getBytes(StandardCharsets.UTF_8));
+        mvc.perform(delete(path).header("Authorization", "Bearer "+String.join(".", parts)))
+                .andExpect(status().isUnauthorized());
+        stats(1, "5.00");
+    }
+
+    @Test void moderationCannotDeleteReviewThroughAnotherCourse() throws Exception {
+        save(60, 5);
+        var other = courses.save(Course.builder().instructorId(50L).title("Other")
+                .slug(UUID.randomUUID().toString()).status(CourseStatus.PUBLISHED).build());
+        try {
+            mvc.perform(delete("/api/courses/"+other.getId()+"/reviews/"+reviewId(60))
+                            .header("Authorization", token(99, "ROLE_ADMIN")))
+                    .andExpect(status().isNotFound());
+            stats(1, "5.00");
+            assertThat(courses.findById(other.getId()).orElseThrow().getRatingCount()).isZero();
+        } finally { courses.deleteById(other.getId()); }
+    }
+
+    @Test void moderationMissingIdsAndLastReview() throws Exception {
+        save(60, 5);
+        Long removedId = reviewId(60);
+        mvc.perform(delete(url()+"/9223372036854775807").header("Authorization", token(99, "ROLE_ADMIN")))
+                .andExpect(status().isNotFound());
+        mvc.perform(delete("/api/courses/9223372036854775807/reviews/"+removedId)
+                        .header("Authorization", token(99, "ROLE_ADMIN"))).andExpect(status().isNotFound());
+        mvc.perform(delete(url()+"/abc").header("Authorization", token(99, "ROLE_ADMIN")))
+                .andExpect(status().isBadRequest());
+        stats(1, "5.00");
+        mvc.perform(delete(url()+"/"+removedId).header("Authorization", token(99, "ROLE_ADMIN")))
+                .andExpect(status().isOk());
+        stats(0, "0.00");
+        mvc.perform(delete(url()+"/"+removedId).header("Authorization", token(99, "ROLE_ADMIN")))
+                .andExpect(status().isNotFound());
+        stats(0, "0.00");
+    }
+
+    @ParameterizedTest @ValueSource(strings={"DRAFT", "PENDING_REVIEW", "ARCHIVED"})
+    void adminCanModerateAfterCourseStatusChanges(String status) throws Exception {
+        save(60, 5);
+        Long removedId = reviewId(60);
+        jdbc.update("UPDATE courses SET status=? WHERE id=?", status, id);
+        mvc.perform(delete(url()+"/"+removedId).header("Authorization", token(99, "ROLE_ADMIN")))
+                .andExpect(status().isOk());
+        stats(0, "0.00");
+    }
     @Test void lifecycleRecomputesStatsAndReturnsNoPrivateFields() throws Exception {
         save(60,5); stats(1,"5.00");
         save(61,3); stats(2,"4.00");
