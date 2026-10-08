@@ -209,7 +209,7 @@ async function run() {
   await api("PUT", `/api/courses/${courseId}/reviews/me`, { rating: 5 }, student);
   await api("PUT", `/api/courses/${courseId}/reviews/me`, { rating: 4 }, other);
   await sp.goto(`${web}/courses/${courseId}`);
-  const stars = sp.locator("#reviews").getByRole("img", { name: "4.5 trên 5 sao", exact: true });
+  const stars = sp.locator("#reviews").getByRole("img", { name: "4,5 trên 5 sao", exact: true });
   await stars.waitFor();
   assert.deepEqual(await stars.locator("span[style]").evaluateAll((es) => es.map((e) => e.style.width)), [
     "100%",
