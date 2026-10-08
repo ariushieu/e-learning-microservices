@@ -1,12 +1,12 @@
 "use client";
 
-import { CircleCheckIcon, Loader2Icon, UserCheckIcon } from "lucide-react";
+import { Loader2Icon, UserCheckIcon } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { RoleBadges } from "@/components/auth/role-badge";
 import { ErrorAlert } from "@/components/common/error-alert";
 import { FieldError } from "@/components/common/field-error";
-import { FieldHint, FormActions, FormField, FormSection } from "@/components/common/form-field";
+import { FieldHint, FormActions } from "@/components/common/form-field";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +20,6 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { api } from "@/lib/client";
 import { initials, label } from "@/lib/format";
 import { fieldErrorMap, formErrorMessage } from "@/lib/forms";
@@ -32,15 +31,14 @@ const ROLES: { value: Role; hint: string }[] = [
   { value: "ROLE_ADMIN", hint: "Toàn quyền: cấp quyền người dùng, quản lý danh mục" },
 ];
 
-/** Đặt lại toàn bộ vai trò của một tài khoản theo mã người dùng (backend chưa có API tìm người dùng). */
-export function UserRolesForm() {
-  const [userId, setUserId] = useState("");
-  const [roles, setRoles] = useState<Role[]>(["ROLE_STUDENT"]);
+/** Sửa vai trò của tài khoản đã chọn từ danh sách quản trị. */
+export function UserRolesForm({ user, onSaved }: { user: User; onSaved: (user: User) => void }) {
+  const userId = user.id;
+  const [roles, setRoles] = useState<Role[]>(user.roles);
   const [confirming, setConfirming] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [result, setResult] = useState<User | null>(null);
 
   function toggle(role: Role, checked: boolean) {
     setRoles((prev) => (checked ? [...prev.filter((r) => r !== role), role] : prev.filter((r) => r !== role)));
@@ -50,8 +48,6 @@ export function UserRolesForm() {
     e.preventDefault();
     setError(null);
     setErrors({});
-    const id = Number(userId);
-    if (!Number.isInteger(id) || id <= 0) return setErrors({ userId: "Mã người dùng phải là số nguyên dương." });
     if (roles.length === 0) return setErrors({ roles: "Chọn ít nhất một vai trò." });
     setConfirming(true);
   }
@@ -61,7 +57,7 @@ export function UserRolesForm() {
     setPending(true);
     try {
       const user = await api<User>(`/api/users/${Number(userId)}/roles`, { method: "PATCH", body: { roles } });
-      setResult(user);
+      onSaved(user);
       toast.success(`Đã cập nhật vai trò cho ${user.fullName}`);
     } catch (err) {
       setErrors(fieldErrorMap(err));
@@ -72,17 +68,11 @@ export function UserRolesForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="max-w-4xl space-y-8">
+    <form onSubmit={onSubmit} className="space-y-5">
       {error && <ErrorAlert message={error} />}
 
-      <FormSection title="Tài khoản" description="Backend chưa có tìm kiếm người dùng: nhập mã mà người đó xem được ở trang Hồ sơ.">
-        <FormField id="userId" label="Mã người dùng" hint="Người dùng xem mã của mình ở trang Hồ sơ." error={errors.userId}>
-          <Input id="userId" inputMode="numeric" value={userId} onChange={(e) => setUserId(e.target.value)} placeholder="VD: 12" className="max-w-40" />
-        </FormField>
-        {result && <UpdatedUser user={result} />}
-      </FormSection>
-
-      <FormSection title="Vai trò" description="Vai trò được thay thế toàn bộ. Người dùng phải đăng nhập lại để nhận vai trò mới.">
+      <UpdatedUser user={user} />
+      <FieldHint>Vai trò được thay thế toàn bộ. Người dùng cần đăng nhập lại hoặc làm mới phiên để nhận quyền mới.</FieldHint>
         <fieldset className="space-y-3">
           <legend className="sr-only">Vai trò</legend>
           <div className="grid gap-2">
@@ -102,7 +92,6 @@ export function UserRolesForm() {
           <FieldError message={errors.roles} />
           {!errors.roles && <FieldHint>Chọn ít nhất một vai trò.</FieldHint>}
         </fieldset>
-      </FormSection>
 
       <FormActions>
         <Button type="submit" size="lg" disabled={pending}>
@@ -114,7 +103,7 @@ export function UserRolesForm() {
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Đặt lại vai trò cho người dùng #{userId}?</AlertDialogTitle>
+            <AlertDialogTitle>Đặt lại vai trò cho {user.fullName}?</AlertDialogTitle>
             <AlertDialogDescription>
               Vai trò mới: {roles.map(label).join(", ")}. Mọi vai trò khác của tài khoản này sẽ bị gỡ.
             </AlertDialogDescription>
@@ -129,7 +118,7 @@ export function UserRolesForm() {
   );
 }
 
-/** Tài khoản vừa được đặt lại vai trò (API trả về người dùng sau khi cập nhật). */
+/** Tài khoản đang được chỉnh sửa. */
 function UpdatedUser({ user }: { user: User }) {
   return (
     <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-3" aria-live="polite">
@@ -144,7 +133,6 @@ function UpdatedUser({ user }: { user: User }) {
         <p className="truncate text-xs text-muted-foreground">{user.email}</p>
         <RoleBadges roles={user.roles} />
       </div>
-      <CircleCheckIcon className="size-4 shrink-0 text-success" aria-label="Đã lưu" />
     </div>
   );
 }
