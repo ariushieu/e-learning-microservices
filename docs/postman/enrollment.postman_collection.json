@@ -8287,7 +8287,1574 @@
       ]
     },
     {
-      "name": "7. ENROLL-09 — thao tác hạ tầng thủ công",
+      "name": "7. Số liệu học tập toàn khóa",
+      "description": "ENROLL-12: khóa riêng hai bài, S hoàn thành cả hai, B xong bài một, C chưa học, D học một bài rồi hủy. Chỉ tạo fixture bằng API qua gateway; số liệu không phụ thuộc bộ lọc danh sách.",
+      "item": [
+        {
+          "name": "SETUP-16.C Đăng ký học viên thống kê",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa.summary.c@example.com\",\n  \"fullName\": \"Học viên C\",\n  \"password\": \"Test@123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-16.C Đăng ký học viên thống kê — HTTP 201,409\", () => {",
+                  "pm.expect(pm.response.code).to.be.oneOf([201,409]);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"SETUP-16.C Đăng ký học viên thống kê — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-17.C Đăng nhập học viên thống kê",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa.summary.c@example.com\",\n  \"password\": \"Test@123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-17.C Đăng nhập học viên thống kê — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"SETUP-17.C Đăng nhập học viên thống kê — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.collectionVariables.set(\"summaryTokenC\", d.accessToken);",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-16.D Đăng ký học viên thống kê",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa.summary.d@example.com\",\n  \"fullName\": \"Học viên D\",\n  \"password\": \"Test@123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-16.D Đăng ký học viên thống kê — HTTP 201,409\", () => {",
+                  "pm.expect(pm.response.code).to.be.oneOf([201,409]);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"SETUP-16.D Đăng ký học viên thống kê — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-17.D Đăng nhập học viên thống kê",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa.summary.d@example.com\",\n  \"password\": \"Test@123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-17.D Đăng nhập học viên thống kê — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"SETUP-17.D Đăng nhập học viên thống kê — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.collectionVariables.set(\"summaryTokenD\", d.accessToken);",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-18 Tạo khóa thống kê riêng",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/courses",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": {{categoryId}},\n  \"title\": \"Thống kê học tập {{runId}}\",\n  \"slug\": \"enrollment-summary-{{runId}}\",\n  \"price\": 0,\n  \"level\": \"BEGINNER\",\n  \"language\": \"vi\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-18 Tạo khóa thống kê riêng — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"SETUP-18 Tạo khóa thống kê riêng — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.collectionVariables.set(\"summaryCourseId\", d.id);",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-19 Tạo chương thống kê",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/courses/{{summaryCourseId}}/sections",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Chương thống kê\",\n  \"position\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-19 Tạo chương thống kê — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"SETUP-19 Tạo chương thống kê — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.collectionVariables.set(\"summarySectionId\", d.id);",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-20.1 Tạo bài thống kê",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/sections/{{summarySectionId}}/lessons",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Bài thống kê 1\",\n  \"type\": \"ARTICLE\",\n  \"content\": \"Nội dung kiểm thử thống kê\",\n  \"position\": 1,\n  \"isPreview\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-20.1 Tạo bài thống kê — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"SETUP-20.1 Tạo bài thống kê — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.collectionVariables.set(\"summaryLesson1Id\", d.id);",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-20.2 Tạo bài thống kê",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/sections/{{summarySectionId}}/lessons",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Bài thống kê 2\",\n  \"type\": \"ARTICLE\",\n  \"content\": \"Nội dung kiểm thử thống kê\",\n  \"position\": 2,\n  \"isPreview\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-20.2 Tạo bài thống kê — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"SETUP-20.2 Tạo bài thống kê — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.collectionVariables.set(\"summaryLesson2Id\", d.id);",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-21 Xuất bản khóa thống kê",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/courses/{{summaryCourseId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"PUBLISHED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-21 Xuất bản khóa thống kê — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"SETUP-21 Xuất bản khóa thống kê — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "",
+                  "});",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-12.1 Khóa chưa có học viên",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/courses/{{summaryCourseId}}/learners/summary"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "const ready = (pm.response.code === 200);",
+                  "const pollKey = 'poll:' + pm.info.requestName;",
+                  "const attempts = Number(cv(pollKey) || 0);",
+                  "if (!ready && pm.response.code < 500 && attempts < 15) {",
+                  "  pm.collectionVariables.set(pollKey, attempts + 1);",
+                  "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 2000);",
+                  "} else {",
+                  "  pm.collectionVariables.unset(pollKey);",
+                  "pm.test(\"ENROLL-12.1 Khóa chưa có học viên — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-12.1 Khóa chưa có học viên — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store');pm.expect(Object.keys(d).sort()).to.eql(['active','averageProgress','cancelled','certificatesIssued','completed','completionRate','lessons']);d.lessons.forEach(l => pm.expect(Object.keys(l).sort()).to.eql(['completedCount','completionRate','lessonId']));pm.expect(d.active).to.eql(0);pm.expect(d.completed).to.eql(0);pm.expect(d.averageProgress).to.eql(0);pm.expect(d.completionRate).to.eql(0);pm.expect(d.certificatesIssued).to.eql(0);pm.expect(d.lessons).to.eql([]);pm.expect(d.cancelled).to.eql(0);",
+                  "});",
+                  "}",
+                  "}",
+                  "if (pm.response.code >= 400 && pm.response.code !== 409 && attempts >= 15) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-22 D ghi danh khóa thống kê",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{summaryTokenD}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/enrollments",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{summaryCourseId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-22 D ghi danh khóa thống kê — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"SETUP-22 D ghi danh khóa thống kê — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.collectionVariables.set(\"summaryEnrollmentDId\", d.id);",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-23 D học bài một trước khi hủy",
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{summaryTokenD}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/lessons/{{summaryLesson1Id}}/progress",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{summaryCourseId}},\n  \"status\": \"COMPLETED\",\n  \"watchedSeconds\": 60\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-23 D học bài một trước khi hủy — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"SETUP-23 D học bài một trước khi hủy — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-24 D hủy lượt đã học một bài",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{summaryTokenD}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/enrollments/{{summaryEnrollmentDId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CANCELLED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-24 D hủy lượt đã học một bài — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"SETUP-24 D hủy lượt đã học một bài — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-12.2 Chỉ có lượt đã hủy không chia cho không",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/courses/{{summaryCourseId}}/learners/summary"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-12.2 Chỉ có lượt đã hủy không chia cho không — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-12.2 Chỉ có lượt đã hủy không chia cho không — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store');pm.expect(Object.keys(d).sort()).to.eql(['active','averageProgress','cancelled','certificatesIssued','completed','completionRate','lessons']);d.lessons.forEach(l => pm.expect(Object.keys(l).sort()).to.eql(['completedCount','completionRate','lessonId']));pm.expect(d.active).to.eql(0);pm.expect(d.completed).to.eql(0);pm.expect(d.averageProgress).to.eql(0);pm.expect(d.completionRate).to.eql(0);pm.expect(d.certificatesIssued).to.eql(0);pm.expect(d.lessons).to.eql([]);pm.expect(d.cancelled).to.eql(1);",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-25.S Ghi danh khóa thống kê",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/enrollments",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{summaryCourseId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-25.S Ghi danh khóa thống kê — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"SETUP-25.S Ghi danh khóa thống kê — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-25.B Ghi danh khóa thống kê",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/enrollments",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{summaryCourseId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-25.B Ghi danh khóa thống kê — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"SETUP-25.B Ghi danh khóa thống kê — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-25.C Ghi danh khóa thống kê",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{summaryTokenC}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/enrollments",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{summaryCourseId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-25.C Ghi danh khóa thống kê — HTTP 201\", () => {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"SETUP-25.C Ghi danh khóa thống kê — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-26 S hoàn thành bài một",
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/lessons/{{summaryLesson1Id}}/progress",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{summaryCourseId}},\n  \"status\": \"COMPLETED\",\n  \"watchedSeconds\": 60\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-26 S hoàn thành bài một — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"SETUP-26 S hoàn thành bài một — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-27 S hoàn thành bài hai",
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/lessons/{{summaryLesson2Id}}/progress",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{summaryCourseId}},\n  \"status\": \"COMPLETED\",\n  \"watchedSeconds\": 60\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-27 S hoàn thành bài hai — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"SETUP-27 S hoàn thành bài hai — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-28 B hoàn thành bài một",
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/lessons/{{summaryLesson1Id}}/progress",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{summaryCourseId}},\n  \"status\": \"COMPLETED\",\n  \"watchedSeconds\": 60\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-28 B hoàn thành bài một — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"SETUP-28 B hoàn thành bài một — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SETUP-29 C chỉ bắt đầu bài một",
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{summaryTokenC}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/lessons/{{summaryLesson1Id}}/progress",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": {{summaryCourseId}},\n  \"status\": \"IN_PROGRESS\",\n  \"watchedSeconds\": 60\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"SETUP-29 C chỉ bắt đầu bài một — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"SETUP-29 C chỉ bắt đầu bài một — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-12.3 Đúng số liệu nghiệm thu S B C D",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/courses/{{summaryCourseId}}/learners/summary"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-12.3 Đúng số liệu nghiệm thu S B C D — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-12.3 Đúng số liệu nghiệm thu S B C D — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store');pm.expect(Object.keys(d).sort()).to.eql(['active','averageProgress','cancelled','certificatesIssued','completed','completionRate','lessons']);d.lessons.forEach(l => pm.expect(Object.keys(l).sort()).to.eql(['completedCount','completionRate','lessonId']));pm.expect(d.active).to.eql(2);pm.expect(d.completed).to.eql(1);pm.expect(d.cancelled).to.eql(1);pm.expect(d.averageProgress).to.eql(50);pm.expect(d.completionRate).to.eql(33.33);pm.expect(d.certificatesIssued).to.eql(1);pm.expect(d.lessons.length).to.eql(2);const first = d.lessons.find(l => l.lessonId === id('summaryLesson1Id')); const second = d.lessons.find(l => l.lessonId === id('summaryLesson2Id'));pm.expect(first.completedCount).to.eql(2);pm.expect(first.completionRate).to.eql(66.67);pm.expect(second.completedCount).to.eql(1);pm.expect(second.completionRate).to.eql(33.33);",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-12.4 Bộ lọc học viên không đổi số liệu",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/courses/{{summaryCourseId}}/learners/summary?status=CANCELLED&page=99&size=1"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-12.4 Bộ lọc học viên không đổi số liệu — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-12.4 Bộ lọc học viên không đổi số liệu — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store');pm.expect(Object.keys(d).sort()).to.eql(['active','averageProgress','cancelled','certificatesIssued','completed','completionRate','lessons']);d.lessons.forEach(l => pm.expect(Object.keys(l).sort()).to.eql(['completedCount','completionRate','lessonId']));pm.expect(d.active).to.eql(2);pm.expect(d.completed).to.eql(1);pm.expect(d.cancelled).to.eql(1);pm.expect(d.averageProgress).to.eql(50);pm.expect(d.completionRate).to.eql(33.33);pm.expect(d.certificatesIssued).to.eql(1);pm.expect(d.lessons.length).to.eql(2);const first = d.lessons.find(l => l.lessonId === id('summaryLesson1Id')); const second = d.lessons.find(l => l.lessonId === id('summaryLesson2Id'));pm.expect(first.completedCount).to.eql(2);pm.expect(first.completionRate).to.eql(66.67);pm.expect(second.completedCount).to.eql(1);pm.expect(second.completionRate).to.eql(33.33);",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-12.5 Admin xem được số liệu",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/courses/{{summaryCourseId}}/learners/summary"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-12.5 Admin xem được số liệu — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-12.5 Admin xem được số liệu — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store');pm.expect(Object.keys(d).sort()).to.eql(['active','averageProgress','cancelled','certificatesIssued','completed','completionRate','lessons']);d.lessons.forEach(l => pm.expect(Object.keys(l).sort()).to.eql(['completedCount','completionRate','lessonId']));pm.expect(d.active).to.eql(2);pm.expect(d.completed).to.eql(1);pm.expect(d.cancelled).to.eql(1);pm.expect(d.averageProgress).to.eql(50);pm.expect(d.completionRate).to.eql(33.33);pm.expect(d.certificatesIssued).to.eql(1);pm.expect(d.lessons.length).to.eql(2);const first = d.lessons.find(l => l.lessonId === id('summaryLesson1Id')); const second = d.lessons.find(l => l.lessonId === id('summaryLesson2Id'));pm.expect(first.completedCount).to.eql(2);pm.expect(first.completionRate).to.eql(66.67);pm.expect(second.completedCount).to.eql(1);pm.expect(second.completionRate).to.eql(33.33);",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-12.6 Không token qua gateway",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/courses/{{summaryCourseId}}/learners/summary"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-12.6 Không token qua gateway — HTTP 401\", () => {",
+                  "pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test('Lỗi có hợp đồng API', () => { pm.expect(response.success).to.eql(false); pm.expect(response.code).to.be.a('string'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-12.7 Giảng viên B đã ghi danh vẫn không xem được",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/courses/{{summaryCourseId}}/learners/summary?instructorId={{instructorAId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-12.7 Giảng viên B đã ghi danh vẫn không xem được — HTTP 403\", () => {",
+                  "pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test('Lỗi có hợp đồng API', () => { pm.expect(response.success).to.eql(false); pm.expect(response.code).to.be.a('string'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-12.8 Học viên không giả chủ khóa qua query",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/courses/{{summaryCourseId}}/learners/summary?userId={{instructorAId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-12.8 Học viên không giả chủ khóa qua query — HTTP 403\", () => {",
+                  "pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test('Lỗi có hợp đồng API', () => { pm.expect(response.success).to.eql(false); pm.expect(response.code).to.be.a('string'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-12.9 Khóa không có snapshot",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/courses/{{missingId}}/learners/summary"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-12.9 Khóa không có snapshot — HTTP 404\", () => {",
+                  "pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test('Lỗi có hợp đồng API', () => { pm.expect(response.success).to.eql(false); pm.expect(response.code).to.be.a('string'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-12.10 ID khóa 0",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/courses/0/learners/summary"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-12.10 ID khóa 0 — HTTP 400\", () => {",
+                  "pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('Lỗi có hợp đồng API', () => { pm.expect(response.success).to.eql(false); pm.expect(response.code).to.be.a('string'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-12.10 ID khóa -1",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/courses/-1/learners/summary"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-12.10 ID khóa -1 — HTTP 400\", () => {",
+                  "pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('Lỗi có hợp đồng API', () => { pm.expect(response.success).to.eql(false); pm.expect(response.code).to.be.a('string'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-12.10 ID khóa abc",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/courses/abc/learners/summary"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-12.10 ID khóa abc — HTTP 400\", () => {",
+                  "pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('Lỗi có hợp đồng API', () => { pm.expect(response.success).to.eql(false); pm.expect(response.code).to.be.a('string'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-12.11 Chi tiết khóa vẫn qua course-service",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/courses/{{summaryCourseId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-12.11 Chi tiết khóa vẫn qua course-service — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-12.11 Chi tiết khóa vẫn qua course-service — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.expect(d.id).to.eql(Number(pm.collectionVariables.get(\"summaryCourseId\")));pm.expect(d.status).to.eql('PUBLISHED');",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENROLL-12.11 Đề cương vẫn qua course-service",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/api/courses/{{summaryCourseId}}/curriculum"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const cv = (key) => pm.collectionVariables.get(key);",
+                  "const id = (key) => Number(cv(key));",
+                  "let response; try { response = pm.response.json(); } catch { response = {}; }",
+                  "const d = response.data;",
+                  "pm.test(\"ENROLL-12.11 Đề cương vẫn qua course-service — HTTP 200\", () => {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "if (pm.response.code < 400) {",
+                  "pm.test(\"ENROLL-12.11 Đề cương vẫn qua course-service — dữ liệu\", () => {",
+                  "pm.expect(response.success).to.eql(true);",
+                  "pm.expect(d.length).to.eql(1);pm.expect(d[0].lessons.length).to.eql(2);",
+                  "});",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "8. ENROLL-09 — thao tác hạ tầng thủ công",
       "item": [],
       "description": "Không giả PASS bằng HTTP. Năm ca ENROLL-09.1–09.5 cần dừng MySQL, gửi Kafka và làm DLT lỗi trên môi trường thử riêng. Thực hiện đúng docs/test-cases/enrollment.md, khôi phục hạ tầng sau mỗi ca; ghi HTTP là N/A cùng log, offset và message DLT trong biên bản. Runner không thực hiện năm ca này."
     }

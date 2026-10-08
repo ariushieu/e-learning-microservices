@@ -1,0 +1,64 @@
+{
+  "browser": "Codex in-app browser",
+  "frontend": "Next.js production on localhost:3001",
+  "quizId": 15,
+  "checks": [
+    {
+      "name": "Dialog opens; submit disabled before selecting a file",
+      "pass": true
+    },
+    {
+      "name": "Downloaded sample bytes match bundled UTF-8 BOM template",
+      "pass": true
+    },
+    {
+      "name": "Invalid row reports physical line 2; valid later row not saved",
+      "pass": true
+    },
+    {
+      "name": "2 MiB file rejected before upload",
+      "pass": true
+    },
+    {
+      "name": "Empty file rejected",
+      "pass": true
+    },
+    {
+      "name": "Selecting corrected sample clears prior errors and imports 3 questions",
+      "pass": true
+    },
+    {
+      "name": "List refreshes with three types, expected options and total score 4",
+      "pass": true
+    },
+    {
+      "name": "Imported quiz publishes successfully",
+      "pass": true
+    },
+    {
+      "name": "All 3 imported questions playable; UI submission scores 100%",
+      "pass": true
+    },
+    {
+      "name": "Error dialog fits 375px without horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "Editor fits 375px",
+      "pass": true
+    },
+    {
+      "name": "Editor fits 768px",
+      "pass": true
+    },
+    {
+      "name": "Editor fits 1366px",
+      "pass": true
+    },
+    {
+      "name": "Reopening resets file/errors; cancel closes dialog",
+      "pass": true
+    }
+  ],
+  "consoleErrorsAtEnd": []
+}

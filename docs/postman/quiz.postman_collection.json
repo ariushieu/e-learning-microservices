@@ -9800,6 +9800,936 @@
           ]
         }
       ]
+    },
+    {
+      "name": "9. Nhập câu hỏi CSV (QUIZ-19)",
+      "description": "Multipart chứa file questions.csv. Dữ liệu được tạo trong collection, không cần đường dẫn file cục bộ. Chạy sau setup; chỉ dùng dữ liệu QA.",
+      "item": [
+        {
+          "name": "QUIZ-19 chuẩn bị đề nhập CSV",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"courseId\":\"{{publishedCourseId}}\",\"title\":\"Nhập CSV {{runId}}\",\"passScore\":75}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('importQuizId',pm.response.json().data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-19.1 Tải mẫu UTF-8",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{importQuizId}}/questions/import/template",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Downloadable template',()=>{pm.expect(pm.response.headers.get('Content-Type')).to.include('text/csv');pm.expect(pm.response.headers.get('Content-Disposition')).to.include('mau-cau-hoi.csv');pm.expect(pm.response.text()).to.include('MULTIPLE_CHOICE');pm.collectionVariables.set('importSample',pm.response.text());});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-19.2 Nhập file mẫu 3 câu",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{importQuizId}}/questions/import",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data; boundary=QuizCsvBoundary"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "--QuizCsvBoundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"questions.csv\"\r\nContent-Type: text/csv\r\n\r\n{{importSample}}\r\n--QuizCsvBoundary--\r\n"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "pm.test('Three imported',()=>pm.expect(pm.response.json().data.imported).to.eql(3));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-19.3 Dòng 2 thiếu đáp án đúng, không lưu dở",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{importQuizId}}/questions/import",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data; boundary=QuizCsvBoundary"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "--QuizCsvBoundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"questions.csv\"\r\nContent-Type: text/csv\r\n\r\ntype,content,score,explanation,option1,option2\r\nSINGLE_CHOICE,Câu hỏi,1,Giải thích,Đúng,Sai\r\nSINGLE_CHOICE,Câu hỏi,1,Giải thích,*Đúng,Sai\r\n\r\n--QuizCsvBoundary--\r\n"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Row 2 validation error',()=>{const b=pm.response.json();pm.expect(b.code).to.eql('VALIDATION_FAILED');pm.expect(b.errors[0].line).to.eql(2);pm.expect(b.errors[0].message).to.be.a('string').and.not.empty;});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-19.3b Đề vẫn đúng 3 câu",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{importQuizId}}/questions",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Unchanged after invalid import',()=>{const qs=pm.response.json().data;pm.expect(qs.length).to.eql(3);pm.expect(qs.map(q=>q.type)).to.eql(['SINGLE_CHOICE','MULTIPLE_CHOICE','TRUE_FALSE']);pm.collectionVariables.set('importAnswers',JSON.stringify({answers:qs.map(q=>({questionId:q.id,selectedOptionIds:q.options.filter(o=>o.isCorrect).map(o=>o.id)}))}));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-19.4 B không phải tác giả",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{importQuizId}}/questions/import",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data; boundary=QuizCsvBoundary"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "--QuizCsvBoundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"questions.csv\"\r\nContent-Type: text/csv\r\n\r\ntype,content,score,explanation,option1,option2\r\nSINGLE_CHOICE,Câu hỏi,1,Giải thích,*Đúng,Sai\r\n\r\n--QuizCsvBoundary--\r\n"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403',()=>pm.response.to.have.status(403));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-19.5 Học viên",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{importQuizId}}/questions/import",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data; boundary=QuizCsvBoundary"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "--QuizCsvBoundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"questions.csv\"\r\nContent-Type: text/csv\r\n\r\ntype,content,score,explanation,option1,option2\r\nSINGLE_CHOICE,Câu hỏi,1,Giải thích,*Đúng,Sai\r\n\r\n--QuizCsvBoundary--\r\n"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403',()=>pm.response.to.have.status(403));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-19.6 Không đăng nhập",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{importQuizId}}/questions/import",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data; boundary=QuizCsvBoundary"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "--QuizCsvBoundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"questions.csv\"\r\nContent-Type: text/csv\r\n\r\ntype,content,score,explanation,option1,option2\r\nSINGLE_CHOICE,Câu hỏi,1,Giải thích,*Đúng,Sai\r\n\r\n--QuizCsvBoundary--\r\n"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401',()=>pm.response.to.have.status(401));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-19.7 File 2 MB",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{importQuizId}}/questions/import",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data; boundary=QuizCsvBoundary"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "--QuizCsvBoundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"questions.csv\"\r\nContent-Type: text/csv\r\n\r\n{{importOversize}}\r\n--QuizCsvBoundary--\r\n"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('importOversize','x'.repeat(2*1024*1024));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Row 1 validation error',()=>{const b=pm.response.json();pm.expect(b.code).to.eql('VALIDATION_FAILED');pm.expect(b.errors[0].line).to.eql(1);pm.expect(b.errors[0].message).to.be.a('string').and.not.empty;});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-19.8 201 câu",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{importQuizId}}/questions/import",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data; boundary=QuizCsvBoundary"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "--QuizCsvBoundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"questions.csv\"\r\nContent-Type: text/csv\r\n\r\n{{importMany}}\r\n--QuizCsvBoundary--\r\n"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('importMany',\"type,content,score,explanation,option1,option2\\r\\n\"+\"SINGLE_CHOICE,Câu hỏi,1,Giải thích,*Đúng,Sai\\r\\n\".repeat(201));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Row 202 validation error',()=>{const b=pm.response.json();pm.expect(b.code).to.eql('VALIDATION_FAILED');pm.expect(b.errors[0].line).to.eql(202);pm.expect(b.errors[0].message).to.be.a('string').and.not.empty;});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-19.9 BOM, dấu kép và xuống dòng trong ô",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{importQuizId}}/questions/import",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data; boundary=QuizCsvBoundary"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "--QuizCsvBoundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"questions.csv\"\r\nContent-Type: text/csv\r\n\r\n﻿type,content,score,explanation,option1,option2\r\nSINGLE_CHOICE,\"Nội dung, \"\"trích dẫn\"\"\r\nDòng tiếp\",1,\"Giải\r\nthích\",*Đúng,Sai\r\n\r\n--QuizCsvBoundary--\r\n"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "pm.test('One imported by admin',()=>pm.expect(pm.response.json().data.imported).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-19.10 Dòng vật lý sau ô nhiều dòng",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{importQuizId}}/questions/import",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data; boundary=QuizCsvBoundary"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "--QuizCsvBoundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"questions.csv\"\r\nContent-Type: text/csv\r\n\r\ntype,content,score,explanation,option1,option2\r\nSINGLE_CHOICE,\"Q\r\nQ\",1,,*A,B\r\nSINGLE_CHOICE,Câu hỏi,1,Giải thích,Đúng,Sai\r\n\r\n--QuizCsvBoundary--\r\n"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Row 4 validation error',()=>{const b=pm.response.json();pm.expect(b.code).to.eql('VALIDATION_FAILED');pm.expect(b.errors[0].line).to.eql(4);pm.expect(b.errors[0].message).to.be.a('string').and.not.empty;});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-19.11 Dấu chấm phẩy Excel",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{importQuizId}}/questions/import",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data; boundary=QuizCsvBoundary"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "--QuizCsvBoundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"questions.csv\"\r\nContent-Type: text/csv\r\n\r\ntype;content;score;explanation;option1;option2\r\nSINGLE_CHOICE;Câu hỏi;1;Giải thích;*Đúng;Sai\r\n\r\n--QuizCsvBoundary--\r\n"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-19.12 CSV sai cú pháp",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{importQuizId}}/questions/import",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data; boundary=QuizCsvBoundary"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "--QuizCsvBoundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"questions.csv\"\r\nContent-Type: text/csv\r\n\r\ntype,content,score,explanation,option1,option2\r\nSINGLE_CHOICE,\"unclosed\r\n--QuizCsvBoundary--\r\n"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Row 2 validation error',()=>{const b=pm.response.json();pm.expect(b.code).to.eql('VALIDATION_FAILED');pm.expect(b.errors[0].line).to.eql(2);pm.expect(b.errors[0].message).to.be.a('string').and.not.empty;});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-19.13 Ô đáp án quá dài",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{importQuizId}}/questions/import",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data; boundary=QuizCsvBoundary"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "--QuizCsvBoundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"questions.csv\"\r\nContent-Type: text/csv\r\n\r\ntype,content,score,explanation,option1,option2\r\nSINGLE_CHOICE,Câu hỏi,1,Giải thích,*aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,Sai\r\n\r\n--QuizCsvBoundary--\r\n"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  "pm.test('Row 2 validation error',()=>{const b=pm.response.json();pm.expect(b.code).to.eql('VALIDATION_FAILED');pm.expect(b.errors[0].line).to.eql(2);pm.expect(b.errors[0].message).to.be.a('string').and.not.empty;});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-19.14 B không tải được mẫu",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{importQuizId}}/questions/import/template",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403',()=>pm.response.to.have.status(403));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-19.15 Đề không tồn tại",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{missingId}}/questions/import",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data; boundary=QuizCsvBoundary"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "--QuizCsvBoundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"questions.csv\"\r\nContent-Type: text/csv\r\n\r\n{{importSample}}\r\n--QuizCsvBoundary--\r\n"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404',()=>pm.response.to.have.status(404));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-19 lấy đủ 5 câu sau các lần nhập hợp lệ",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{importQuizId}}/questions",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Exactly five questions; contents preserved',()=>{const qs=pm.response.json().data;pm.expect(qs.length).to.eql(5);pm.expect(qs[3].content).to.eql('Nội dung, \"trích dẫn\"\\r\\nDòng tiếp');pm.collectionVariables.set('importAnswers',JSON.stringify({answers:qs.map(q=>({questionId:q.id,selectedOptionIds:q.options.filter(o=>o.isCorrect).map(o=>o.id)}))}));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-19 xuất bản đề vừa nhập",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/quizzes/{{importQuizId}}/status",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\":\"PUBLISHED\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-19.16 Bắt đầu làm thử",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{importQuizId}}/attempts",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('importAttemptId',pm.response.json().data.id);pm.test('Attempt in progress',()=>pm.expect(pm.response.json().data.status).to.eql('IN_PROGRESS'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-19.16a Lấy đề để làm",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{importQuizId}}/take",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('All five playable questions without answers',()=>{pm.expect(pm.response.json().data.questions.length).to.eql(5);pm.expect(pm.response.text()).to.not.include('isCorrect');});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-19.16b Nộp các câu vừa nhập",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/attempts/{{importAttemptId}}/submit",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{{importAnswers}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Full score',()=>{pm.expect(pm.response.json().data.score).to.eql(100);pm.expect(pm.response.json().data.passed).to.eql(true);});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

@@ -241,6 +241,31 @@ loại bản ghi cũ/tương lai. Trình duyệt kiểm `/admin`, link thống k
 375/768/1366px không tràn, mobile thấy ngay nút Cấp quyền/Khóa trên thẻ; nội dung xác nhận
 không mất tên/email trong lúc đóng (thành công, hủy và Escape).
 
+## AUTH-12 — Email so khớp chính xác
+
+Collection tạo email ASCII riêng theo `runId`; họ tên fixture không chứa email để kiểm đúng nhánh tìm email.
+
+| # | Tình huống | Mong đợi |
+|---|---|---|
+| 1 | Đăng ký `qa.hocvien.<runId>@example.com` | 201; lưu id làm mốc |
+| 2 | Đăng nhập bằng `qa.hocviên.<runId>@example.com`, đúng mật khẩu | 401 UNAUTHORIZED |
+| 3 | Đăng nhập bằng email chữ hoa | 200; đúng id và email chuẩn hóa của ca 1 |
+| 4 | Đăng ký email có dấu ở tên/hậu tố miền, dấu tổ hợp hoặc chữ fullwidth | 400 VALIDATION_FAILED; fieldErrors.email có thông báo ASCII |
+| 5 | Đăng ký lại email chữ hoa của ca 1 | 409 DUPLICATE_RESOURCE |
+| 6 | Admin tìm email có dấu | 200; không khớp tài khoản ASCII; danh sách rỗng |
+| 7 | Admin tìm email chữ hoa với khoảng trắng hai đầu | 200; đúng một tài khoản của ca 1 |
+
+Kiểm riêng trên MySQL bằng `python scripts/check-auth-email-migration.py`: database rỗng,
+email cũ được trim/lower nhưng không mất dấu/mật khẩu, hai tài khoản trùng sau chuẩn hóa
+phải dừng trước khi đổi dữ liệu/collation. Script dùng schema tạm và tự dọn; cấu hình qua
+`MYSQL_BIN`, `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER` (mật khẩu qua option file/`MYSQL_PWD`).
+
+Kiểm web bằng `node scripts/check-auth-email-browser.cjs` (cần Playwright và Edge):
+375/768/1366px; lỗi Unicode tiếng Việt dưới ô Email, aria-invalid, giữ giá trị để sửa;
+email rỗng/sai định dạng, số điện thoại sai, mật khẩu ngắn vẫn bị chặn;
+sửa thành ASCII thì đăng ký và tự đăng nhập được. Script tạo tài khoản QA, chạy trên DB test.
+Biên bản: [email so khớp chính xác](ket-qua/auth-email.md).
+
 ## Truy vết nguồn
 
 - [AuthController](../../auth-service/src/main/java/com/hunre/authservice/controller/AuthController.java),

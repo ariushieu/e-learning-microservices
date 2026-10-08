@@ -1,0 +1,12 @@
+{
+  "checks": [
+    "Exactly 1048576 bytes accepted",
+    "1048577 bytes rejected with 400",
+    "Oversize leaves existing questions unchanged",
+    "200 rows accepted on MySQL",
+    "Append positions consecutive"
+  ],
+  "passed": 5,
+  "quizId": 33,
+  "initialRows": 105
+}

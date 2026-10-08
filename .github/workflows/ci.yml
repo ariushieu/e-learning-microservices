@@ -74,6 +74,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Enrollment summary display rules
+        run: node --test ../scripts/check-enrollment-summary.test.mjs
+
       - name: Build
         run: pnpm build
 
@@ -175,7 +178,7 @@ jobs:
       - name: Smoke test through the gateway
         run: bash scripts/smoke-test.sh
 
-      - name: Set up Node for auth acceptance tests
+      - name: Set up Node for Docker acceptance tests
         uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -209,6 +212,41 @@ jobs:
           path: target/auth-acceptance.json
           if-no-files-found: ignore
           retention-days: 14
+
+      - name: Enrollment collection through Docker gateway
+        run: |
+          set -e
+          trap 'RATE_LIMIT_ENABLED=true docker compose --profile app up -d --wait api-gateway' EXIT
+          RATE_LIMIT_ENABLED=false docker compose --profile app up -d --wait --wait-timeout 120 api-gateway
+          pnpm dlx newman@6.2.2 run docs/postman/enrollment.postman_collection.json --delay-request 60 --timeout-request 15000 --timeout-script 30000 --reporters cli,json --reporter-json-export "$RUNNER_TEMP/enrollment-newman-report.json"
+
+      - name: Sanitize enrollment acceptance results
+        if: always()
+        env:
+          SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if [ -f "$RUNNER_TEMP/enrollment-newman-report.json" ]; then
+            mkdir -p "$RUNNER_TEMP/enrollment-summary-evidence"
+            node scripts/report-enrollment-newman.cjs "$RUNNER_TEMP/enrollment-newman-report.json" "$RUNNER_TEMP/enrollment-summary-evidence/docker-http.json"
+          fi
+
+      - name: Check enrollment summary in Chromium
+        env:
+          ENROLLMENT_PLAYWRIGHT_MODULE: ${{ runner.temp }}/enrollment-ui/node_modules/playwright
+          ENROLLMENT_UI_OUTPUT: ${{ runner.temp }}/enrollment-summary-evidence
+        run: |
+          npm install --prefix "$RUNNER_TEMP/enrollment-ui" --no-package-lock --no-save playwright@1.56.1
+          node "$RUNNER_TEMP/enrollment-ui/node_modules/playwright/cli.js" install --with-deps chromium
+          node scripts/check-enrollment-summary-ui.cjs
+
+      - name: Upload enrollment UI evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: enrollment-summary-ui
+          path: ${{ runner.temp }}/enrollment-summary-evidence/
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Container status and logs (khi fail)
         if: failure()

@@ -211,3 +211,30 @@ Phần quyền sở hữu đã kiểm trước đó:
   H2, token ký riêng cho kiểm thử, tắt Kafka và giới hạn request bằng cấu hình tiến
   trình tạm; không thay cấu hình xác thực mặc định. Đây là kiểm chứng phần quyền sở
   hữu, chưa phải biên bản hoàn tất đợt Postman chung của nhóm.
+
+## Nhập câu hỏi từ CSV (QUIZ-19)
+
+Trên trang soạn đề, chọn **Nhập từ CSV**, tải file mẫu, chọn file rồi bấm **Nhập câu hỏi**.
+Các câu mới được thêm cuối đề. Nếu một dòng không hợp lệ, toàn bộ lần nhập bị từ chối;
+bảng lỗi chỉ ra dòng cần sửa. Không tự động nhập lại khi mất kết nối: kiểm tra danh sách
+trước khi thử lại để tránh trùng câu.
+
+- `POST /api/quizzes/{quizId}/questions/import`, multipart với trường `file`; thành công
+  trả 201 `{success:true,data:{imported:3},...}`. Chỉ tác giả hoặc ADMIN; B/học viên 403.
+- `GET /api/quizzes/{quizId}/questions/import/template`: tải mẫu 3 câu có BOM UTF-8,
+  cùng quyền truy cập. File nguồn: [questions-template.csv](src/main/resources/csv/questions-template.csv).
+- CSV UTF-8 (có/không BOM), dấu phẩy hoặc chấm phẩy, CRLF/LF. Trong Excel chọn **CSV UTF-8**
+  khi lưu; không gửi XLSX hoặc CSV dùng bảng mã ANSI. Ngoặc kép và xuống dòng trong ô được
+  đọc theo RFC 4180; dấu kép bên trong ô viết thành `""`.
+- Header bắt buộc: `type,content,score,explanation,option1,option2,...`; 2–20 cột đáp án.
+  Giữ cột trống cuối dòng để đủ số cột như header. Đáp án đúng có `*` ngay đầu ô.
+- `SINGLE_CHOICE` và `TRUE_FALSE`: đúng 1 đáp án đúng; `MULTIPLE_CHOICE`: ít nhất 1.
+  Ít nhất 2 đáp án; Đúng/Sai đúng 2. Các cột đáp án không dùng phải nằm cuối dòng.
+- Điểm 0.01–999.99, tối đa 2 số lẻ, dùng dấu chấm. Nội dung và giải thích tối đa 10000
+  ký tự mỗi ô; đáp án tối đa 1000 ký tự (không tính dấu `*`). Nội dung/đáp án không trống.
+- Tối đa 200 câu và **1048576 byte** (1 MiB). Vượt giới hạn trả 400, không nhập gì.
+- Lỗi 400 có `code: VALIDATION_FAILED`, `errors: [{line,message},...]`. `line` là dòng vật lý
+  bắt đầu bản ghi, tính cả header và xuống dòng trong ô; lỗi toàn file dùng dòng 1.
+- Collection nhóm 9 tạo multipart có filename trực tiếp, không cần đặt đường dẫn file máy.
+  Chạy cùng lệnh Newman ở trên, sau setup. Xem [QUIZ-19](../docs/test-cases/quiz.md#quiz-19--nhập-câu-hỏi-csv)
+  và [biên bản](../docs/test-cases/ket-qua/quiz-import.md).

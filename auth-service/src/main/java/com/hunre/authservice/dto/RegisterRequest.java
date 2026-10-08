@@ -15,6 +15,8 @@ public class RegisterRequest {
 
     @NotBlank(message = "Email không được để trống")
     @Email(message = "Email không đúng định dạng")
+    @Pattern(regexp = "[\\x00-\\x7F]*", message = "Email chỉ được chứa ký tự ASCII, không dùng chữ có dấu")
+    @Size(max = 255, message = "Email không được vượt quá 255 ký tự")
     private String email;
 
     @NotBlank(message = "Mật khẩu không được để trống")
