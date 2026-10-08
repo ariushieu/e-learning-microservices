@@ -1,6 +1,6 @@
 # Bảng theo dõi công việc
 
-> **Cập nhật lần cuối:** 08/10/2026 — `main` ở `3f0e35f`
+> **Cập nhật lần cuối:** 08/10/2026 — `main` ở `762c17d`
 >
 > File này là nơi duy nhất ghi ai đang làm gì. Xong một việc thì nhóm trưởng cập nhật ngay
 > tại đây, nên **cứ `git pull` là biết việc tiếp theo của mình**, không phải hỏi ai.
@@ -20,20 +20,20 @@
 | Người | Service | Việc đang mở | Ưu tiên | Cỡ |
 |---|---|---|---|---|
 | Hiếu | api-gateway, web | [Giới hạn đăng nhập theo IP thật](#hiếu--giới-hạn-đăng-nhập-theo-ip-thật) — hiện cả lớp dùng chung một xô | **Cao — xong trước demo** | ~1h |
-| quocluibotre | auth | [Quản lý người dùng cho admin: danh sách, tìm kiếm, khóa tài khoản](#quocluibotre--quản-lý-người-dùng-cho-admin) | Trung bình | ~3h |
+| quocluibotre | auth | [Trang tổng quan quản trị, hoàn thiện #70](#quocluibotre--trang-tổng-quan-quản-trị) | Trung bình | ~2h |
 | phamquyet19042005-netizen | enrollment | [Giảng viên xem học viên của khóa và tiến độ](#phamquyet19042005-netizen--giảng-viên-xem-học-viên-của-khóa) | Trung bình | ~3h |
 | hiepdeptrai0111 | quiz | [Giảng viên xem kết quả bài kiểm tra](#hiepdeptrai0111--giảng-viên-xem-kết-quả-bài-kiểm-tra) | Trung bình | ~3h |
-| duyd92689-debug | course | [Tài liệu đính kèm bài học trên khu giảng dạy, hoàn thiện đánh giá](#duyd92689-debug--tài-liệu-đính-kèm-bài-học-hoàn-thiện-đánh-giá) | Trung bình | ~2h |
+| duyd92689-debug | course | [Admin gỡ đánh giá vi phạm, hoàn thiện #69](#duyd92689-debug--admin-gỡ-đánh-giá-vi-phạm) | Trung bình | ~2h |
 
-Bốn việc của nhóm đều là **tính năng cho giảng viên và admin** — phần học viên đã đủ cho demo, còn phía
-giảng dạy mới chỉ soạn được nội dung mà chưa xem được ai học, học ra sao.
+Bốn việc của nhóm đều là **tính năng cho giảng viên và admin** — phần học viên đã đủ cho demo. Đã xong
+ở lượt này: tài liệu đính kèm trên khu giảng dạy (#69), admin tìm và khóa tài khoản (#70).
 
 **Khung giao diện đã có** (#54): mọi việc web ở trên làm theo [frontend/DESIGN.md](../frontend/DESIGN.md)
 và trang `/design`. Chạy cả hệ thống: `docker compose --profile app up -d --build --wait` rồi mở
 http://localhost:3000.
 
 **Collection Postman: đủ cả 7 file**, đều đã chạy thật trên Docker — auth, course, enrollment, quiz
-(#56, #57, #59, #60, cập nhật ở #64, #65, #67) và gateway, notification, demo-flow (#66). Trước buổi demo, chạy
+(#56, #57, #59, #60, cập nhật ở #64, #65, #67, #69, #70) và gateway, notification, demo-flow (#66). Trước buổi demo, chạy
 `demo-flow` trên máy mình để xem cả chuỗi còn thông (81 assertion, khoảng 12 giây). Quy ước chung ở
 [mục dưới](#cả-nhóm--collection-postman-của-service-mình). Ca FAIL hay việc mới sinh ra khi chạy
 collection thì sửa ở PR riêng như các việc trong bảng trên.
@@ -180,8 +180,8 @@ service đó. Không gộp chung một file: năm người cùng sửa một JSO
 
 | Người | File | Chạy tình huống | Trạng thái (chạy thật trên Docker) |
 |---|---|---|---|
-| quocluibotre | `docs/postman/auth.postman_collection.json` | [auth.md](test-cases/auth.md) | Xong #57, #65 — 497/497 assertion |
-| duyd92689-debug | `docs/postman/course.postman_collection.json` | [course.md](test-cases/course.md) | Xong #56, #64 — 778/778 |
+| quocluibotre | `docs/postman/auth.postman_collection.json` | [auth.md](test-cases/auth.md) | Xong #57, #65, #70 — 665/665 assertion (3 ca BLOCKED vì cần fixture riêng) |
+| duyd92689-debug | `docs/postman/course.postman_collection.json` | [course.md](test-cases/course.md) | Xong #56, #64, #69 — 827/827 |
 | phamquyet19042005-netizen | `docs/postman/enrollment.postman_collection.json` | [enrollment.md](test-cases/enrollment.md) | Xong #60 — 310/310 |
 | hiepdeptrai0111 | `docs/postman/quiz.postman_collection.json` | [quiz.md](test-cases/quiz.md) | Xong #59, #67 — 417/417 |
 | Hiếu | `gateway`, `notification`, `demo-flow` | [gateway.md](test-cases/gateway.md), [notification.md](test-cases/notification.md) | Xong #66 — gateway 31/31 ca, notification 55/55 ca, demo-flow 81/81 |
@@ -234,32 +234,39 @@ với nguyên dữ liệu cũ là khóa được đồng bộ. Hoặc dùng khó
 
 ---
 
-### quocluibotre — quản lý người dùng cho admin
+### quocluibotre — trang tổng quan quản trị
 
-> `/admin/users` hiện bắt admin **gõ tay ID** mới cấp được quyền, không có danh sách người dùng.
-> `UserStatus.LOCKED` có sẵn, đăng nhập và refresh đã chặn tài khoản `LOCKED` (403 "Tài khoản của
-> bạn đã bị khóa"), nhưng chưa có API nào đặt được trạng thái này.
+> `/admin` hiện chỉ chuyển thẳng sang `/admin/users`. Từ #70 admin đã tìm và khóa được tài khoản,
+> nhưng vào khu quản trị chưa thấy hệ thống đang có bao nhiêu người, bao nhiêu giảng viên, ai bị khóa.
+> Lúc demo, đây là trang đầu tiên người xem thấy khi đăng nhập bằng admin.
 
 **Cần làm.**
 
-- auth-service, chỉ ADMIN (người khác 403):
-  - `GET /api/users?keyword=&role=&status=&page=&size=`: `keyword` tìm theo email hoặc họ tên.
-    Phân trang (C1), sort cho phép `createdAt`, `email`, `fullName`; sort khác trả 400. Trả `id`,
-    `email`, `fullName`, `phone`, `roles`, `status`, `createdAt`; không trả `passwordHash`.
-  - `PATCH /api/users/{id}/status` body `{"status": "LOCKED"}` hoặc `"ACTIVE"` (B4).
-    - Không tự khóa chính mình, không khóa tài khoản có `ROLE_ADMIN`: cả hai trả 422, để không ai
-      khóa được hết admin.
-    - Khóa thì gọi `revokeAllUserTokens` trong cùng transaction: refresh token cũ hết dùng được.
-  - README ghi rõ: access token đã phát vẫn dùng được tới khi hết hạn (tối đa 15 phút), vì gateway
-    không tra DB mỗi request.
-- Web `/admin/users`:
-  - Bảng người dùng (`DataTableCard`), ô tìm kiếm, lọc vai trò và trạng thái, phân trang.
-  - Mỗi dòng có nút cấp quyền (dùng lại form hiện có, bỏ ô gõ ID) và nút Khóa / Mở khóa có hộp
-    thoại xác nhận. Trạng thái hiện bằng `StatusBadge`.
+- auth-service, chỉ ADMIN (người khác 403, không token 401):
+  - `GET /api/users/stats` trả `total`, `byRole` (`ROLE_STUDENT`, `ROLE_INSTRUCTOR`, `ROLE_ADMIN`),
+    `byStatus` (`ACTIVE`, `LOCKED`, `PENDING`), `newLast7Days`.
+  - Đếm bằng truy vấn `COUNT … GROUP BY`, không tải hết bảng `users` lên rồi đếm trong Java.
+  - Một người nhiều vai trò thì được đếm ở mỗi vai trò, README ghi rõ để không ai cộng `byRole` ra
+    `total`.
+- Web `/admin` (thay trang chuyển hướng hiện tại):
+  - `StatGrid` + `Stat`: tổng người dùng, giảng viên, admin, bị khóa, mới trong 7 ngày.
+  - Thẻ "bị khóa" là link tới `/admin/users?status=LOCKED`, thẻ giảng viên tới
+    `/admin/users?role=ROLE_INSTRUCTOR`.
+  - Bảng 5 tài khoản mới nhất, dùng lại `GET /api/users?sort=createdAt,desc&size=5`, có link "Xem tất cả".
+  - Sidebar thêm mục "Tổng quan" trên "Người dùng & quyền" (`components/layout/` là của Hiếu,
+    CODEOWNERS tự mời review).
+- Hoàn thiện #70, góp ý khi review:
+  - `user-management-table.tsx`: lúc hộp xác nhận đang mờ dần, tiêu đề chớp thành "Khóa tài khoản ?"
+    vì `setChanging(null)` xóa tên trước khi hộp đóng xong. Giữ user đang chọn tới khi hiệu ứng đóng
+    kết thúc, hoặc tách `open` khỏi dữ liệu hiển thị.
+  - `admin/users/page.tsx` và `user-management-table.tsx`: tách các dòng JSX dài cho giống các file
+    khác trong `components/`.
+  - Ở 375px phải cuộn ngang bảng mới thấy nút Khóa / Cấp quyền: đưa thao tác lên dòng tên, hoặc hiện
+    dạng thẻ trên điện thoại.
 
-**Tự kiểm.** Admin tìm "qa.student" ra đúng một dòng. Học viên gọi `GET /api/users` → 403. Khóa S →
-S đăng nhập nhận 403, refresh token cũ của S không đổi được token; mở khóa → đăng nhập lại được.
-Admin tự khóa mình → 422. Thêm ca vào `auth.md` và collection, chạy lại collection auth trên Docker.
+**Tự kiểm.** Đăng ký thêm 2 học viên → `total` và `newLast7Days` tăng 2. Cấp giảng viên cho một người →
+`byRole.ROLE_INSTRUCTOR` tăng 1, `total` không đổi. Khóa một người → `byStatus.LOCKED` = 1, bấm thẻ ra đúng
+người đó. Học viên gọi → 403. Thêm ca vào `auth.md` và collection, chạy lại collection auth trên Docker.
 
 ---
 
@@ -323,28 +330,32 @@ vào `quiz.md` và collection.
 
 ---
 
-### duyd92689-debug — tài liệu đính kèm bài học, hoàn thiện đánh giá
+### duyd92689-debug — admin gỡ đánh giá vi phạm
 
-> `POST /api/lessons/{lessonId}/resources` và `DELETE …/resources/{resourceId}` đã có, trang học đã hiện
-> danh sách tài liệu, nhưng **khu giảng dạy chưa có chỗ thêm hay xóa** — giảng viên chỉ thêm được bằng
-> Postman. Theo luật ở [trên](#giao-diện-web-ai-giữ-trang-nào), API không có chỗ dùng trên web coi như
-> chưa xong.
+> Từ #64 học viên viết được nhận xét công khai trên trang khóa học, nhưng chỉ chính người viết xóa được.
+> Một nhận xét chửi bới hay quảng cáo sẽ nằm đó mãi và vẫn kéo điểm trung bình của khóa.
 
 **Cần làm.**
 
-- course-service: `fileUrl` hiện nhận chuỗi bất kỳ, kể cả `javascript:…`. Chỉ cho `http://` và
-  `https://`, sai thì 400 `VALIDATION_FAILED`.
-- Web, form sửa bài học ở khu giảng dạy:
-  - Mục "Tài liệu đính kèm": danh sách tên + link, thêm (tên, URL), xóa có hộp thoại xác nhận.
-  - Lỗi `fieldErrors` hiện dưới ô.
-- Hoàn thiện #64:
-  - Tổng điểm 4,5 đang tô kín 5 sao (`Math.round`): hiện nửa sao, hoặc làm tròn xuống.
-  - `course-reviews.tsx` và `review-form.tsx`: tách các dòng JSX dài cho giống cách định dạng của các
-    file khác trong `components/`.
+- course-service:
+  - `DELETE /api/courses/{courseId}/reviews/{reviewId}` (B3), chỉ ADMIN; học viên và giảng viên của
+    khóa 403, không token 401.
+  - Đánh giá không thuộc khóa đó → 404, để không xóa nhầm qua `courseId` khác.
+  - Khóa hàng khóa học trước khi xóa (giống `requireLearnerAndLock`) rồi `recalculateRating`: điểm
+    trung bình và số lượt đánh giá cập nhật ngay.
+  - Gỡ xong, người viết vẫn viết lại được nếu còn đủ điều kiện, giống khi tự xóa.
+- Web, mục "Đánh giá từ học viên" ở trang khóa học:
+  - Admin thấy nút "Gỡ" trên từng nhận xét, có hộp thoại xác nhận; người khác không thấy nút.
+  - Gỡ xong thì danh sách, điểm và số sao cập nhật ngay.
+- Hoàn thiện #69, góp ý khi review:
+  - `RatingStars`: `aria-label` đang dùng số thô; backend làm tròn 2 chữ số nên điểm 4,33 được đọc là
+    "4.33" trong khi màn hiện "4,3". Dùng `formatNumber(value, 1)`.
+  - `safeLink` trong `lesson-resources.tsx` gần trùng `safeUrl` ở `components/enrollment/lesson-content.tsx`:
+    đưa vào `lib/` dùng chung, sửa cả hai chỗ gọi (`lib/` là của Hiếu, CODEOWNERS tự mời review).
 
-**Tự kiểm.** Thêm tài liệu `https://…` cho một bài → trang học hiện link, bấm mở đúng. URL
-`javascript:alert(1)` → 400, lỗi dưới ô. Xóa → trang học hết link. Khóa 4,5 điểm hiện 4 sao rưỡi. Thêm
-ca vào `course.md` và collection.
+**Tự kiểm.** S đánh giá 5, B đánh giá 1 → trung bình 3. Admin gỡ đánh giá của B → trung bình 5, còn 1 lượt.
+Gỡ với `courseId` của khóa khác → 404. A (giảng viên của khóa) gọi → 403. B viết lại được. Thêm ca vào
+`course.md` và collection, chạy lại collection course trên Docker.
 
 ---
 
@@ -372,6 +383,8 @@ cũng chưa biết email người dùng).
 
 | Ngày | PR | Việc | Người |
 |---|---|---|---|
+| 08/10 | #70 | Admin tìm, lọc người dùng; khóa / mở khóa tài khoản (thu hồi refresh token); cấp quyền ngay trên từng dòng | quocluibotre |
+| 08/10 | #69 | Thêm / xóa tài liệu đính kèm trong form sửa bài, chỉ nhận URL `http(s)`, tổng điểm hiện nửa sao | duyd92689-debug |
 | 07/10 | #67 | Không lộ đáp án khi đang làm bài (QUIZ-14.8), nộp quá giờ lưu đúng EXPIRED | hiepdeptrai0111 |
 | 07/10 | #65 | Kiểm định dạng số điện thoại khi đăng ký và sửa hồ sơ, form hiện lỗi dưới ô | quocluibotre |
 | 07/10 | #64 | Đánh giá khóa học: sao + nhận xét, điểm trung bình trên thẻ khóa | duyd92689-debug |
