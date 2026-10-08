@@ -19,7 +19,7 @@ public interface QuizService {
 
     QuizDetailResponse getQuizDetail(Long id, Long currentUserId, boolean isAdmin);
 
-    QuizDetailResponse getQuizForStudent(Long id);
+    QuizDetailResponse getQuizForStudent(Long id, Long currentUserId);
 
     List<QuizResponse> getQuizzesByCourse(Long courseId, Long currentUserId, boolean isAdmin);
 

@@ -1,0 +1,100 @@
+{
+  "date": "2026-10-08",
+  "environment": "Production frontend, real gateway and native MySQL 8.0.46",
+  "checks": [
+    {
+      "name": "Default shuffle switches are off",
+      "pass": true
+    },
+    {
+      "name": "Both flags persist after save/reload",
+      "pass": true
+    },
+    {
+      "name": "First start already uses shuffled question/option order",
+      "pass": true
+    },
+    {
+      "name": "Three reload/resume operations preserve both orders",
+      "pass": true
+    },
+    {
+      "name": "TRUE_FALSE stays Đúng/Sai",
+      "pass": true
+    },
+    {
+      "name": "Correct content selections score 100%, 5/5",
+      "pass": true
+    },
+    {
+      "name": "Result questions use authored order",
+      "pass": true
+    },
+    {
+      "name": "New attempt has different order in five-question fixture",
+      "pass": true
+    },
+    {
+      "name": "Second attempt order survives reload/resume",
+      "pass": true
+    },
+    {
+      "name": "Author editor retains authored order",
+      "pass": true
+    },
+    {
+      "name": "Both flags disabled restores question and option authored order",
+      "pass": true
+    },
+    {
+      "name": "Editor has no horizontal overflow at 375px",
+      "pass": true,
+      "scroll": 360,
+      "width": 375
+    },
+    {
+      "name": "Editor has no horizontal overflow at 768px",
+      "pass": true,
+      "scroll": 753,
+      "width": 768
+    },
+    {
+      "name": "Editor has no horizontal overflow at 1366px",
+      "pass": true,
+      "scroll": 1351,
+      "width": 1366
+    },
+    {
+      "name": "No browser console errors at final log check",
+      "pass": true
+    }
+  ],
+  "firstAttempt": [
+    "Câu 1Một đáp án1 điểmCâu kiến thức số 3Lựa chọn 3.3Lựa chọn 3.4Lựa chọn 3.1Lựa chọn 3.2",
+    "Câu 2Một đáp án1 điểmCâu kiến thức số 2Lựa chọn 2.1Lựa chọn 2.2Lựa chọn 2.4Lựa chọn 2.3",
+    "Câu 3Một đáp án1 điểmCâu kiến thức số 1Lựa chọn 1.2Lựa chọn 1.4Lựa chọn 1.1Lựa chọn 1.3",
+    "Câu 4Nhiều đáp án1 điểmCâu kiến thức số 4 Chọn tất cả các đáp án đúng.Lựa chọn 4.4Lựa chọn 4.2Lựa chọn 4.3Lựa chọn 4.1",
+    "Câu 5Đúng / Sai1 điểmCâu kiến thức số 5ĐúngSai"
+  ],
+  "secondAttempt": [
+    "Câu 1Một đáp án1 điểmCâu kiến thức số 1Lựa chọn 1.4Lựa chọn 1.1Lựa chọn 1.3Lựa chọn 1.2",
+    "Câu 2Đúng / Sai1 điểmCâu kiến thức số 5ĐúngSai",
+    "Câu 3Một đáp án1 điểmCâu kiến thức số 3Lựa chọn 3.3Lựa chọn 3.4Lựa chọn 3.2Lựa chọn 3.1",
+    "Câu 4Một đáp án1 điểmCâu kiến thức số 2Lựa chọn 2.3Lựa chọn 2.1Lựa chọn 2.4Lựa chọn 2.2",
+    "Câu 5Nhiều đáp án1 điểmCâu kiến thức số 4 Chọn tất cả các đáp án đúng.Lựa chọn 4.1Lựa chọn 4.2Lựa chọn 4.4Lựa chọn 4.3"
+  ],
+  "reloads": [
+    {
+      "reload": 1,
+      "same": true
+    },
+    {
+      "reload": 2,
+      "same": true
+    },
+    {
+      "reload": 3,
+      "same": true
+    }
+  ]
+}

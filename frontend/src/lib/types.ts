@@ -229,6 +229,7 @@ export interface Quiz {
   passScore: number;
   maxAttempts: number;
   shuffleQuestions: boolean;
+  shuffleOptions: boolean;
   status: QuizStatus;
   createdBy: number;
   totalQuestions: number;
@@ -246,6 +247,7 @@ export interface QuizInput {
   passScore?: number;
   maxAttempts?: number;
   shuffleQuestions?: boolean;
+  shuffleOptions?: boolean;
 }
 
 export interface AnswerOption {

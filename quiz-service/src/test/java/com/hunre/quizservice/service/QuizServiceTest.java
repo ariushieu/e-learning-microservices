@@ -124,7 +124,7 @@ class QuizServiceTest {
     void getQuizForStudent_notPublished_throwsException() {
         when(quizRepository.findById(1L)).thenReturn(Optional.of(quiz)); // DRAFT
 
-        assertThatThrownBy(() -> quizService.getQuizForStudent(1L))
+        assertThatThrownBy(() -> quizService.getQuizForStudent(1L, 20L))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("chưa được xuất bản");
     }
