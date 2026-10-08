@@ -24,7 +24,7 @@ import type { AuthResponse } from "@/lib/types";
 const BLOCKED = new Set(["auth/login", "auth/register", "auth/refresh-token", "auth/logout"]);
 
 // Header của gateway mà màn hình cần đọc (thông báo 429, hạn mức còn lại).
-const PASS_HEADERS = ["content-type", "retry-after", "x-ratelimit-remaining", "x-ratelimit-burst-capacity"];
+const PASS_HEADERS = ["content-type", "content-disposition", "retry-after", "x-ratelimit-remaining", "x-ratelimit-burst-capacity"];
 
 // Luồng thông báo tức thời (Server-Sent Events): trả về từng đoạn ngay khi gateway gửi, không
 // gom cả body như response JSON.

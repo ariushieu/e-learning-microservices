@@ -312,6 +312,29 @@ một lượt đạt. Tỉ lệ đúng từng câu dùng **tất cả lượt SU
 cao nhất; câu chưa được chấm có `gradedAnswers=0`, web hiện "Chưa có dữ liệu". EXPIRED chỉ
 tăng bộ đếm hết giờ. Lượt thử và lượt cũ chưa phân loại không tham gia bất cứ thống kê nào.
 
+## QUIZ-18 — tải kết quả CSV
+
+Chạy sau QUIZ-17. Quyền, tập học viên và cách tính điểm giống `/results`.
+
+| # | Tình huống | Mong đợi |
+|---|---|---|
+| 1 | A tải, kể cả page=99&size=1 | 200, đủ 2 học viên, S có 2 lượt/50 điểm và B 1 lượt/100 điểm; không có A/admin làm thử; text/csv UTF-8, đúng tên attachment |
+| 2 | Admin tải | Nội dung giống A |
+| 3 | B không phải tác giả tải | 403 JSON, không có header attachment |
+| 4 | S gửi userId của A, isAdmin=true | Vẫn 403, không file |
+| 5 | Không token | 401, không file |
+| 6 | Quiz không tồn tại | 404 RESOURCE_NOT_FOUND |
+| 7 | S đổi tên =1+1, đăng nhập lại, làm/nộp bài | Ô tên là `'=1+1`, 3 lượt và điểm cao nhất vẫn 50; không công thức |
+| 8 | S đổi tên `Nguyễn, "Ánh"`, đăng nhập lại, làm/nộp bài | Ô CSV là `"Nguyễn, ""Ánh"""`, tiếng Việt giữ nguyên, 4 lượt/50 điểm |
+| 9 | Đề chưa có lượt nộp | File chỉ có header tiếng Việt |
+
+Integration test bổ sung: BOM byte EF BB BF, đủ 22 học viên ngoài giới hạn 20 của web,
+giờ UTC+7 chính xác, tên bắt đầu bằng + / - / @ / tab / CR / LF, phẩy/kép/xuống dòng,
+fallback tên trống, không sửa dữ liệu gốc, loại preview/legacy/expired/ongoing và ID sai kiểu.
+Kiểm web: bấm **Tải CSV** tải đúng tên `ket-qua-quiz-<id>.csv`, byte BOM và nội dung
+giữ nguyên qua cầu nối; trang 375/768/1366px không tràn ngang. Không coi kiểm byte BOM
+là đã mở file bằng Excel; ghi riêng việc đó trong biên bản nếu đã thực hiện.
+
 ## Truy vết nguồn
 
 - [Controllers](../../quiz-service/src/main/java/com/hunre/quizservice/controller),
