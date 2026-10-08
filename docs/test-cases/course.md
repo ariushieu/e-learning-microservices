@@ -485,6 +485,36 @@ Tự kiểm web: Trả lời/Sửa/Xóa chỉ hiện cho chủ khóa có vai tr�
 xác nhận. Lỗi hiển thị theo ô, giữ bản nháp để thử lại. Khách thấy nhãn Phản hồi của giảng viên;
 HTML hiển thị dạng văn bản. Kiểm tra ở 375/768/1366px và giữ trang phân trang sau khi trả lời.
 
+## COURSE-29 — Hộp đánh giá trong khu giảng dạy
+
+Fixture riêng: giảng viên IA sở hữu hai khóa có hai đánh giá chưa trả lời; IB chưa có khóa.
+`unrepliedCount` theo phạm vi người gọi và courseId, không phụ thuộc replied/page/size.
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Thiếu token | — | GET /api/instructor/reviews | 401 |
+| 2 | Học viên | S | GET inbox | 403 |
+| 3 | Hai khóa chưa trả lời | IA | GET replied=false | 200; 2 dòng, đếm 2, courseId/courseTitle |
+| 4 | Phân trang | IA | GET size=1 | 200; mới nhất trước, tổng 2 |
+| 5 | Trang kế tiếp | IA | GET size=1&page=1 | 200; không trùng trang trước |
+| 6 | Chưa có phản hồi | IA | GET replied=true | 200; 0 dòng nhưng đếm chờ vẫn 2 |
+| 7 | Lọc khóa của mình | IA | GET courseId=khóa1 | 200; một dòng, đếm 1 |
+| 8 | IB không thấy dữ liệu IA | IB | GET inbox | 200; rỗng, đếm 0, danh sách khóa rỗng |
+| 9 | IB lọc khóa IA | IB | GET courseId=khóa1 | 403 |
+| 10 | Admin xem tất cả | ADM | GET inbox | 200; có cả hai đánh giá IA |
+| 11 | Trả lời một đánh giá | IA | PUT reply rồi GET replied=false | 200; một dòng, đếm 1 |
+| 12 | Bộ lọc đã trả lời | IA | GET replied=true | 200; thấy phản hồi, nhãn INSTRUCTOR |
+| 13 | Admin sửa phản hồi | ADM | PUT reply rồi GET khóa công khai | 200; nhãn ADMIN, không lộ repliedBy |
+| 14 | Xóa phản hồi | IA | DELETE reply rồi GET inbox | 200; đếm 2 |
+| 15 | Bộ lọc boolean sai | IA | GET replied=bad | 400 |
+| 16 | courseId sai kiểu | IA | GET courseId=abc | 400 |
+| 17 | Sắp xếp trường không hỗ trợ | IA | GET sort=comment,desc | 400 |
+| 18 | Khóa không tồn tại | IA | GET courseId=missingId | 404 |
+| 19 | Trang vượt tổng | IA | GET page=999 | 200; trang rỗng, tổng/đếm vẫn 2 |
+
+Kiểm web: bộ lọc và phân trang, trả lời tại chỗ, số chờ ở sidebar/tổng quan, trường hợp trả lời
+dòng cuối trang, lỗi API, nội dung HTML dạng chữ; lỗi content mất ngay khi gõ lại và hint hiện lại.
+
 ## Truy vết nguồn
 
 - [Controllers](../../course-service/src/main/java/com/hunre/courseservice/controller).

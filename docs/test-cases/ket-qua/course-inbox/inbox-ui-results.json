@@ -1,0 +1,30 @@
+{
+  "tag": "inbox-ui-1791466287155",
+  "courseIds": [
+    496,
+    497
+  ],
+  "checks": [
+    "A có hai khóa: hai thẻ mới nhất trước, số chờ và sidebar đều 2",
+    "Lọc khóa: số tại trang theo khóa, sidebar vẫn tổng số 2",
+    "Sửa lỗi khoảng trắng: lỗi biến mất và bộ đếm trở lại ngay trước khi Lưu",
+    "API lưu lỗi 503: giữ bản nháp và số chờ",
+    "Trang và form không tràn ngang ở 375px",
+    "Trang và form không tràn ngang ở 768px",
+    "Trang và form không tràn ngang ở 1366px",
+    "Lưu thành công: thẻ rời bộ lọc chưa trả lời, trang và sidebar cập nhật 1",
+    "Tổng quan có thẻ đúng số 1 và liên kết đến trang đánh giá",
+    "Bộ lọc đã trả lời hiện đúng thẻ và nhãn giảng viên",
+    "Admin trả lời: nhãn quản trị đúng ở inbox và trang công khai; HTML chỉ là chữ",
+    "Hủy xác nhận xóa giữ nguyên thẻ và số chờ",
+    "Xóa phản hồi: bộ lọc đã trả lời rỗng và số chờ/sidebar trở về 2",
+    "Bộ lọc tất cả hiển thị hai đánh giá",
+    "B không thấy đánh giá/tên khóa A; nhập courseId của A hiện lỗi quyền",
+    "Học viên bị chuyển trang không có quyền, khách phải đăng nhập",
+    "Admin xem được đánh giá khóa của A trên giao diện",
+    "URL bộ lọc không hợp lệ hiện lỗi rõ ràng",
+    "Trả lời dòng cuối trang 2: về trang 1, giữ bộ lọc khóa/trạng thái, số đếm đúng",
+    "Không có lỗi JavaScript trong trình duyệt"
+  ],
+  "errors": []
+}
