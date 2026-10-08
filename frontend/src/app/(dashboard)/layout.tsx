@@ -1,4 +1,7 @@
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import { getReviewInboxSummary } from "@/components/course/instructor-review-query";
+import { getSession } from "@/lib/server/gateway";
+import { hasRole } from "@/lib/auth-shared";
 import { DashboardCrumbs } from "@/components/layout/dashboard-crumbs";
 import { UserMenu } from "@/components/layout/user-menu";
 import { NotificationBell } from "@/components/notification/notification-bell";
@@ -6,10 +9,12 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 /** Khu giảng viên và quản trị: sidebar xanh đậm bên trái, nội dung rộng bên phải. */
-export default function DashboardLayout({ children }: LayoutProps<"/">) {
+export default async function DashboardLayout({ children }: LayoutProps<"/">) {
+  const session = await getSession();
+  const summary = hasRole(session, "ROLE_INSTRUCTOR", "ROLE_ADMIN") ? await getReviewInboxSummary() : null;
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar unrepliedCount={summary?.data?.unrepliedCount ?? null} />
       <SidebarInset className="min-w-0 bg-background">
         <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b bg-card/85 px-4 backdrop-blur-md">
           <SidebarTrigger className="-ml-1" />

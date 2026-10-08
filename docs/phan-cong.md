@@ -1,6 +1,6 @@
 # Bảng theo dõi công việc
 
-> **Cập nhật lần cuối:** 08/10/2026 — `main` ở `94bb008`
+> **Cập nhật lần cuối:** 08/10/2026 — `main` ở `bb5023a`
 >
 > File này là nơi duy nhất ghi ai đang làm gì. Xong một việc thì nhóm trưởng cập nhật ngay
 > tại đây, nên **cứ `git pull` là biết việc tiếp theo của mình**, không phải hỏi ai.
@@ -20,16 +20,20 @@
 | Người | Service | Việc đang mở | Ưu tiên | Cỡ |
 |---|---|---|---|---|
 | Hiếu | api-gateway, web | [Khách chưa đăng nhập dùng chung xô API](#hiếu--khách-chưa-đăng-nhập-dùng-chung-xô-api) — 30 khách mở trang chủ thì 4 trang lỗi | **Cao — xong trước demo** | ~2h |
-| quocluibotre | auth | [Email so khớp chính xác: `hocviên@…` không vào được `hocvien@…`](#quocluibotre--email-so-khớp-chính-xác) | Trung bình | ~2h |
-| phamquyet19042005-netizen | enrollment | [Số liệu học tập của khóa: tỉ lệ hoàn thành, bài nào học viên bỏ dở](#phamquyet19042005-netizen--số-liệu-học-tập-của-khóa) | Trung bình | ~2h |
-| hiepdeptrai0111 | quiz | [Nhập câu hỏi từ file CSV](#hiepdeptrai0111--nhập-câu-hỏi-từ-file-csv) | Trung bình | ~3h |
-| duyd92689-debug | course | [Giảng viên trả lời đánh giá](#duyd92689-debug--giảng-viên-trả-lời-đánh-giá) | Trung bình | ~2h |
+| quocluibotre | auth, web | [Quản lý phiên đăng nhập: xem máy đang đăng nhập, đăng xuất từ xa](#quocluibotre--quản-lý-phiên-đăng-nhập) | Trung bình | ~3h |
+| phamquyet19042005-netizen | enrollment | [Đạt bài kiểm tra thì bài học tự hoàn thành (nghe sự kiện Kafka)](#phamquyet19042005-netizen--đạt-bài-kiểm-tra-thì-bài-học-tự-hoàn-thành) | **Cao — chuỗi sự kiện cho demo** | ~3h |
+| hiepdeptrai0111 | quiz | [Xáo trộn giữ nguyên trong một lượt làm, thêm xáo đáp án](#hiepdeptrai0111--xáo-trộn-giữ-nguyên-trong-một-lượt-làm-thêm-xáo-đáp-án) — tải lại trang thì câu hỏi đổi chỗ | Trung bình | ~2h |
+| duyd92689-debug | course | [Đánh giá chờ phản hồi trong khu giảng dạy, hoàn thiện #84](#duyd92689-debug--đánh-giá-chờ-phản-hồi-hoàn-thiện-84) | Trung bình | ~2h |
 
 Đã xong ở lượt này:
 
-- Trang tổng quan quản trị (#78) và admin gỡ đánh giá vi phạm (#79).
-- Xuất kết quả bài kiểm tra ra CSV (#75).
-- Giới hạn đăng nhập theo tài khoản, không còn cả lớp chung một xô (#76).
+- Số liệu học tập của khóa: tỉ lệ hoàn thành từng bài, bài học viên bỏ dở (#81).
+- Email phân biệt dấu: `hocviên@…` không còn vào được `hocvien@…` (#82).
+- Nhập câu hỏi từ CSV, một dòng sai thì không nhập câu nào (#83).
+- Giảng viên trả lời đánh giá (#84).
+
+Cả 4 pull request đều chạy thử trên Docker trước khi merge. Các điểm nhỏ còn lại ghi trong review và đã
+đưa vào việc mới bên dưới.
 
 **Luật merge mới (#77): không tự merge pull request của mình.** Ruleset của `main` giờ bắt CI xanh và
 nhóm trưởng duyệt. Mở pull request, chờ CI, rồi để đó: nhóm trưởng chạy thử trên Docker rồi duyệt và merge
@@ -41,7 +45,7 @@ và trang `/design`. Chạy cả hệ thống: `docker compose --profile app up 
 http://localhost:3000.
 
 **Collection Postman: đủ cả 7 file**, đều đã chạy thật trên Docker — auth, course, enrollment, quiz
-(#56, #57, #59, #60, cập nhật ở #64, #65, #67, #69, #70, #71, #73, #75, #78, #79) và gateway, notification, demo-flow (#66). Collection auth chạy luôn trong CI ở mọi pull request (#78). Trước buổi demo, chạy
+(#56, #57, #59, #60, cập nhật ở #64, #65, #67, #69, #70, #71, #73, #75, #78, #79, #81–#84) và gateway, notification, demo-flow (#66). Collection auth (#78) và enrollment (#81, kèm kiểm giao diện bằng Chromium) chạy luôn trong CI ở mọi pull request. Trước buổi demo, chạy
 `demo-flow` trên máy mình để xem cả chuỗi còn thông (81 assertion, khoảng 12 giây). Quy ước chung ở
 [mục dưới](#cả-nhóm--collection-postman-của-service-mình). Ca FAIL hay việc mới sinh ra khi chạy
 collection thì sửa ở PR riêng như các việc trong bảng trên.
@@ -187,10 +191,10 @@ service đó. Không gộp chung một file: năm người cùng sửa một JSO
 
 | Người | File | Chạy tình huống | Trạng thái (chạy thật trên Docker) |
 |---|---|---|---|
-| quocluibotre | `docs/postman/auth.postman_collection.json` | [auth.md](test-cases/auth.md) | Xong #57, #65, #70, #78 — 707/707 assertion (3 ca BLOCKED vì cần fixture riêng); chạy trong CI |
-| duyd92689-debug | `docs/postman/course.postman_collection.json` | [course.md](test-cases/course.md) | Xong #56, #64, #69, #79 — 879/879 |
-| phamquyet19042005-netizen | `docs/postman/enrollment.postman_collection.json` | [enrollment.md](test-cases/enrollment.md) | Xong #60, #73 — 363/363 |
-| hiepdeptrai0111 | `docs/postman/quiz.postman_collection.json` | [quiz.md](test-cases/quiz.md) | Xong #59, #67, #71, #75 — 512/512 |
+| quocluibotre | `docs/postman/auth.postman_collection.json` | [auth.md](test-cases/auth.md) | Xong #57, #65, #70, #78, #82 — 739/739 assertion (3 ca BLOCKED vì cần fixture riêng); chạy trong CI |
+| duyd92689-debug | `docs/postman/course.postman_collection.json` | [course.md](test-cases/course.md) | Xong #56, #64, #69, #79, #84 — 973/973 |
+| phamquyet19042005-netizen | `docs/postman/enrollment.postman_collection.json` | [enrollment.md](test-cases/enrollment.md) | Xong #60, #73, #81 — 432/432; chạy trong CI |
+| hiepdeptrai0111 | `docs/postman/quiz.postman_collection.json` | [quiz.md](test-cases/quiz.md) | Xong #59, #67, #71, #75, #83 — 548/548 |
 | Hiếu | `gateway`, `notification`, `demo-flow` | [gateway.md](test-cases/gateway.md), [notification.md](test-cases/notification.md) | Xong #66, #76 — gateway 33/33 ca (G-RATE 37/37 assertion), notification 55/55 ca, demo-flow 81/81 |
 
 Chạy collection bằng dòng lệnh (chỉ dùng pnpm):
@@ -241,134 +245,161 @@ với nguyên dữ liệu cũ là khóa được đồng bộ. Hoặc dùng khó
 
 ---
 
-### quocluibotre — email so khớp chính xác
+### quocluibotre — quản lý phiên đăng nhập
 
-> Phát hiện khi làm #76: cột `users.email` dùng collation mặc định `utf8mb4_0900_ai_ci`, so sánh **không
-> phân biệt dấu**. Đăng nhập bằng `hocviên@hunre.edu.vn` vẫn vào được tài khoản `hocvien@hunre.edu.vn` (vẫn
-> phải đúng mật khẩu). Code đã `trim()` và `toLowerCase()` email khi đăng ký và đăng nhập, nên chỉ còn sai
-> ở cách MySQL so sánh.
+> Mỗi lần đăng nhập, auth-service lưu một refresh token kèm `user_agent`. Nhưng người dùng không xem được
+> mình đang đăng nhập ở những máy nào, và không đăng xuất từ xa được: quên đăng xuất ở phòng máy trường
+> thì chỉ còn cách đổi mật khẩu. Thêm nữa, mọi lần đăng nhập qua web đang lưu `user_agent = "node"`, vì
+> server Next.js gọi gateway bằng user agent của chính nó (xem trong bảng `refresh_tokens` trên Docker).
 
 **Cần làm.**
 
 - auth-service:
-  - Migration mới (V5):
-    - Hạ chữ thường và bỏ khoảng trắng email cũ. Nếu sau bước đó có hai dòng trùng nhau thì migration
-      phải dừng và báo lỗi, không tự gộp.
-    - Đổi cột `email` sang `utf8mb4_bin`.
-  - Đăng ký chỉ nhận email ASCII: email có dấu trả 400 `VALIDATION_FAILED`, lỗi ở trường `email`, để không
-    ai tạo được tài khoản trông giống hệt tài khoản người khác.
-  - Áp dụng cho mọi chỗ tra theo email: đăng nhập, đăng ký, tìm kiếm của admin.
-- Web: form đăng ký hiện lỗi dưới ô email.
+  - Access token mang thêm claim `sid`: id của refresh token sinh cùng lúc, cả khi đăng nhập lẫn khi đổi
+    token.
+  - `GET /api/auth/sessions`: các phiên còn hạn, chưa thu hồi của người gọi, mới nhất trước. Mỗi phiên
+    gồm:
+    - `id` và `createdAt`.
+    - `device`: trình duyệt + hệ điều hành rút từ user agent, ví dụ "Edge trên Windows". Không nhận ra thì
+      ghi "Thiết bị khác".
+    - `current`: `true` nếu `id` trùng `sid` trong token.
+  - `DELETE /api/auth/sessions/{id}`: thu hồi một phiên của chính mình. Phiên của người khác trả 404,
+    không trả 403, để không lộ id nào tồn tại.
+  - `POST /api/auth/sessions/revoke-others`: thu hồi mọi phiên trừ phiên hiện tại.
+  - Không trả IP: qua frontend thì IP luôn là IP container (lý do ghi ở #76).
+  - README ghi rõ: phiên bị thu hồi thì refresh token hết dùng ngay, còn access token vẫn chạy tới khi hết
+    hạn.
+- Web:
+  - Server Next.js chuyển `User-Agent` của trình duyệt khi gọi đăng nhập và đổi token. Phần này nằm trong
+    `lib/` của Hiếu: sửa luôn trong pull request này, CODEOWNERS sẽ mời Hiếu review.
+  - Trang hồ sơ thêm mục "Phiên đăng nhập":
+    - Danh sách phiên; phiên đang dùng có nhãn "Thiết bị này".
+    - Nút đăng xuất từng phiên, và nút "Đăng xuất mọi thiết bị khác" có hộp xác nhận.
+- Hoàn thiện #82: email có khoảng trắng ở đầu hoặc cuối đang bị `@Email` trả 400 trước khi tới `trim()`.
+  Cắt khoảng trắng trước khi kiểm, ở cả đăng ký và đăng nhập.
 
 **Tự kiểm.**
 
-- `hocviên@hunre.edu.vn` + mật khẩu đúng → 401.
-- `HOCVIEN@hunre.edu.vn` → 200: chữ hoa vẫn được hạ trước khi so.
-- Đăng ký `thử@example.com` → 400.
-- Gateway (#76) vẫn gộp các cách viết có dấu vào chung một xô giới hạn: như vậy chặt hơn, không sai.
+- Đăng nhập bằng Edge và bằng Postman → có 2 phiên. Xem từ Edge thì phiên Edge mang nhãn "Thiết bị này".
+- Từ web đăng xuất phiên Postman → Postman gọi `refresh-token` nhận 401.
+- "Đăng xuất mọi thiết bị khác" → chỉ còn phiên hiện tại, web vẫn dùng tiếp được.
+- Xóa phiên của người khác → 404. Không token → 401.
+- Đăng nhập bằng `" hocvien@hunre.edu.vn "` (có khoảng trắng) → 200.
 
-Thêm ca vào `auth.md` và collection. Collection auth giờ chạy trong CI (#78), nên ca mới phải ổn định.
+Thêm nhóm ca vào `auth.md` và collection. Collection auth chạy trong CI, nên ca mới phải ổn định.
 
 ---
 
-### phamquyet19042005-netizen — số liệu học tập của khóa
+### phamquyet19042005-netizen — đạt bài kiểm tra thì bài học tự hoàn thành
 
-> Từ #73 giảng viên thấy từng học viên, nhưng chưa thấy bức tranh chung của khóa: bao nhiêu người học
-> xong, và **học viên bỏ dở ở bài nào**. `lesson_progress` đã lưu tiến độ từng bài, nên enrollment-service
-> tự tính được, không phải gọi sang service khác.
+> Bài kiểm tra gắn được với bài học (`quizzes.lesson_id`), nhưng làm đạt rồi học viên vẫn phải tự bấm
+> "Đánh dấu hoàn thành". Vì vậy số liệu #81 thấp hơn thực tế. quiz-service đã phát `QuizGradedEvent`
+> lên Kafka sau mỗi lần chấm (notification-service đang nghe), nên enrollment-service chỉ cần nghe thêm.
+> Đây cũng là chỗ demo rõ nhất cảnh các service nói chuyện với nhau qua sự kiện.
 
 **Cần làm.**
 
-- enrollment-service:
-  - `GET /api/courses/{courseId}/learners/summary`: cùng quyền với `/learners` (giảng viên của khóa theo
-    snapshot hoặc ADMIN; người khác 403, không token 401, khóa chưa có snapshot 404).
-  - Trả các trường sau:
-    - Số lượt ghi danh theo trạng thái: `active`, `completed`, `cancelled`.
-    - `averageProgress`: trung bình `progressPercent`, không tính lượt `CANCELLED`.
-    - `completionRate`: `completed / (active + completed)`, theo phần trăm.
-    - `certificatesIssued`.
-    - `lessons`: mỗi bài một dòng `lessonId`, `completedCount`, `completionRate`, tính trên các lượt chưa hủy.
-  - Đếm bằng `COUNT … GROUP BY`, không tải hết lượt ghi danh lên Java.
-  - Route (A4): thêm đường dẫn `/summary` vào route `enrollment-course-learners` ở gateway (#73). Kiểm
-    `GET /api/courses/{id}` vẫn về course-service.
-- Web, mục "Học viên của khóa" (`components/enrollment/course-learners.tsx`):
-  - `StatGrid` phía trên bảng: đang học, đã hoàn thành, tiến độ trung bình, tỉ lệ hoàn thành.
-  - Bảng "Tỉ lệ hoàn thành từng bài":
-    - Tên bài lấy từ đề cương mà trang `/instructor/courses/{id}` đã tải; truyền vào component qua prop.
-      Trang đó là của duyd92689-debug, chỉ sửa một dòng.
-    - Bài chưa ai học hiện 0%; bài đã xóa khỏi đề cương thì không hiện.
-    - Bài có tỉ lệ thấp hơn hẳn bài liền trước thì làm nổi bật, để giảng viên thấy học viên bỏ ở đâu.
+- Sự kiện:
+  - shared-common: thêm `lessonId` (có thể null) vào `QuizGradedEvent`. Record đã có `ignoreUnknown`,
+    nên notification-service bản cũ vẫn đọc được.
+  - quiz-service: điền `lessonId` của quiz khi phát sự kiện. Chỉ một dòng ở `QuizAttemptServiceImpl`;
+    CODEOWNERS sẽ mời hiepdeptrai0111 và Hiếu review.
+- enrollment-service, consumer mới cho topic sự kiện quiz (group riêng):
+  - Chỉ xử lý khi thỏa cả bốn điều kiện:
+    - `passed` là true.
+    - `lessonId` khác null.
+    - Học viên có lượt ghi danh `ACTIVE` vào `courseId`.
+    - Bài có trong đề cương của snapshot.
 
-**Tự kiểm.** Khóa 2 bài: S học xong cả 2, B xong bài 1, C chưa học, D ghi danh rồi hủy:
+    Thiếu điều kiện nào thì bỏ qua, không báo lỗi.
+  - Đánh dấu bài `COMPLETED` bằng đúng đường đi của `PUT /api/lessons/{id}/progress`, để tiến độ, hoàn
+    thành khóa, chứng chỉ và thông báo chạy y như khi học viên tự bấm. Bài đã xong thì giữ nguyên (#50).
+  - Kafka giao lại cùng một sự kiện thì không làm hai lần: dựa vào `eventId`.
+  - MySQL tắt giữa chừng thì thử lại, như consumer `course.updated` (#41).
+- Web, trang học: bài có bài kiểm tra hiện dòng "Đạt bài kiểm tra thì bài này tự hoàn thành". Làm đạt
+  xong, quay lại trang học thấy bài đã được tích.
 
-- `active` 2, `completed` 1, `cancelled` 1.
-- Tiến độ trung bình 50, tỉ lệ hoàn thành 33,33%.
-- Bài 1: 66,67%; bài 2: 33,33%.
+**Tự kiểm.** Khóa 2 bài, S đã xong bài 1, quiz gắn với bài 2:
 
-Giảng viên khác gọi → 403. Thêm nhóm ca vào `enrollment.md` và collection, chạy lại collection enrollment
-trên Docker.
+- S làm đạt quiz → vài giây sau bài 2 `COMPLETED`, khóa `COMPLETED`, có chứng chỉ và thông báo.
+- S làm trượt → không đổi.
+- Quiz không gắn bài nào → không đổi.
+- Tác giả làm thử (không ghi danh) → không lỗi, không tạo gì.
+- Lượt ghi danh đã `CANCELLED` → bỏ qua.
+- Gửi cùng một sự kiện hai lần → chỉ một lần cập nhật.
+
+Thêm nhóm ca vào `enrollment.md` và collection. Collection enrollment chạy trong CI (#81), nên chờ sự kiện
+bằng cách hỏi lại vài lần (tối đa vài giây), không `sleep` cố định.
 
 ---
 
-### hiepdeptrai0111 — nhập câu hỏi từ file CSV
+### hiepdeptrai0111 — xáo trộn giữ nguyên trong một lượt làm, thêm xáo đáp án
 
-> Từ #75 giảng viên xuất được kết quả ra CSV. Chiều ngược lại thì chưa có: soạn một đề 30 câu vẫn phải
-> bấm thêm từng câu, từng đáp án. Đa số giảng viên đã có sẵn câu hỏi trong Excel.
+> Thấy khi review #83: bật "Xáo trộn câu hỏi" thì `GET /api/quizzes/{id}/take` gọi `Collections.shuffle`
+> **mỗi lần tải**. Học viên tải lại trang giữa chừng thì thứ tự câu đổi hết, câu đang làm dở nhảy chỗ.
+> Đáp án thì chưa xáo được: cả lớp thấy đáp án đúng ở cùng một vị trí, dễ nhắc nhau "câu 3 chọn B".
 
 **Cần làm.**
 
 - quiz-service:
-  - `POST /api/quizzes/{quizId}/questions/import`, body là file CSV (multipart), chỉ tác giả hoặc ADMIN.
-  - Mỗi dòng một câu: loại, nội dung, điểm, giải thích, rồi các đáp án. Đáp án đúng đánh dấu bằng `*` ở
-    đầu. Kèm file mẫu tải về được.
-  - Hoặc nhận hết, hoặc không nhận câu nào: một dòng sai thì trả 400, kèm danh sách lỗi theo số dòng
-    (`line`, `message`), không lưu gì.
-  - Kiểm như khi thêm từng câu:
-    - `SINGLE_CHOICE` và `TRUE_FALSE` đúng một đáp án đúng; `MULTIPLE_CHOICE` ít nhất một.
-    - Giới hạn độ dài từng ô.
-    - Tối đa 200 dòng, file tối đa 1 MB.
-  - Đọc được file có BOM, có ngoặc kép, có xuống dòng trong ô; file xuất từ Excel phải nhập được.
-- Web, trang soạn đề:
-  - Nút "Nhập từ CSV", hộp thoại chọn file và link tải file mẫu.
-  - Nhập lỗi thì hiện bảng lỗi theo dòng; nhập xong thì danh sách câu hỏi cập nhật.
-- Hoàn thiện #75: lần sau merge bằng **Squash and merge**. #75 là merge commit, nên các commit lẻ của
-  nhánh đã vào thẳng `main`.
+  - Thứ tự xáo cố định theo lượt làm:
+    - `/take` nhận người gọi và tìm lượt `IN_PROGRESS` của họ. Lấy id lượt đó làm seed
+      (`new Random(attemptId)`).
+    - Cùng một lượt thì tải bao nhiêu lần cũng ra một thứ tự; lượt mới thì thứ tự mới. Không cần lưu thêm
+      bảng nào.
+  - Thêm cài đặt `shuffleOptions` (migration mới, mặc định `false`): xáo đáp án trong từng câu theo cùng
+    seed. Câu `TRUE_FALSE` giữ thứ tự Đúng/Sai.
+  - Chấm điểm vẫn theo id đáp án, không theo vị trí.
+  - Những chỗ sau luôn hiện thứ tự gốc của đề: trang kết quả, thống kê (#71), CSV (#75), trang soạn đề của
+    tác giả.
+- Web, cài đặt đề: thêm ô "Xáo trộn đáp án" cạnh "Xáo trộn câu hỏi".
 
-**Tự kiểm.**
+**Tự kiểm.** Đề 5 câu, bật cả hai cài đặt:
 
-- File mẫu 3 câu → nhập đủ 3 câu, làm bài được ngay.
-- Dòng 2 không có đáp án đúng → 400, báo đúng dòng 2, đề không đổi.
-- B (không phải tác giả) → 403.
-- File 2 MB → 400.
+- Trong một lượt, S tải `/take` 5 lần → cùng thứ tự câu và đáp án.
+- S nộp rồi làm lượt mới → thứ tự khác.
+- Chọn đúng hết theo nội dung → 100 điểm dù vị trí đã đổi.
+- Câu `TRUE_FALSE` vẫn Đúng trước Sai.
+- Tắt cả hai cài đặt → thứ tự gốc.
 
 Thêm nhóm ca vào `quiz.md` và collection.
 
 ---
 
-### duyd92689-debug — giảng viên trả lời đánh giá
+### duyd92689-debug — đánh giá chờ phản hồi, hoàn thiện #84
 
-> Từ #64 và #79, học viên đánh giá được và admin gỡ được đánh giá vi phạm. Nhưng giảng viên vẫn chưa
-> nói lại được câu nào: nhận xét chê hay câu hỏi trong đánh giá cứ nằm đó, không ai phản hồi.
+> Từ #84 giảng viên trả lời được đánh giá, nhưng phải mở từng trang khóa mới biết có đánh giá mới. Giảng
+> viên có 5 khóa thì không ai đi mở hết, và đánh giá chê cứ nằm đó không ai trả lời.
 
 **Cần làm.**
 
 - course-service:
-  - Migration mới: thêm `reply`, `replied_at`, `replied_by` vào `course_reviews`.
-  - `PUT /api/courses/{courseId}/reviews/{reviewId}/reply`, body `{"content": "..."}` (1–1000 ký tự).
-    Chỉ giảng viên của khóa hoặc ADMIN; người khác 403. Đánh giá không thuộc khóa → 404.
-  - `DELETE` cùng đường dẫn để gỡ câu trả lời.
-  - Danh sách đánh giá trả thêm `reply`, `repliedAt`.
-  - Học viên sửa đánh giá thì câu trả lời vẫn còn. Học viên xóa đánh giá thì câu trả lời mất theo.
-- Web, mục đánh giá ở trang khóa học:
-  - Câu trả lời hiện ngay dưới nhận xét, có nhãn "Phản hồi của giảng viên".
-  - Giảng viên của khóa có nút Trả lời / Sửa / Xóa; xóa có hộp thoại xác nhận.
+  - `GET /api/instructor/reviews?replied=false&courseId=&page=&size=`:
+    - Trả đánh giá trên các khóa của người gọi (admin thấy mọi khóa), mới nhất trước.
+    - Mỗi dòng thêm `courseId` và `courseTitle`.
+    - Trả thêm `unrepliedCount`.
+    - Chỉ INSTRUCTOR và ADMIN; học viên 403. Lọc theo `courseId` của khóa người khác → 403.
+  - Khai route ở gateway (A4).
+- Web, khu giảng dạy:
+  - Trang `/instructor/reviews`:
+    - Danh sách thẻ đánh giá, lọc "Chưa trả lời / Đã trả lời / Tất cả" và theo khóa.
+    - Trả lời ngay tại chỗ bằng `ReviewReply` của #84.
+  - Sidebar thêm mục "Đánh giá" kèm số chưa trả lời; trang tổng quan khu giảng dạy thêm một thẻ.
+- Hoàn thiện #84 (đã ghi trong review):
+  1. Gõ lại nội dung hợp lệ thì xóa lỗi của ô ngay (`setFieldError(undefined)` trong `onChange`). Bộ đếm
+     `x/1000` hiện lại.
+  2. Phản hồi của admin mang nhãn "Phản hồi của quản trị viên": so `repliedBy` với `instructorId` của khóa
+     ở server.
+  3. Ghi vào README: `updatedAt` của đánh giá đổi cả khi có phản hồi, nên đừng dùng trường này để biết học
+     viên có sửa đánh giá hay không.
 
 **Tự kiểm.**
 
-- A trả lời đánh giá của S → khách thấy câu trả lời.
-- B (giảng viên khác) → 403; S → 403.
-- S sửa số sao → câu trả lời vẫn còn.
-- Nội dung có thẻ HTML hiện dạng văn bản.
+- A có 2 khóa, mỗi khóa một đánh giá chưa trả lời → danh sách 2, đếm 2.
+- Trả lời một đánh giá → đếm 1; bộ lọc "Đã trả lời" thấy nó.
+- B không thấy đánh giá trên khóa của A; lọc theo `courseId` của A → 403.
+- S → 403. Admin thấy tất cả.
+- Admin trả lời → nhãn "Phản hồi của quản trị viên".
 
 Thêm nhóm ca vào `course.md` và collection.
 
@@ -401,6 +432,10 @@ cũng chưa biết email người dùng).
 
 | Ngày | PR | Việc | Người |
 |---|---|---|---|
+| 08/10 | #84 | Giảng viên của khóa và admin trả lời, sửa, xóa phản hồi dưới từng đánh giá | duyd92689-debug |
+| 08/10 | #83 | Nhập câu hỏi từ CSV: file mẫu, lỗi theo số dòng, đọc được file Excel; route `/api` chuyển nguyên byte file | hiepdeptrai0111 |
+| 08/10 | #82 | Email phân biệt dấu (V5 sang `utf8mb4_bin`, dừng nếu trùng), đăng ký chỉ nhận email ASCII | quocluibotre |
+| 08/10 | #81 | Số liệu học tập của khóa: tiến độ trung bình, tỉ lệ hoàn thành từng bài, làm nổi bài bị bỏ dở; collection enrollment và kiểm Chromium chạy trong CI | phamquyet19042005-netizen |
 | 08/10 | #79 | Admin gỡ đánh giá vi phạm, điểm trung bình tính lại ngay | duyd92689-debug |
 | 08/10 | #78 | Trang tổng quan quản trị, thống kê người dùng; bảng người dùng dạng thẻ trên điện thoại; collection auth chạy trong CI | quocluibotre |
 | 08/10 | #77 | Ruleset bắt CI xanh và nhóm trưởng duyệt; sửa tên GitHub trong CODEOWNERS | Hiếu |

@@ -1,4 +1,12 @@
-import { BookOpenIcon, ExternalLinkIcon, FilePenLineIcon, GlobeIcon, PlusIcon, SettingsIcon, UsersIcon } from "lucide-react";
+import {
+  BookOpenIcon,
+  ExternalLinkIcon,
+  FilePenLineIcon,
+  GlobeIcon,
+  PlusIcon,
+  SettingsIcon,
+  UsersIcon,
+} from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -7,6 +15,8 @@ import { DataTableCard } from "@/components/common/data-table-card";
 import { EmptyState } from "@/components/common/empty-state";
 import { ErrorAlert } from "@/components/common/error-alert";
 import { Stat } from "@/components/common/stat";
+import { getReviewInboxSummary } from "@/components/course/instructor-review-query";
+import { MessageSquareIcon } from "lucide-react";
 import { StatusBadge } from "@/components/common/status-badge";
 import { DashboardPage } from "@/components/templates/dashboard-page";
 import { Button } from "@/components/ui/button";
@@ -21,13 +31,16 @@ export const metadata: Metadata = { title: "Khóa học tôi dạy" };
 export default async function InstructorPage() {
   const session = await getSession();
   if (!session) redirect("/login?next=/instructor");
+  const inbox = await getReviewInboxSummary();
 
   let courses: CourseSummary[] = [];
   let total = 0;
   let loadError: string | null = null;
   try {
     // instructorId = chính mình nên backend trả cả bản nháp và khóa đã lưu trữ.
-    const page = await gateway<Page<CourseSummary>>(`/api/courses?instructorId=${session.userId}&size=50&sort=createdAt,desc`);
+    const page = await gateway<Page<CourseSummary>>(
+      `/api/courses?instructorId=${session.userId}&size=50&sort=createdAt,desc`,
+    );
     courses = page.content;
     total = page.totalElements;
   } catch (e) {
@@ -60,6 +73,23 @@ export default async function InstructorPage() {
         )
       }
     >
+      <div className="mb-6">
+        {inbox.error !== null ? (
+          <ErrorAlert title="Không tải được số đánh giá chờ phản hồi" message={inbox.error} />
+        ) : (
+          <Link
+            href="/instructor/reviews"
+            className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Stat
+              label="Đánh giá chờ phản hồi"
+              value={formatNumber(inbox.data.unrepliedCount)}
+              icon={MessageSquareIcon}
+              tone="primary"
+            />
+          </Link>
+        )}
+      </div>
       {loadError ? (
         <ErrorAlert title="Không tải được danh sách khóa học" message={loadError} />
       ) : (
@@ -108,7 +138,10 @@ export default async function InstructorPage() {
                           className="hidden w-20 shrink-0 rounded-md sm:flex"
                         />
                         <div className="min-w-0">
-                          <Link href={`/instructor/courses/${c.id}`} className="block truncate font-medium hover:text-primary">
+                          <Link
+                            href={`/instructor/courses/${c.id}`}
+                            className="block truncate font-medium hover:text-primary"
+                          >
                             {c.title}
                           </Link>
                           <p className="truncate text-xs text-muted-foreground">
@@ -121,8 +154,12 @@ export default async function InstructorPage() {
                       <StatusBadge status={c.status} />
                     </TableCell>
                     <TableCell className="hidden text-right tabular-nums md:table-cell">{c.totalLessons}</TableCell>
-                    <TableCell className="hidden text-right tabular-nums md:table-cell">{formatNumber(c.studentCount)}</TableCell>
-                    <TableCell className="hidden text-muted-foreground lg:table-cell">{c.publishedAt ? formatDay(c.publishedAt) : "—"}</TableCell>
+                    <TableCell className="hidden text-right tabular-nums md:table-cell">
+                      {formatNumber(c.studentCount)}
+                    </TableCell>
+                    <TableCell className="hidden text-muted-foreground lg:table-cell">
+                      {c.publishedAt ? formatDay(c.publishedAt) : "—"}
+                    </TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-1">
                         <Button asChild variant="outline" size="sm">

@@ -265,10 +265,38 @@ Migration V6 thêm `reply` (1000 ký tự), `replied_at`, `replied_by` nullable 
   không lộ ID người trả lời. Quyền đọc vẫn theo trạng thái khóa và quyền học hiện có.
 - Ghi/xóa phản hồi dùng khóa dòng `courses` cùng thứ tự với đánh giá; không thay số sao
   hoặc số lượt. Học viên sửa đánh giá giữ nguyên phản hồi; xóa đánh giá xóa cả phản hồi.
-- Web dùng văn bản thuần, nhãn **Phản hồi của giảng viên**, cho chủ khóa/admin Trả lời/Sửa/Xóa,
+- Web dùng văn bản thuần, nhãn **Phản hồi của giảng viên** hoặc **Phản hồi của quản trị viên**,
+  cho chủ khóa/admin Trả lời/Sửa/Xóa,
   xác nhận khi xóa, lỗi theo ô và giữ dữ liệu khi API lỗi. Giữ nguyên trang phân trang khi lưu.
 
 Kiểm thử API trong `COURSE-28`, trình duyệt bằng `scripts/check-course-replies.cjs`.
+
+`replyAuthorRole` do server tính: `INSTRUCTOR` nếu `repliedBy` trùng `instructorId`
+của khóa, còn lại là `ADMIN`; chưa có phản hồi thì null. Không trả `repliedBy` ra API.
+`updatedAt` của đánh giá đổi cả khi lưu/xóa phản hồi do `@UpdateTimestamp`, vì vậy
+**không dùng trường này để kết luận học viên đã sửa đánh giá**. `repliedAt` là thời
+điểm tạo/sửa phản hồi, còn `createdAt` dùng cho thứ tự danh sách đánh giá.
+
+### Đánh giá chờ phản hồi
+
+`GET /api/instructor/reviews?replied=false&courseId=123&page=0&size=10` đi qua
+gateway 8080, bắt buộc JWT hợp lệ. INSTRUCTOR chỉ thấy đánh giá trên khóa của mình
+(kể cả khóa nháp/lưu trữ); ADMIN thấy mọi khóa. Học viên trả 403, không token 401;
+lọc khóa của giảng viên khác trả 403, khóa không tồn tại 404.
+
+- `replied=false`: chưa trả lời; `true`: đã trả lời; bỏ tham số: tất cả.
+- `reviews` là đối tượng phân trang; mỗi dòng `content` có `courseId`, `courseTitle`
+  và `review` (đánh giá cùng phản hồi). Sắp xếp cố định `createdAt DESC, id DESC`.
+- `unrepliedCount` đếm trong phạm vi người gọi và `courseId` nếu có, độc lập với
+  `replied` và trang hiện tại. Sidebar/tổng quan bỏ `courseId` để đếm tất cả khóa.
+- `courses` chứa ID/tên các khóa có đánh giá mà người gọi được quản lý, không phụ
+  thuộc bộ lọc hiện tại; dùng cho ô chọn khóa, không làm lộ khóa của người khác.
+
+Web `/instructor/reviews` mặc định chưa trả lời, 10 dòng/trang, dùng chung
+`ReviewReply` để thêm/sửa/xóa. Lưu xong cập nhật danh sách, số đếm và sidebar;
+trang cuối hết dòng thì về trang hợp lệ gần nhất, giữ bộ lọc. Gõ lại nội dung xóa
+lỗi ô nhập và hiện lại bộ đếm. API lỗi hiện thông báo, không hiển thị số 0 giả.
+Ca API: `COURSE-29`; trình duyệt: `scripts/check-course-inbox.cjs`.
 
 ### Chạy kiểm thử
 
