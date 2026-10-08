@@ -49,7 +49,7 @@ export function UserManagementTable({ users, callerId }: { users: User[]; caller
         <TableBody>{users.map(user => {
           const protectedAccount = user.id === callerId || user.roles.includes("ROLE_ADMIN");
           return <TableRow key={user.id}>
-            <TableCell className="max-w-72 whitespace-normal">
+            <TableCell className="min-w-56 max-w-72 whitespace-normal">
               <p className="font-medium break-words">{user.fullName}</p>
               <p className="text-xs break-all text-muted-foreground">{user.email}</p>
               {user.phone && <p className="text-xs text-muted-foreground">{user.phone}</p>}
