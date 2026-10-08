@@ -1,0 +1,23 @@
+{
+  "tag": "resources-ui-1791421559053",
+  "courseId": 351,
+  "checks": [
+    "API thêm tài liệu: thiếu token 401, học viên và giảng viên khác 403",
+    "Form sửa bài có mục tài liệu và trạng thái rỗng",
+    "javascript bị API chặn 400, lỗi dưới ô URL, giữ dữ liệu nhập",
+    "Lỗi khi thêm giữ tên và URL, cho phép thử lại",
+    "Thêm HTTPS hiển thị ngay, không gửi hoặc thay đổi form bài học",
+    "API xóa chặn sai quyền, sai lessonId 404, giữ nguyên tài liệu",
+    "Người chưa ghi danh không thấy tài liệu bài thường",
+    "Học viên đã ghi danh thấy link, bấm mở đúng URL ở tab mới",
+    "Form tài liệu không tràn ở 375px",
+    "Form tài liệu không tràn ở 768px",
+    "Form tài liệu không tràn ở 1366px",
+    "Giữ lại trong hộp xác nhận không xóa dữ liệu",
+    "Xóa lỗi giữ hộp xác nhận và hiện thông báo để thử lại",
+    "Xóa thành công cập nhật form và trang học không còn link",
+    "Trung bình thật 4,5 hiển thị bốn sao đầy và 50% sao cuối",
+    "Không có lỗi JavaScript"
+  ],
+  "errors": []
+}
