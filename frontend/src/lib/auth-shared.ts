@@ -70,11 +70,11 @@ export function hasRole(session: Session | null, ...roles: Role[]): boolean {
 }
 
 /** Đổi refresh token lấy cặp token mới. Refresh token cũ bị thu hồi ngay, phải lưu cặp mới. */
-export async function refreshTokens(refreshToken: string): Promise<AuthResponse | null> {
+export async function refreshTokens(refreshToken: string, userAgent: string | null): Promise<AuthResponse | null> {
   try {
     const res = await fetch(`${gatewayUrl()}/api/auth/refresh-token`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "User-Agent": userAgent ?? "" },
       body: JSON.stringify({ refreshToken }),
       cache: "no-store",
     });

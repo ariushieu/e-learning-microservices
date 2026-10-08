@@ -1,0 +1,174 @@
+{
+  "applicationCommit": "cfed738",
+  "browser": "Microsoft Edge, Playwright",
+  "web": "http://127.0.0.1:3100",
+  "gateway": "http://127.0.0.1:18080",
+  "scope": "Real auth API; one injected DELETE 503; unrelated notification calls return 503 to isolate missing/invalid access-cookie fixtures.",
+  "results": [
+    {
+      "width": 1366,
+      "test": "Browser User-Agent and current label; two distinct sessions",
+      "result": "PASS"
+    },
+    {
+      "width": 1366,
+      "test": "Responsive session actions without horizontal overflow",
+      "result": "PASS"
+    },
+    {
+      "width": 1366,
+      "test": "Cancel does not revoke a session",
+      "result": "PASS"
+    },
+    {
+      "width": 1366,
+      "test": "Failed revoke stays in dialog with retry enabled",
+      "result": "PASS"
+    },
+    {
+      "width": 1366,
+      "test": "Remote revoke blocks the real Postman refresh token",
+      "result": "PASS"
+    },
+    {
+      "width": 1366,
+      "test": "Revoke others keeps this session and revokes both remote tokens",
+      "result": "PASS"
+    },
+    {
+      "width": 1366,
+      "test": "Profile server-action rotation preserves browser identity and current label",
+      "result": "PASS"
+    },
+    {
+      "width": 1366,
+      "test": "Proxy refresh forwards browser User-Agent",
+      "result": "PASS"
+    },
+    {
+      "width": 1366,
+      "test": "BFF refresh forwards browser User-Agent",
+      "result": "PASS"
+    },
+    {
+      "width": 1366,
+      "test": "BFF 401 retry preserves browser identity",
+      "result": "PASS"
+    },
+    {
+      "width": 1366,
+      "test": "Self revoke clears cookies, redirects, protects profile; no JS errors",
+      "result": "PASS"
+    },
+    {
+      "width": 768,
+      "test": "Browser User-Agent and current label; two distinct sessions",
+      "result": "PASS"
+    },
+    {
+      "width": 768,
+      "test": "Responsive session actions without horizontal overflow",
+      "result": "PASS"
+    },
+    {
+      "width": 768,
+      "test": "Cancel does not revoke a session",
+      "result": "PASS"
+    },
+    {
+      "width": 768,
+      "test": "Failed revoke stays in dialog with retry enabled",
+      "result": "PASS"
+    },
+    {
+      "width": 768,
+      "test": "Remote revoke blocks the real Postman refresh token",
+      "result": "PASS"
+    },
+    {
+      "width": 768,
+      "test": "Revoke others keeps this session and revokes both remote tokens",
+      "result": "PASS"
+    },
+    {
+      "width": 768,
+      "test": "Profile server-action rotation preserves browser identity and current label",
+      "result": "PASS"
+    },
+    {
+      "width": 768,
+      "test": "Proxy refresh forwards browser User-Agent",
+      "result": "PASS"
+    },
+    {
+      "width": 768,
+      "test": "BFF refresh forwards browser User-Agent",
+      "result": "PASS"
+    },
+    {
+      "width": 768,
+      "test": "BFF 401 retry preserves browser identity",
+      "result": "PASS"
+    },
+    {
+      "width": 768,
+      "test": "Self revoke clears cookies, redirects, protects profile; no JS errors",
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "test": "Browser User-Agent and current label; two distinct sessions",
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "test": "Responsive session actions without horizontal overflow",
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "test": "Cancel does not revoke a session",
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "test": "Failed revoke stays in dialog with retry enabled",
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "test": "Remote revoke blocks the real Postman refresh token",
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "test": "Revoke others keeps this session and revokes both remote tokens",
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "test": "Profile server-action rotation preserves browser identity and current label",
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "test": "Proxy refresh forwards browser User-Agent",
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "test": "BFF refresh forwards browser User-Agent",
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "test": "BFF 401 retry preserves browser identity",
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "test": "Self revoke clears cookies, redirects, protects profile; no JS errors",
+      "result": "PASS"
+    }
+  ]
+}

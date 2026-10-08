@@ -9,9 +9,19 @@ import lombok.*;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 @Builder
 public class RegisterRequest {
+
+    public RegisterRequest(String email, String password, String fullName, String phone) {
+        setEmail(email);
+        this.password = password;
+        this.fullName = fullName;
+        this.phone = phone;
+    }
+
+    public void setEmail(String email) {
+        this.email = email == null ? null : email.trim();
+    }
 
     @NotBlank(message = "Email không được để trống")
     @Email(message = "Email không đúng định dạng")

@@ -64,3 +64,11 @@ ASCII riêng; kiểm email có dấu không đăng nhập/tìm ra tài khoản k
 được chuẩn hóa, đăng ký Unicode bị chặn ở trường email. Các request này chạy tự động
 trong CI Docker; không cần fixture ngoài. Migration và trình duyệt có script riêng,
 xem [AUTH-12](../test-cases/auth.md#auth-12--email-so-khớp-chính-xác).
+
+## Phiên đăng nhập (AUTH-13)
+
+Thư mục 13 tạo fixture riêng theo `runId`, đăng nhập với User-Agent Edge và Postman,
+thu hồi từng phiên/mọi phiên khác/phiên hiện tại và kiểm refresh 401. Chạy cả collection
+để có `testPassword`/`runId`; không cần environment hay fixture bổ sung cho nhóm này.
+Kiểm email có khoảng trắng ở cả register/login. SID mới sau rotation được kiểm qua
+`current` và id danh sách; token/raw UA/IP không có trong response danh sách.

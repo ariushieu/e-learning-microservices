@@ -266,6 +266,39 @@ email rỗng/sai định dạng, số điện thoại sai, mật khẩu ngắn v
 sửa thành ASCII thì đăng ký và tự đăng nhập được. Script tạo tài khoản QA, chạy trên DB test.
 Biên bản: [email so khớp chính xác](ket-qua/auth-email.md).
 
+## AUTH-13 — Quản lý phiên đăng nhập
+
+Collection tạo hai tài khoản riêng theo runId và các phiên Edge/Postman. Mỗi request
+kiểm HTTP và kết quả; không phụ thuộc dữ liệu/tài khoản của người khác.
+
+| # | Tình huống | Mong đợi |
+|---|---|---|
+| 1 | Đăng ký email có khoảng trắng hai đầu | 201, email đã trim |
+| 2 | Đăng nhập email có khoảng trắng; Edge và Postman | 200, tạo phiên riêng |
+| 3 | Xem từ Edge | 200, 2 phiên đúng thứ tự, đúng 4 trường, Edge là current, không IP/token/hash/UA thô |
+| 4 | Xem từ Postman | 200, Postman là current |
+| 5 | Xóa phiên của B hoặc id không tồn tại | 404 RESOURCE_NOT_FOUND |
+| 6 | Xóa phiên Postman rồi dùng refresh cũ | DELETE 200; refresh 401 |
+| 7 | Access token đã phát của phiên bị thu hồi gọi /me | 200 cho đến khi JWT hết hạn |
+| 8 | Danh sách sau thu hồi; xóa lại id đó | GET 200 chỉ còn Edge; DELETE 404 |
+| 9 | Refresh Edge | 200, id mới/current=true, id cũ không xuất hiện; device giữ đúng Edge |
+| 10 | Access token mang sid cũ gọi revoke-others | 401, không thu hồi phiên hiện tại mới |
+| 11 | Đăng xuất mọi thiết bị khác | 200; chỉ còn current; refresh của hai phiên khác đều 401 |
+| 12 | Refresh của tài khoản B | 200; không bị ảnh hưởng |
+| 13 | Gọi revoke-others lần nữa khi chỉ còn current | 200 |
+| 14 | Refresh current sau revoke-others | 200 |
+| 15 | Xóa chính phiên hiện tại rồi refresh | DELETE 200, refresh 401 |
+| 16 | Danh sách hết phiên nhưng JWT chưa hết hạn | 200, [] |
+| 17 | Ba endpoint thiếu token hoặc token sai | 401 mỗi request |
+| 18 | Email toàn khoảng trắng ở đăng ký/đăng nhập | 400 VALIDATION_FAILED với lỗi email |
+
+Test Java thêm: lọc phiên hết hạn/đã thu hồi; JWT legacy thiếu sid; sid không tồn tại hoặc
+thuộc tài khoản khác; chuỗi User-Agent dài/không nhận diện; thu hồi đồng thời với refresh.
+Test trình duyệt thật bằng `scripts/check-auth-sessions-browser.cjs`: ba viewport
+375/768/1366px, nhãn current, thu hồi từng phiên và mọi phiên khác, hủy/hộp thoại lỗi/thử
+lại, cookie và redirect khi thu hồi thiết bị này; UA còn đúng sau server action, proxy,
+BFF refresh và retry 401. Biên bản: [quản lý phiên](ket-qua/auth-sessions.md).
+
 ## Truy vết nguồn
 
 - [AuthController](../../auth-service/src/main/java/com/hunre/authservice/controller/AuthController.java),

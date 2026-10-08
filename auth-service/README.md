@@ -189,3 +189,35 @@ V5 kiểm toàn bộ khóa email sau chuẩn hóa trước khi sửa dữ liệu
 `uk_normalized_email_collision`, dừng triển khai và nhờ người quản trị xử lý các tài khoản
 xung đột; không tự xóa/gộp tài khoản. Sao lưu trước khi nâng cấp, dừng các instance auth
 cũ ghi dữ liệu trong lúc migration chạy. Migration không xóa dấu của email Unicode cũ.
+
+### Phiên đăng nhập
+
+Access token phát khi đăng nhập hoặc refresh có thêm claim `sid`, bằng id refresh token
+đi kèm. Khi rotate, phiên cũ bị thu hồi và phiên mới có id/createdAt mới. JWT cũ chưa có
+`sid` vẫn dùng được cho API thông thường và xem danh sách (mọi `current` là false);
+phải refresh hoặc đăng nhập lại trước khi gọi `revoke-others`.
+
+| API | Hành vi |
+|---|---|
+| `GET /api/auth/sessions` | Phiên còn hạn, chưa thu hồi của chính người gọi, createdAt/id giảm dần; chỉ trả id, createdAt, device, current |
+| `DELETE /api/auth/sessions/{id}` | Thu hồi phiên đang hoạt động của mình, kể cả phiên hiện tại; 200. Id người khác/không có/đã thu hồi/hết hạn đều 404 |
+| `POST /api/auth/sessions/revoke-others` | Thu hồi mọi phiên còn hạn khác, giữ đúng sid đang dùng; 200. Thiếu sid, sid đã rotate/thu hồi/hết hạn hoặc không thuộc mình: 401, không đổi dữ liệu |
+
+Cả ba API đòi access token hợp lệ; không nhận userId từ client. Thao tác ghi khóa user
+cùng thứ tự với login/refresh/change-password, tránh refresh tạo ra phiên mới trong lúc
+thu hồi. Nếu phiên được chọn đã rotate trước DELETE thì trả 404 để client tải lại danh
+sách; không báo đăng xuất thành công trong khi phiên thay thế vẫn hoạt động.
+
+**Thu hồi phiên làm refresh token hết dùng ngay; access token đã phát vẫn dùng được đến
+khi hết hạn** (mặc định 15 phút). Đây không phải cơ chế thu hồi JWT tức thời. Web xóa cookie
+và về /login khi đăng xuất thiết bị này. Danh sách không trả IP, raw user agent hay token/hash.
+User agent chỉ dùng làm nhãn gợi ý (có thể giả mạo); không dùng để phân quyền, giới hạn
+255 ký tự trước lưu, nhận diện không được thì hiển thị “Thiết bị khác”.
+
+Next.js chuyển User-Agent trình duyệt trong đăng nhập và cả ba luồng refresh: proxy,
+route handler (gồm retry 401), server action sau sửa hồ sơ. `lib/` và route/proxy nằm trong
+phạm vi giao việc này, cần Hiếu review theo CODEOWNERS.
+
+Email được trim trong DTO **trước** `@Email` ở cả đăng ký và đăng nhập (constructor và
+setter đều chuẩn hóa), sau đó service hạ chữ thường bằng Locale.ROOT. Email trắng vẫn
+400, Unicode đăng ký vẫn 400 ở trường email; không cắt hay sửa mật khẩu.

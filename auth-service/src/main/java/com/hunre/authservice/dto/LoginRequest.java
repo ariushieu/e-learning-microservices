@@ -7,9 +7,17 @@ import lombok.*;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 @Builder
 public class LoginRequest {
+
+    public LoginRequest(String email, String password) {
+        setEmail(email);
+        this.password = password;
+    }
+
+    public void setEmail(String email) {
+        this.email = email == null ? null : email.trim();
+    }
 
     @NotBlank(message = "Email không được để trống")
     @Email(message = "Email không đúng định dạng")
