@@ -72,3 +72,12 @@ thu hồi từng phiên/mọi phiên khác/phiên hiện tại và kiểm refres
 để có `testPassword`/`runId`; không cần environment hay fixture bổ sung cho nhóm này.
 Kiểm email có khoảng trắng ở cả register/login. SID mới sau rotation được kiểm qua
 `current` và id danh sách; token/raw UA/IP không có trong response danh sách.
+
+
+### AUTH-14 — hoạt động đăng nhập
+
+Collection thêm 30 request tự chuẩn bị tài khoản `qa.activity.<runId>@example.com` và
+một tài khoản khác; kiểm transaction 401, cảnh báo 3 → 0, lịch sử riêng/phân trang,
+validation và startedAt qua hai lần rotate. Không cần fixture riêng cho nhóm này.
+Các ca retention, migration, concurrent login và trình duyệt có kiểm thử riêng, xem
+[biên bản kết quả](../test-cases/ket-qua/auth-login-events.md).

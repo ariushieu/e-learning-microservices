@@ -74,8 +74,8 @@ class SessionIntegrationTest {
         assertThat(list.get(1).path("device").asText()).isEqualTo("Edge trên Windows");
         assertThat(list.get(1).path("current").asBoolean()).isTrue();
         for (JsonNode row : list) {
-            assertThat(row.size()).isEqualTo(4);
-            assertThat(row.has("id") && row.has("device") && row.has("createdAt") && row.has("current")).isTrue();
+            assertThat(row.size()).isEqualTo(5);
+            assertThat(row.has("id") && row.has("device") && row.has("createdAt") && row.has("current") && row.has("startedAt")).isTrue();
         }
         assertThat(list.toString()).doesNotContain("ipAddress", "userAgent", "tokenHash", "refreshToken", "userId");
     }

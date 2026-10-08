@@ -27,6 +27,8 @@ async function sessions(page) {
 }
 async function discardAccess(context) {
   // Exercise the real refresh paths without forging a JWT or mocking auth APIs.
+  // Drain page prefetches before changing cookies underneath the running app.
+  for (const page of context.pages()) await page.waitForLoadState("networkidle");
   const cookie = (await context.cookies()).find((c) => c.name === "el_access");
   assert.ok(cookie);
   await context.addCookies([{ ...cookie, expires: 1 }]);
@@ -139,6 +141,7 @@ async function discardAccess(context) {
       currentId = afterBff.id;
       pass("BFF refresh forwards browser User-Agent");
 
+      await page.waitForLoadState("networkidle");
       const cookie = (await context.cookies()).find((c) => c.name === "el_access");
       // A structurally current but invalid signature exercises the 401 retry branch.
       const segments = cookie.value.split(".");
