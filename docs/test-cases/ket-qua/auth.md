@@ -172,3 +172,10 @@ Edge 375/768/1366px và bằng chứng Docker CI. Kết quả cũ bên trên gi�
 
 Xem [biên bản phiên đăng nhập ngày 08/10/2026](auth-sessions.md): HTTP thực tế từng ca,
 collection MySQL/Docker, 33 kiểm tra Edge và ảnh. Các biên bản cũ giữ nguyên theo commit đã chạy.
+
+
+## Hoạt động đăng nhập — AUTH-14
+
+Xem [biên bản và bằng chứng thật ngày 08/10/2026](auth-login-events.md):
+371 request, 923/923 assertion trên MySQL thật qua gateway; 24 kiểm tra web mới và
+33 kiểm tra hồi quy phiên. Không còn ca BLOCKED trong lần native có đủ fixture này.
