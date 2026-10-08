@@ -1,6 +1,13 @@
 "use client";
 
-import { ArrowLeftIcon, FolderTreeIcon, LayoutDashboardIcon, PlusCircleIcon, UsersIcon } from "lucide-react";
+import {
+  ArrowLeftIcon,
+  FolderTreeIcon,
+  LayoutDashboardIcon,
+  MessageSquareIcon,
+  PlusCircleIcon,
+  UsersIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -20,6 +27,7 @@ import { Brand } from "./brand";
 
 const TEACHING = [
   { href: "/instructor", label: "Khóa học tôi dạy", icon: LayoutDashboardIcon, exact: true },
+  { href: "/instructor/reviews", label: "Đánh giá", icon: MessageSquareIcon, exact: true },
   { href: "/instructor/courses/new", label: "Tạo khóa học", icon: PlusCircleIcon, exact: true },
 ];
 
@@ -29,7 +37,7 @@ const ADMIN = [
   { href: "/admin/categories", label: "Danh mục", icon: FolderTreeIcon, exact: false },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ unrepliedCount }: { unrepliedCount: number | null }) {
   const pathname = usePathname();
   const { hasRole } = useSession();
   const isActive = (href: string, exact: boolean) =>
@@ -46,6 +54,18 @@ export function AppSidebar() {
                 <Link href={item.href}>
                   <item.icon />
                   <span>{item.label}</span>
+                  {item.href === "/instructor/reviews" && (
+                    <span
+                      className="ml-auto rounded-md bg-sidebar-accent px-2 text-xs tabular-nums"
+                      aria-label={
+                        unrepliedCount === null
+                          ? "Không tải được số đánh giá chờ phản hồi"
+                          : `${unrepliedCount} đánh giá chờ phản hồi`
+                      }
+                    >
+                      {unrepliedCount === null ? "—" : unrepliedCount}
+                    </span>
+                  )}
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

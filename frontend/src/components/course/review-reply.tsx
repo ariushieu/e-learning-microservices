@@ -79,7 +79,9 @@ export function ReviewReply({
       {review.reply !== null && (
         <div className="space-y-2 rounded-lg border-l-2 border-primary bg-primary-soft p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h4 className="text-sm font-semibold text-primary-strong">Phản hồi của giảng viên</h4>
+            <h4 className="text-sm font-semibold text-primary-strong">
+              {review.replyAuthorRole === "ADMIN" ? "Phản hồi của quản trị viên" : "Phản hồi của giảng viên"}
+            </h4>
             {review.repliedAt && (
               <time dateTime={review.repliedAt} className="text-caption text-muted-foreground">
                 {formatDay(review.repliedAt)}
@@ -113,7 +115,11 @@ export function ReviewReply({
                   rows={4}
                   disabled={busy}
                   aria-invalid={Boolean(fieldError)}
-                  onChange={(event) => setContent(event.target.value)}
+                  onChange={(event) => {
+                    setContent(event.target.value);
+                    setFieldError(undefined);
+                    setError(null);
+                  }}
                 />
               </FormField>
               <div className="flex flex-wrap gap-2">
