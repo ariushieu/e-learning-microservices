@@ -162,7 +162,20 @@ class Probe:
     def reader(self, topic):
         consumer = Consumer({"bootstrap.servers": "localhost:9092", "group.id": "qa-" + uuid.uuid4().hex,
                              "enable.auto.commit": False, "auto.offset.reset": "latest"})
-        partitions = self.admin.list_topics(topic, timeout=15).topics[topic].partitions
+        transient_metadata_errors = (KafkaError.NOT_LEADER_FOR_PARTITION,
+                                     KafkaError.LEADER_NOT_AVAILABLE, KafkaError.UNKNOWN_TOPIC_OR_PART)
+
+        def topic_partitions():
+            metadata = self.admin.list_topics(topic, timeout=10).topics.get(topic)
+            if metadata is None:
+                return None
+            if metadata.error:
+                if metadata.error.code() in transient_metadata_errors:
+                    return None
+                raise KafkaException(metadata.error)
+            return metadata.partitions or None
+
+        partitions = wait_for("new topic metadata available", topic_partitions, timeout=30)
         assignments = []
         for partition in partitions:
             def watermark():
@@ -171,9 +184,7 @@ class Probe:
                 except KafkaException as error:
                     # CreateTopics can finish before every client's metadata sees
                     # the new leader. Retry only these startup metadata errors.
-                    if error.args[0].code() in (KafkaError.NOT_LEADER_FOR_PARTITION,
-                                                KafkaError.LEADER_NOT_AVAILABLE,
-                                                KafkaError.UNKNOWN_TOPIC_OR_PART):
+                    if error.args[0].code() in transient_metadata_errors:
                         consumer.list_topics(topic, timeout=5)
                         return None
                     raise
