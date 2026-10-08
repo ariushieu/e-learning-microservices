@@ -1,0 +1,1403 @@
+{
+  "sourceCommit": "0fcfdfd",
+  "baseMain": "7a3cc03",
+  "environment": "Local JVM services, real Kafka KRaft, H2 MySQL mode, JWT enabled; no Docker/MySQL",
+  "collectionSha256": "688facc1b18c296a30a90b6f12f55d4f45c5414aa7af7197b021abacd335f915",
+  "startedAt": "2026-10-08T06:08:22.4470000+00:00",
+  "completedAt": "2026-10-08T06:09:20.6720000+00:00",
+  "stats": {
+    "iterations": {
+      "total": 1,
+      "pending": 0,
+      "failed": 0
+    },
+    "items": {
+      "total": 221,
+      "pending": 0,
+      "failed": 0
+    },
+    "scripts": {
+      "total": 226,
+      "pending": 0,
+      "failed": 0
+    },
+    "prerequests": {
+      "total": 221,
+      "pending": 0,
+      "failed": 0
+    },
+    "requests": {
+      "total": 223,
+      "pending": 0,
+      "failed": 0
+    },
+    "tests": {
+      "total": 221,
+      "pending": 0,
+      "failed": 0
+    },
+    "assertions": {
+      "total": 432,
+      "pending": 0,
+      "failed": 0
+    },
+    "testScripts": {
+      "total": 221,
+      "pending": 0,
+      "failed": 0
+    },
+    "prerequestScripts": {
+      "total": 5,
+      "pending": 0,
+      "failed": 0
+    }
+  },
+  "manualCasesNotExecuted": [
+    "ENROLL-09.1",
+    "ENROLL-09.2",
+    "ENROLL-09.3",
+    "ENROLL-09.4",
+    "ENROLL-09.5"
+  ],
+  "executions": [
+    {
+      "name": "SETUP-01 Đăng nhập admin và bắt đầu lượt chạy",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-02.A Đăng ký (409 = đã tồn tại, phải đăng nhập bước sau)",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-03.A Đăng nhập lấy ID",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-04.A Cấp vai trò bằng API",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-05.A Đăng nhập lại lấy quyền mới",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-02.B Đăng ký (409 = đã tồn tại, phải đăng nhập bước sau)",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-03.B Đăng nhập lấy ID",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-04.B Cấp vai trò bằng API",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-05.B Đăng nhập lại lấy quyền mới",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-02.S Đăng ký (409 = đã tồn tại, phải đăng nhập bước sau)",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-03.S Đăng nhập lấy ID",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-04.S Cấp vai trò bằng API",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-05.S Đăng nhập lại lấy quyền mới",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-06 Xác nhận missingId không phải khóa thật",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-07 Tạo danh mục riêng",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-08.main Tạo khóa",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-09.main Tạo chương",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-10.main.1 Tạo bài",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-10.main.2 Tạo bài",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-11.main Xuất bản và gửi course.updated",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-08.aux Tạo khóa",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-09.aux Tạo chương",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-10.aux.1 Tạo bài",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-11.aux Xuất bản và gửi course.updated",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-08.race Tạo khóa",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-09.race Tạo chương",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-10.race.1 Tạo bài",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-11.race Xuất bản và gửi course.updated",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-08.archive Tạo khóa",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-09.archive Tạo chương",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-10.archive.1 Tạo bài",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-11.archive Xuất bản và gửi course.updated",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-01.1 Ghi danh khóa đã đồng bộ",
+      "http": 404,
+      "assertions": 0,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-01.1 Ghi danh khóa đã đồng bộ",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-01.2 Không token",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-01.3 Giảng viên tự ghi danh",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-01.4 Khóa không tồn tại",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-01.5 ID sai kiểu",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-01.6 ID 0",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-01.6 ID -1",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-01.6 Thiếu ID",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-01.7 Ghi danh trùng",
+      "http": 409,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-01.9 Không nhận userId từ body",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-01.11 Đúng một thông báo ghi danh",
+      "http": 200,
+      "assertions": 0,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-01.11 Đúng một thông báo ghi danh",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-02.1 Danh sách và metadata",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-02.2 Không token",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-02.3 Danh sách của B",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-02.4 Trang rỗng",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-02.5 Sort bịa",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-02.6 Sort thuộc tính con bịa",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-02.7 Không đọc hộ qua query",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-03.1 Đọc lượt của mình",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-03.2 Không token",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-03.3 B đọc hộ",
+      "http": 403,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-03.4 Admin đọc hộ",
+      "http": 403,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-03.5 ID không tồn tại",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-03.6 ID sai kiểu",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-08.8 Chưa học bài nào",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-08.2 Không token",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-08.3 Người chưa ghi danh",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-08.4 Khóa không có lượt",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-08.5 ID sai kiểu",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-08.6 Thiếu courseId",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-12 Lưu trữ khóa riêng",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-01.10 Khóa đã lưu trữ",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.1 A thấy S và B đúng khóa",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.2 Không token qua đường dẫn public của gateway",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.3 B là giảng viên khác đã ghi danh",
+      "http": 403,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.4 S không được đọc cả khóa",
+      "http": 403,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.5 Admin được xem danh sách",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.6 Khóa không có snapshot",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.7 ID khóa 0",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.7 ID khóa -1",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.7 ID khóa abc",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.8 Trang đầu một học viên",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.8 Trang sau không trùng học viên",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.8 Trang vượt cuối",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.9 Query không hợp lệ page=-1",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.9 Query không hợp lệ page=abc",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.9 Query không hợp lệ size=0",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.9 Query không hợp lệ size=101",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.9 Query không hợp lệ status=INVALID",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.9 Query không hợp lệ sort=learnerName",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.9 Query không hợp lệ sort=courseId",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.9 Query không hợp lệ sort=progressPercent,desc&sort=userId",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.10 Khóa chưa có học viên",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.12 Tên không lấy từ body ghi danh",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-04.2 Không token",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-04.3 B hủy hộ",
+      "http": 403,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-04.4 ID không tồn tại",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-04.5 ID sai kiểu",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-04.8 Enum sai",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-04.8 Thiếu status",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-04.9 Không tự cấp hoàn thành",
+      "http": 422,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-04.1 Hủy lượt ACTIVE",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-04.7 Hủy lần hai",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-02.8 Danh sách giữ lượt đã hủy",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-03.7 Đọc lượt đã hủy",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.8 Không cập nhật lượt đã hủy",
+      "http": 422,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.11 Lọc lượt đã hủy",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-01.8 Kích hoạt lại dùng ID cũ",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.12 Kích hoạt lại giữ tên token và cùng ID",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-06.6 Lượt ACTIVE chưa có chứng chỉ",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.2 Không token",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.3 Người chưa ghi danh",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.4 Khóa không có lượt",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.5 ID bài sai kiểu",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.6 Giây xem âm",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.7 Sai status",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.7 Thiếu status",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.13 Bài không tồn tại",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.13 Bài thuộc khóa khác",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.13 Kiểm tra không ghi tiến độ",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.1 Hoàn thành bài đầu",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.1 Tiến độ 50%",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.13 Học một trong hai bài hiện 50%",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.15 Sắp xếp tiến độ tăng dần",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.9 Gửi hoàn thành lần hai",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.9 Không đếm trùng",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.11 Giây xem không giảm",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.14 IN_PROGRESS với 90 giây",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.14 IN_PROGRESS với 10 giây",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.14 Giữ 50%",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.12 B giả userId S",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-08.1 Tiến độ chỉ của S",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-08.7 Không đọc hộ qua query",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.10 Hoàn thành bài cuối",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.10 Hoàn thành 100%",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.10 Lưu mốc hoàn thành khóa",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-06.1 Chứng chỉ được cấp",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.14 Hoàn thành có ngày và mã chứng chỉ",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-06.2 Không token",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-06.3 B đọc chứng chỉ của S",
+      "http": 403,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-06.4 Lượt không tồn tại",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-06.5 ID sai kiểu",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-06.7 Đọc lại không cấp trùng",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-06.8 Admin không đọc hộ",
+      "http": 403,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-08.9 Đọc sau hoàn thành lần 1",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-08.9 Đọc sau hoàn thành lần 2",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-04.6 Không hủy khóa hoàn thành",
+      "http": 422,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-04.6 Giữ trạng thái sau khi từ chối hủy",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.15 Không thu hồi hoàn thành",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.15 Giữ 100% và mã",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.15 Giữ completedAt",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.15 Giữ chứng chỉ cũ",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.15 Thông báo hoàn thành và chứng chỉ",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.15 Không thêm thông báo sau khi chờ outbox",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-10.1 Xác minh không đăng nhập",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-10.2 Người khác vẫn thấy cùng dữ liệu công khai",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-10.3 Mã không tồn tại",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-10.4 Mã sai định dạng",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-10.5 Không giả người học qua query",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-10.6 Chỉ mở GET, POST vẫn cần đăng nhập",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-10.7 Không mở API danh sách chứng chỉ",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-15 Đổi tên khóa sau khi cấp chứng chỉ",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-10.9 Đợi tên mới đồng bộ",
+      "http": 200,
+      "assertions": 0,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-10.9 Đợi tên mới đồng bộ",
+      "http": 200,
+      "assertions": 0,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-10.9 Đợi tên mới đồng bộ",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-10.9 Xác minh giữ tên khóa tại lúc cấp",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-10.9 Chứng chỉ của chủ cũng giữ tên cũ",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-13 Lượt riêng cho ca đồng thời",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.16 Hai cập nhật đồng thời",
+      "http": 200,
+      "assertions": 4,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.16 Hai cập nhật đồng thời",
+      "http": 200,
+      "assertions": 4,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.16 Hai cập nhật đồng thời",
+      "http": 200,
+      "assertions": 4,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.16 Chứng chỉ duy nhất lần 1",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.16 Chứng chỉ duy nhất lần 2",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-14 Thêm bài thứ ba sau hoàn thành",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.17 Đợi snapshot có ba bài",
+      "http": 200,
+      "assertions": 0,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.17 Đợi snapshot có ba bài",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.17 Gửi IN_PROGRESS sau khi thêm bài",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.17 Vẫn COMPLETED và 100%",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-07.17 Chứng chỉ không đổi",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-05.2 Không token",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-05.3 A chưa ghi danh không xóa được S",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-05.3 S vẫn đọc được lượt",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-05.4 Khóa không có lượt",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-05.5 ID sai kiểu",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-05.6 Thiếu courseId",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-05.7 B chỉ xóa lượt của B",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-05.7 S vẫn còn lượt",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-05.1 Xóa lượt S",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-11.16 Xóa lượt thì biến mất khỏi danh sách",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-05.1 ID cũ không còn",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-05.1 Tiến độ đã xóa",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-05.1 Chứng chỉ riêng đã xóa",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-10.8 Mã chứng chỉ đã xóa không xác minh được",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-05.8 Ghi danh lại có ID mới",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-05.8 Không khôi phục tiến độ cũ",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-16.C Đăng ký học viên thống kê",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-17.C Đăng nhập học viên thống kê",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-16.D Đăng ký học viên thống kê",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-17.D Đăng nhập học viên thống kê",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-18 Tạo khóa thống kê riêng",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-19 Tạo chương thống kê",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-20.1 Tạo bài thống kê",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-20.2 Tạo bài thống kê",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-21 Xuất bản khóa thống kê",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-12.1 Khóa chưa có học viên",
+      "http": 404,
+      "assertions": 0,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-12.1 Khóa chưa có học viên",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-22 D ghi danh khóa thống kê",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-23 D học bài một trước khi hủy",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-24 D hủy lượt đã học một bài",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-12.2 Chỉ có lượt đã hủy không chia cho không",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-25.S Ghi danh khóa thống kê",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-25.B Ghi danh khóa thống kê",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-25.C Ghi danh khóa thống kê",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-26 S hoàn thành bài một",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-27 S hoàn thành bài hai",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-28 B hoàn thành bài một",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "SETUP-29 C chỉ bắt đầu bài một",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-12.3 Đúng số liệu nghiệm thu S B C D",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-12.4 Bộ lọc học viên không đổi số liệu",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-12.5 Admin xem được số liệu",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-12.6 Không token qua gateway",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-12.7 Giảng viên B đã ghi danh vẫn không xem được",
+      "http": 403,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-12.8 Học viên không giả chủ khóa qua query",
+      "http": 403,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-12.9 Khóa không có snapshot",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-12.10 ID khóa 0",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-12.10 ID khóa -1",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-12.10 ID khóa abc",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-12.11 Chi tiết khóa vẫn qua course-service",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "ENROLL-12.11 Đề cương vẫn qua course-service",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    }
+  ],
+  "failures": []
+}
