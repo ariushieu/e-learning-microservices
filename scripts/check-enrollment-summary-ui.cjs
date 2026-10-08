@@ -99,7 +99,8 @@ async function run() {
   checks.push("New untouched lesson is visible at zero without an aggregate progress record");
 
   for (const width of [375, 768, 1366]) {
-    await page.setViewportSize({ width, height: 1000 });
+    // Fit the section vertically so the sticky app header stays outside its screenshot.
+    await page.setViewportSize({ width, height: 2200 });
     await section.scrollIntoViewIfNeeded();
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `Page overflow at ${width}`);
     assert.ok(await section.evaluate((element) => element.scrollWidth <= element.clientWidth + 1), `Summary overflow at ${width}`);

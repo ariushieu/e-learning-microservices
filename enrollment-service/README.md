@@ -314,6 +314,9 @@ không thể khôi phục tên lịch sử vốn chưa từng lưu. Mã cũ và 
 Trước bước đó, API public trả 422 với hướng dẫn, không suy đoán tên hoặc dùng email thay thế.
 Xóa lượt ghi danh vẫn xóa chứng chỉ; mã đã xóa trả 404 khi xác minh.
 
+Triển khai enrollment-service (Flyway V2), gateway và frontend cùng phiên bản. Kiểm tra schema
+MySQL bằng scripts/verify-schema.sh/CI; H2 không xác nhận được cú pháp migration MySQL.
+
 ## Số liệu học tập của khóa
 
 `GET /api/courses/{courseId}/learners/summary` trả `active`, `completed`, `cancelled`,
@@ -334,6 +337,3 @@ học viên đã bỏ khóa. Lỗi summary không che danh sách học viên; l�
 
 Triển khai gateway, enrollment-service và frontend cùng phiên bản. Không đổi schema/migration.
 Các ca và cách tái hiện nằm ở ENROLL-12 trong `docs/test-cases/enrollment.md` và thư mục 7 của collection.
-
-Triển khai enrollment-service (Flyway V2), gateway và frontend cùng phiên bản. Kiểm tra schema
-MySQL bằng scripts/verify-schema.sh/CI; H2 không xác nhận được cú pháp migration MySQL.

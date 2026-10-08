@@ -42,8 +42,16 @@ D hoàn thành bài 1 trước khi hủy vẫn không được cộng vào tỉ 
 
 Máy cục bộ không có Docker; công cụ trình duyệt không khởi động được do lỗi sandbox.
 Workflow `Full stack in Docker` đã được mở rộng để chạy toàn bộ collection trên MySQL/Kafka/Redis
-và kiểm giao diện bằng Chromium sau smoke test và collection auth có sẵn. Kết quả CI sẽ được
-ghi trong PR; không coi việc thêm script là bằng chứng đã chạy thành công.
+và kiểm giao diện bằng Chromium sau smoke test và collection auth có sẵn.
+
+Lượt [CI 37737611770](https://github.com/ariushieu/e-learning-microservices/actions/runs/37737611770)
+tại **26cba3c**: **10/10 check đạt**, gồm Build & Test JDK 17, schema MySQL và Full stack in Docker.
+Collection Docker: **222 lượt HTTP, 429/429 assertion đạt**; ít hơn lượt local ba assertion dữ liệu
+đăng ký vì tài khoản A/B/S đã được collection auth tạo, nên đăng ký lại trả 409 như dự kiến.
+Chromium: **10 kiểm tra đạt, không lỗi JavaScript**; đủ ba chiều rộng, bàn phím, trạng thái lỗi/tải,
+bài mới và bài đã xóa. [Artifact đã loại token](https://github.com/ariushieu/e-learning-microservices/actions/runs/37737611770/artifacts/11532244439)
+chứa báo cáo HTTP và ảnh. Khung ảnh sau đó tăng chiều cao để header sticky không che phần thống kê
+khi chụp cả section; chiều rộng thử nghiệm và giao diện sản phẩm không thay đổi.
 
 - `scripts/report-enrollment-newman.cjs` loại dữ liệu nhạy cảm trước khi lưu artifact.
 - `scripts/check-enrollment-summary-ui.cjs` dùng fixture ENROLL-12: bốn ô số liệu, phần trăm hai chữ số,
