@@ -21,7 +21,7 @@
 |---|---|---|---|---|
 | Hiếu | api-gateway, web | [Giới hạn đăng nhập theo IP thật](#hiếu--giới-hạn-đăng-nhập-theo-ip-thật) — hiện cả lớp dùng chung một xô | **Cao — xong trước demo** | ~1h |
 | quocluibotre | auth | [Trang tổng quan quản trị, hoàn thiện #70](#quocluibotre--trang-tổng-quan-quản-trị) | Trung bình | ~2h |
-| phamquyet19042005-netizen | enrollment | [Giảng viên xem học viên của khóa và tiến độ](#phamquyet19042005-netizen--giảng-viên-xem-học-viên-của-khóa) — #73 chạy thử đạt, đang để draft: bấm **Ready for review** để merge | Trung bình | ~3h |
+| phamquyet19042005-netizen | enrollment | [Số liệu học tập của khóa: tỉ lệ hoàn thành, bài nào học viên bỏ dở](#phamquyet19042005-netizen--số-liệu-học-tập-của-khóa) — trước đó bấm **Ready for review** cho #73 | Trung bình | ~2h |
 | hiepdeptrai0111 | quiz | [Tải kết quả bài kiểm tra dạng CSV, hoàn thiện #71](#hiepdeptrai0111--tải-kết-quả-bài-kiểm-tra-dạng-csv) | Trung bình | ~2h |
 | duyd92689-debug | course | [Admin gỡ đánh giá vi phạm](#duyd92689-debug--admin-gỡ-đánh-giá-vi-phạm) | Trung bình | ~2h |
 
@@ -271,34 +271,44 @@ người đó. Học viên gọi → 403. Thêm ca vào `auth.md` và collection
 
 ---
 
-### phamquyet19042005-netizen — giảng viên xem học viên của khóa
+### phamquyet19042005-netizen — số liệu học tập của khóa
 
-> Khu giảng dạy chưa cho giảng viên biết ai đang học khóa mình và học tới đâu.
-> `course_snapshots.instructor_id` đã có, nên enrollment-service tự kiểm được quyền, không phải gọi
-> sang course-service.
+> Trước tiên: #73 đã chạy thử đạt hết nhưng còn để **draft**. Bấm **Ready for review** là merge được.
+>
+> Từ #73 giảng viên thấy từng học viên, nhưng chưa thấy bức tranh chung của khóa: bao nhiêu người học
+> xong, và **học viên bỏ dở ở bài nào**. `lesson_progress` đã lưu tiến độ từng bài, nên enrollment-service
+> tự tính được, không phải gọi sang service khác.
 
 **Cần làm.**
 
 - enrollment-service:
-  - Migration mới: thêm `learner_name` vào `enrollments`, lấy từ token lúc ghi danh và lúc kích hoạt
-    lại (giống `learner_name` của chứng chỉ ở #60). Lượt cũ để NULL; web hiện "Học viên #<id>".
-  - `GET /api/courses/{courseId}/learners?status=&page=&size=`:
-    - Chỉ giảng viên của khóa (theo snapshot) hoặc ADMIN; người khác 403; khóa chưa có snapshot 404.
-    - Trả `enrollmentId`, `learnerName`, `status`, `progressPercent`, `enrolledAt`,
-      `lastAccessedAt`, `completedAt`, `certificateCode` (nếu đã cấp). Không trả email.
-    - Phân trang; sort `enrolledAt`, `progressPercent`.
-  - Route (A4): đường dẫn nằm dưới `/api/courses/**` của course-service, nên khai route riêng ở gateway
-    với `order` âm, giống `enrollment-lesson-progress` (routes[5]).
-  - Gateway đang mở công khai `GET:/api/courses/**`, nên enrollment-service phải tự trả 401 khi không
-    có token. Có ca test riêng cho chuyện này.
-- Web: component `components/enrollment/course-learners.tsx` gắn vào trang `/instructor/courses/{id}`.
-  - Bảng: tên, trạng thái, thanh tiến độ (`ProgressMeter`), ngày ghi danh, ngày hoàn thành.
-  - Lọc theo trạng thái; khóa chưa có ai thì hiện `EmptyState`.
-  - Trang đó là của duyd92689-debug: chỉ thêm một dòng import và gắn component; CODEOWNERS tự mời
-    duyd review.
+  - `GET /api/courses/{courseId}/learners/summary`: cùng quyền với `/learners` (giảng viên của khóa theo
+    snapshot hoặc ADMIN; người khác 403, không token 401, khóa chưa có snapshot 404).
+  - Trả các trường sau:
+    - Số lượt ghi danh theo trạng thái: `active`, `completed`, `cancelled`.
+    - `averageProgress`: trung bình `progressPercent`, không tính lượt `CANCELLED`.
+    - `completionRate`: `completed / (active + completed)`, theo phần trăm.
+    - `certificatesIssued`.
+    - `lessons`: mỗi bài một dòng `lessonId`, `completedCount`, `completionRate`, tính trên các lượt chưa hủy.
+  - Đếm bằng `COUNT … GROUP BY`, không tải hết lượt ghi danh lên Java.
+  - Route (A4): thêm đường dẫn `/summary` vào route `enrollment-course-learners` ở gateway (#73). Kiểm
+    `GET /api/courses/{id}` vẫn về course-service.
+- Web, mục "Học viên của khóa" (`components/enrollment/course-learners.tsx`):
+  - `StatGrid` phía trên bảng: đang học, đã hoàn thành, tiến độ trung bình, tỉ lệ hoàn thành.
+  - Bảng "Tỉ lệ hoàn thành từng bài":
+    - Tên bài lấy từ đề cương mà trang `/instructor/courses/{id}` đã tải; truyền vào component qua prop.
+      Trang đó là của duyd92689-debug, chỉ sửa một dòng.
+    - Bài chưa ai học hiện 0%; bài đã xóa khỏi đề cương thì không hiện.
+    - Bài có tỉ lệ thấp hơn hẳn bài liền trước thì làm nổi bật, để giảng viên thấy học viên bỏ ở đâu.
 
-**Tự kiểm.** A thấy S và B với đúng tiến độ; S học xong 1/2 bài → bảng hiện 50%. B (giảng viên khác)
-gọi → 403, S gọi → 403, không token → 401. Thêm nhóm ca ENROLL-11 vào `enrollment.md` và collection.
+**Tự kiểm.** Khóa 2 bài: S học xong cả 2, B xong bài 1, C chưa học, D ghi danh rồi hủy:
+
+- `active` 2, `completed` 1, `cancelled` 1.
+- Tiến độ trung bình 50, tỉ lệ hoàn thành 33,33%.
+- Bài 1: 66,67%; bài 2: 33,33%.
+
+Giảng viên khác gọi → 403. Thêm nhóm ca vào `enrollment.md` và collection, chạy lại collection enrollment
+trên Docker.
 
 ---
 
