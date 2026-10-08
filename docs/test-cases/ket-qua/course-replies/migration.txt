@@ -1,0 +1,5 @@
+2026-10-08T13:54:26.932+07:00  INFO 39444 --- [course-service] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 7 migrations (execution time 00:00.063s)
+2026-10-08T13:54:26.956+07:00  INFO 39444 --- [course-service] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `course_db`: 5
+2026-10-08T13:54:26.983+07:00  INFO 39444 --- [course-service] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `course_db` to version "6 - add review reply"
+2026-10-08T13:54:27.153+07:00  INFO 39444 --- [course-service] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 1 migration to schema `course_db`, now at version v6 (execution time 00:00.134s)
+2026-10-08T13:54:34.368+07:00  INFO 39444 --- [course-service] [           main] c.h.c.CourseServiceApplication           : Started CourseServiceApplication in 15.251 seconds (process running for 15.931)
