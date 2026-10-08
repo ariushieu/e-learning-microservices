@@ -21,16 +21,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/client";
 import { fieldErrorMap, formErrorMessage } from "@/lib/forms";
+import { safeUrl } from "@/lib/safe-url";
 import type { LessonResource } from "@/lib/types";
-
-function safeLink(value: string) {
-  try {
-    const url = new URL(value);
-    return ["http:", "https:"].includes(url.protocol) && !url.username && !url.password;
-  } catch {
-    return false;
-  }
-}
 
 export function LessonResources({
   lessonId,
@@ -105,39 +97,42 @@ export function LessonResources({
       </div>
       {resources.length ? (
         <ul className="divide-y rounded-lg border">
-          {resources.map((resource) => (
-            <li key={resource.id} className="flex min-w-0 items-center gap-3 p-3">
-              <PaperclipIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-              <div className="min-w-0 flex-1 break-all text-sm">
-                {safeLink(resource.fileUrl) ? (
-                  <a
-                    href={resource.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-medium text-primary underline-offset-4 hover:underline"
-                  >
-                    {resource.name}
-                    <ExternalLinkIcon className="ml-1 inline size-3" aria-hidden />
-                  </a>
-                ) : (
-                  <span>{resource.name} — Liên kết không hợp lệ, hãy xóa và thêm lại.</span>
-                )}
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                disabled={busy}
-                aria-label={`Xóa tài liệu ${resource.name}`}
-                onClick={() => {
-                  setDeleteError(null);
-                  setDeleting(resource);
-                }}
-              >
-                <Trash2Icon aria-hidden />
-              </Button>
-            </li>
-          ))}
+          {resources.map((resource) => {
+            const href = safeUrl(resource.fileUrl);
+            return (
+              <li key={resource.id} className="flex min-w-0 items-center gap-3 p-3">
+                <PaperclipIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                <div className="min-w-0 flex-1 break-all text-sm">
+                  {href ? (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-primary underline-offset-4 hover:underline"
+                    >
+                      {resource.name}
+                      <ExternalLinkIcon className="ml-1 inline size-3" aria-hidden />
+                    </a>
+                  ) : (
+                    <span>{resource.name} — Liên kết không hợp lệ, hãy xóa và thêm lại.</span>
+                  )}
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disabled={busy}
+                  aria-label={`Xóa tài liệu ${resource.name}`}
+                  onClick={() => {
+                    setDeleteError(null);
+                    setDeleting(resource);
+                  }}
+                >
+                  <Trash2Icon aria-hidden />
+                </Button>
+              </li>
+            );
+          })}
         </ul>
       ) : (
         <EmptyState icon={PaperclipIcon} title="Chưa có tài liệu đính kèm" />

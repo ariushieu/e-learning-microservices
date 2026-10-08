@@ -51,6 +51,13 @@ public class QuizAttempt {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(name = "learner_name", length = 255)
+    private String learnerName;
+
+    // Immutable classification at start; NULL for attempts predating this feature.
+    @Column(name = "is_preview")
+    private Boolean preview;
+
     @Builder.Default
     @Column(name = "attempt_no", nullable = false)
     private Integer attemptNo = 1;

@@ -32,7 +32,7 @@ public class QuizAttemptController {
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization,
             AuthenticatedUser user) {
         return ApiResponse.ok(quizAttemptService.startAttempt(
-                quizId, user.userId(), user.hasRole(Roles.ADMIN), authorization), "Bắt đầu làm bài kiểm tra");
+                quizId, user.userId(), user.hasRole(Roles.ADMIN), authorization, user.fullName()), "Bắt đầu làm bài kiểm tra");
     }
 
     @GetMapping("/{quizId}/attempts")

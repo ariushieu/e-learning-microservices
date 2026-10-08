@@ -15,7 +15,34 @@ Mật khẩu được lưu bằng BCrypt. Migration hiện nằm trong đường
 giới hạn bởi profile dev: **phải đổi mật khẩu tài khoản này trước khi triển khai thật**.
 Không sửa migration đã áp dụng và không cấp admin tự động dựa trên email đăng ký.
 
-## Gán và gỡ vai trò
+## Quản lý người dùng cho admin
+
+Hai endpoint dưới đây chỉ cho `ROLE_ADMIN`; thiếu token trả 401, học viên/giảng viên trả 403.
+
+- `GET /api/users?keyword=&role=&status=&page=0&size=12&sort=createdAt,desc`:
+  tìm theo email hoặc họ tên (trim, không phân biệt hoa/thường, `%` và `_` là ký tự tìm kiếm
+  bình thường). `role` nhận `ROLE_STUDENT`, `ROLE_INSTRUCTOR`, `ROLE_ADMIN`; `status` nhận
+  `PENDING`, `ACTIVE`, `LOCKED`. Các bộ lọc kết hợp bằng AND; bỏ trống thì không lọc.
+  Trả `PageResponse<UserResponse>` gồm `content`, `page`, `size`, `totalElements`, `totalPages`,
+  `first`, `last`; không trả mật khẩu/token. Mặc định 12 dòng, mới nhất trước; `page >= 0`,
+  `size` từ 1 đến 100, offset (`page * size`) không vượt quá 2147483647. Chỉ sort `createdAt`, `email`, `fullName`; thêm ID làm khóa phụ để
+  phân trang ổn định khi trùng giá trị. Sort/lọc/tham số phân trang sai trả 400; trang vượt
+  phạm vi trả danh sách rỗng.
+- `PATCH /api/users/{id}/status`, body `{"status":"LOCKED"}` hoặc `{"status":"ACTIVE"}`:
+  trả 200 với user đã cập nhật; dữ liệu sai trả 400, user không tồn tại trả 404.
+  Tự khóa hoặc khóa bất kỳ tài khoản có `ROLE_ADMIN` trả 422.
+  Khóa user và thu hồi **mọi refresh token** trong cùng transaction; lỗi thu hồi sẽ rollback.
+  Dùng cùng khóa hàng với login, refresh, đổi mật khẩu và cập nhật vai trò.
+  Gửi lại trạng thái hiện tại vẫn trả 200. Mở khóa không phục hồi refresh token đã thu hồi.
+
+**Access token đã phát vẫn dùng được tới khi hết hạn (mặc định/tối đa 15 phút theo cấu hình
+của dự án)**: gateway xác thực JWT, không tra database mỗi request. Khóa chặn đăng nhập mới
+(403); refresh token đã bị thu hồi trả 401. Sau mở khóa, người dùng đăng nhập lại để có phiên mới.
+
+Trang `/admin/users` có bảng, tìm kiếm, lọc, sắp xếp và phân trang. Cấp quyền trên từng dòng
+dùng lại form vai trò với tài khoản đã chọn; khóa/mở khóa có xác nhận, phản hồi thành công/lỗi.
+
+## Gán và gỡ vai trò (API)
 
 Đăng nhập admin qua `POST /api/auth/login`, lấy `data.accessToken`, rồi gọi:
 

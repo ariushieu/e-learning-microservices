@@ -229,7 +229,7 @@ class QuizEnrollmentIntegrationTest {
     @ParameterizedTest
     @ValueSource(booleans = {false,true})
     void nullIdentityCannotBypassAsAdmin(boolean admin) {
-        assertThatThrownBy(() -> service.startAttempt(quiz.getId(), null, admin, null))
+        assertThatThrownBy(() -> service.startAttempt(quiz.getId(), null, admin, null, null))
                 .isInstanceOfSatisfying(BusinessException.class, ex -> assertThat(ex.errorCode()).isEqualTo(ErrorCode.FORBIDDEN));
         assertThat(attempts.count()).isZero();
         assertThat(tokens).isEmpty();

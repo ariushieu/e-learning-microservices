@@ -55,7 +55,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
 
     @Override
     @Transactional
-    public QuizAttemptResponse startAttempt(Long quizId, Long userId, boolean isAdmin, String authorization) {
+    public QuizAttemptResponse startAttempt(Long quizId, Long userId, boolean isAdmin, String authorization, String learnerName) {
         log.info("Bắt đầu lượt làm bài quizId: {} cho userId: {}", quizId, userId);
         if (userId == null) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "Không thể xác minh người làm bài");
@@ -105,6 +105,8 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         QuizAttempt newAttempt = QuizAttempt.builder()
                 .quiz(quiz)
                 .userId(userId)
+                .learnerName(learnerName == null || learnerName.isBlank() ? null : learnerName.strip())
+                .preview(isAdmin || userId.equals(quiz.getCreatedBy()))
                 .attemptNo((int) attemptsCount + 1)
                 .status(AttemptStatus.IN_PROGRESS)
                 .startedAt(Instant.now())

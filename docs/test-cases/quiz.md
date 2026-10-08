@@ -279,6 +279,62 @@ Sau review #59, tăng khoảng chờ vì giới hạn 60 giây + ân hạn 30 gi
 Giữ nguyên kỳ vọng HTTP 422, không đổi backend hoặc coi ca bỏ qua là PASS.
 QUIZ-13.11 phải chủ động dừng/bật Kafka và xác minh thông báo; mặc định bỏ qua.
 
+## QUIZ-17 — GET /api/quizzes/{quizId}/results
+
+Theo phân công 08/10: chủ đề A hoặc ADMIN xem kết quả toàn lớp. API lịch sử riêng
+`/attempts` giữ nguyên. Đề mẫu có 2 câu bằng điểm, điểm đạt 75, tối đa 5 lượt;
+S nộp 50 điểm, B nộp 100 điểm. Collection dùng đề riêng `statsQuizId`.
+
+| # | Tình huống | Mong đợi |
+|---|---|---|
+| 1 | Chưa có bài nộp | 200; số người, điểm trung bình, tỉ lệ đạt đều 0; learners rỗng |
+| 2 | S đang làm | Không tăng số lượt nộp hoặc số người |
+| 3 | A đọc sau S và B nộp | 2 người, 2 lượt, trung bình 75, đạt 50%; câu 1 đúng 100%, câu 2 đúng 50%; có tên, không email/đáp án |
+| 4 | ADMIN đọc | 200, cùng số liệu A |
+| 5 | Giảng viên B đọc | 403, không data |
+| 6 | S giả userId/isAdmin | 403, không data |
+| 7 | Không token | 401 |
+| 8 | Quiz không tồn tại | 404 |
+| 9 | size=1 | 1 dòng, tổng 2 người, 2 trang; summary vẫn toàn lớp |
+| 10 | page=1&size=1 | Người còn lại, không trùng trang đầu |
+| 11 | sort=secret,desc | 400 |
+| 12 | A và ADMIN làm thử rồi nộp | Số liệu vẫn như ca 3 |
+| 13 | S nộp thêm lượt 0 điểm | 2 người, 3 lượt, trung bình vẫn 75, đạt 50%; câu 1 đúng 66.67%, câu 2 đúng 33.33% |
+| 14 | page=999 | learners rỗng; summary vẫn toàn lớp |
+| 15 | Đề quá giờ của QUIZ-13.7 | 1 lượt EXPIRED, không có lượt SUBMITTED, trung bình 0; cần runSlowTests=true |
+
+Integration test bổ sung: lưu tên từ JWT, chặn giả tên/cờ làm thử, không đổi phân loại khi
+resume bằng vai trò mới, lượt quiz khác không ảnh hưởng, tên trống hiện `Học viên #<id>`,
+lượt cũ thiếu phân loại bị loại và có `unclassifiedAttempts`, ID sai kiểu trả 400.
+
+Định nghĩa thống kê: trung bình lấy điểm cao nhất mỗi người, tỉ lệ đạt tính người có ít nhất
+một lượt đạt. Tỉ lệ đúng từng câu dùng **tất cả lượt SUBMITTED đã chấm câu đó**, không chỉ lượt
+cao nhất; câu chưa được chấm có `gradedAnswers=0`, web hiện "Chưa có dữ liệu". EXPIRED chỉ
+tăng bộ đếm hết giờ. Lượt thử và lượt cũ chưa phân loại không tham gia bất cứ thống kê nào.
+
+## QUIZ-18 — tải kết quả CSV
+
+Chạy sau QUIZ-17. Quyền, tập học viên và cách tính điểm giống `/results`.
+
+| # | Tình huống | Mong đợi |
+|---|---|---|
+| 1 | A tải, kể cả page=99&size=1 | 200, đủ 2 học viên, S có 2 lượt/50 điểm và B 1 lượt/100 điểm; không có A/admin làm thử; text/csv UTF-8, đúng tên attachment |
+| 2 | Admin tải | Nội dung giống A |
+| 3 | B không phải tác giả tải | 403 JSON, không có header attachment |
+| 4 | S gửi userId của A, isAdmin=true | Vẫn 403, không file |
+| 5 | Không token | 401, không file |
+| 6 | Quiz không tồn tại | 404 RESOURCE_NOT_FOUND |
+| 7 | S đổi tên =1+1, đăng nhập lại, làm/nộp bài | Ô tên là `'=1+1`, 3 lượt và điểm cao nhất vẫn 50; không công thức |
+| 8 | S đổi tên `Nguyễn, "Ánh"`, đăng nhập lại, làm/nộp bài | Ô CSV là `"Nguyễn, ""Ánh"""`, tiếng Việt giữ nguyên, 4 lượt/50 điểm |
+| 9 | Đề chưa có lượt nộp | File chỉ có header tiếng Việt |
+
+Integration test bổ sung: BOM byte EF BB BF, đủ 22 học viên ngoài giới hạn 20 của web,
+giờ UTC+7 chính xác, tên bắt đầu bằng + / - / @ / tab / CR / LF, phẩy/kép/xuống dòng,
+fallback tên trống, không sửa dữ liệu gốc, loại preview/legacy/expired/ongoing và ID sai kiểu.
+Kiểm web: bấm **Tải CSV** tải đúng tên `ket-qua-quiz-<id>.csv`, byte BOM và nội dung
+giữ nguyên qua cầu nối; trang 375/768/1366px không tràn ngang. Không coi kiểm byte BOM
+là đã mở file bằng Excel; ghi riêng việc đó trong biên bản nếu đã thực hiện.
+
 ## Truy vết nguồn
 
 - [Controllers](../../quiz-service/src/main/java/com/hunre/quizservice/controller),

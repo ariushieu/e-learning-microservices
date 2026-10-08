@@ -8254,6 +8254,2455 @@
           ]
         }
       ]
+    },
+    {
+      "name": "9. Danh sách người dùng · AUTH-09",
+      "item": [
+        {
+          "name": "Chuẩn bị quản trị: tạo a",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.management.{{runId}}.a@example.com\", \"password\": \"{{testPassword}}\", \"fullName\": \"QA Management A {{runId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\",()=>pm.response.to.have.status(201));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.collectionVariables.set(\"management_a_id\",d.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chuẩn bị quản trị: tạo b",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.management.{{runId}}.b@example.com\", \"password\": \"{{testPassword}}\", \"fullName\": \"QA Management B {{runId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\",()=>pm.response.to.have.status(201));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.collectionVariables.set(\"management_b_id\",d.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chuẩn bị quản trị: tạo admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.management.{{runId}}.admin@example.com\", \"password\": \"{{testPassword}}\", \"fullName\": \"QA Management ADMIN {{runId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\",()=>pm.response.to.have.status(201));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.collectionVariables.set(\"management_admin_id\",d.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chuẩn bị quản trị: vai trò b",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{management_b_id}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": [\"ROLE_STUDENT\", \"ROLE_INSTRUCTOR\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chuẩn bị quản trị: vai trò admin",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{management_admin_id}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": [\"ROLE_STUDENT\", \"ROLE_ADMIN\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chuẩn bị quản trị: phiên managementSession1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.management.{{runId}}.a@example.com\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.collectionVariables.set(\"managementSession1\",d.refreshToken);",
+                  "pm.collectionVariables.set(\"managementSession1Access\",d.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chuẩn bị quản trị: phiên managementSession2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.management.{{runId}}.a@example.com\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.collectionVariables.set(\"managementSession2\",d.refreshToken);",
+                  "pm.collectionVariables.set(\"managementSession2Access\",d.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chuẩn bị quản trị: phiên managementOther",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.management.{{runId}}.b@example.com\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.collectionVariables.set(\"managementOther\",d.refreshToken);",
+                  "pm.collectionVariables.set(\"managementOtherAccess\",d.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.1 Danh sách mặc định không lộ dữ liệu nội bộ",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.page).to.eql(0);pm.expect(d.size).to.eql(12);pm.expect(d.content.length).to.be.at.most(12);d.content.forEach(u=>{pm.expect(u).to.include.all.keys(\"id\",\"email\",\"fullName\",\"phone\",\"roles\",\"status\",\"createdAt\");pm.expect(u).not.to.have.property(\"passwordHash\");pm.expect(u).not.to.have.property(\"refreshTokens\");});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.2 Tìm email không phân biệt hoa thường và trim",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?keyword=%20QA.MANAGEMENT.{{runId}}.A%40EXAMPLE.COM%20",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.totalElements).to.eql(1);pm.expect(d.content[0].id).to.eql(Number(pm.collectionVariables.get(\"management_a_id\")));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.3 Tìm họ tên",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?keyword=QA%20Management%20A%20{{runId}}",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.totalElements).to.eql(1);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.4 Kết hợp vai trò trạng thái từ khóa",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?keyword=qa.management.{{runId}}&role=ROLE_INSTRUCTOR&status=ACTIVE",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.totalElements).to.eql(1);pm.expect(d.content[0].id).to.eql(Number(pm.collectionVariables.get(\"management_b_id\")));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.5 Phân trang 0",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?keyword=qa.management.{{runId}}&size=1&page=0&sort=email,asc",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.totalElements).to.eql(3);pm.expect(d.totalPages).to.eql(3);pm.expect(d.page).to.eql(0);pm.expect(d.content.length).to.eql(1);});",
+                  "pm.collectionVariables.set(\"managementPage0Id\",d.content[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.5 Phân trang 1",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?keyword=qa.management.{{runId}}&size=1&page=1&sort=email,asc",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.totalElements).to.eql(3);pm.expect(d.totalPages).to.eql(3);pm.expect(d.page).to.eql(1);pm.expect(d.content.length).to.eql(1);});",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.content[0].id).not.to.eql(Number(pm.collectionVariables.get(\"managementPage0Id\")));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.6 Sắp xếp createdAt asc",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?keyword=qa.management.{{runId}}&sort=createdAt,asc",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.totalElements).to.eql(3);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.6 Sắp xếp createdAt desc",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?keyword=qa.management.{{runId}}&sort=createdAt,desc",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.totalElements).to.eql(3);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.6 Sắp xếp email asc",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?keyword=qa.management.{{runId}}&sort=email,asc",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.totalElements).to.eql(3);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.6 Sắp xếp email desc",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?keyword=qa.management.{{runId}}&sort=email,desc",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.totalElements).to.eql(3);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.6 Sắp xếp fullName asc",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?keyword=qa.management.{{runId}}&sort=fullName,asc",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.totalElements).to.eql(3);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.6 Sắp xếp fullName desc",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?keyword=qa.management.{{runId}}&sort=fullName,desc",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.totalElements).to.eql(3);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.7 Từ chối sort abcxyz",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?sort=abcxyz",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.7 Từ chối sort passwordHash",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?sort=passwordHash",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.7 Từ chối sort roles.code",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?sort=roles.code",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.7 Từ chối sort id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?sort=id",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.7 Từ chối sort email,invalid",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?sort=email,invalid",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.8 Tham số sai page=-1",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?page=-1",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.8 Offset vượt giới hạn JPA",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?page=2147483647",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.8 Tham số sai page=abc",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?page=abc",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.8 Tham số sai size=0",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?size=0",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.8 Tham số sai size=101",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?size=101",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.8 Tham số sai size=abc",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?size=abc",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.8 Tham số sai role=ADMIN",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?role=ADMIN",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.8 Tham số sai status=DELETED",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?status=DELETED",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.9 Chưa xác thực None",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/users",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.9 Chưa xác thực INVALID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid-token"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.10 Không phải admin studentToken",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\",()=>pm.response.to.have.status(403));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.10 Không phải admin tokenA",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\",()=>pm.response.to.have.status(403));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.11 Không có kết quả và trang vượt phạm vi",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?keyword=qa.management.{{runId}}&page=99",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.content).to.eql([]);pm.expect(d.totalElements).to.eql(3);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.12 Tìm ký tự LIKE theo nghĩa đen %25",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?keyword=qa.management.{{runId}}%25",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.totalElements).to.eql(0);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-09.12 Tìm ký tự LIKE theo nghĩa đen _",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?keyword=qa.management.{{runId}}_",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.totalElements).to.eql(0);});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10. Khóa và mở khóa · AUTH-10",
+      "item": [
+        {
+          "name": "AUTH-10.1 Khóa tài khoản học viên",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{management_a_id}}/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"LOCKED\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.status).to.eql(\"LOCKED\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.1 Danh sách phản ánh trạng thái đã khóa",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?keyword=qa.management.{{runId}}&status=LOCKED",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.totalElements).to.eql(1);pm.expect(d.content[0].id).to.eql(Number(pm.collectionVariables.get(\"management_a_id\")));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.2 Đăng nhập bị khóa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.management.{{runId}}.a@example.com\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\",()=>pm.response.to.have.status(403));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.3 Thu hồi mọi phiên managementSession1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{managementSession1}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.3 Thu hồi mọi phiên managementSession2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{managementSession2}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.4 Access token đã phát vẫn còn hạn",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{managementSession1Access}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.status).to.eql(\"LOCKED\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.5 Mở khóa",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{management_a_id}}/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"ACTIVE\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.status).to.eql(\"ACTIVE\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.5 Đăng nhập lại sau mở khóa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.management.{{runId}}.a@example.com\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.5 Không phục hồi refresh token đã thu hồi",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{managementSession1}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.6 Đặt trạng thái lặp LOCKED",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{management_a_id}}/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"LOCKED\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.status).to.eql(\"LOCKED\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.6 Đặt trạng thái lặp LOCKED",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{management_a_id}}/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"LOCKED\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.status).to.eql(\"LOCKED\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.6 Đặt trạng thái lặp ACTIVE",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{management_a_id}}/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"ACTIVE\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.status).to.eql(\"ACTIVE\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.6 Đặt trạng thái lặp ACTIVE",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{management_a_id}}/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"ACTIVE\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.status).to.eql(\"ACTIVE\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.7 Không tự khóa",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{adminId}}/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"LOCKED\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 422\",()=>pm.response.to.have.status(422));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.8 Không khóa admin khác có nhiều vai trò",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{management_admin_id}}/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"LOCKED\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 422\",()=>pm.response.to.have.status(422));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.9 Tài khoản không tồn tại",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{missingId}}/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"LOCKED\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\",()=>pm.response.to.have.status(404));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.10 ID sai kiểu",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/abc/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"LOCKED\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.11 Body không hợp lệ 0",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{management_a_id}}/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business result\",()=>{pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.some(e=>e.field===\"status\")).to.eql(true);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.11 Body không hợp lệ 1",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{management_a_id}}/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": null}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business result\",()=>{pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.some(e=>e.field===\"status\")).to.eql(true);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.11 Body không hợp lệ 2",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{management_a_id}}/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business result\",()=>{pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.some(e=>e.field===\"status\")).to.eql(true);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.11 Body không hợp lệ 3",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{management_a_id}}/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"PENDING\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business result\",()=>{pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.some(e=>e.field===\"status\")).to.eql(true);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.11 Body không hợp lệ 4",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{management_a_id}}/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"locked\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business result\",()=>{pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.some(e=>e.field===\"status\")).to.eql(true);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.11 Body không hợp lệ 5",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{management_a_id}}/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"DELETED\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Business result\",()=>{pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.some(e=>e.field===\"status\")).to.eql(true);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.12 Không phải admin studentToken",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{management_a_id}}/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"LOCKED\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\",()=>pm.response.to.have.status(403));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.12 Không phải admin tokenA",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{management_a_id}}/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"LOCKED\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\",()=>pm.response.to.have.status(403));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.13 Chưa xác thực None",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{management_a_id}}/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"LOCKED\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.13 Chưa xác thực INVALID",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid-token"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{management_a_id}}/status",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"LOCKED\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-10.14 Không thu hồi phiên tài khoản khác",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{managementOther}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Khôi phục fixture quản trị: bỏ quyền admin thử nghiệm",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{management_admin_id}}/roles",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roles\": [\"ROLE_STUDENT\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

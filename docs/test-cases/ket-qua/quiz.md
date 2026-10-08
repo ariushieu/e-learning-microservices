@@ -1,5 +1,8 @@
 # Biên bản kiểm thử quiz — 07/10/2026
 
+> Biên bản mới nhất: [QUIZ-18 — tải kết quả CSV, 08/10/2026](quiz-csv.md).
+> Trước đó: [QUIZ-17 — kết quả dành cho giảng viên, 08/10/2026](quiz-results.md).
+
 ## Bản sửa bảo vệ kết quả và lưu EXPIRED — `194f5ef`
 
 Code và collection: **`194f5ef305d5bcc2fe54fbcdd8e0aa41986e4347`**, đồng bộ
