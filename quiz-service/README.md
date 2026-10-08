@@ -238,3 +238,24 @@ trước khi thử lại để tránh trùng câu.
 - Collection nhóm 9 tạo multipart có filename trực tiếp, không cần đặt đường dẫn file máy.
   Chạy cùng lệnh Newman ở trên, sau setup. Xem [QUIZ-19](../docs/test-cases/quiz.md#quiz-19--nhập-câu-hỏi-csv)
   và [biên bản](../docs/test-cases/ket-qua/quiz-import.md).
+
+## Xáo trộn theo lượt làm (QUIZ-20)
+
+- Cài đặt đề có `shuffleQuestions` và `shuffleOptions` (cùng mặc định `false`). Web có
+  hai công tắc trong phần Cài đặt của trang soạn đề. Migration mới V5 thêm `shuffle_options`
+  với mặc định false, không thay các migration đã chạy.
+- `/api/quizzes/{id}/take` lấy danh tính từ JWT, tìm lượt `IN_PROGRESS` của chính người gọi
+  trên đúng đề rồi dùng `new Random(attemptId)`. Cùng lượt, cùng đề/cài đặt thì thứ tự câu
+  và đáp án giữ nguyên qua tải lại hoặc làm tiếp. Lượt mới dùng seed mới; đây không phải
+  cơ chế bảo đảm các hoán vị luôn khác nhau khi đề có rất ít câu/đáp án.
+- Khi chưa có lượt đang làm (hoặc chỉ có lượt SUBMITTED/EXPIRED), `/take` trả thứ tự gốc
+  để trang giới thiệu vẫn hoạt động. API này không tự tạo lượt hoặc mượn lượt người khác.
+- Web luôn lấy lại `/take` **sau** khi POST bắt đầu/làm tiếp thành công. Không dùng đề tải
+  trước khi có lượt làm. Mốc hết giờ được tính trước request tải đề để không cộng thêm giờ.
+- Xáo trên bản response, không sửa position trong DB; câu/đáp án cùng position có id làm
+  thứ tự phụ ổn định. Câu TRUE_FALSE giữ nguyên thứ tự tác giả đã soạn (thường Đúng, Sai).
+- Chấm điểm theo ID đáp án. Trang soạn đề, kết quả, thống kê và CSV vẫn dùng thứ tự gốc.
+  Tắt cả hai công tắc trả thứ tự gốc. Sửa đề hoặc cài đặt giữa lượt có thể thay thứ tự;
+  đây chưa phải tính năng lưu bản chụp đề cho từng lượt.
+- Nhóm 10 của collection và `QuizShuffleIntegrationTest` kiểm luồng này. Xem
+  [biên bản QUIZ-20](../docs/test-cases/ket-qua/quiz-shuffle.md).

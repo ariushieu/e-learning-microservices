@@ -1,0 +1,3652 @@
+{
+  "stats": {
+    "iterations": {
+      "total": 1,
+      "pending": 0,
+      "failed": 0
+    },
+    "items": {
+      "total": 298,
+      "pending": 0,
+      "failed": 0
+    },
+    "scripts": {
+      "total": 308,
+      "pending": 0,
+      "failed": 0
+    },
+    "prerequests": {
+      "total": 298,
+      "pending": 0,
+      "failed": 0
+    },
+    "requests": {
+      "total": 291,
+      "pending": 0,
+      "failed": 0
+    },
+    "tests": {
+      "total": 291,
+      "pending": 0,
+      "failed": 0
+    },
+    "assertions": {
+      "total": 618,
+      "pending": 0,
+      "failed": 0
+    },
+    "testScripts": {
+      "total": 291,
+      "pending": 0,
+      "failed": 0
+    },
+    "prerequestScripts": {
+      "total": 17,
+      "pending": 0,
+      "failed": 0
+    }
+  },
+  "failures": [],
+  "requests": [
+    {
+      "name": "SETUP-01 Đăng nhập admin",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Đăng ký A",
+      "http": 409,
+      "assertions": [
+        {
+          "name": "HTTP 201/409"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Lấy ID A",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Cấp vai trò A",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Đăng nhập lại A",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Đăng ký B",
+      "http": 409,
+      "assertions": [
+        {
+          "name": "HTTP 201/409"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Lấy ID B",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Cấp vai trò B",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Đăng nhập lại B",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Đăng ký S",
+      "http": 409,
+      "assertions": [
+        {
+          "name": "HTTP 201/409"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Lấy ID S",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Cấp vai trò S",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Đăng nhập lại S",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Danh mục mới",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Khóa publishedCourseId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Chương publishedCourseId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Bài publishedCourseId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Xuất bản khóa publishedCourseId",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Khóa courseBId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Chương courseBId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Bài courseBId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Xuất bản khóa courseBId",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Ghi danh S",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Ghi danh B",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị quizId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị otherQuizId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị archivedQuizId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "SETUP Lưu trữ",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị publishedQuizId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị câu 1 của publishedQuizId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị câu 2 của publishedQuizId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Xuất bản publishedQuizId",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị unlimitedQuizId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị câu 1 của unlimitedQuizId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị câu 2 của unlimitedQuizId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Xuất bản unlimitedQuizId",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị shuffleQuizId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị câu 1 của shuffleQuizId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị câu 2 của shuffleQuizId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Xuất bản shuffleQuizId",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-01.1 Tạo hợp lệ",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Tác giả từ token"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-01.2 Không token",
+      "http": 401,
+      "assertions": [
+        {
+          "name": "HTTP 401"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-01.3 Học viên tạo",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-01.4 Thiếu courseId",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-01.5 Sai kiểu courseId",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-01.6 Điểm quá 100",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-01.7 Giả tác giả",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Không nhận createdBy từ body"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-01.8 Admin tạo",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-01.9 Khóa không tồn tại",
+      "http": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-01.10 Khóa người khác",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-02.1 Sửa nháp",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-02.2 Không token",
+      "http": 401,
+      "assertions": [
+        {
+          "name": "HTTP 401"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-02.3 Sai vai trò",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-02.4 Không tồn tại",
+      "http": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-02.5 Sai ID",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-02.6 Đã lưu trữ",
+      "http": 422,
+      "assertions": [
+        {
+          "name": "HTTP 422"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-02.7 Title trống",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-02.8 Admin sửa",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-02.9 B sửa bài A",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị statusQuizId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị câu 1 của statusQuizId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-03.1 Xuất bản",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-03.2 Không token",
+      "http": 401,
+      "assertions": [
+        {
+          "name": "HTTP 401"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-03.3 Sai vai trò",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-03.4 Không tồn tại",
+      "http": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-03.5 Sai ID",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-03.6 Chưa có câu hỏi",
+      "http": 422,
+      "assertions": [
+        {
+          "name": "HTTP 422"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-03.7 Lưu trữ",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-03.8 Enum sai",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-03.8b Thiếu enum",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-03.9 Admin xuất bản",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-03.10 B lưu trữ",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-04.1 Giảng viên xem",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Có đáp án"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-04.2 Không token",
+      "http": 401,
+      "assertions": [
+        {
+          "name": "HTTP 401"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-04.3 Học viên xem đáp án",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-04.4 Không tồn tại",
+      "http": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-04.5 Sai ID",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-04.6 Admin xem",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Có đáp án"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-04.7 B xem bài A",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-05.1 Đề hợp lệ",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Không lộ đáp án"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-05.2 Không token",
+      "http": 401,
+      "assertions": [
+        {
+          "name": "HTTP 401"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-05.3 B lấy đề",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Không lộ đáp án"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-05.4 Không tồn tại",
+      "http": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-05.5 Sai ID",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-05.6 Đề nháp",
+      "http": 422,
+      "assertions": [
+        {
+          "name": "HTTP 422"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-05.7 Đã lưu trữ",
+      "http": 422,
+      "assertions": [
+        {
+          "name": "HTTP 422"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-05.8 Xáo trộn",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Không lộ đáp án"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-06.1 Danh sách theo khóa",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Danh sách an toàn"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-06.2 Không token",
+      "http": 401,
+      "assertions": [
+        {
+          "name": "HTTP 401"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-06.3 A xem nháp của mình",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Danh sách an toàn"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-06.4 Khóa không có quiz",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Danh sách an toàn"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-06.5 Sai bộ lọc",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-06.6 Thiếu courseId",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-06.7 Không trả đáp án",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Danh sách an toàn"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị deleteQuizId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị deleteAdminQuizId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-07.2 Không token",
+      "http": 401,
+      "assertions": [
+        {
+          "name": "HTTP 401"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-07.3 Sai vai trò",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-07.8 B xóa bài A",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-07.1 Xóa quiz",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-07.4 Không tồn tại",
+      "http": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-07.5 Sai ID",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-07.6 Admin xóa",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-07.7 Xóa lại",
+      "http": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-08.1 Thêm hợp lệ",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-08.2 Không token",
+      "http": 401,
+      "assertions": [
+        {
+          "name": "HTTP 401"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-08.3 Sai vai trò",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-08.4 Không tồn tại",
+      "http": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-08.5 Sai ID",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-08.6 Chỉ một phương án",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-08.7 Hai đáp án đúng",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-08.8 Không đáp án đúng",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-08.9 Nhiều lựa chọn hợp lệ",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-08.10 B thêm vào bài A",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-09.1 Sửa câu",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-09.2 Không token",
+      "http": 401,
+      "assertions": [
+        {
+          "name": "HTTP 401"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-09.3 Sai vai trò",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-09.4 Không tồn tại",
+      "http": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-09.5 Sai ID",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-09.6 Sai quiz cha",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-09.7 Score 0",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-09.8 Sai loại",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-11.1 A xem",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-11.2 Không token",
+      "http": 401,
+      "assertions": [
+        {
+          "name": "HTTP 401"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-11.3 Sai vai trò",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-11.4 Quiz không tồn tại",
+      "http": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-11.5 Sai ID",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-11.6 Admin xem",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-11.7 Quiz rỗng",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Rỗng"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-11.8 B xem bài A",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-10.2 Không token",
+      "http": 401,
+      "assertions": [
+        {
+          "name": "HTTP 401"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-10.3 Sai vai trò",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-10.4 Không tồn tại",
+      "http": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-10.5 Sai ID",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-10.6 Sai quiz cha",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-10.1 Xóa câu",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-10.7 Admin xóa",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-12.1 Bắt đầu",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Đúng người làm"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-12.2 Không token",
+      "http": 401,
+      "assertions": [
+        {
+          "name": "HTTP 401"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-12.3 B làm bài riêng",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Đúng người làm"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-12.4 Không tồn tại",
+      "http": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-12.5 Sai ID",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-12.6 Đề nháp",
+      "http": 422,
+      "assertions": [
+        {
+          "name": "HTTP 422"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-12.7 Tiếp tục",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Đúng người làm"
+        },
+        {
+          "name": "Cùng lượt đang làm"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-12.9 Giả userId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Đúng người làm"
+        },
+        {
+          "name": "Cùng lượt đang làm"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-14.8 Không lộ đáp án khi đang làm",
+      "http": 422,
+      "assertions": [
+        {
+          "name": "HTTP 422"
+        },
+        {
+          "name": "Response contract: no answers before submission"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-13.2 Không token",
+      "http": 401,
+      "assertions": [
+        {
+          "name": "HTTP 401"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-13.3 B nộp bài S",
+      "http": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-13.4 Không tồn tại",
+      "http": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-13.5 Sai ID",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-13.8 Answers null",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-13.1 Đúng một trong hai câu",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Điểm 50, chưa đạt"
+        },
+        {
+          "name": "Đúng người làm"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-13.6 Nộp lần hai",
+      "http": 422,
+      "assertions": [
+        {
+          "name": "HTTP 422"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-12.8 Hết số lần",
+      "http": 422,
+      "assertions": [
+        {
+          "name": "HTTP 422"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-14.1 Kết quả đã nộp",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Điểm và đáp án"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-14.2 Không token",
+      "http": 401,
+      "assertions": [
+        {
+          "name": "HTTP 401"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-14.3 B đọc bài S",
+      "http": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-14.4 Không tồn tại",
+      "http": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-14.5 Sai ID",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-14.6 Admin đọc hộ",
+      "http": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-14.7 Giả userId",
+      "http": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-15.1 Lịch sử S",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Chỉ dữ liệu của mình"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-15.2 Không token",
+      "http": 401,
+      "assertions": [
+        {
+          "name": "HTTP 401"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-15.3 Lịch sử B",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Chỉ dữ liệu của mình"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-15.4 Không có lịch sử",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Chỉ dữ liệu của mình"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-15.5 Sai ID",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-15.6 Giả danh",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Chỉ dữ liệu của mình"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-15.7 Admin chưa làm",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Chỉ dữ liệu của mình"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị lượt unlimitedAttempt",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-13.9 Bỏ trống",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Điểm 0"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-12.10 Không giới hạn lượt",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Lượt tăng"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-13.10 Đúng cả hai câu",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Điểm 100, đạt"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị lượt unlimitedAttempt",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-13.12 Giả người nộp",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Đúng người làm"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-16.1 Chưa ghi danh khóa khác",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị câu hỏi khóa B",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Xuất bản bài khóa B",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-16.2 Chưa ghi danh bị chặn",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-16.3 Không có lượt mới sau 403",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Không ghi dữ liệu"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị lượt resumeAttempt",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-16.4 Hủy ghi danh",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-16.5 Hủy rồi không tiếp tục được",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-16.6 Lượt cũ không bị đổi",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Giữ nguyên lượt"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-16.7 Ghi danh lại",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-16.8 Tiếp tục đúng lượt",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Cùng lượt"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-16.9 Chủ bài được làm thử",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-16.10 Admin được làm thử",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị timeoutQuizId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị câu 1 của timeoutQuizId",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Xuất bản timeoutQuizId",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "Chuẩn bị lượt timeoutAttempt",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-13.7 Nộp quá giờ",
+      "http": 422,
+      "assertions": [
+        {
+          "name": "HTTP 422"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 chuẩn bị đề thống kê",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 chuẩn bị câu 1",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 chuẩn bị câu 2",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 xuất bản",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.1 Đề chưa có bài nộp",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Empty results"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 bắt đầu S",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.2 Đang làm không tính",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Ongoing excluded"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 nộp S",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Graded score"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 bắt đầu B",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 nộp B",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Graded score"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.3 Chủ đề xem thống kê 75 điểm",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Two learners, best average and question rates"
+        },
+        {
+          "name": "Names and privacy"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.4 Admin xem thống kê",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Two learners, best average and question rates"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.5 Giảng viên khác bị chặn",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.6 Học viên giả userId vẫn bị chặn",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.7 Không token",
+      "http": 401,
+      "assertions": [
+        {
+          "name": "HTTP 401"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.8 Đề không tồn tại",
+      "http": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.9 Trang đầu vẫn thống kê toàn bộ",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Two learners, best average and question rates"
+        },
+        {
+          "name": "Pagination"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.10 Trang sau không lặp học viên",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Next page"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.11 Sort sai",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 bắt đầu A",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 nộp A",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Graded score"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 bắt đầu Admin",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 nộp Admin",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Graded score"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.12 Lượt làm thử không đổi thống kê",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Two learners, best average and question rates"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 bắt đầu S",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 nộp S",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Graded score"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.13 Làm lại lấy điểm cao nhất",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Best score and all graded question rates"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.14 Trang vượt cuối",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Beyond end"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.15 Hết giờ chỉ tính bộ đếm hết giờ",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Expired only"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-18.1 Chủ đề xuất toàn bộ, bỏ tham số trang",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "CSV download headers"
+        },
+        {
+          "name": "Two learners, no previews, best scores"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-18.2 Admin tải cùng kết quả",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "CSV download headers"
+        },
+        {
+          "name": "Same results as author"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-18.3 Giảng viên khác",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Error without attachment"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-18.4 Học viên giả danh",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Error without attachment"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-18.5 Không token",
+      "http": 401,
+      "assertions": [
+        {
+          "name": "HTTP 401"
+        },
+        {
+          "name": "Error without attachment"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-18.6 Đề không tồn tại",
+      "http": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404"
+        },
+        {
+          "name": "Missing resource"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-18 chuẩn bị tên công thức",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-18 đăng nhập lại nhận tên từ JWT",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-18 bắt đầu với tên công thức",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-18 nộp với tên công thức",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-18.7 Tên công thức được vô hiệu hóa",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "CSV download headers"
+        },
+        {
+          "name": "Formula escaped, best score preserved"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-18 chuẩn bị tên có dấu phẩy và ngoặc kép",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-18 đăng nhập lại tên tiếng Việt",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-18 bắt đầu tên tiếng Việt",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-18 nộp tên tiếng Việt",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-18.8 CSV giữ tiếng Việt và escape dấu kép",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "CSV download headers"
+        },
+        {
+          "name": "Quoted Vietnamese name"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-18 khôi phục tên tài khoản QA",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-18 đăng nhập lại sau khôi phục",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-18 chuẩn bị đề rỗng",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-18.9 Đề rỗng vẫn có header",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Only Vietnamese header"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-19 chuẩn bị đề nhập CSV",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-19.1 Tải mẫu UTF-8",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Downloadable template"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-19.2 Nhập file mẫu 3 câu",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Three imported"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-19.3 Dòng 2 thiếu đáp án đúng, không lưu dở",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Row 2 validation error"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-19.3b Đề vẫn đúng 3 câu",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Unchanged after invalid import"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-19.4 B không phải tác giả",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-19.5 Học viên",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-19.6 Không đăng nhập",
+      "http": 401,
+      "assertions": [
+        {
+          "name": "HTTP 401"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-19.7 File 2 MB",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Row 1 validation error"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-19.8 201 câu",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Row 202 validation error"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-19.9 BOM, dấu kép và xuống dòng trong ô",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "One imported by admin"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-19.10 Dòng vật lý sau ô nhiều dòng",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Row 4 validation error"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-19.11 Dấu chấm phẩy Excel",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-19.12 CSV sai cú pháp",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Row 2 validation error"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-19.13 Ô đáp án quá dài",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Row 2 validation error"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-19.14 B không tải được mẫu",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-19.15 Đề không tồn tại",
+      "http": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-19 lấy đủ 5 câu sau các lần nhập hợp lệ",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Exactly five questions; contents preserved"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-19 xuất bản đề vừa nhập",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-19.16 Bắt đầu làm thử",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Attempt in progress"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-19.16a Lấy đề để làm",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "All five playable questions without answers"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-19.16b Nộp các câu vừa nhập",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Full score"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20 chuẩn bị đề bật hai cài đặt",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Both settings enabled"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20 thêm câu 1",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20 thêm câu 2",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20 thêm câu 3",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20 thêm câu 4",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20 thêm câu 5",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20 xuất bản",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20.1 Đề gốc của tác giả",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Canonical order"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20.2 Chưa bắt đầu không có seed",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Original order without active attempt"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20 bắt đầu lượt S",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20.3 Tải lại đề lần 1",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "No answers or explanations"
+        },
+        {
+          "name": "True/false unchanged"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20.3 Tải lại đề lần 2",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Stable attempt order"
+        },
+        {
+          "name": "No answers or explanations"
+        },
+        {
+          "name": "True/false unchanged"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20.3 Tải lại đề lần 3",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Stable attempt order"
+        },
+        {
+          "name": "No answers or explanations"
+        },
+        {
+          "name": "True/false unchanged"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20.3 Tải lại đề lần 4",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Stable attempt order"
+        },
+        {
+          "name": "No answers or explanations"
+        },
+        {
+          "name": "True/false unchanged"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20.3 Tải lại đề lần 5",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Stable attempt order"
+        },
+        {
+          "name": "No answers or explanations"
+        },
+        {
+          "name": "True/false unchanged"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20.4 Làm tiếp vẫn cùng lượt",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Same attempt id"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20.4b Làm tiếp hoặc giả query không đổi seed",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Caller identity determines seed"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20.5 A chưa làm không mượn seed S",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Original order for another caller"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20.6 Soạn đề không đổi",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Author order unchanged"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20.7 Nộp theo ID đáp án",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Correct ids score 100"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20.8 Kết quả theo thứ tự gốc",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Original question and option order in results"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20.9 Thống kê theo thứ tự gốc",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Original question order in statistics"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20.10 CSV điểm không đổi",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "CSV includes correct score"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20 lượt mới",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "New attempt id"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20.11 Seed mới cho lượt mới",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "New order in this five-question fixture"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20.11b Lượt mới cũng ổn định",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Second attempt stable"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20 tắt cả hai cài đặt",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-20.12 Tắt xáo trở lại thứ tự gốc",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Both disabled"
+        }
+      ]
+    }
+  ]
+}

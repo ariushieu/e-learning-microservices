@@ -71,7 +71,7 @@ public class Question {
 
     @Builder.Default
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("position ASC")
+    @OrderBy("position ASC, id ASC")
     private List<AnswerOption> options = new ArrayList<>();
 
     @PrePersist

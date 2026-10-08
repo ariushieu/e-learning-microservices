@@ -2,6 +2,7 @@ import { AwardIcon, BookOpenIcon, type LucideIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { RoleBadges } from "@/components/auth/role-badge";
+import { SessionList, type LoginSession } from "@/components/auth/session-list";
 import { Fact, FactList } from "@/components/common/fact-list";
 import { FormSection } from "@/components/common/form-field";
 import { IconTile } from "@/components/common/icon-tile";
@@ -24,9 +25,10 @@ const ACCOUNT_STATUS: Record<User["status"], string> = {
 };
 
 export default async function ProfilePage() {
-  const [me, enrollments] = await Promise.all([
+  const [me, enrollments, sessions] = await Promise.all([
     gateway<User>("/api/auth/me"),
     gateway<Page<Enrollment>>("/api/enrollments?size=100").catch(() => null),
+    gateway<LoginSession[]>("/api/auth/sessions").catch(() => null),
   ]);
   const completed = enrollments?.content.filter((e) => e.status === "COMPLETED").length ?? 0;
 
@@ -68,6 +70,10 @@ export default async function ProfilePage() {
         description="Dùng mật khẩu hiện tại để đặt mật khẩu mới. Các phiên đăng nhập trên thiết bị khác sẽ cần đăng nhập lại."
       >
         <ChangePasswordForm />
+      </FormSection>
+
+      <FormSection title="Phiên đăng nhập" description="Xem thiết bị đã đăng nhập và đăng xuất những phiên bạn không còn sử dụng.">
+        <SessionList key={sessions?.map((session) => `${session.id}:${session.current}`).join(",") ?? "error"} initial={sessions} />
       </FormSection>
 
       <FormSection

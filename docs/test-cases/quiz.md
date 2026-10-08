@@ -370,3 +370,29 @@ Integration bổ sung: rollback khi lưu câu thứ hai lỗi; đủ 200 câu; m
 đáp án đúng, ô trống, điểm không hợp lệ, nội dung/giải thích quá dài, UTF-8 lỗi, file rỗng,
 thiếu part, header/cột sai, admin, JWT thật. Kiểm web: chọn file, tải mẫu, bảng lỗi và sửa
 file rồi nhập, danh sách cập nhật, thông báo file lớn/rỗng, 375/768/1366px không tràn.
+
+## QUIZ-20 — xáo trộn theo lượt làm
+
+Nhóm 10 của collection: tạo đề 5 câu (3 SINGLE_CHOICE, 1 MULTIPLE_CHOICE, 1 TRUE_FALSE),
+bật cả hai cài đặt, dùng S đã ghi danh trong setup. Thứ tự so theo ID câu và ID đáp án.
+
+| # | Tình huống | Mong đợi |
+|---|---|---|
+| 1 | A xem đề gốc | Câu theo position 1–5, ghi lại thứ tự gốc và ID đáp án đúng |
+| 2 | S chưa bắt đầu gọi take | Thứ tự gốc, không tự tạo lượt |
+| 3 | S bắt đầu rồi gọi take 5 lần | Cùng thứ tự câu và đáp án; không có isCorrect/giải thích; TRUE_FALSE Đúng trước Sai |
+| 4 | Làm tiếp, gửi userId/attemptId/seed giả qua query | Cùng ID lượt và cùng thứ tự của S |
+| 5 | A chưa làm, trong khi S đang làm | A thấy thứ tự gốc, không mượn seed của S |
+| 6 | A mở trang soạn đề sau nhiều lần take | Thứ tự gốc không đổi |
+| 7 | S nộp đúng bằng ID đáp án | 100 điểm dù vị trí đã xáo |
+| 8 | Xem kết quả | Câu và đáp án theo thứ tự gốc |
+| 9 | A xem thống kê | Câu theo thứ tự gốc, điểm trung bình 100 |
+| 10 | A xuất CSV | Có lượt nộp 100 điểm, Đạt |
+| 11 | S làm lượt mới, tải 2 lần | ID mới, thứ tự mới trên fixture 5 câu này và ổn định giữa 2 lần |
+| 12 | A tắt cả hai cài đặt | take trả thứ tự gốc |
+
+Integration bổ sung: 4 tổ hợp bật/tắt độc lập; mặc định false; round-trip tạo/sửa; B không
+đổi được cài đặt; khách 401; đề DRAFT 422; lượt đã nộp/hết hạn không làm seed; position
+trùng vẫn ổn định nhờ id; take không thay dữ liệu soạn đề/thống kê/CSV.
+Web: bật/lưu hai cài đặt, bắt đầu phải lấy đề sau khi tạo lượt, tải lại rồi làm tiếp không
+đổi thứ tự, nộp đúng đạt 100%, kết quả thứ tự gốc; thử 375/768/1366px.

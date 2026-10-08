@@ -11680,6 +11680,1452 @@
           ]
         }
       ]
+    },
+    {
+      "name": "13. Quản lý phiên đăng nhập · AUTH-13",
+      "item": [
+        {
+          "name": "AUTH-13.1 Đăng ký email thừa khoảng trắng",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"  qa.sessions.{{runId}}@example.com  \", \"fullName\": \"QA Sessions\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\",()=>pm.response.to.have.status(201));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Session result\",()=>{pm.expect(d.email).to.eql(pm.variables.replaceIn(\"qa.sessions.{{runId}}@example.com\"));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.1 Đăng ký email thừa khoảng trắng",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"  qa.sessions.other.{{runId}}@example.com  \", \"fullName\": \"QA Sessions\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\",()=>pm.response.to.have.status(201));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Session result\",()=>{pm.expect(d.email).to.eql(pm.variables.replaceIn(\"qa.sessions.other.{{runId}}@example.com\"));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.2 Đăng nhập edge với email có khoảng trắng",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"  qa.sessions.{{runId}}@example.com  \", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Session result\",()=>{pm.collectionVariables.set(\"edgeAccess\",d.accessToken);pm.collectionVariables.set(\"edgeRefresh\",d.refreshToken);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.2 Đăng nhập postman với email có khoảng trắng",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"  qa.sessions.{{runId}}@example.com  \", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Session result\",()=>{pm.collectionVariables.set(\"postmanAccess\",d.accessToken);pm.collectionVariables.set(\"postmanRefresh\",d.refreshToken);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.2 Đăng nhập foreign với email có khoảng trắng",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"  qa.sessions.other.{{runId}}@example.com  \", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Session result\",()=>{pm.collectionVariables.set(\"foreignAccess\",d.accessToken);pm.collectionVariables.set(\"foreignRefresh\",d.refreshToken);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.3 Danh sách riêng đủ trường mới nhất trước",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/sessions",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{edgeAccess}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Session result\",()=>{pm.expect(d.length).to.eql(2);d.forEach(s=>pm.expect(s).to.have.all.keys(\"id\",\"createdAt\",\"device\",\"current\"));pm.expect(d[0].device).to.eql(\"Thiết bị khác\");pm.expect(d[0].current).to.eql(false);pm.expect(d[1].device).to.eql(\"Edge trên Windows\");pm.expect(d[1].current).to.eql(true);pm.expect(Date.parse(d[0].createdAt)).to.be.at.least(Date.parse(d[1].createdAt));pm.collectionVariables.set(\"edgeId\",d[1].id);pm.collectionVariables.set(\"postmanId\",d[0].id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.4 Phiên hiện tại theo access token Postman",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/sessions",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{postmanAccess}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Session result\",()=>{pm.expect(d[0].current).to.eql(true);pm.expect(d[0].id).to.eql(Number(pm.collectionVariables.get(\"postmanId\")));pm.expect(d[1].current).to.eql(false);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.5 Lấy phiên người dùng B",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/sessions",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{foreignAccess}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Session result\",()=>{pm.expect(d.length).to.eql(1);pm.collectionVariables.set(\"foreignId\",d[0].id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.5 Xóa phiên người khác hoặc không tồn tại {{foreignId}}",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/auth/sessions/{{foreignId}}",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{edgeAccess}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\",()=>pm.response.to.have.status(404));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Session result\",()=>{pm.expect(j.code).to.eql(\"RESOURCE_NOT_FOUND\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.5 Xóa phiên người khác hoặc không tồn tại 999999999",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/auth/sessions/999999999",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{edgeAccess}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\",()=>pm.response.to.have.status(404));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Session result\",()=>{pm.expect(j.code).to.eql(\"RESOURCE_NOT_FOUND\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.6 Đăng xuất riêng phiên Postman",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/auth/sessions/{{postmanId}}",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{edgeAccess}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.6 Refresh của phiên vừa thu hồi",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{postmanRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.7 Access token đã phát vẫn còn dùng được",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{postmanAccess}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.8 Phiên thu hồi không nằm trong danh sách",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/sessions",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{edgeAccess}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Session result\",()=>{pm.expect(d.length).to.eql(1);pm.expect(d[0].current).to.eql(true);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.8 Xóa lại phiên đã thu hồi",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/auth/sessions/{{postmanId}}",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{edgeAccess}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\",()=>pm.response.to.have.status(404));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.9 Đổi token tạo sid mới",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{edgeRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Session result\",()=>{pm.collectionVariables.set(\"rotatedAccess\",d.accessToken);pm.collectionVariables.set(\"rotatedRefresh\",d.refreshToken);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.9 Phiên cũ biến mất phiên mới là hiện tại",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/sessions",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{rotatedAccess}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Session result\",()=>{pm.expect(d.length).to.eql(1);pm.expect(d[0].current).to.eql(true);pm.expect(d[0].id).not.to.eql(Number(pm.collectionVariables.get(\"edgeId\")));pm.expect(d[0].device).to.eql(\"Edge trên Windows\");pm.collectionVariables.set(\"rotatedId\",d[0].id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.10 Sid đã rotate không được thu hồi các phiên khác",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/sessions/revoke-others",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{edgeAccess}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.11 Tạo thêm phiên extra1",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.sessions.{{runId}}@example.com\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Session result\",()=>{pm.collectionVariables.set(\"extra1Access\",d.accessToken);pm.collectionVariables.set(\"extra1Refresh\",d.refreshToken);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.11 Tạo thêm phiên extra2",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.sessions.{{runId}}@example.com\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Session result\",()=>{pm.collectionVariables.set(\"extra2Access\",d.accessToken);pm.collectionVariables.set(\"extra2Refresh\",d.refreshToken);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.11 Đăng xuất mọi thiết bị khác",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/sessions/revoke-others",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{rotatedAccess}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.11 Chỉ giữ phiên hiện tại",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/sessions",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{rotatedAccess}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Session result\",()=>{pm.expect(d.length).to.eql(1);pm.expect(d[0].id).to.eql(Number(pm.collectionVariables.get(\"rotatedId\")));pm.expect(d[0].current).to.eql(true);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.11 Phiên khác không refresh được extra1",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{extra1Refresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.11 Phiên khác không refresh được extra2",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{extra2Refresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.12 Phiên người dùng khác không bị ảnh hưởng",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{foreignRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Session result\",()=>{pm.collectionVariables.set(\"foreignAccess\",d.accessToken);pm.collectionVariables.set(\"foreignRefresh\",d.refreshToken);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.13 Đăng xuất mọi thiết bị khác lần hai",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/sessions/revoke-others",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{rotatedAccess}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.14 Phiên hiện tại vẫn refresh được",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{rotatedRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Session result\",()=>{pm.collectionVariables.set(\"currentAccess\",d.accessToken);pm.collectionVariables.set(\"currentRefresh\",d.refreshToken);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.15 Lấy id phiên hiện tại",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/sessions",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{currentAccess}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Session result\",()=>{pm.expect(d.length).to.eql(1);pm.expect(d[0].current).to.eql(true);pm.collectionVariables.set(\"currentId\",d[0].id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.15 Đăng xuất thiết bị này",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/auth/sessions/{{currentId}}",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{currentAccess}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.15 Refresh thiết bị này bị thu hồi",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{currentRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.16 Không còn phiên đang hoạt động",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/sessions",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{currentAccess}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Session result\",()=>{pm.expect(d).to.eql([]);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.17 Không xác thực GET None",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/sessions",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.17 Không xác thực DELETE None",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/auth/sessions/{{currentId}}",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.17 Không xác thực POST None",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/sessions/revoke-others",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.17 Không xác thực GET INVALID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/sessions",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer bad.jwt"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.17 Không xác thực DELETE INVALID",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/auth/sessions/{{currentId}}",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer bad.jwt"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.17 Không xác thực POST INVALID",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/sessions/revoke-others",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer bad.jwt"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.18 Email toàn khoảng trắng register",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"   \", \"password\": \"{{testPassword}}\", \"fullName\": \"QA Sessions\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Session result\",()=>{pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.some(e=>e.field===\"email\")).to.eql(true);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-13.18 Email toàn khoảng trắng login",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.43"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"   \", \"password\": \"{{testPassword}}\", \"fullName\": \"QA Sessions\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));",
+                  "pm.test(\"Session result\",()=>{pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.some(e=>e.field===\"email\")).to.eql(true);});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

@@ -31,7 +31,7 @@ export async function proxy(request: NextRequest) {
   let refreshFailed = false;
 
   if (!session && refresh) {
-    refreshed = await refreshTokens(refresh);
+    refreshed = await refreshTokens(refresh, request.headers.get("user-agent"));
     if (refreshed) {
       session = sessionFromToken(refreshed.accessToken);
       // Ghi cookie mới vào chính request đang xử lý, để Server Component của lần render này

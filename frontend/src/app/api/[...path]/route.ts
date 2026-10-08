@@ -66,7 +66,7 @@ async function handle(request: NextRequest, ctx: RouteContext<"/api/[...path]">)
   let refreshed: AuthResponse | null = null;
 
   if ((!token || isExpired(token)) && refresh) {
-    refreshed = await refreshTokens(refresh);
+    refreshed = await refreshTokens(refresh, request.headers.get("user-agent"));
     if (refreshed) token = refreshed.accessToken;
   }
 
@@ -76,7 +76,7 @@ async function handle(request: NextRequest, ctx: RouteContext<"/api/[...path]">)
     // Token bị gateway từ chối dù chưa hết hạn theo đồng hồ (ví dụ vừa đổi vai trò, server đổi
     // khóa): thử đổi token một lần rồi gửi lại.
     if (upstream.status === 401 && refresh && !refreshed) {
-      refreshed = await refreshTokens(refresh);
+      refreshed = await refreshTokens(refresh, request.headers.get("user-agent"));
       if (refreshed) upstream = await forward(request, path, body, refreshed.accessToken);
     }
   } catch {

@@ -7,8 +7,11 @@ import com.hunre.quizservice.dto.QuestionResponse;
 import com.hunre.quizservice.dto.QuizDetailResponse;
 import com.hunre.quizservice.dto.QuizResponse;
 import com.hunre.quizservice.dto.UpdateQuizRequest;
+import com.hunre.quizservice.entity.AttemptStatus;
+import com.hunre.quizservice.entity.QuestionType;
 import com.hunre.quizservice.entity.Quiz;
 import com.hunre.quizservice.entity.QuizStatus;
+import com.hunre.quizservice.repository.QuizAttemptRepository;
 import com.hunre.quizservice.repository.QuizRepository;
 import com.hunre.quizservice.service.QuizService;
 import com.hunre.sharedcommon.exception.BusinessException;
@@ -23,6 +26,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +35,7 @@ public class QuizServiceImpl implements QuizService {
 
     private final QuizRepository quizRepository;
     private final CourseOwnershipClient courseOwnershipClient;
+    private final QuizAttemptRepository attemptRepository;
 
     @Override
     @Transactional
@@ -48,6 +53,7 @@ public class QuizServiceImpl implements QuizService {
                 .passScore(request.getPassScore() != null ? request.getPassScore() : new BigDecimal("50.00"))
                 .maxAttempts(request.getMaxAttempts() != null ? request.getMaxAttempts() : 3)
                 .shuffleQuestions(Boolean.TRUE.equals(request.getShuffleQuestions()))
+                .shuffleOptions(Boolean.TRUE.equals(request.getShuffleOptions()))
                 .status(QuizStatus.DRAFT)
                 .createdBy(createdBy)
                 .build();
@@ -79,6 +85,7 @@ public class QuizServiceImpl implements QuizService {
             quiz.setMaxAttempts(request.getMaxAttempts());
         }
         quiz.setShuffleQuestions(Boolean.TRUE.equals(request.getShuffleQuestions()));
+        quiz.setShuffleOptions(Boolean.TRUE.equals(request.getShuffleOptions()));
 
         Quiz updated = quizRepository.save(quiz);
         return QuizResponse.from(updated);
@@ -122,7 +129,7 @@ public class QuizServiceImpl implements QuizService {
 
     @Override
     @Transactional(readOnly = true)
-    public QuizDetailResponse getQuizForStudent(Long id) {
+    public QuizDetailResponse getQuizForStudent(Long id, Long currentUserId) {
         Quiz quiz = findQuizOrThrow(id);
         if (quiz.getStatus() != QuizStatus.PUBLISHED) {
             throw new BusinessException(ErrorCode.BUSINESS_RULE_VIOLATED,
@@ -130,11 +137,24 @@ public class QuizServiceImpl implements QuizService {
         }
 
         QuizDetailResponse detail = QuizDetailResponse.from(quiz, false);
-        if (quiz.isShuffleQuestions() && detail.getQuestions() != null) {
-            List<QuestionResponse> shuffled = new ArrayList<>(detail.getQuestions());
-            Collections.shuffle(shuffled);
-            detail.setQuestions(shuffled);
+        if (!quiz.isShuffleQuestions() && !quiz.isShuffleOptions()) return detail;
+        // A landing page has no active attempt yet. Never borrow another learner's seed.
+        var attempt = attemptRepository.findFirstByQuizIdAndUserIdAndStatus(id, currentUserId, AttemptStatus.IN_PROGRESS);
+        if (attempt.isEmpty()) return detail;
+
+        // Shuffle DTO copies only. Persistent question/option positions remain canonical.
+        var random = new Random(attempt.get().getId());
+        var shuffled = new ArrayList<>(detail.getQuestions());
+        if (quiz.isShuffleQuestions()) Collections.shuffle(shuffled, random);
+        if (quiz.isShuffleOptions()) {
+            for (QuestionResponse question : shuffled) {
+                if (question.getType() == QuestionType.TRUE_FALSE) continue;
+                var options = new ArrayList<>(question.getOptions());
+                Collections.shuffle(options, random);
+                question.setOptions(options);
+            }
         }
+        detail.setQuestions(shuffled);
         return detail;
     }
 

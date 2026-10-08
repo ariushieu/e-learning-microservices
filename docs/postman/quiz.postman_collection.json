@@ -10730,6 +10730,1109 @@
           ]
         }
       ]
+    },
+    {
+      "name": "10. Xáo trộn theo lượt (QUIZ-20)",
+      "description": "Đề 5 câu; giữ thứ tự trong lượt, xáo đáp án trừ TRUE_FALSE, chấm điểm bằng ID. Chạy sau setup ghi danh S.",
+      "item": [
+        {
+          "name": "QUIZ-20 chuẩn bị đề bật hai cài đặt",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"courseId\":\"{{publishedCourseId}}\",\"title\":\"Xáo trộn {{runId}}\",\"shuffleQuestions\":true,\"shuffleOptions\":true,\"maxAttempts\":0,\"passScore\":75}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('shuffleQuizId',pm.response.json().data.id);pm.test('Both settings enabled',()=>{const d=pm.response.json().data;pm.expect(d.shuffleQuestions).to.eql(true);pm.expect(d.shuffleOptions).to.eql(true);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20 thêm câu 1",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}/questions",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\":\"Câu xáo trộn 1\",\"type\":\"SINGLE_CHOICE\",\"score\":1,\"position\":1,\"explanation\":\"Giải thích bí mật 1\",\"options\":[{\"content\":\"Phương án 1.1\",\"isCorrect\":true,\"position\":1},{\"content\":\"Phương án 1.2\",\"isCorrect\":false,\"position\":2},{\"content\":\"Phương án 1.3\",\"isCorrect\":false,\"position\":3},{\"content\":\"Phương án 1.4\",\"isCorrect\":false,\"position\":4}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20 thêm câu 2",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}/questions",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\":\"Câu xáo trộn 2\",\"type\":\"SINGLE_CHOICE\",\"score\":1,\"position\":2,\"explanation\":\"Giải thích bí mật 2\",\"options\":[{\"content\":\"Phương án 2.1\",\"isCorrect\":true,\"position\":1},{\"content\":\"Phương án 2.2\",\"isCorrect\":false,\"position\":2},{\"content\":\"Phương án 2.3\",\"isCorrect\":false,\"position\":3},{\"content\":\"Phương án 2.4\",\"isCorrect\":false,\"position\":4}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20 thêm câu 3",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}/questions",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\":\"Câu xáo trộn 3\",\"type\":\"SINGLE_CHOICE\",\"score\":1,\"position\":3,\"explanation\":\"Giải thích bí mật 3\",\"options\":[{\"content\":\"Phương án 3.1\",\"isCorrect\":true,\"position\":1},{\"content\":\"Phương án 3.2\",\"isCorrect\":false,\"position\":2},{\"content\":\"Phương án 3.3\",\"isCorrect\":false,\"position\":3},{\"content\":\"Phương án 3.4\",\"isCorrect\":false,\"position\":4}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20 thêm câu 4",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}/questions",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\":\"Câu xáo trộn 4\",\"type\":\"MULTIPLE_CHOICE\",\"score\":1,\"position\":4,\"explanation\":\"Giải thích bí mật 4\",\"options\":[{\"content\":\"Phương án 4.1\",\"isCorrect\":true,\"position\":1},{\"content\":\"Phương án 4.2\",\"isCorrect\":false,\"position\":2},{\"content\":\"Phương án 4.3\",\"isCorrect\":true,\"position\":3},{\"content\":\"Phương án 4.4\",\"isCorrect\":false,\"position\":4}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20 thêm câu 5",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}/questions",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\":\"Câu xáo trộn 5\",\"type\":\"TRUE_FALSE\",\"score\":1,\"position\":5,\"explanation\":\"Giải thích bí mật 5\",\"options\":[{\"content\":\"Đúng\",\"isCorrect\":true,\"position\":1},{\"content\":\"Sai\",\"isCorrect\":false,\"position\":2}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20 xuất bản",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}/status",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\":\"PUBLISHED\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20.1 Đề gốc của tác giả",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const order=q=>q.questions.map(x=>[x.id,...x.options.map(o=>o.id)]);const d=pm.response.json().data;pm.collectionVariables.set('shuffleOriginal',JSON.stringify(order(d)));pm.collectionVariables.set('shuffleAnswers',JSON.stringify({answers:d.questions.map(q=>({questionId:q.id,selectedOptionIds:q.options.filter(o=>o.isCorrect).map(o=>o.id)}))}));pm.test('Canonical order',()=>pm.expect(d.questions.map(q=>q.position)).to.eql([1,2,3,4,5]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20.2 Chưa bắt đầu không có seed",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}/take",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const order=q=>q.questions.map(x=>[x.id,...x.options.map(o=>o.id)]);pm.test('Original order without active attempt',()=>pm.expect(order(pm.response.json().data)).to.eql(JSON.parse(pm.collectionVariables.get('shuffleOriginal'))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20 bắt đầu lượt S",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}/attempts",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('shuffleAttempt',pm.response.json().data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20.3 Tải lại đề lần 1",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}/take",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const order=q=>q.questions.map(x=>[x.id,...x.options.map(o=>o.id)]);const d=pm.response.json().data;const current=JSON.stringify(order(d));pm.collectionVariables.set('shuffleFirst',current);pm.test('No answers or explanations',()=>{pm.expect(pm.response.text()).to.not.include('isCorrect');pm.expect(pm.response.text()).to.not.include('Giải thích bí mật');});pm.test('True/false unchanged',()=>pm.expect(d.questions.find(q=>q.type==='TRUE_FALSE').options.map(o=>o.content)).to.eql(['Đúng','Sai']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20.3 Tải lại đề lần 2",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}/take",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const order=q=>q.questions.map(x=>[x.id,...x.options.map(o=>o.id)]);const d=pm.response.json().data;const current=JSON.stringify(order(d));pm.test('Stable attempt order',()=>pm.expect(current).to.eql(pm.collectionVariables.get('shuffleFirst')));pm.test('No answers or explanations',()=>{pm.expect(pm.response.text()).to.not.include('isCorrect');pm.expect(pm.response.text()).to.not.include('Giải thích bí mật');});pm.test('True/false unchanged',()=>pm.expect(d.questions.find(q=>q.type==='TRUE_FALSE').options.map(o=>o.content)).to.eql(['Đúng','Sai']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20.3 Tải lại đề lần 3",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}/take",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const order=q=>q.questions.map(x=>[x.id,...x.options.map(o=>o.id)]);const d=pm.response.json().data;const current=JSON.stringify(order(d));pm.test('Stable attempt order',()=>pm.expect(current).to.eql(pm.collectionVariables.get('shuffleFirst')));pm.test('No answers or explanations',()=>{pm.expect(pm.response.text()).to.not.include('isCorrect');pm.expect(pm.response.text()).to.not.include('Giải thích bí mật');});pm.test('True/false unchanged',()=>pm.expect(d.questions.find(q=>q.type==='TRUE_FALSE').options.map(o=>o.content)).to.eql(['Đúng','Sai']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20.3 Tải lại đề lần 4",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}/take",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const order=q=>q.questions.map(x=>[x.id,...x.options.map(o=>o.id)]);const d=pm.response.json().data;const current=JSON.stringify(order(d));pm.test('Stable attempt order',()=>pm.expect(current).to.eql(pm.collectionVariables.get('shuffleFirst')));pm.test('No answers or explanations',()=>{pm.expect(pm.response.text()).to.not.include('isCorrect');pm.expect(pm.response.text()).to.not.include('Giải thích bí mật');});pm.test('True/false unchanged',()=>pm.expect(d.questions.find(q=>q.type==='TRUE_FALSE').options.map(o=>o.content)).to.eql(['Đúng','Sai']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20.3 Tải lại đề lần 5",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}/take",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const order=q=>q.questions.map(x=>[x.id,...x.options.map(o=>o.id)]);const d=pm.response.json().data;const current=JSON.stringify(order(d));pm.test('Stable attempt order',()=>pm.expect(current).to.eql(pm.collectionVariables.get('shuffleFirst')));pm.test('No answers or explanations',()=>{pm.expect(pm.response.text()).to.not.include('isCorrect');pm.expect(pm.response.text()).to.not.include('Giải thích bí mật');});pm.test('True/false unchanged',()=>pm.expect(d.questions.find(q=>q.type==='TRUE_FALSE').options.map(o=>o.content)).to.eql(['Đúng','Sai']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20.4 Làm tiếp vẫn cùng lượt",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}/attempts",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "pm.test('Same attempt id',()=>pm.expect(pm.response.json().data.id).to.eql(pm.collectionVariables.get('shuffleAttempt')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20.4b Làm tiếp hoặc giả query không đổi seed",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}/take?userId={{instructorAId}}&attemptId=999999&seed=1",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const order=q=>q.questions.map(x=>[x.id,...x.options.map(o=>o.id)]);pm.test('Caller identity determines seed',()=>pm.expect(JSON.stringify(order(pm.response.json().data))).to.eql(pm.collectionVariables.get('shuffleFirst')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20.5 A chưa làm không mượn seed S",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}/take",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const order=q=>q.questions.map(x=>[x.id,...x.options.map(o=>o.id)]);pm.test('Original order for another caller',()=>pm.expect(order(pm.response.json().data)).to.eql(JSON.parse(pm.collectionVariables.get('shuffleOriginal'))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20.6 Soạn đề không đổi",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const order=q=>q.questions.map(x=>[x.id,...x.options.map(o=>o.id)]);pm.test('Author order unchanged',()=>pm.expect(order(pm.response.json().data)).to.eql(JSON.parse(pm.collectionVariables.get('shuffleOriginal'))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20.7 Nộp theo ID đáp án",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/attempts/{{shuffleAttempt}}/submit",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{{shuffleAnswers}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Correct ids score 100',()=>pm.expect(pm.response.json().data.score).to.eql(100));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20.8 Kết quả theo thứ tự gốc",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/attempts/{{shuffleAttempt}}",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Original question and option order in results',()=>pm.expect(pm.response.json().data.questionResults.map(q=>[q.questionId,...q.options.map(o=>o.id)])).to.eql(JSON.parse(pm.collectionVariables.get('shuffleOriginal'))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20.9 Thống kê theo thứ tự gốc",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}/results",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Original question order in statistics',()=>{const d=pm.response.json().data;pm.expect(d.summary.questions.map(q=>q.questionId)).to.eql(JSON.parse(pm.collectionVariables.get('shuffleOriginal')).map(q=>q[0]));pm.expect(d.summary.averageBestScore).to.eql(100);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20.10 CSV điểm không đổi",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}/results/export",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('CSV includes correct score',()=>pm.expect(pm.response.text()).to.include(',1,100.00,Đạt,'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20 lượt mới",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}/attempts",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "pm.test('New attempt id',()=>pm.expect(pm.response.json().data.id).to.not.eql(pm.collectionVariables.get('shuffleAttempt')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20.11 Seed mới cho lượt mới",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}/take",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const order=q=>q.questions.map(x=>[x.id,...x.options.map(o=>o.id)]);pm.test('New order in this five-question fixture',()=>{const current=JSON.stringify(order(pm.response.json().data));pm.expect(current).to.not.eql(pm.collectionVariables.get('shuffleFirst'));pm.collectionVariables.set('shuffleSecond',current);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20.11b Lượt mới cũng ổn định",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}/take",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const order=q=>q.questions.map(x=>[x.id,...x.options.map(o=>o.id)]);pm.test('Second attempt stable',()=>pm.expect(JSON.stringify(order(pm.response.json().data))).to.eql(pm.collectionVariables.get('shuffleSecond')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20 tắt cả hai cài đặt",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\":\"Xáo trộn {{runId}}\",\"shuffleQuestions\":false,\"shuffleOptions\":false,\"maxAttempts\":0}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-20.12 Tắt xáo trở lại thứ tự gốc",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{shuffleQuizId}}/take",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const order=q=>q.questions.map(x=>[x.id,...x.options.map(o=>o.id)]);pm.test('Both disabled',()=>{const d=pm.response.json().data;pm.expect(d.shuffleOptions).to.eql(false);pm.expect(d.shuffleQuestions).to.eql(false);pm.expect(order(d)).to.eql(JSON.parse(pm.collectionVariables.get('shuffleOriginal')));});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

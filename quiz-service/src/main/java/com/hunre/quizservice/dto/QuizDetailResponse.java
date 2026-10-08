@@ -28,6 +28,7 @@ public class QuizDetailResponse {
     private BigDecimal passScore;
     private Integer maxAttempts;
     private boolean shuffleQuestions;
+    private boolean shuffleOptions;
     private QuizStatus status;
     private Long createdBy;
     private int totalQuestions;
@@ -60,6 +61,7 @@ public class QuizDetailResponse {
                 .passScore(quiz.getPassScore())
                 .maxAttempts(quiz.getMaxAttempts())
                 .shuffleQuestions(quiz.isShuffleQuestions())
+                .shuffleOptions(quiz.isShuffleOptions())
                 .status(quiz.getStatus())
                 .createdBy(quiz.getCreatedBy())
                 .totalQuestions(totalQuestions)

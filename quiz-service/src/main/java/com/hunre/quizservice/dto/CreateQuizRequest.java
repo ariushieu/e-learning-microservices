@@ -46,4 +46,7 @@ public class CreateQuizRequest {
     @Builder.Default
     private Boolean shuffleQuestions = false;
 
+    @Builder.Default
+    private Boolean shuffleOptions = false;
+
 }
