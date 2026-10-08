@@ -55,7 +55,7 @@ public class AuthServiceImpl implements AuthService {
                 .email(email)
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .fullName(request.getFullName().trim())
-                .phone(request.getPhone())
+                .phone(normalizePhone(request.getPhone()))
                 .status(UserStatus.ACTIVE)
                 .roles(roles)
                 .build();
@@ -190,9 +190,12 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByIdForUpdate(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("người dùng", "id", userId));
         user.setFullName(request.getFullName().trim());
-        String phone = request.getPhone();
-        user.setPhone(phone == null || phone.isBlank() ? null : phone.trim());
+        user.setPhone(normalizePhone(request.getPhone()));
         return UserResponse.from(userRepository.save(user));
+    }
+
+    private static String normalizePhone(String phone) {
+        return phone == null || phone.isBlank() ? null : phone.trim();
     }
 
     @Override

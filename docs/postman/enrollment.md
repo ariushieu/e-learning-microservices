@@ -54,7 +54,7 @@ collection không có request giả; kết quả Runner không tính năm ca nà
 ## Chạy bằng dòng lệnh
 
 ~~~bash
-npx --yes newman@6.2.2 run docs/postman/enrollment.postman_collection.json --delay-request 60 --timeout-request 15000 --timeout-script 30000
+pnpm dlx newman@6.2.2 run docs/postman/enrollment.postman_collection.json --delay-request 60 --timeout-request 15000 --timeout-script 30000
 ~~~
 
 Lưu [biên bản](../test-cases/ket-qua/enrollment.md): commit, môi trường, mã HTTP thực tế và bằng chứng.
@@ -68,4 +68,3 @@ node scripts/build-enrollment-postman.mjs
 ~~~
 
 File enrollment-service.postman_collection.json cũ đã được thay bằng collection này.
-

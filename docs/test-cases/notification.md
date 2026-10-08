@@ -1,7 +1,9 @@
 # Tình huống test notification-service
 
 Đọc [gateway.md](gateway.md) để có token/fixture, cách đợi sự kiện và ghi kết quả.
-Tất cả request qua `{{baseUrl}}`. **Đây là kế hoạch chưa chạy Postman**.
+Tất cả request qua `{{baseUrl}}`. Collection:
+[`docs/postman/notification.postman_collection.json`](../postman/notification.postman_collection.json);
+đã chạy trên Docker ngày 07/10/2026: [biên bản](ket-qua/notification.md).
 Sáu endpoint giữ nguyên đường dẫn. Mọi tài khoản đã đăng nhập đọc hộp thư của chính mình,
 không có vai trò riêng được đọc hộp thư người khác; ADM cũng không có ngoại lệ.
 NotificationResponse trả `read` (boolean), không trả status hay userId.
@@ -106,11 +108,11 @@ Khi đếm, phân trang đến hết hoặc dùng title riêng không trùng; kh
 
 | # | Tình huống | Tài khoản | Request / thao tác | Mong đợi |
 |---|---|---|---|---|
-| 1 | enrollment.created [CHỜ snapshot] | S | POST /api/enrollments 201; GET hộp thư | GET 200; thêm đúng một type=ENROLLMENT_SUCCESS với tên khóa đúng |
-| 2 | enrollment.completed [CHỜ snapshot] | S | Hoàn thành đủ 2 bài bằng PUT progress 200; GET hộp thư | GET 200; thêm đúng một type=COURSE_COMPLETED |
-| 3 | certificate.issued [CHỜ snapshot] | S | Sau ca 2, GET certificate 200 và GET hộp thư | GET 200; type=CERTIFICATE_ISSUED chứa cùng certificateCode |
+| 1 | enrollment.created | S | POST /api/enrollments 201; GET hộp thư | GET 200; thêm đúng một type=ENROLLMENT_SUCCESS với tên khóa đúng |
+| 2 | enrollment.completed | S | Hoàn thành đủ 2 bài bằng PUT progress 200; GET hộp thư | GET 200; thêm đúng một type=COURSE_COMPLETED |
+| 3 | certificate.issued | S | Sau ca 2, GET certificate 200 và GET hộp thư | GET 200; type=CERTIFICATE_ISSUED chứa cùng certificateCode |
 | 4 | quiz.graded | S | Nộp QUIZ-SUBMIT-50 nhận 200; GET hộp thư | GET 200; đúng một type=QUIZ_GRADED, tên quiz và điểm 50 đúng |
-| 5 | Giữ hai số lẻ [CHỜ SỬA payload quiz] | S | Nộp quiz đúng 1/2 câu; GET hộp thư sau khi bản sửa payload LONGTEXT đã có | GET 200; content hiển thị 50.00 điểm; bản hiện tại có thể 50.0, không ghi PASS |
+| 5 | Giữ hai số lẻ | S | Nộp quiz đúng 1/2 câu; GET hộp thư | GET 200; content hiển thị 50.00 điểm |
 | 6 | Không gửi nhầm người | B | B GET hộp thư sau S ghi danh/nộp quiz riêng | 200; không có thông báo vừa tạo cho S |
 | 7 | Replay cùng eventId | S | Trong Kafka UI dev, copy nguyên message quiz.graded đã xử lý, gửi lại đúng topic và payload; GET hộp thư | 200; số thông báo của sự kiện đó không tăng; giữ nguyên eventId, không phát event mới |
 | 8 | Loại không tạo thông báo | S | A xuất bản/cập nhật khóa để phát course.updated; GET hộp thư S | 200; không có thông báo mới chỉ vì course.updated |

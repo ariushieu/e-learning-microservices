@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { REFRESH_COOKIE, clearAuthCookies, gatewayUrl, writeAuthCookies } from "../auth-shared";
+import { REFRESH_COOKIE, clearAuthCookies, gatewayUrl, refreshTokens, writeAuthCookies } from "../auth-shared";
 import { ApiError, errorMessage } from "../errors";
 import type { AuthResponse } from "../types";
 
@@ -69,6 +69,19 @@ export async function registerAction(_prev: FormState, form: FormData): Promise<
     return toState(e, values);
   }
   redirect(safeNext(form.get("next")));
+}
+
+/**
+ * Đổi lấy cặp token mới ngay, để thông tin nằm trong token (họ tên trên header) khớp với dữ liệu
+ * vừa sửa. Token mới do auth-service ký từ bản ghi người dùng hiện tại; không đổi được (refresh
+ * token đã bị thu hồi) thì giữ nguyên cookie, tên cũ chỉ còn tới lần đổi token tự động sau.
+ */
+export async function refreshSessionAction(): Promise<void> {
+  const store = await cookies();
+  const refreshToken = store.get(REFRESH_COOKIE)?.value;
+  if (!refreshToken) return;
+  const auth = await refreshTokens(refreshToken);
+  if (auth) writeAuthCookies(store, auth);
 }
 
 export async function logoutAction(): Promise<void> {

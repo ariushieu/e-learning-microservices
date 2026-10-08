@@ -1,93 +1,157 @@
 # Biên bản kiểm thử auth-service
 
-## Nguồn và môi trường chạy thật
+## N3 — Lỗi phone trên form đăng ký và giới hạn 30 ký tự
 
-- **Nguồn kết quả R1:** [review ngày 07/10/2026 trên PR #57][R1], được reviewer xác nhận lại trong [comment chạy độc lập][R2]. Biên bản tổng hợp kết quả chạy của reviewer; người cập nhật tài liệu chưa chạy lại trên máy local vì không có Docker. Không sử dụng kết quả CI thay cho kết quả Newman.
-- **Mốc collection được review:** PR #57 tại commit `4e6ee7d12f837d08739588d269314931d22edaa6`. Reviewer chạy bản gộp `main + #56 + #57`; SHA của bản gộp thử nghiệm không được công bố trong review.
-- **Môi trường:** backend Docker, mọi request qua gateway `http://localhost:8080`; rate limit tạm tắt. Frontend production chạy riêng và được kiểm bằng Playwright trên Edge.
-- **Lệnh reviewer sử dụng:** `pnpm dlx newman@6.2.2 run docs/postman/auth.postman_collection.json`.
-- **Kết quả Newman:** chạy 130/133 request; **294/294 assertion PASS**. Ba request bị bỏ qua do thiếu fixture. Theo các assertion hiện có của collection, 73 mã tình huống được tổng hợp thành **70 PASS, 0 FAIL, 3 BLOCKED**.
-- **Cách đối chiếu HTTP:** các mã trong bảng được suy ra từ assertion HTTP trong [collection](../../postman/auth.postman_collection.json) tại commit trên và xác nhận toàn bộ assertion PASS của reviewer. Chưa nhận file JSON Newman hoặc response thô để trích xuất độc lập. Dấu `→` chỉ thứ tự các request cùng mã ca trong collection, bao gồm chuẩn bị/khôi phục nếu có; mỗi mã ứng với một request, kể cả mã lặp lại.
-- **Kiểm thử web bổ sung:** reviewer xác nhận 13/13 ca PASS, gồm lưu/xóa số điện thoại, validation inline, so khớp mật khẩu không gọi API, logout/xóa cookie sau đổi mật khẩu, đăng nhập bằng mật khẩu mới, không lỗi JavaScript và không tràn ở 375px.
-- **Dữ liệu sau test:** theo review, database đã được khôi phục về bản chụp trước khi chạy. Review không xác nhận trạng thái rate limit sau chạy; hướng dẫn [chạy lại](../../postman/auth.md#chạy-bằng-newman) bắt buộc bật lại cả khi Newman lỗi.
+- **Thời gian:** 2026-10-07 22:02:15–22:02:44 (UTC+7).
+- **Frontend đã chạy:** `3f01ef9`, đã đồng bộ `main e92c686`; `pnpm --dir frontend build` và `pnpm --dir frontend lint` đều thành công. Bản production chạy tại `http://127.0.0.1:3100`.
+- **Backend thật:** dùng JAR auth/gateway đã build ở N2 (mã nguồn hai module không đổi), MySQL 8.0.43 với datadir mới riêng trên 13317, Flyway V1–V4; frontend gọi gateway 18080, xác thực bật. Rate limit chỉ tắt ở gateway test; tất cả tiến trình test đã dừng. Đây là lượt native, không phải Docker.
+- **Trình duyệt:** Playwright + Microsoft Edge, headless, viewport 1366×900 và 375×900. Không mock API. **10/10 ca PASS** (5 ca dưới đây × 2 viewport), không lỗi JavaScript, không tràn ngang ở các trạng thái được kiểm tra.
+- **Bằng chứng:** [kết quả từng ca](auth-ui/phone-results.json), [ảnh desktop](auth-ui/register-phone-error-1366.png), [ảnh mobile](auth-ui/register-phone-error-375.png).
 
-Kế hoạch gốc: [auth.md](../auth.md). Các ca BLOCKED dưới đây không có HTTP thực tế và không tính vào PASS. Khi có fixture, chạy lại đúng ca và bổ sung kết quả cùng mốc code; không thay kỳ vọng bằng token giả.
+| Ca giao diện | Thao tác | Kết quả thực tế |
+|---|---|---|
+| Đăng ký với `abc` | Điền đủ form và bấm Tạo tài khoản | Vẫn ở `/register`; lỗi tiếng Việt hiện ngay dưới ô phone; `aria-invalid=true` |
+| Đăng ký với `+++++++++` | Gửi lại form đủ trường | Hiện cùng lỗi dưới ô phone |
+| Đăng ký với `  12345678` | Gửi lại form đủ trường | Hiện cùng lỗi dưới ô phone |
+| Đăng ký với số dài 30 ký tự | Gõ `+1 2 3 4 5 6 7 8 9 0 1 2 3 4 5` bằng bàn phím, sửa form lỗi rồi gửi | Không bị cắt ở ký tự 20; đăng ký/đăng nhập thành công, chuyển `/profile`; số đã lưu đúng |
+| Cập nhật hồ sơ với số dài 30 ký tự | Gõ `+9 8 7 6 5 4 3 2 1 0 9 8 7 6 5`, Lưu thông tin rồi tải lại | `maxLength=30`, có toast thành công; tải lại vẫn giữ đủ số |
 
-| Mã ca | Commit/môi trường | HTTP xác nhận qua assertion | Trạng thái | Bằng chứng / lý do |
+Thông báo quan sát được: “Số điện thoại phải có 9–15 chữ số, có thể bắt đầu bằng + và cách nhau bằng một khoảng trắng”.
+N3 bổ sung kiểm thử web cho lỗi reviewer phát hiện ở `5e64e99`; không coi collection N2 là bằng chứng kiểm thử giao diện.
+
+## N2 — Đếm chữ số và dùng chung ràng buộc đăng ký/hồ sơ sau review PR #65
+
+- **Thời gian:** 2026-10-07T16:46:35.789343+07:00 đến 2026-10-07T16:47:48.754234+07:00.
+- **Code đã chạy:** `4005b8f5254a9def2b601cf73984bf07c438b1bd`, đã đồng bộ `main 34baba3`. Lượt N2 kiểm lại quy tắc mới; kết quả N1 bên dưới chỉ là lịch sử của regex cũ.
+- **Maven:** `mvnw.cmd -B -ntp verify` toàn dự án thành công: 766 test, 0 failure, 0 error, 0 skipped. Riêng auth-service: 108 test, không bỏ qua; controller integration hồ sơ/đăng ký/mật khẩu: 76 test. Các JAR gateway/auth/course/quiz được build từ lượt này.
+- **Newman 6.2.2:** **205/205 request, 504/504 assertion PASS**, **80/80 mã ca PASS**, 0 FAIL, 0 BLOCKED, không request bị bỏ qua. Có 18 request chuẩn bị/khôi phục ngoài các mã ca.
+- **Môi trường:** Windows/Java 17, MySQL 8.0.43 thật ở `127.0.0.1:13317`, datadir riêng mới. Flyway chạy đủ V1–V4 của auth, Hibernate `ddl-auto=validate` thành công. V4 mở rộng `users.phone` từ 20 lên 30 ký tự; số 15 chữ số có `+` và 14 dấu cách được lưu/đọc lại qua cả hai API.
+- **Đường đi:** mọi request Newman qua gateway `http://127.0.0.1:18080`, JWT bật. Dùng cổng 18080 vì 8080 có tiến trình khác; MySQL dev 3306 không bị tác động. Máy không có Docker, nên chạy các JAR native; không ghi nhận lượt này là Docker, smoke test hoặc kiểm thử giao diện.
+- **Phạm vi:** gateway/auth/course/quiz; Kafka consumer/outbox worker tắt cho tiến trình test, không khởi động Redis/enrollment/notification. Rate limit chỉ tắt bằng tham số của gateway test; toàn bộ tiến trình test đã dừng sau lượt chạy, cấu hình rate limit trong Git vẫn bật.
+- **Nguồn kết quả:** HTTP/assertion lấy trực tiếp từ `run.executions` của JSON Newman. [Bằng chứng đã bỏ payload/token](auth-phone-evidence.json) chứa mã HTTP và số assertion của từng request.
+- **Collection SHA-256:** `9026d7cabfc2d5043769823cb35160073d04e0b96f069cf097f16686dfa2e159` trước khi điền fixture/đổi cổng. Bản runtime chỉ thay bốn biến `baseUrl`, `expiredAccessToken`, `expiredRefreshToken`, `deletedUserToken`; giữ nguyên request và test script.
+
+### Các ca reviewer yêu cầu sửa
+
+| Đầu vào | API | HTTP thực tế | Kết quả |
+|---|---|---|---|
+| `+++++++++` | PUT /api/auth/me; POST /api/auth/register | 400; 400 | PASS; VALIDATION_FAILED, fieldErrors.phone tiếng Việt |
+| `  12345678` | PUT /api/auth/me; POST /api/auth/register | 400; 400 | PASS; khoảng trắng không bù thiếu chữ số |
+| `abc` | PUT /api/auth/me; POST /api/auth/register | 400; 400 | PASS; không lưu hồ sơ/không tạo tài khoản |
+| `0912  345678` và dấu `+` sai vị trí | PUT /api/auth/me; POST /api/auth/register | 400; 400 | PASS |
+| `0912 345 678`, `+84 912 345 678`, đủ 15 chữ số với dấu cách | PUT /api/auth/me; POST /api/auth/register | 200; 201 | PASS; GET sau lưu trả đúng số đã trim |
+| null/rỗng/toàn dấu cách | PUT /api/auth/me; POST /api/auth/register | 200; 201 | PASS; phone=null |
+
+### Fixture và khả năng chạy lại
+
+Đầu lượt chạy, MySQL ở schema V3 với `phone VARCHAR(20)` và một số điện thoại đã lưu.
+Sau khi khởi động auth với V4, truy vấn `information_schema.columns` xác nhận độ dài 30;
+truy vấn lại dữ liệu xác nhận số cũ không đổi (`migrationUpgradePreservesPhone=true` trong bằng chứng).
+
+AUTH-03.8, AUTH-05.5 và AUTH-07.10 đã chạy thật trong **N2** vì có fixture:
+
+1. Auth-service TTL access/refresh 1 giây phát token qua login ở gateway; chờ quá TTL, dừng instance TTL ngắn rồi chạy lại auth với TTL mặc định trên cùng database. Dùng nguyên token đã phát: refresh/access hết hạn đều trả 401.
+2. Tạo và đăng nhập tài khoản fixture riêng, giữ JWT còn hạn, xóa đúng tài khoản đó trong database test rồi PUT /me trả 404. Không xóa tài khoản trên database chung.
+
+Collection trong Git cố ý không chứa token. Khi reviewer chạy không điền ba fixture, **202 request** được thực thi, ba ca trên phải ghi **BLOCKED**, không tính PASS. Đây là khác biệt môi trường, không phải thay đổi kỳ vọng.
+
+Lệnh Newman đã chạy (cài Newman 6.2.2 riêng tại `target/phone-tools`):
+
+```bash
+pnpm --dir target/phone-tools exec newman run target/phone-acceptance/20261007-164635/runtime-collection.json --reporters cli,json --reporter-json-export target/phone-acceptance/20261007-164635/newman-report.json --timeout-request 15000
+```
+
+Report thô/runtime collection giữ dưới `target/phone-acceptance/20261007-164635/` trên máy chạy vì có token. Để chạy trên Docker qua 8080, làm theo [hướng dẫn auth](../../postman/auth.md#chạy-bằng-newman) và cung cấp fixture riêng nếu muốn đủ 205 request.
+
+## HTTP thực tế theo mã ca — N2
+
+Dấu `→` thể hiện thứ tự các request cùng mã ca, kể cả chuẩn bị và đọc lại. Kế hoạch: [auth.md](../auth.md).
+
+| Mã ca | Commit/môi trường | HTTP thực tế | Trạng thái | Bằng chứng |
 |---|---|---|---|---|
-| AUTH-01.1 | R1 / `4e6ee7d` | 201 | PASS | [R1] — Đăng ký hợp lệ, không token. |
-| AUTH-01.2 | R1 / `4e6ee7d` | 201 | PASS | [R1] — Token admin không cấp quyền cho người đăng ký. |
-| AUTH-01.3 | R1 / `4e6ee7d` | 409 | PASS | [R1] — Trùng email. |
-| AUTH-01.4 | R1 / `4e6ee7d` | 400 | PASS | [R1] — Email sai định dạng. |
-| AUTH-01.5 | R1 / `4e6ee7d` | 400 | PASS | [R1] — Mật khẩu ngắn. |
-| AUTH-01.6 | R1 / `4e6ee7d` | 400 | PASS | [R1] — Thiếu tên. |
-| AUTH-01.7 | R1 / `4e6ee7d` | 409 | PASS | [R1] — Chuẩn hóa email. |
-| AUTH-01.8 | R1 / `4e6ee7d` | 400 | PASS | [R1] — JSON hỏng. |
-| AUTH-02.1 | R1 / `4e6ee7d` | 200 | PASS | [R1] — Login không token. |
-| AUTH-02.2 | R1 / `4e6ee7d` | 200 | PASS | [R1] — Login admin seed. |
-| AUTH-02.3 | R1 / `4e6ee7d` | 401 | PASS | [R1] — Không tồn tại tài khoản. |
-| AUTH-02.4 | R1 / `4e6ee7d` | 401 | PASS | [R1] — Sai mật khẩu. |
-| AUTH-02.5 | R1 / `4e6ee7d` | 400 | PASS | [R1] — Thiếu mật khẩu. |
-| AUTH-02.6 | R1 / `4e6ee7d` | 400 | PASS | [R1] — Email sai định dạng. |
-| AUTH-02.7 | R1 / `4e6ee7d` | 200 | PASS | [R1] — Vai trò không bị token gửi kèm chi phối. |
-| AUTH-02.8 | R1 / `4e6ee7d` | 200 → 200 → 200 → 200 | PASS | [R1] — Chuẩn bị cấp instructor; JWT mới nhận quyền; Khôi phục quyền; Đăng nhập lại sau khôi phục. |
-| AUTH-03.1 | R1 / `4e6ee7d` | 200 → 200 | PASS | [R1] — Chuẩn bị token riêng; Refresh hợp lệ. |
-| AUTH-03.2 | R1 / `4e6ee7d` | 401 | PASS | [R1] — Dùng lại refresh đã rotate. |
-| AUTH-03.3 | R1 / `4e6ee7d` | 401 | PASS | [R1] — Refresh không tồn tại. |
-| AUTH-03.4 | R1 / `4e6ee7d` | 200 → 200 → 401 | PASS | [R1] — Chuẩn bị token thu hồi; Thu hồi token; Token đã thu hồi. |
-| AUTH-03.5 | R1 / `4e6ee7d` | 400 | PASS | [R1] — Body thiếu trường. |
-| AUTH-03.6 | R1 / `4e6ee7d` | 400 | PASS | [R1] — Chuỗi trống. |
-| AUTH-03.7 | R1 / `4e6ee7d` | 200 → 200 → 200 → 200 → 200 | PASS | [R1] — Lưu JWT trước cấp quyền; Cấp instructor; Refresh nhận quyền hiện tại; Khôi phục quyền; Đăng nhập lại S. |
-| AUTH-03.8 | R1 / `4e6ee7d` | Không gửi request | BLOCKED | Thiếu expiredRefreshToken: cần refresh token thật đã quá TTL; không dùng token hỏng thay thế. |
-| AUTH-03.9 | R1 / `4e6ee7d` | 401 | PASS | [R1] — Access token không thay thế refresh token. |
-| AUTH-04.1 | R1 / `4e6ee7d` | 200 → 200 → 401 | PASS | [R1] — Chuẩn bị phiên đăng xuất; Đăng xuất hợp lệ; Xác nhận token bị thu hồi. |
-| AUTH-04.2 | R1 / `4e6ee7d` | 200 | PASS | [R1] — Gọi lại logout. |
-| AUTH-04.3 | R1 / `4e6ee7d` | 200 | PASS | [R1] — Refresh không tồn tại. |
-| AUTH-04.4 | R1 / `4e6ee7d` | 200 | PASS | [R1] — Không body. |
-| AUTH-04.5 | R1 / `4e6ee7d` | 200 | PASS | [R1] — Refresh trống. |
-| AUTH-04.6 | R1 / `4e6ee7d` | 400 | PASS | [R1] — JSON sai cú pháp. |
-| AUTH-04.7 | R1 / `4e6ee7d` | 200 | PASS | [R1] — Access token còn hạn sau logout. |
-| AUTH-04.8 | R1 / `4e6ee7d` | 200 → 200 → 200 → 200 | PASS | [R1] — Phiên một; Phiên hai; Đăng xuất phiên một; Phiên hai vẫn hoạt động. |
-| AUTH-05.1 | R1 / `4e6ee7d` | 200 | PASS | [R1] — Đúng danh tính. |
-| AUTH-05.2 | R1 / `4e6ee7d` | 401 | PASS | [R1] — Không token. |
-| AUTH-05.3 | R1 / `4e6ee7d` | 200 | PASS | [R1] — Giảng viên cũng được đọc chính mình. |
-| AUTH-05.4 | R1 / `4e6ee7d` | 401 | PASS | [R1] — Token không hợp lệ. |
-| AUTH-05.5 | R1 / `4e6ee7d` | Không gửi request | BLOCKED | Thiếu expiredAccessToken: cần access token thật đã quá exp; không sửa claim/chữ ký để giả lập. |
-| AUTH-05.6 | R1 / `4e6ee7d` | 200 | PASS | [R1] — Giả danh qua query. |
-| AUTH-05.7 | R1 / `4e6ee7d` | 200 | PASS | [R1] — Không lộ dữ liệu nhạy cảm. |
-| AUTH-06.1 | R1 / `4e6ee7d` | 200 → 200 | PASS | [R1] — Cấp instructor; Nhận JWT instructor. |
-| AUTH-06.2 | R1 / `4e6ee7d` | 401 | PASS | [R1] — Không token. |
-| AUTH-06.3 | R1 / `4e6ee7d` | 403 | PASS | [R1] — Học viên tự nâng quyền. |
-| AUTH-06.4 | R1 / `4e6ee7d` | 403 | PASS | [R1] — Giảng viên cấp quyền. |
-| AUTH-06.5 | R1 / `4e6ee7d` | 404 | PASS | [R1] — User không tồn tại. |
-| AUTH-06.6 | R1 / `4e6ee7d` | 400 | PASS | [R1] — ID sai kiểu. |
-| AUTH-06.7 | R1 / `4e6ee7d` | 400 → 400 → 400 → 400 | PASS | [R1] — Roles thiếu; Roles rỗng; Roles null; Roles phần tử null. |
-| AUTH-06.8 | R1 / `4e6ee7d` | 400 | PASS | [R1] — Mã vai trò không tồn tại. |
-| AUTH-06.9 | R1 / `4e6ee7d` | 200 → 200 → 403 | PASS | [R1] — Gỡ instructor; Token mới chỉ STUDENT; JWT mới không tạo quiz. |
-| AUTH-06.10 | R1 / `4e6ee7d` | 422 | PASS | [R1] — Admin tự hạ quyền. |
-| AUTH-06.11 | R1 / `4e6ee7d` | 200 | PASS | [R1] — Admin cập nhật chính mình, giữ ADMIN. |
-| AUTH-06.12 | R1 / `4e6ee7d` | 201 → 201 → 201 → 200 → 200 → 200 | PASS | [R1] — Chuẩn bị danh mục riêng; Chuẩn bị khóa do S sở hữu; JWT instructor cũ còn hiệu lực; Dọn quiz thử nghiệm; Dọn khóa thử nghiệm; Dọn danh mục thử nghiệm. |
-| AUTH-07.1 | R1 / `4e6ee7d` | 200 → 200 | PASS | [R1] — Lưu hồ sơ; Đọc lại dữ liệu mới. |
-| AUTH-07.2 | R1 / `4e6ee7d` | 401 | PASS | [R1] — Chưa đăng nhập. |
-| AUTH-07.3 | R1 / `4e6ee7d` | 401 | PASS | [R1] — Token hỏng. |
-| AUTH-07.4 | R1 / `4e6ee7d` | 400 → 400 | PASS | [R1] — Họ tên thiếu; Họ tên trắng. |
-| AUTH-07.5 | R1 / `4e6ee7d` | 400 | PASS | [R1] — Họ tên quá dài. |
-| AUTH-07.6 | R1 / `4e6ee7d` | 400 | PASS | [R1] — Số điện thoại quá dài. |
-| AUTH-07.7 | R1 / `4e6ee7d` | 200 → 200 → 200 | PASS | [R1] — Xóa phone bỏ; Xóa phone null; Xóa phone trắng. |
-| AUTH-07.8 | R1 / `4e6ee7d` | 200 | PASS | [R1] — Giả danh và nâng quyền qua body. |
-| AUTH-07.9 | R1 / `4e6ee7d` | 200 | PASS | [R1] — Chuẩn hóa khoảng trắng. |
-| AUTH-07.10 | R1 / `4e6ee7d` | Không gửi request | BLOCKED | Thiếu deletedUserToken: cần JWT còn hạn của tài khoản đã bị xóa trong môi trường riêng; chưa có API xóa user. |
-| AUTH-08.1 | R1 / `4e6ee7d` | 200 → 401 → 200 | PASS | [R1] — Đổi mật khẩu; Mật khẩu cũ bị từ chối; Mật khẩu mới dùng được. |
-| AUTH-08.2 | R1 / `4e6ee7d` | 401 → 401 → 200 | PASS | [R1] — Phiên một bị thu hồi; Phiên hai bị thu hồi; Phiên mới vẫn refresh được. |
-| AUTH-08.3 | R1 / `4e6ee7d` | 200 → 200 | PASS | [R1] — Lấy phiên của S; Tài khoản khác không ảnh hưởng. |
-| AUTH-08.4 | R1 / `4e6ee7d` | 400 → 200 → 200 | PASS | [R1] — Mật khẩu hiện tại sai; Mật khẩu không đổi; Phiên không bị thu hồi. |
-| AUTH-08.5 | R1 / `4e6ee7d` | 400 → 400 | PASS | [R1] — Mật khẩu hiện tại thiếu; Mật khẩu hiện tại trắng. |
-| AUTH-08.6 | R1 / `4e6ee7d` | 400 → 400 | PASS | [R1] — Mật khẩu mới thiếu; Mật khẩu mới trắng. |
-| AUTH-08.7 | R1 / `4e6ee7d` | 400 → 400 | PASS | [R1] — Mật khẩu mới dài 5; Mật khẩu mới dài 51. |
-| AUTH-08.8 | R1 / `4e6ee7d` | 401 | PASS | [R1] — Chưa đăng nhập. |
-| AUTH-08.9 | R1 / `4e6ee7d` | 401 | PASS | [R1] — Token hỏng. |
-| AUTH-08.10 | R1 / `4e6ee7d` | 200 → 200 → 200 | PASS | [R1] — Không đổi mật khẩu người khác; Tài khoản test đổi đúng; S vẫn giữ mật khẩu cũ. |
-| AUTH-08.11 | R1 / `4e6ee7d` | 200 | PASS | [R1] — Access token đã phát. |
+| AUTH-01.1 | `4005b8f` / N2 | 201 | PASS | 3 assertion đạt; Đăng ký hợp lệ, không token |
+| AUTH-01.2 | `4005b8f` / N2 | 201 | PASS | 3 assertion đạt; Token admin không cấp quyền cho người đăng ký |
+| AUTH-01.3 | `4005b8f` / N2 | 409 | PASS | 3 assertion đạt; Trùng email |
+| AUTH-01.4 | `4005b8f` / N2 | 400 | PASS | 2 assertion đạt; Email sai định dạng |
+| AUTH-01.5 | `4005b8f` / N2 | 400 | PASS | 2 assertion đạt; Mật khẩu ngắn |
+| AUTH-01.6 | `4005b8f` / N2 | 400 | PASS | 2 assertion đạt; Thiếu tên |
+| AUTH-01.7 | `4005b8f` / N2 | 409 | PASS | 2 assertion đạt; Chuẩn hóa email |
+| AUTH-01.8 | `4005b8f` / N2 | 400 | PASS | 2 assertion đạt; JSON hỏng |
+| AUTH-01.9 | `4005b8f` / N2 | 400 → 400 → 400 → 400 → 400 → 400 → 400 → 400 → 400 → 400 → 401 | PASS | 32 assertion đạt; Đăng ký với phone sai |
+| AUTH-01.10 | `4005b8f` / N2 | 201 → 200 → 200 → 201 → 200 → 200 → 201 → 200 → 200 → 201 → 200 → 200 → 201 → 200 → 200 → 201 → 200 → 200 | PASS | 48 assertion đạt; Phone hợp lệ khi đăng ký |
+| AUTH-01.11 | `4005b8f` / N2 | 201 → 200 → 200 → 201 → 200 → 200 → 201 → 200 → 200 | PASS | 24 assertion đạt; Phone tùy chọn khi đăng ký |
+| AUTH-02.1 | `4005b8f` / N2 | 200 | PASS | 3 assertion đạt; Login không token |
+| AUTH-02.2 | `4005b8f` / N2 | 200 | PASS | 3 assertion đạt; Login admin seed |
+| AUTH-02.3 | `4005b8f` / N2 | 401 | PASS | 2 assertion đạt; Không tồn tại tài khoản |
+| AUTH-02.4 | `4005b8f` / N2 | 401 | PASS | 3 assertion đạt; Sai mật khẩu |
+| AUTH-02.5 | `4005b8f` / N2 | 400 | PASS | 2 assertion đạt; Thiếu mật khẩu |
+| AUTH-02.6 | `4005b8f` / N2 | 400 | PASS | 2 assertion đạt; Email sai định dạng |
+| AUTH-02.7 | `4005b8f` / N2 | 200 | PASS | 3 assertion đạt; Vai trò không bị token gửi kèm chi phối |
+| AUTH-02.8 | `4005b8f` / N2 | 200 → 200 → 200 → 200 | PASS | 9 assertion đạt; Sau cấp quyền |
+| AUTH-03.1 | `4005b8f` / N2 | 200 → 200 | PASS | 5 assertion đạt; Refresh hợp lệ, không access token |
+| AUTH-03.2 | `4005b8f` / N2 | 401 | PASS | 2 assertion đạt; Dùng lại refresh đã rotate |
+| AUTH-03.3 | `4005b8f` / N2 | 401 | PASS | 2 assertion đạt; Refresh không tồn tại |
+| AUTH-03.4 | `4005b8f` / N2 | 200 → 200 → 401 | PASS | 6 assertion đạt; Refresh bị thu hồi |
+| AUTH-03.5 | `4005b8f` / N2 | 400 | PASS | 2 assertion đạt; Body thiếu trường |
+| AUTH-03.6 | `4005b8f` / N2 | 400 | PASS | 2 assertion đạt; Chuỗi trống |
+| AUTH-03.7 | `4005b8f` / N2 | 200 → 200 → 200 → 200 → 200 | PASS | 11 assertion đạt; Quyền trong DB thay đổi |
+| AUTH-03.8 | `4005b8f` / N2 | 401 | PASS | 2 assertion đạt; Refresh hết hạn thật |
+| AUTH-03.9 | `4005b8f` / N2 | 401 | PASS | 2 assertion đạt; Access token không thay thế refresh token |
+| AUTH-04.1 | `4005b8f` / N2 | 200 → 200 → 401 | PASS | 6 assertion đạt; Logout bằng refresh hợp lệ |
+| AUTH-04.2 | `4005b8f` / N2 | 200 | PASS | 2 assertion đạt; Gọi lại logout |
+| AUTH-04.3 | `4005b8f` / N2 | 200 | PASS | 2 assertion đạt; Refresh không tồn tại |
+| AUTH-04.4 | `4005b8f` / N2 | 200 | PASS | 2 assertion đạt; Không body |
+| AUTH-04.5 | `4005b8f` / N2 | 200 | PASS | 2 assertion đạt; Refresh trống |
+| AUTH-04.6 | `4005b8f` / N2 | 400 | PASS | 2 assertion đạt; JSON sai cú pháp |
+| AUTH-04.7 | `4005b8f` / N2 | 200 | PASS | 2 assertion đạt; Access token còn hạn sau logout |
+| AUTH-04.8 | `4005b8f` / N2 | 200 → 200 → 200 → 200 | PASS | 8 assertion đạt; Phiên khác vẫn hoạt động |
+| AUTH-05.1 | `4005b8f` / N2 | 200 | PASS | 3 assertion đạt; Đúng danh tính |
+| AUTH-05.2 | `4005b8f` / N2 | 401 | PASS | 2 assertion đạt; Không token |
+| AUTH-05.3 | `4005b8f` / N2 | 200 | PASS | 3 assertion đạt; Giảng viên cũng được đọc chính mình |
+| AUTH-05.4 | `4005b8f` / N2 | 401 | PASS | 2 assertion đạt; Token không hợp lệ |
+| AUTH-05.5 | `4005b8f` / N2 | 401 | PASS | 2 assertion đạt; Token hết hạn |
+| AUTH-05.6 | `4005b8f` / N2 | 200 | PASS | 3 assertion đạt; Giả danh qua query |
+| AUTH-05.7 | `4005b8f` / N2 | 200 | PASS | 3 assertion đạt; Không lộ dữ liệu nhạy cảm |
+| AUTH-06.1 | `4005b8f` / N2 | 200 → 200 | PASS | 5 assertion đạt; Cấp giảng viên |
+| AUTH-06.2 | `4005b8f` / N2 | 401 | PASS | 2 assertion đạt; Không token |
+| AUTH-06.3 | `4005b8f` / N2 | 403 | PASS | 2 assertion đạt; Học viên tự nâng quyền |
+| AUTH-06.4 | `4005b8f` / N2 | 403 | PASS | 2 assertion đạt; Giảng viên cấp quyền |
+| AUTH-06.5 | `4005b8f` / N2 | 404 | PASS | 2 assertion đạt; User không tồn tại |
+| AUTH-06.6 | `4005b8f` / N2 | 400 | PASS | 2 assertion đạt; ID sai kiểu |
+| AUTH-06.7 | `4005b8f` / N2 | 400 → 400 → 400 → 400 | PASS | 8 assertion đạt; Roles rỗng/thiếu/null |
+| AUTH-06.8 | `4005b8f` / N2 | 400 | PASS | 2 assertion đạt; Mã vai trò không tồn tại |
+| AUTH-06.9 | `4005b8f` / N2 | 200 → 200 → 403 | PASS | 7 assertion đạt; Gỡ instructor |
+| AUTH-06.10 | `4005b8f` / N2 | 422 | PASS | 2 assertion đạt; Admin tự hạ quyền |
+| AUTH-06.11 | `4005b8f` / N2 | 200 | PASS | 2 assertion đạt; Admin cập nhật chính mình, giữ ADMIN |
+| AUTH-06.12 | `4005b8f` / N2 | 201 → 201 → 201 → 200 → 200 → 200 | PASS | 12 assertion đạt; JWT cũ sau gỡ quyền |
+| AUTH-07.1 | `4005b8f` / N2 | 200 → 200 | PASS | 6 assertion đạt; Sửa hồ sơ hợp lệ |
+| AUTH-07.2 | `4005b8f` / N2 | 401 | PASS | 2 assertion đạt; Chưa đăng nhập |
+| AUTH-07.3 | `4005b8f` / N2 | 401 | PASS | 2 assertion đạt; Token hỏng |
+| AUTH-07.4 | `4005b8f` / N2 | 400 → 400 | PASS | 6 assertion đạt; Thiếu hoặc trắng họ tên |
+| AUTH-07.5 | `4005b8f` / N2 | 400 | PASS | 3 assertion đạt; Họ tên quá dài |
+| AUTH-07.6 | `4005b8f` / N2 | 400 | PASS | 3 assertion đạt; Số điện thoại quá dài |
+| AUTH-07.7 | `4005b8f` / N2 | 200 → 200 → 200 → 200 → 200 → 200 → 200 → 200 | PASS | 24 assertion đạt; Xóa số điện thoại |
+| AUTH-07.8 | `4005b8f` / N2 | 200 | PASS | 3 assertion đạt; Giả danh và nâng quyền qua body |
+| AUTH-07.9 | `4005b8f` / N2 | 200 | PASS | 3 assertion đạt; Chuẩn hóa khoảng trắng |
+| AUTH-07.10 | `4005b8f` / N2 | 404 | PASS | 3 assertion đạt; Người gọi không còn tồn tại |
+| AUTH-07.11 | `4005b8f` / N2 | 200 → 200 → 200 → 200 → 200 → 200 → 200 → 200 → 200 | PASS | 27 assertion đạt; Số điện thoại hợp lệ, kiểm biên |
+| AUTH-07.12 | `4005b8f` / N2 | 200 → 400 → 400 → 400 → 400 → 400 → 400 → 200 | PASS | 24 assertion đạt; Ký tự sai định dạng |
+| AUTH-07.13 | `4005b8f` / N2 | 400 → 200 → 400 → 200 | PASS | 12 assertion đạt; Số điện thoại quá ngắn |
+| AUTH-07.14 | `4005b8f` / N2 | 400 → 400 → 400 → 400 → 400 → 400 → 400 → 200 | PASS | 24 assertion đạt; Dấu cộng/khoảng trắng sai vị trí |
+| AUTH-08.1 | `4005b8f` / N2 | 200 → 401 → 200 | PASS | 6 assertion đạt; Đổi mật khẩu hợp lệ |
+| AUTH-08.2 | `4005b8f` / N2 | 401 → 401 → 200 | PASS | 6 assertion đạt; Thu hồi tất cả phiên |
+| AUTH-08.3 | `4005b8f` / N2 | 200 → 200 | PASS | 4 assertion đạt; Không ảnh hưởng người khác |
+| AUTH-08.4 | `4005b8f` / N2 | 400 → 200 → 200 | PASS | 7 assertion đạt; Sai mật khẩu hiện tại |
+| AUTH-08.5 | `4005b8f` / N2 | 400 → 400 | PASS | 6 assertion đạt; Thiếu/trắng mật khẩu hiện tại |
+| AUTH-08.6 | `4005b8f` / N2 | 400 → 400 | PASS | 6 assertion đạt; Thiếu/trắng mật khẩu mới |
+| AUTH-08.7 | `4005b8f` / N2 | 400 → 400 | PASS | 6 assertion đạt; Mật khẩu mới ngoài giới hạn |
+| AUTH-08.8 | `4005b8f` / N2 | 401 | PASS | 2 assertion đạt; Chưa đăng nhập |
+| AUTH-08.9 | `4005b8f` / N2 | 401 | PASS | 2 assertion đạt; Token hỏng |
+| AUTH-08.10 | `4005b8f` / N2 | 200 → 200 → 200 | PASS | 6 assertion đạt; Giả danh qua userId |
+| AUTH-08.11 | `4005b8f` / N2 | 200 | PASS | 2 assertion đạt; Access token đã phát |
 
-[R1]: https://github.com/ariushieu/e-learning-microservices/pull/57#pullrequestreview-5438638977
-[R2]: https://github.com/ariushieu/e-learning-microservices/pull/57#issuecomment-6033297978
+## Lịch sử
+
+- N1 (`ee88921`, báo cáo tại `46a02ab`): 153/153 request và 358/358 assertion PASS trên MySQL/gateway native, đủ ba fixture. Regex lúc đó đếm ký tự và chỉ áp dụng cho cập nhật; **không chứng minh các ca phát sinh sau review đạt**.
+- Reviewer chạy Docker/MySQL tại `46a02ab`: 150 request, 351/351 assertion PASS, ba ca BLOCKED vì thiếu fixture; thử tay phát hiện `+++++++++`, `  12345678` và đăng ký `abc` vẫn được lưu. N2 bổ sung chính các ca này và sửa cả hai API.
+- Review PR #57 trước đó: 130/133 request, 294/294 assertion PASS, ba ca BLOCKED; kiểm thử giao diện 13/13 là kết quả của reviewer, không phải lượt N2. [Review](https://github.com/ariushieu/e-learning-microservices/pull/57#pullrequestreview-5438638977).
