@@ -35,6 +35,8 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Random;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -113,6 +115,14 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                 .build();
 
         QuizAttempt saved = quizAttemptRepository.save(newAttempt);
+        // IDENTITY assigns the seed before selection; selection and attempt commit atomically.
+        var candidates = new ArrayList<>(quiz.getQuestions());
+        Integer count = quiz.getQuestionsPerAttempt();
+        if (count != null && count < candidates.size()) {
+            Collections.shuffle(candidates, new Random(saved.getId()));
+            candidates = new ArrayList<>(candidates.subList(0, count));
+        }
+        saved.getQuestionIds().addAll(candidates.stream().map(Question::getId).toList());
         return QuizAttemptResponse.from(saved);
     }
 
@@ -149,7 +159,15 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         BigDecimal totalMaxScore = BigDecimal.ZERO;
         List<QuestionResultResponse> questionResults = new ArrayList<>();
 
-        for (Question question : quiz.getQuestions()) {
+        if (!attempt.getQuestionIds().containsAll(answersMap.keySet())) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "Câu trả lời có câu hỏi ngoài bộ câu của lượt làm");
+        }
+        var selectedQuestions = attempt.selectedQuestions();
+        if (selectedQuestions.isEmpty()) {
+            throw new BusinessException(ErrorCode.BUSINESS_RULE_VIOLATED,
+                    "Bộ câu của lượt làm không còn câu hỏi để chấm");
+        }
+        for (Question question : selectedQuestions) {
             BigDecimal questionScore = question.getScore() != null ? question.getScore() : BigDecimal.ONE;
             totalMaxScore = totalMaxScore.add(questionScore);
 
@@ -271,7 +289,9 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                 .collect(Collectors.toMap(a -> a.getQuestion().getId(), a -> a, (oldV, newV) -> newV));
 
         List<QuestionResultResponse> questionResults = new ArrayList<>();
-        for (Question question : quiz.getQuestions()) {
+        var gradedQuestions = attempt.getAnswers().stream().map(AttemptAnswer::getQuestion)
+                .sorted(java.util.Comparator.comparing(Question::getPosition).thenComparing(Question::getId)).toList();
+        for (Question question : gradedQuestions) {
             AttemptAnswer ans = answerMap.get(question.getId());
 
             Set<Long> selectedOptionIds = ans != null && ans.getSelectedOptions() != null

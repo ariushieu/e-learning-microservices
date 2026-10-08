@@ -54,6 +54,7 @@ public class QuizServiceImpl implements QuizService {
                 .maxAttempts(request.getMaxAttempts() != null ? request.getMaxAttempts() : 3)
                 .shuffleQuestions(Boolean.TRUE.equals(request.getShuffleQuestions()))
                 .shuffleOptions(Boolean.TRUE.equals(request.getShuffleOptions()))
+                .questionsPerAttempt(request.getQuestionsPerAttempt())
                 .status(QuizStatus.DRAFT)
                 .createdBy(createdBy)
                 .build();
@@ -86,6 +87,7 @@ public class QuizServiceImpl implements QuizService {
         }
         quiz.setShuffleQuestions(Boolean.TRUE.equals(request.getShuffleQuestions()));
         quiz.setShuffleOptions(Boolean.TRUE.equals(request.getShuffleOptions()));
+        quiz.setQuestionsPerAttempt(request.getQuestionsPerAttempt());
 
         Quiz updated = quizRepository.save(quiz);
         return QuizResponse.from(updated);
@@ -137,10 +139,15 @@ public class QuizServiceImpl implements QuizService {
         }
 
         QuizDetailResponse detail = QuizDetailResponse.from(quiz, false);
-        if (!quiz.isShuffleQuestions() && !quiz.isShuffleOptions()) return detail;
         // A landing page has no active attempt yet. Never borrow another learner's seed.
         var attempt = attemptRepository.findFirstByQuizIdAndUserIdAndStatus(id, currentUserId, AttemptStatus.IN_PROGRESS);
         if (attempt.isEmpty()) return detail;
+
+        var selected = attempt.get().selectedQuestions();
+        detail.setQuestions(selected.stream().map(q -> QuestionResponse.from(q, false)).toList());
+        detail.setTotalQuestions(selected.size());
+        detail.setTotalScore(selected.stream().map(q -> q.getScore() == null ? BigDecimal.ONE : q.getScore())
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
 
         // Shuffle DTO copies only. Persistent question/option positions remain canonical.
         var random = new Random(attempt.get().getId());

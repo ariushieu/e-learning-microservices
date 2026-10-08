@@ -72,6 +72,7 @@ class QuizAttemptResultIntegrationTest {
 
     private QuizAttempt attempt(AttemptStatus status, long ageSeconds) {
         return attempts.saveAndFlush(QuizAttempt.builder().quiz(quiz).userId(99L)
+                .questionIds(new java.util.HashSet<>(java.util.Set.of(question.getId())))
                 .status(status).startedAt(Instant.now().minusSeconds(ageSeconds)).build());
     }
 

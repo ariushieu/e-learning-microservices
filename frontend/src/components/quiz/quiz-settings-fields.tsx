@@ -18,6 +18,7 @@ export interface QuizSettingsValues {
   maxAttempts: string;
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
+  questionsPerAttempt: string;
 }
 
 export type FieldErrors = Partial<Record<keyof QuizSettingsValues, string>>;
@@ -30,6 +31,7 @@ export const emptyQuizSettings: QuizSettingsValues = {
   maxAttempts: "3",
   shuffleQuestions: false,
   shuffleOptions: false,
+  questionsPerAttempt: "",
 };
 
 export function quizToSettings(quiz: Quiz): QuizSettingsValues {
@@ -41,6 +43,7 @@ export function quizToSettings(quiz: Quiz): QuizSettingsValues {
     maxAttempts: String(quiz.maxAttempts),
     shuffleQuestions: quiz.shuffleQuestions,
     shuffleOptions: quiz.shuffleOptions,
+    questionsPerAttempt: quiz.questionsPerAttempt == null ? "" : String(quiz.questionsPerAttempt),
   };
 }
 
@@ -60,6 +63,9 @@ export function validateQuizSettings(v: QuizSettingsValues): FieldErrors {
     errors.passScore = "Điểm đạt phải từ 0 đến 100";
   }
   if (!isInteger(v.maxAttempts)) errors.maxAttempts = "Số lần làm bài là số nguyên không âm";
+  if (v.questionsPerAttempt.trim() && (!isInteger(v.questionsPerAttempt) || Number(v.questionsPerAttempt) < 1 || Number(v.questionsPerAttempt) > 200)) {
+    errors.questionsPerAttempt = "Số câu mỗi lượt phải là số nguyên từ 1 đến 200";
+  }
   return errors;
 }
 
@@ -72,6 +78,7 @@ export function settingsToPayload(v: QuizSettingsValues) {
     maxAttempts: Number(v.maxAttempts),
     shuffleQuestions: v.shuffleQuestions,
     shuffleOptions: v.shuffleOptions,
+    questionsPerAttempt: v.questionsPerAttempt.trim() ? Number(v.questionsPerAttempt) : null,
   };
 }
 
@@ -97,6 +104,7 @@ export function QuizSettingsFields({
   disabled,
   showShuffle = true,
   compact = false,
+  totalQuestions = 0,
 }: {
   values: QuizSettingsValues;
   errors: FieldErrors;
@@ -104,6 +112,7 @@ export function QuizSettingsFields({
   disabled?: boolean;
   showShuffle?: boolean;
   compact?: boolean;
+  totalQuestions?: number;
 }) {
   const id = useId();
   const set = <K extends keyof QuizSettingsValues>(key: K, value: QuizSettingsValues[K]) =>
@@ -178,6 +187,13 @@ export function QuizSettingsFields({
           />
         </FormField>
       </div>
+      <FormField id={`${id}-draw`} label="Số câu mỗi lượt"
+        hint={`Đề có ${totalQuestions} câu. Để trống hoặc lớn hơn số câu của đề để lấy hết.`}
+        error={errors.questionsPerAttempt}>
+        <Input id={`${id}-draw`} type="number" min={1} max={200} step={1} inputMode="numeric"
+          value={values.questionsPerAttempt} onChange={(e) => set("questionsPerAttempt", e.target.value)}
+          disabled={disabled} aria-invalid={Boolean(errors.questionsPerAttempt)} />
+      </FormField>
       {showShuffle && (
         <div className="space-y-3">
           <div className="flex items-start justify-between gap-4 rounded-lg border p-3">

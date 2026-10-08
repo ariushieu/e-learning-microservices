@@ -11833,6 +11833,1720 @@
           ]
         }
       ]
+    },
+    {
+      "name": "11. Rút câu theo lượt (QUIZ-21)",
+      "description": "Lưu bộ câu lúc bắt đầu; bỏ câu bị xóa, không rút bù; từ chối câu ngoài bộ; điểm và thống kê đúng theo bộ câu. Chạy sau setup ghi danh.",
+      "item": [
+        {
+          "name": "QUIZ-21 chuẩn bị đề 12 câu lấy 5",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"courseId\":\"{{publishedCourseId}}\",\"title\":\"Bộ câu {{runId}}\",\"questionsPerAttempt\":5,\"shuffleQuestions\":true,\"shuffleOptions\":true,\"maxAttempts\":0}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "const d=pm.response.json().data;pm.collectionVariables.set('drawQuizId',d.id);pm.test('Count setting',()=>pm.expect(d.questionsPerAttempt).to.eql(5));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21 thêm câu 1",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/questions",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\":\"Câu ngân hàng 1\",\"type\":\"SINGLE_CHOICE\",\"score\":1,\"position\":1,\"options\":[{\"content\":\"Đúng 1\",\"isCorrect\":true,\"position\":1},{\"content\":\"Sai 1\",\"isCorrect\":false,\"position\":2}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21 thêm câu 2",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/questions",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\":\"Câu ngân hàng 2\",\"type\":\"SINGLE_CHOICE\",\"score\":1,\"position\":2,\"options\":[{\"content\":\"Đúng 2\",\"isCorrect\":true,\"position\":1},{\"content\":\"Sai 2\",\"isCorrect\":false,\"position\":2}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21 thêm câu 3",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/questions",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\":\"Câu ngân hàng 3\",\"type\":\"SINGLE_CHOICE\",\"score\":1,\"position\":3,\"options\":[{\"content\":\"Đúng 3\",\"isCorrect\":true,\"position\":1},{\"content\":\"Sai 3\",\"isCorrect\":false,\"position\":2}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21 thêm câu 4",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/questions",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\":\"Câu ngân hàng 4\",\"type\":\"SINGLE_CHOICE\",\"score\":1,\"position\":4,\"options\":[{\"content\":\"Đúng 4\",\"isCorrect\":true,\"position\":1},{\"content\":\"Sai 4\",\"isCorrect\":false,\"position\":2}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21 thêm câu 5",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/questions",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\":\"Câu ngân hàng 5\",\"type\":\"SINGLE_CHOICE\",\"score\":1,\"position\":5,\"options\":[{\"content\":\"Đúng 5\",\"isCorrect\":true,\"position\":1},{\"content\":\"Sai 5\",\"isCorrect\":false,\"position\":2}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21 thêm câu 6",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/questions",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\":\"Câu ngân hàng 6\",\"type\":\"SINGLE_CHOICE\",\"score\":1,\"position\":6,\"options\":[{\"content\":\"Đúng 6\",\"isCorrect\":true,\"position\":1},{\"content\":\"Sai 6\",\"isCorrect\":false,\"position\":2}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21 thêm câu 7",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/questions",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\":\"Câu ngân hàng 7\",\"type\":\"SINGLE_CHOICE\",\"score\":1,\"position\":7,\"options\":[{\"content\":\"Đúng 7\",\"isCorrect\":true,\"position\":1},{\"content\":\"Sai 7\",\"isCorrect\":false,\"position\":2}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21 thêm câu 8",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/questions",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\":\"Câu ngân hàng 8\",\"type\":\"SINGLE_CHOICE\",\"score\":1,\"position\":8,\"options\":[{\"content\":\"Đúng 8\",\"isCorrect\":true,\"position\":1},{\"content\":\"Sai 8\",\"isCorrect\":false,\"position\":2}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21 thêm câu 9",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/questions",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\":\"Câu ngân hàng 9\",\"type\":\"SINGLE_CHOICE\",\"score\":1,\"position\":9,\"options\":[{\"content\":\"Đúng 9\",\"isCorrect\":true,\"position\":1},{\"content\":\"Sai 9\",\"isCorrect\":false,\"position\":2}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21 thêm câu 10",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/questions",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\":\"Câu ngân hàng 10\",\"type\":\"SINGLE_CHOICE\",\"score\":1,\"position\":10,\"options\":[{\"content\":\"Đúng 10\",\"isCorrect\":true,\"position\":1},{\"content\":\"Sai 10\",\"isCorrect\":false,\"position\":2}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21 thêm câu 11",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/questions",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\":\"Câu ngân hàng 11\",\"type\":\"SINGLE_CHOICE\",\"score\":1,\"position\":11,\"options\":[{\"content\":\"Đúng 11\",\"isCorrect\":true,\"position\":1},{\"content\":\"Sai 11\",\"isCorrect\":false,\"position\":2}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21 thêm câu 12",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/questions",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\":\"Câu ngân hàng 12\",\"type\":\"SINGLE_CHOICE\",\"score\":1,\"position\":12,\"options\":[{\"content\":\"Đúng 12\",\"isCorrect\":true,\"position\":1},{\"content\":\"Sai 12\",\"isCorrect\":false,\"position\":2}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21 xuất bản",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/status",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\":\"PUBLISHED\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21 đề gốc",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const d=pm.response.json().data;pm.collectionVariables.set('drawBank',JSON.stringify(d.questions));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21 bắt đầu",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/attempts",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "const d=pm.response.json().data;pm.collectionVariables.set('drawAttempt',d.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.1 Bộ câu cố định lần 1",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/take",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const d=pm.response.json().data;const order=q=>q.questions.map(x=>[x.id,...x.options.map(o=>o.id)]);pm.test('Five questions, five points',()=>{pm.expect(d.totalQuestions).to.eql(5);pm.expect(d.totalScore).to.eql(5);pm.expect(d.questions).to.have.length(5);});pm.collectionVariables.set('drawOrder',JSON.stringify(order(d)));pm.collectionVariables.set('drawIds',JSON.stringify(d.questions.map(q=>q.id)));const ids=d.questions.map(q=>q.id);const bank=JSON.parse(pm.collectionVariables.get('drawBank'));const answers=bank.filter(q=>ids.includes(q.id)).map(q=>({questionId:q.id,selectedOptionIds:q.options.filter(o=>o.isCorrect).map(o=>o.id)}));pm.collectionVariables.set('drawAnswers',JSON.stringify({answers}));pm.collectionVariables.set('drawDeleteId',ids[0]);pm.test('No correct answers',()=>pm.expect(pm.response.text()).to.not.include('isCorrect'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.1 Bộ câu cố định lần 2",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/take",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const d=pm.response.json().data;const order=q=>q.questions.map(x=>[x.id,...x.options.map(o=>o.id)]);pm.test('Five questions, five points',()=>{pm.expect(d.totalQuestions).to.eql(5);pm.expect(d.totalScore).to.eql(5);pm.expect(d.questions).to.have.length(5);});pm.test('Stable membership and order',()=>pm.expect(JSON.stringify(order(d))).to.eql(pm.collectionVariables.get('drawOrder')));pm.test('No correct answers',()=>pm.expect(pm.response.text()).to.not.include('isCorrect'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.1 Bộ câu cố định lần 3",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/take",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const d=pm.response.json().data;const order=q=>q.questions.map(x=>[x.id,...x.options.map(o=>o.id)]);pm.test('Five questions, five points',()=>{pm.expect(d.totalQuestions).to.eql(5);pm.expect(d.totalScore).to.eql(5);pm.expect(d.questions).to.have.length(5);});pm.test('Stable membership and order',()=>pm.expect(JSON.stringify(order(d))).to.eql(pm.collectionVariables.get('drawOrder')));pm.test('No correct answers',()=>pm.expect(pm.response.text()).to.not.include('isCorrect'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.1 Bộ câu cố định lần 4",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/take",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const d=pm.response.json().data;const order=q=>q.questions.map(x=>[x.id,...x.options.map(o=>o.id)]);pm.test('Five questions, five points',()=>{pm.expect(d.totalQuestions).to.eql(5);pm.expect(d.totalScore).to.eql(5);pm.expect(d.questions).to.have.length(5);});pm.test('Stable membership and order',()=>pm.expect(JSON.stringify(order(d))).to.eql(pm.collectionVariables.get('drawOrder')));pm.test('No correct answers',()=>pm.expect(pm.response.text()).to.not.include('isCorrect'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.1 Bộ câu cố định lần 5",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/take",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const d=pm.response.json().data;const order=q=>q.questions.map(x=>[x.id,...x.options.map(o=>o.id)]);pm.test('Five questions, five points',()=>{pm.expect(d.totalQuestions).to.eql(5);pm.expect(d.totalScore).to.eql(5);pm.expect(d.questions).to.have.length(5);});pm.test('Stable membership and order',()=>pm.expect(JSON.stringify(order(d))).to.eql(pm.collectionVariables.get('drawOrder')));pm.test('No correct answers',()=>pm.expect(pm.response.text()).to.not.include('isCorrect'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.2 Resume cùng lượt",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/attempts",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "const d=pm.response.json().data;pm.test('Same attempt',()=>pm.expect(d.id).to.eql(pm.collectionVariables.get('drawAttempt')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.3 Câu ngoài bộ trả 400",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/attempts/{{drawAttempt}}/submit",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{{drawOutsideBody}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const bank=JSON.parse(pm.collectionVariables.get('drawBank')),ids=JSON.parse(pm.collectionVariables.get('drawIds'));const q=bank.find(q=>!ids.includes(q.id));pm.variables.set('drawOutsideBody',JSON.stringify({answers:[{questionId:q.id,selectedOptionIds:[]}]}));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.4 Đổi số câu không rút lại lượt đang làm",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\":\"Bộ câu {{runId}}\",\"questionsPerAttempt\":12,\"shuffleQuestions\":true,\"shuffleOptions\":true,\"maxAttempts\":0}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.4b Vẫn cùng 5 câu",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/take",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const d=pm.response.json().data;const order=q=>q.questions.map(x=>[x.id,...x.options.map(o=>o.id)]);pm.test('Frozen draw after setting change',()=>pm.expect(JSON.stringify(order(d))).to.eql(pm.collectionVariables.get('drawOrder')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.5 Xóa câu đang được làm",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/questions/{{drawDeleteId}}",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.5b Không rút bù câu",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/take",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const d=pm.response.json().data;pm.test('Four surviving questions and points',()=>{pm.expect(d.questions).to.have.length(4);pm.expect(d.totalScore).to.eql(4);pm.expect(d.questions.map(q=>q.id).sort()).to.eql(JSON.parse(pm.collectionVariables.get('drawIds')).filter(id=>id!==pm.collectionVariables.get('drawDeleteId')).sort());});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.6 Nộp đúng cả bộ kể cả đáp án câu đã xóa",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/attempts/{{drawAttempt}}/submit",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{{drawAnswers}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const d=pm.response.json().data;pm.test('Surviving questions score 100',()=>{pm.expect(d.score).to.eql(100);pm.expect(d.questionResults).to.have.length(4);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.7 Kết quả chỉ 4 câu đã chấm",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/attempts/{{drawAttempt}}",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const d=pm.response.json().data;pm.test('Only graded subset',()=>{pm.expect(d.questionResults).to.have.length(4);pm.expect(d.score).to.eql(100);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.8 Thống kê chia theo lượt gặp câu",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/results",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const d=pm.response.json().data;pm.test('Encounter denominators',()=>{const seen=JSON.parse(pm.collectionVariables.get('drawIds'));d.summary.questions.forEach(q=>{pm.expect(q.gradedAnswers).to.eql(seen.includes(q.questionId)?1:0);pm.expect(q.correctRate).to.eql(seen.includes(q.questionId)?100:0);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21 đặt lại số câu 5",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\":\"Bộ câu {{runId}}\",\"questionsPerAttempt\":5,\"shuffleQuestions\":true,\"shuffleOptions\":true,\"maxAttempts\":0}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.9 Lượt mới",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/attempts",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "const d=pm.response.json().data;pm.test('New attempt',()=>pm.expect(d.id).to.not.eql(pm.collectionVariables.get('drawAttempt')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.9b Bộ câu mới từ ngân hàng còn lại",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/take",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const d=pm.response.json().data;pm.test('New five-question set excludes deleted ID',()=>{pm.expect(d.questions).to.have.length(5);pm.expect(d.questions.map(q=>q.id)).to.not.include(pm.collectionVariables.get('drawDeleteId'));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.10 Từ chối số câu 0",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\":\"Bộ câu\",\"questionsPerAttempt\":0}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.10 Từ chối số câu -1",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\":\"Bộ câu\",\"questionsPerAttempt\":-1}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.10 Từ chối số câu 201",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\":\"Bộ câu\",\"questionsPerAttempt\":201}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.11 B không sửa cài đặt",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\":\"Bộ câu\",\"questionsPerAttempt\":2}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403',()=>pm.response.to.have.status(403));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.12 Để trống lấy hết",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\":\"Bộ câu {{runId}}\",\"questionsPerAttempt\":null,\"maxAttempts\":0}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const d=pm.response.json().data;pm.test('Null stored',()=>pm.expect(d.questionsPerAttempt).to.eql(null));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.12b A làm thử nhận hết",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/attempts",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-21.12c Đủ 11 câu còn lại",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{drawQuizId}}/take",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const d=pm.response.json().data;pm.test('Full bank',()=>pm.expect(d.questions).to.have.length(11));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

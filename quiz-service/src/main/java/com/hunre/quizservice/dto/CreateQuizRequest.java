@@ -3,6 +3,7 @@ package com.hunre.quizservice.dto;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -48,5 +49,9 @@ public class CreateQuizRequest {
 
     @Builder.Default
     private Boolean shuffleOptions = false;
+
+    @Min(value = 1, message = "Số câu mỗi lượt phải từ 1 đến 200")
+    @Max(value = 200, message = "Số câu mỗi lượt phải từ 1 đến 200")
+    private Integer questionsPerAttempt;
 
 }

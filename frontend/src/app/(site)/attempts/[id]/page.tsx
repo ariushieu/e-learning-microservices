@@ -155,7 +155,7 @@ export default async function AttemptResultPage({ params }: PageProps<"/attempts
         ) : (
           <div className="space-y-4">
             {questions.map((q, i) => (
-              <QuestionResultCard key={q.questionId} q={q} index={i} />
+              <QuestionResultCard key={q.questionId} q={q} index={i} total={questions.length} />
             ))}
           </div>
         )}
@@ -164,7 +164,7 @@ export default async function AttemptResultPage({ params }: PageProps<"/attempts
   );
 }
 
-function QuestionResultCard({ q, index }: { q: QuestionResult; index: number }) {
+function QuestionResultCard({ q, index, total }: { q: QuestionResult; index: number; total: number }) {
   const correct = isQuestionCorrect(q);
   const selected = new Set((q.selectedOptionIds ?? []).map(Number));
   const right = new Set((q.correctOptionIds ?? []).map(Number));
@@ -175,7 +175,7 @@ function QuestionResultCard({ q, index }: { q: QuestionResult; index: number }) 
     <Card>
       <CardHeader className="gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-subheading">Câu {index + 1}</span>
+          <span className="text-subheading">Câu {index + 1}/{total}</span>
           <QuestionTypeTag type={q.type} />
           <Badge variant="outline" className={cn("border-0", TONE_CLASSES[tone].soft)}>
             {correct ? <CheckIcon /> : <XIcon />}

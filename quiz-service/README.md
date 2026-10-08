@@ -259,3 +259,30 @@ trước khi thử lại để tránh trùng câu.
   đây chưa phải tính năng lưu bản chụp đề cho từng lượt.
 - Nhóm 10 của collection và `QuizShuffleIntegrationTest` kiểm luồng này. Xem
   [biên bản QUIZ-20](../docs/test-cases/ket-qua/quiz-shuffle.md).
+
+## Rút câu cho mỗi lượt làm (QUIZ-21)
+
+- `questionsPerAttempt` nhận null hoặc số nguyên 1–200. Null, bằng hoặc lớn hơn số câu
+  hiện có thì lấy hết. Ô “Số câu mỗi lượt” trong web cho phép xóa trống để lưu null và
+  hiện “Đề có M câu”. Số thứ tự trong màn làm bài/kết quả là “Câu k/N” của lượt đó.
+- Khi bắt đầu, lưu lượt để có id, dùng `new Random(attemptId)` chọn N câu rồi lưu ID vào
+  `attempt_questions` trong cùng transaction. Resume và `/take` chỉ đọc danh sách đã lưu;
+  đổi số câu mỗi lượt hoặc thêm câu vào ngân hàng không làm rút lại lượt đang dở.
+- Khi chưa bắt đầu, `/take` vẫn trả ngân hàng không có đáp án như trước. Sau khi bắt đầu,
+  chỉ trả các câu được chọn còn tồn tại; `totalQuestions` và `totalScore` tính trên bộ này.
+  Hai cờ xáo của QUIZ-20 vẫn áp dụng. Seed mới có thể ngẫu nhiên cho cùng tập câu; không
+  hứa loại bỏ tuyệt đối mọi câu trùng giữa các lượt.
+- **Xóa giữa lượt:** theo ca kiểm trong phân công và lựa chọn của người phụ trách, giữ ID
+  đã chọn, không rút bù. Bỏ câu đã xóa khỏi đề và tổng điểm. Request cũ gửi cả đáp án câu
+  vừa xóa vẫn được nộp; phần đó bị bỏ qua. Nếu toàn bộ bộ câu bị xóa, trả 422 và không phát
+  sự kiện chấm điểm. Nội dung/cài đặt câu sửa dùng bản hiện tại, không chụp nội dung đề.
+- Xóa câu dùng cờ `deleted`: khỏi ngân hàng, danh sách và thống kê; hàng dữ liệu còn lại
+  để lịch sử đã nộp vẫn xem được và không vướng khóa ngoại. Kết quả chỉ hiện các câu đã
+  chấm trong lượt, không hiện câu mới thêm sau đó. Không thể sửa/xóa lại câu đã xóa (404).
+- Gửi ID câu không thuộc bộ đã lưu trả **400**, không lưu đáp án/điểm/outbox. Điểm phần
+  trăm dùng tổng điểm câu còn lại trong bộ. Câu bỏ trống vẫn sai. Thống kê đúng từng câu
+  dùng số đáp án thực sự được chấm cho câu đó; chưa có lượt gặp thì web ghi “Chưa có lượt nào”.
+- V6 thêm cài đặt, cờ xóa và bảng bộ câu. Lượt cũ đang dở được gắn toàn bộ ngân hàng tại
+  lúc nâng cấp; lượt đã đóng lấy ID từ đáp án đã chấm. Không sửa migration V1–V5.
+- Chạy nhóm 11 của collection sau setup; xem [QUIZ-21](../docs/test-cases/quiz.md#quiz-21--rút-câu-theo-lượt)
+  và [biên bản](../docs/test-cases/ket-qua/quiz-draw.md).

@@ -93,7 +93,7 @@ export default async function QuizPage({ params }: PageProps<"/quizzes/[id]">) {
       description={quiz.description ? <span className="whitespace-pre-line">{quiz.description}</span> : undefined}
       meta={
         <>
-          <HeroMeta icon={<ClipboardListIcon />}>{quiz.questions.length} câu hỏi</HeroMeta>
+          <HeroMeta icon={<ClipboardListIcon />}>{inProgress ? quiz.questions.length : Math.min(quiz.questionsPerAttempt ?? quiz.questions.length, quiz.questions.length)} câu hỏi</HeroMeta>
           <HeroMeta icon={<ClockIcon />}>{quiz.timeLimitMinutes ? `${quiz.timeLimitMinutes} phút` : "Không giới hạn thời gian"}</HeroMeta>
           <HeroMeta icon={<TargetIcon />}>Điểm đạt {formatScore(quiz.passScore)}</HeroMeta>
           <HeroMeta icon={<RepeatIcon />}>{quiz.maxAttempts > 0 ? `Tối đa ${quiz.maxAttempts} lượt` : "Không giới hạn lượt"}</HeroMeta>

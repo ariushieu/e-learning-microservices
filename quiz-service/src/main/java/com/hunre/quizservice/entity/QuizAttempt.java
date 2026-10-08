@@ -2,6 +2,8 @@ package com.hunre.quizservice.entity;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -25,6 +27,8 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 @Entity
 @Table(
@@ -82,6 +86,17 @@ public class QuizAttempt {
     @Builder.Default
     @OneToMany(mappedBy = "attempt", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AttemptAnswer> answers = new ArrayList<>();
+
+    @Builder.Default
+    @ElementCollection
+    @CollectionTable(name = "attempt_questions", joinColumns = @JoinColumn(name = "attempt_id"))
+    @Column(name = "question_id", nullable = false)
+    private Set<Long> questionIds = new HashSet<>();
+
+    /** Authored order, restricted to the persisted draw; deleted questions are not replaced. */
+    public List<Question> selectedQuestions() {
+        return quiz.getQuestions().stream().filter(q -> questionIds.contains(q.getId())).toList();
+    }
 
     @PrePersist
     public void prePersist() {

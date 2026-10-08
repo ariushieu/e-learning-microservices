@@ -72,6 +72,7 @@ export function QuizSettingsForm({ quiz }: { quiz: Quiz }) {
             errors={errors}
             onChange={setValues}
             disabled={saving || archived}
+            totalQuestions={quiz.totalQuestions}
             compact
           />
         </CardContent>

@@ -140,7 +140,7 @@ export default async function ResultsPage({ params, searchParams }: PageProps<"/
                     <TableCell className="whitespace-normal break-words">{i + 1}. {question.content}</TableCell>
                     <TableCell className="tabular-nums">{formatNumber(question.gradedAnswers)}</TableCell>
                     <TableCell className="whitespace-normal tabular-nums">
-                      {question.gradedAnswers === 0 ? "Chưa có dữ liệu" : `${formatNumber(question.correctRate, 2)}%`}
+                      {question.gradedAnswers === 0 ? "Chưa có lượt nào" : `${formatNumber(question.correctRate, 2)}%`}
                       {low && <span className="mt-1 block text-caption text-warning-strong">Cần xem xét</span>}
                     </TableCell>
                   </TableRow>

@@ -1,0 +1,12 @@
+old_quizzes	null_count
+49	49
+status	selected_rows
+IN_PROGRESS	34
+SUBMITTED	94
+version	success
+1	1
+2	1
+3	1
+4	1
+5	1
+6	1
