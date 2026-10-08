@@ -1,0 +1,23 @@
+{
+  "tag": "reviews-ui-1791421608092",
+  "courseId": 352,
+  "checks": [
+    "Khách thấy trạng thái rỗng và lời mời đăng nhập, không thấy form ghi",
+    "Chưa chọn sao không gửi form",
+    "Gửi 5 sao qua form, điểm và số lượt cập nhật",
+    "Nhận xét hiển thị dạng văn bản, không thực thi script",
+    "Form của mình vẫn hiện khi đánh giá nằm ngoài trang đầu",
+    "Phân trang nhận xét không trùng và giữ form của mình",
+    "Sửa điểm giữ số lượt, làm tròn trung bình chính xác",
+    "Lỗi API hiện thông báo và giữ nội dung đang viết",
+    "Form và danh sách không tràn ngang tại 375px",
+    "Form và danh sách không tràn ngang tại 768px",
+    "Form và danh sách không tràn ngang tại 1366px",
+    "Hủy hộp xác nhận không xóa nhận xét",
+    "Xóa qua hộp xác nhận cập nhật điểm và mở lại form tạo",
+    "Thẻ khóa học công khai có điểm và số lượt mới",
+    "Chủ khóa chưa ghi danh cũng không có form đánh giá",
+    "Không có lỗi JavaScript"
+  ],
+  "errors": []
+}

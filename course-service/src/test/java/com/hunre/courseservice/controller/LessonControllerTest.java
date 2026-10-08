@@ -15,6 +15,10 @@ import com.hunre.sharedcommon.security.Roles;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import tools.jackson.databind.ObjectMapper;
+import java.util.Map;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -28,6 +32,7 @@ import java.util.Set;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -37,6 +42,35 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @ExtendWith(MockitoExtension.class)
 class LessonControllerTest {
+
+    @ParameterizedTest
+    @ValueSource(strings = {"javascript:alert(1)", "JaVaScRiPt:alert(1)", "data:text/html,test",
+            "file:///tmp/test", "ftp://example.com/a", "//example.com/a", "/a.pdf", "https://",
+            "https:example.com/a", "https:///example.com", "https://example.com/a b",
+            "https://user:password@example.com/a", "https://example.com:99999/a",
+            "https://example.com\\evil", " https://example.com", "https://example.com\n"})
+    void addResource_rejectsUnsafeOrMalformedUrl(String url) throws Exception {
+        mockMvc.perform(post("/api/lessons/100/resources")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(Map.of("name", "Tài liệu", "fileUrl", url))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.fieldErrors[0].field").value("fileUrl"));
+        verifyNoInteractions(curriculumService);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"http://example.com/a.pdf", "https://example.com/a.pdf?q=a%20b#page=2",
+            "HTTPS://example.com/a", "http://localhost:8080/a", "https://[::1]/a"})
+    void addResource_acceptsHttpAndHttps(String url) throws Exception {
+        mockMvc.perform(post("/api/lessons/100/resources")
+                        .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, instructor)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(Map.of("name", "Tài liệu", "fileUrl", url))))
+                .andExpect(status().isCreated());
+        verify(curriculumService).addResource(eq(100L), any(CreateLessonResourceRequest.class), eq(1L), eq(false));
+    }
 
     private MockMvc mockMvc;
     private AuthenticatedUser instructor;

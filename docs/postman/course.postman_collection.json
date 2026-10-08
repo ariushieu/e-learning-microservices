@@ -25356,6 +25356,1147 @@
           ]
         }
       ]
+    },
+    {
+      "name": "COURSE-26 — URL tài liệu đính kèm",
+      "item": [
+        {
+          "name": "COURSE-26.1 URL HTTPS hợp lệ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/lessons/{{urlLessonId}}/resources",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"URL HTTPS hợp lệ\",\n  \"fileUrl\": \"https://example.com/slides.pdf\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mong đợi theo course.md: 201; đọc lại đúng liên kết. Dùng fixture riêng cho thao tác làm thay đổi/xóa dữ liệu."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async () => {",
+                  "",
+                  "const cv = pm.collectionVariables;",
+                  "const get = (key) => cv.get(key);",
+                  "const set = (key,value) => cv.set(key,value);",
+                  "const id = (key) => Number(get(key));",
+                  "const unique = () => get('runId') + '-' + pm.variables.replaceIn('{{$guid}}').slice(0,8);",
+                  "async function call(method, url, body, who='tokenA', expected=200) {",
+                  "  const header = {'Content-Type':'application/json'};",
+                  "  if (who) header.Authorization = 'Bearer ' + get(who);",
+                  "  const response = await new Promise((resolve,reject)=>pm.sendRequest({method,url:get('baseUrl')+url,header,...(body === undefined ? {} : {body:{mode:'raw',raw:JSON.stringify(body)}})},(error,response)=>error?reject(error):resolve(response)));",
+                  "  pm.expect(response.code,method+' '+url).to.eql(expected);",
+                  "  const json = response.json();",
+                  "  pm.expect(json.success,method+' '+url+' success').to.eql(expected < 400);",
+                  "  return json.data;",
+                  "}",
+                  "const categoryBody = () => ({name:'QA '+unique(),slug:'qa-'+unique(),position:0});",
+                  "const courseBody = () => ({categoryId:id('categoryId'),title:'Khoa QA '+unique(),slug:'khoa-qa-'+unique(),level:'BEGINNER',language:'vi',price:0});",
+                  "const sectionBody = () => ({title:'Chuong QA',position:1});",
+                  "const lessonBody = () => ({title:'Bai QA',type:'ARTICLE',durationSeconds:60,position:1,isPreview:true,content:'Noi dung xem thu QA',contentUrl:'https://example.com/preview'});",
+                  "const resourceBody = () => ({name:'Tai lieu QA',fileUrl:'https://example.com/qa.pdf'});",
+                  "async function category(body=categoryBody()) { return call('POST','/api/categories',body,'tokenA',201); }",
+                  "async function course(body=courseBody(),who='tokenA') { return call('POST','/api/courses',body,who,201); }",
+                  "async function section(courseId=id('publishedCourseId')) { return call('POST','/api/courses/'+courseId+'/sections',sectionBody(),'tokenA',201); }",
+                  "async function lesson(sectionId=id('sectionAId'),body=lessonBody()) { return call('POST','/api/sections/'+sectionId+'/lessons',body,'tokenA',201); }",
+                  "async function resource(lessonId=id('lessonAId')) { return call('POST','/api/lessons/'+lessonId+'/resources',resourceBody(),'tokenA',201); }",
+                  "async function status(courseId,value) { return call('PATCH','/api/courses/'+courseId+'/status',{status:value}); }",
+                  "async function eventually(fn, message) {",
+                  "  let last;",
+                  "  for (let n=0;n<30;n++) { try { return await fn(); } catch(e) { last=e; await new Promise(resolve=>setTimeout(resolve,1000)); } }",
+                  "  throw new Error(message+': '+last.message);",
+                  "}",
+                  "",
+                  "try {",
+                  "const sec=await section(id('reviewCourseId')); const l=await lesson(sec.id);set('urlLessonId',l.id);",
+                  "} catch(e) { pm.test('Chuẩn bị dữ liệu thành công',()=>{throw e;}); pm.execution.setNextRequest(null); pm.execution.skipRequest(); }",
+                  "})().catch(error => { pm.test('Script chạy thành công', () => { throw error; }); pm.execution.setNextRequest(null); });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async () => {",
+                  "",
+                  "const cv = pm.collectionVariables;",
+                  "const get = (key) => cv.get(key);",
+                  "const set = (key,value) => cv.set(key,value);",
+                  "const id = (key) => Number(get(key));",
+                  "const unique = () => get('runId') + '-' + pm.variables.replaceIn('{{$guid}}').slice(0,8);",
+                  "async function call(method, url, body, who='tokenA', expected=200) {",
+                  "  const header = {'Content-Type':'application/json'};",
+                  "  if (who) header.Authorization = 'Bearer ' + get(who);",
+                  "  const response = await new Promise((resolve,reject)=>pm.sendRequest({method,url:get('baseUrl')+url,header,...(body === undefined ? {} : {body:{mode:'raw',raw:JSON.stringify(body)}})},(error,response)=>error?reject(error):resolve(response)));",
+                  "  pm.expect(response.code,method+' '+url).to.eql(expected);",
+                  "  const json = response.json();",
+                  "  pm.expect(json.success,method+' '+url+' success').to.eql(expected < 400);",
+                  "  return json.data;",
+                  "}",
+                  "const categoryBody = () => ({name:'QA '+unique(),slug:'qa-'+unique(),position:0});",
+                  "const courseBody = () => ({categoryId:id('categoryId'),title:'Khoa QA '+unique(),slug:'khoa-qa-'+unique(),level:'BEGINNER',language:'vi',price:0});",
+                  "const sectionBody = () => ({title:'Chuong QA',position:1});",
+                  "const lessonBody = () => ({title:'Bai QA',type:'ARTICLE',durationSeconds:60,position:1,isPreview:true,content:'Noi dung xem thu QA',contentUrl:'https://example.com/preview'});",
+                  "const resourceBody = () => ({name:'Tai lieu QA',fileUrl:'https://example.com/qa.pdf'});",
+                  "async function category(body=categoryBody()) { return call('POST','/api/categories',body,'tokenA',201); }",
+                  "async function course(body=courseBody(),who='tokenA') { return call('POST','/api/courses',body,who,201); }",
+                  "async function section(courseId=id('publishedCourseId')) { return call('POST','/api/courses/'+courseId+'/sections',sectionBody(),'tokenA',201); }",
+                  "async function lesson(sectionId=id('sectionAId'),body=lessonBody()) { return call('POST','/api/sections/'+sectionId+'/lessons',body,'tokenA',201); }",
+                  "async function resource(lessonId=id('lessonAId')) { return call('POST','/api/lessons/'+lessonId+'/resources',resourceBody(),'tokenA',201); }",
+                  "async function status(courseId,value) { return call('PATCH','/api/courses/'+courseId+'/status',{status:value}); }",
+                  "async function eventually(fn, message) {",
+                  "  let last;",
+                  "  for (let n=0;n<30;n++) { try { return await fn(); } catch(e) { last=e; await new Promise(resolve=>setTimeout(resolve,1000)); } }",
+                  "  throw new Error(message+': '+last.message);",
+                  "}",
+                  "",
+                  "pm.test('HTTP 201',()=>pm.expect(pm.response.code).to.be.oneOf([201]));",
+                  "const json = pm.response.json();",
+                  "const d = json.data;",
+                  "if (!pm.request.url.toString().includes('/actuator/health')) {",
+                  "  pm.test('Vỏ response đúng',()=>{pm.expect(json.success).to.eql(pm.response.code < 400); if(pm.response.code >= 400) { pm.expect(json.code).to.be.a('string'); pm.expect(json.message).to.be.a('string'); }});",
+                  "}",
+                  "try { set('urlResourceId',d.id); const l=await call('GET','/api/lessons/'+id('urlLessonId'));pm.test('Đọc đúng liên kết',()=>pm.expect(l.resources.some(r=>r.id===d.id&&r.fileUrl===d.fileUrl)).eql(true)); } catch(e) { pm.test('Nghiệp vụ đúng',()=>{throw e;}); }",
+                  "",
+                  "})().catch(error => { pm.test('Script chạy thành công', () => { throw error; }); pm.execution.setNextRequest(null); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COURSE-26.2 URL HTTP hợp lệ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/lessons/{{urlLessonId}}/resources",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"URL HTTP hợp lệ\",\n  \"fileUrl\": \"http://example.com/a.pdf\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mong đợi theo course.md: 201; đọc lại đúng liên kết. Dùng fixture riêng cho thao tác làm thay đổi/xóa dữ liệu."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async () => {",
+                  "",
+                  "const cv = pm.collectionVariables;",
+                  "const get = (key) => cv.get(key);",
+                  "const set = (key,value) => cv.set(key,value);",
+                  "const id = (key) => Number(get(key));",
+                  "const unique = () => get('runId') + '-' + pm.variables.replaceIn('{{$guid}}').slice(0,8);",
+                  "async function call(method, url, body, who='tokenA', expected=200) {",
+                  "  const header = {'Content-Type':'application/json'};",
+                  "  if (who) header.Authorization = 'Bearer ' + get(who);",
+                  "  const response = await new Promise((resolve,reject)=>pm.sendRequest({method,url:get('baseUrl')+url,header,...(body === undefined ? {} : {body:{mode:'raw',raw:JSON.stringify(body)}})},(error,response)=>error?reject(error):resolve(response)));",
+                  "  pm.expect(response.code,method+' '+url).to.eql(expected);",
+                  "  const json = response.json();",
+                  "  pm.expect(json.success,method+' '+url+' success').to.eql(expected < 400);",
+                  "  return json.data;",
+                  "}",
+                  "const categoryBody = () => ({name:'QA '+unique(),slug:'qa-'+unique(),position:0});",
+                  "const courseBody = () => ({categoryId:id('categoryId'),title:'Khoa QA '+unique(),slug:'khoa-qa-'+unique(),level:'BEGINNER',language:'vi',price:0});",
+                  "const sectionBody = () => ({title:'Chuong QA',position:1});",
+                  "const lessonBody = () => ({title:'Bai QA',type:'ARTICLE',durationSeconds:60,position:1,isPreview:true,content:'Noi dung xem thu QA',contentUrl:'https://example.com/preview'});",
+                  "const resourceBody = () => ({name:'Tai lieu QA',fileUrl:'https://example.com/qa.pdf'});",
+                  "async function category(body=categoryBody()) { return call('POST','/api/categories',body,'tokenA',201); }",
+                  "async function course(body=courseBody(),who='tokenA') { return call('POST','/api/courses',body,who,201); }",
+                  "async function section(courseId=id('publishedCourseId')) { return call('POST','/api/courses/'+courseId+'/sections',sectionBody(),'tokenA',201); }",
+                  "async function lesson(sectionId=id('sectionAId'),body=lessonBody()) { return call('POST','/api/sections/'+sectionId+'/lessons',body,'tokenA',201); }",
+                  "async function resource(lessonId=id('lessonAId')) { return call('POST','/api/lessons/'+lessonId+'/resources',resourceBody(),'tokenA',201); }",
+                  "async function status(courseId,value) { return call('PATCH','/api/courses/'+courseId+'/status',{status:value}); }",
+                  "async function eventually(fn, message) {",
+                  "  let last;",
+                  "  for (let n=0;n<30;n++) { try { return await fn(); } catch(e) { last=e; await new Promise(resolve=>setTimeout(resolve,1000)); } }",
+                  "  throw new Error(message+': '+last.message);",
+                  "}",
+                  "",
+                  "pm.test('HTTP 201',()=>pm.expect(pm.response.code).to.be.oneOf([201]));",
+                  "const json = pm.response.json();",
+                  "const d = json.data;",
+                  "if (!pm.request.url.toString().includes('/actuator/health')) {",
+                  "  pm.test('Vỏ response đúng',()=>{pm.expect(json.success).to.eql(pm.response.code < 400); if(pm.response.code >= 400) { pm.expect(json.code).to.be.a('string'); pm.expect(json.message).to.be.a('string'); }});",
+                  "}",
+                  "try { set('urlResourceId',d.id); const l=await call('GET','/api/lessons/'+id('urlLessonId'));pm.test('Đọc đúng liên kết',()=>pm.expect(l.resources.some(r=>r.id===d.id&&r.fileUrl===d.fileUrl)).eql(true)); } catch(e) { pm.test('Nghiệp vụ đúng',()=>{throw e;}); }",
+                  "",
+                  "})().catch(error => { pm.test('Script chạy thành công', () => { throw error; }); pm.execution.setNextRequest(null); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COURSE-26.3 Chặn javascript",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/lessons/{{urlLessonId}}/resources",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Chặn javascript\",\n  \"fileUrl\": \"javascript:alert(1)\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mong đợi theo course.md: 400; VALIDATION_FAILED, fieldErrors.fileUrl; không lưu. Dùng fixture riêng cho thao tác làm thay đổi/xóa dữ liệu."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async () => {",
+                  "",
+                  "const cv = pm.collectionVariables;",
+                  "const get = (key) => cv.get(key);",
+                  "const set = (key,value) => cv.set(key,value);",
+                  "const id = (key) => Number(get(key));",
+                  "const unique = () => get('runId') + '-' + pm.variables.replaceIn('{{$guid}}').slice(0,8);",
+                  "async function call(method, url, body, who='tokenA', expected=200) {",
+                  "  const header = {'Content-Type':'application/json'};",
+                  "  if (who) header.Authorization = 'Bearer ' + get(who);",
+                  "  const response = await new Promise((resolve,reject)=>pm.sendRequest({method,url:get('baseUrl')+url,header,...(body === undefined ? {} : {body:{mode:'raw',raw:JSON.stringify(body)}})},(error,response)=>error?reject(error):resolve(response)));",
+                  "  pm.expect(response.code,method+' '+url).to.eql(expected);",
+                  "  const json = response.json();",
+                  "  pm.expect(json.success,method+' '+url+' success').to.eql(expected < 400);",
+                  "  return json.data;",
+                  "}",
+                  "const categoryBody = () => ({name:'QA '+unique(),slug:'qa-'+unique(),position:0});",
+                  "const courseBody = () => ({categoryId:id('categoryId'),title:'Khoa QA '+unique(),slug:'khoa-qa-'+unique(),level:'BEGINNER',language:'vi',price:0});",
+                  "const sectionBody = () => ({title:'Chuong QA',position:1});",
+                  "const lessonBody = () => ({title:'Bai QA',type:'ARTICLE',durationSeconds:60,position:1,isPreview:true,content:'Noi dung xem thu QA',contentUrl:'https://example.com/preview'});",
+                  "const resourceBody = () => ({name:'Tai lieu QA',fileUrl:'https://example.com/qa.pdf'});",
+                  "async function category(body=categoryBody()) { return call('POST','/api/categories',body,'tokenA',201); }",
+                  "async function course(body=courseBody(),who='tokenA') { return call('POST','/api/courses',body,who,201); }",
+                  "async function section(courseId=id('publishedCourseId')) { return call('POST','/api/courses/'+courseId+'/sections',sectionBody(),'tokenA',201); }",
+                  "async function lesson(sectionId=id('sectionAId'),body=lessonBody()) { return call('POST','/api/sections/'+sectionId+'/lessons',body,'tokenA',201); }",
+                  "async function resource(lessonId=id('lessonAId')) { return call('POST','/api/lessons/'+lessonId+'/resources',resourceBody(),'tokenA',201); }",
+                  "async function status(courseId,value) { return call('PATCH','/api/courses/'+courseId+'/status',{status:value}); }",
+                  "async function eventually(fn, message) {",
+                  "  let last;",
+                  "  for (let n=0;n<30;n++) { try { return await fn(); } catch(e) { last=e; await new Promise(resolve=>setTimeout(resolve,1000)); } }",
+                  "  throw new Error(message+': '+last.message);",
+                  "}",
+                  "",
+                  "pm.test('HTTP 400',()=>pm.expect(pm.response.code).to.be.oneOf([400]));",
+                  "const json = pm.response.json();",
+                  "const d = json.data;",
+                  "if (!pm.request.url.toString().includes('/actuator/health')) {",
+                  "  pm.test('Vỏ response đúng',()=>{pm.expect(json.success).to.eql(pm.response.code < 400); if(pm.response.code >= 400) { pm.expect(json.code).to.be.a('string'); pm.expect(json.message).to.be.a('string'); }});",
+                  "}",
+                  "try { pm.test('Lỗi nằm ở ô URL',()=>{pm.expect(json.code).eql('VALIDATION_FAILED');pm.expect(json.fieldErrors.some(e=>e.field==='fileUrl')).eql(true);}); const l=await call('GET','/api/lessons/'+id('urlLessonId'));pm.test('Không lưu URL sai',()=>pm.expect(l.resources.length).eql(2)); } catch(e) { pm.test('Nghiệp vụ đúng',()=>{throw e;}); }",
+                  "",
+                  "})().catch(error => { pm.test('Script chạy thành công', () => { throw error; }); pm.execution.setNextRequest(null); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COURSE-26.4 Chặn giao thức trộn hoa thường",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/lessons/{{urlLessonId}}/resources",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Chặn giao thức trộn hoa thường\",\n  \"fileUrl\": \"JaVaScRiPt:alert(1)\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mong đợi theo course.md: 400; VALIDATION_FAILED, fieldErrors.fileUrl; không lưu. Dùng fixture riêng cho thao tác làm thay đổi/xóa dữ liệu."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async () => {",
+                  "",
+                  "const cv = pm.collectionVariables;",
+                  "const get = (key) => cv.get(key);",
+                  "const set = (key,value) => cv.set(key,value);",
+                  "const id = (key) => Number(get(key));",
+                  "const unique = () => get('runId') + '-' + pm.variables.replaceIn('{{$guid}}').slice(0,8);",
+                  "async function call(method, url, body, who='tokenA', expected=200) {",
+                  "  const header = {'Content-Type':'application/json'};",
+                  "  if (who) header.Authorization = 'Bearer ' + get(who);",
+                  "  const response = await new Promise((resolve,reject)=>pm.sendRequest({method,url:get('baseUrl')+url,header,...(body === undefined ? {} : {body:{mode:'raw',raw:JSON.stringify(body)}})},(error,response)=>error?reject(error):resolve(response)));",
+                  "  pm.expect(response.code,method+' '+url).to.eql(expected);",
+                  "  const json = response.json();",
+                  "  pm.expect(json.success,method+' '+url+' success').to.eql(expected < 400);",
+                  "  return json.data;",
+                  "}",
+                  "const categoryBody = () => ({name:'QA '+unique(),slug:'qa-'+unique(),position:0});",
+                  "const courseBody = () => ({categoryId:id('categoryId'),title:'Khoa QA '+unique(),slug:'khoa-qa-'+unique(),level:'BEGINNER',language:'vi',price:0});",
+                  "const sectionBody = () => ({title:'Chuong QA',position:1});",
+                  "const lessonBody = () => ({title:'Bai QA',type:'ARTICLE',durationSeconds:60,position:1,isPreview:true,content:'Noi dung xem thu QA',contentUrl:'https://example.com/preview'});",
+                  "const resourceBody = () => ({name:'Tai lieu QA',fileUrl:'https://example.com/qa.pdf'});",
+                  "async function category(body=categoryBody()) { return call('POST','/api/categories',body,'tokenA',201); }",
+                  "async function course(body=courseBody(),who='tokenA') { return call('POST','/api/courses',body,who,201); }",
+                  "async function section(courseId=id('publishedCourseId')) { return call('POST','/api/courses/'+courseId+'/sections',sectionBody(),'tokenA',201); }",
+                  "async function lesson(sectionId=id('sectionAId'),body=lessonBody()) { return call('POST','/api/sections/'+sectionId+'/lessons',body,'tokenA',201); }",
+                  "async function resource(lessonId=id('lessonAId')) { return call('POST','/api/lessons/'+lessonId+'/resources',resourceBody(),'tokenA',201); }",
+                  "async function status(courseId,value) { return call('PATCH','/api/courses/'+courseId+'/status',{status:value}); }",
+                  "async function eventually(fn, message) {",
+                  "  let last;",
+                  "  for (let n=0;n<30;n++) { try { return await fn(); } catch(e) { last=e; await new Promise(resolve=>setTimeout(resolve,1000)); } }",
+                  "  throw new Error(message+': '+last.message);",
+                  "}",
+                  "",
+                  "pm.test('HTTP 400',()=>pm.expect(pm.response.code).to.be.oneOf([400]));",
+                  "const json = pm.response.json();",
+                  "const d = json.data;",
+                  "if (!pm.request.url.toString().includes('/actuator/health')) {",
+                  "  pm.test('Vỏ response đúng',()=>{pm.expect(json.success).to.eql(pm.response.code < 400); if(pm.response.code >= 400) { pm.expect(json.code).to.be.a('string'); pm.expect(json.message).to.be.a('string'); }});",
+                  "}",
+                  "try { pm.test('Lỗi nằm ở ô URL',()=>{pm.expect(json.code).eql('VALIDATION_FAILED');pm.expect(json.fieldErrors.some(e=>e.field==='fileUrl')).eql(true);}); const l=await call('GET','/api/lessons/'+id('urlLessonId'));pm.test('Không lưu URL sai',()=>pm.expect(l.resources.length).eql(2)); } catch(e) { pm.test('Nghiệp vụ đúng',()=>{throw e;}); }",
+                  "",
+                  "})().catch(error => { pm.test('Script chạy thành công', () => { throw error; }); pm.execution.setNextRequest(null); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COURSE-26.5 Chặn data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/lessons/{{urlLessonId}}/resources",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Chặn data\",\n  \"fileUrl\": \"data:text/html,test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mong đợi theo course.md: 400; VALIDATION_FAILED, fieldErrors.fileUrl; không lưu. Dùng fixture riêng cho thao tác làm thay đổi/xóa dữ liệu."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async () => {",
+                  "",
+                  "const cv = pm.collectionVariables;",
+                  "const get = (key) => cv.get(key);",
+                  "const set = (key,value) => cv.set(key,value);",
+                  "const id = (key) => Number(get(key));",
+                  "const unique = () => get('runId') + '-' + pm.variables.replaceIn('{{$guid}}').slice(0,8);",
+                  "async function call(method, url, body, who='tokenA', expected=200) {",
+                  "  const header = {'Content-Type':'application/json'};",
+                  "  if (who) header.Authorization = 'Bearer ' + get(who);",
+                  "  const response = await new Promise((resolve,reject)=>pm.sendRequest({method,url:get('baseUrl')+url,header,...(body === undefined ? {} : {body:{mode:'raw',raw:JSON.stringify(body)}})},(error,response)=>error?reject(error):resolve(response)));",
+                  "  pm.expect(response.code,method+' '+url).to.eql(expected);",
+                  "  const json = response.json();",
+                  "  pm.expect(json.success,method+' '+url+' success').to.eql(expected < 400);",
+                  "  return json.data;",
+                  "}",
+                  "const categoryBody = () => ({name:'QA '+unique(),slug:'qa-'+unique(),position:0});",
+                  "const courseBody = () => ({categoryId:id('categoryId'),title:'Khoa QA '+unique(),slug:'khoa-qa-'+unique(),level:'BEGINNER',language:'vi',price:0});",
+                  "const sectionBody = () => ({title:'Chuong QA',position:1});",
+                  "const lessonBody = () => ({title:'Bai QA',type:'ARTICLE',durationSeconds:60,position:1,isPreview:true,content:'Noi dung xem thu QA',contentUrl:'https://example.com/preview'});",
+                  "const resourceBody = () => ({name:'Tai lieu QA',fileUrl:'https://example.com/qa.pdf'});",
+                  "async function category(body=categoryBody()) { return call('POST','/api/categories',body,'tokenA',201); }",
+                  "async function course(body=courseBody(),who='tokenA') { return call('POST','/api/courses',body,who,201); }",
+                  "async function section(courseId=id('publishedCourseId')) { return call('POST','/api/courses/'+courseId+'/sections',sectionBody(),'tokenA',201); }",
+                  "async function lesson(sectionId=id('sectionAId'),body=lessonBody()) { return call('POST','/api/sections/'+sectionId+'/lessons',body,'tokenA',201); }",
+                  "async function resource(lessonId=id('lessonAId')) { return call('POST','/api/lessons/'+lessonId+'/resources',resourceBody(),'tokenA',201); }",
+                  "async function status(courseId,value) { return call('PATCH','/api/courses/'+courseId+'/status',{status:value}); }",
+                  "async function eventually(fn, message) {",
+                  "  let last;",
+                  "  for (let n=0;n<30;n++) { try { return await fn(); } catch(e) { last=e; await new Promise(resolve=>setTimeout(resolve,1000)); } }",
+                  "  throw new Error(message+': '+last.message);",
+                  "}",
+                  "",
+                  "pm.test('HTTP 400',()=>pm.expect(pm.response.code).to.be.oneOf([400]));",
+                  "const json = pm.response.json();",
+                  "const d = json.data;",
+                  "if (!pm.request.url.toString().includes('/actuator/health')) {",
+                  "  pm.test('Vỏ response đúng',()=>{pm.expect(json.success).to.eql(pm.response.code < 400); if(pm.response.code >= 400) { pm.expect(json.code).to.be.a('string'); pm.expect(json.message).to.be.a('string'); }});",
+                  "}",
+                  "try { pm.test('Lỗi nằm ở ô URL',()=>{pm.expect(json.code).eql('VALIDATION_FAILED');pm.expect(json.fieldErrors.some(e=>e.field==='fileUrl')).eql(true);}); const l=await call('GET','/api/lessons/'+id('urlLessonId'));pm.test('Không lưu URL sai',()=>pm.expect(l.resources.length).eql(2)); } catch(e) { pm.test('Nghiệp vụ đúng',()=>{throw e;}); }",
+                  "",
+                  "})().catch(error => { pm.test('Script chạy thành công', () => { throw error; }); pm.execution.setNextRequest(null); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COURSE-26.6 Chặn file",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/lessons/{{urlLessonId}}/resources",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Chặn file\",\n  \"fileUrl\": \"file:///tmp/a\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mong đợi theo course.md: 400; VALIDATION_FAILED, fieldErrors.fileUrl; không lưu. Dùng fixture riêng cho thao tác làm thay đổi/xóa dữ liệu."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async () => {",
+                  "",
+                  "const cv = pm.collectionVariables;",
+                  "const get = (key) => cv.get(key);",
+                  "const set = (key,value) => cv.set(key,value);",
+                  "const id = (key) => Number(get(key));",
+                  "const unique = () => get('runId') + '-' + pm.variables.replaceIn('{{$guid}}').slice(0,8);",
+                  "async function call(method, url, body, who='tokenA', expected=200) {",
+                  "  const header = {'Content-Type':'application/json'};",
+                  "  if (who) header.Authorization = 'Bearer ' + get(who);",
+                  "  const response = await new Promise((resolve,reject)=>pm.sendRequest({method,url:get('baseUrl')+url,header,...(body === undefined ? {} : {body:{mode:'raw',raw:JSON.stringify(body)}})},(error,response)=>error?reject(error):resolve(response)));",
+                  "  pm.expect(response.code,method+' '+url).to.eql(expected);",
+                  "  const json = response.json();",
+                  "  pm.expect(json.success,method+' '+url+' success').to.eql(expected < 400);",
+                  "  return json.data;",
+                  "}",
+                  "const categoryBody = () => ({name:'QA '+unique(),slug:'qa-'+unique(),position:0});",
+                  "const courseBody = () => ({categoryId:id('categoryId'),title:'Khoa QA '+unique(),slug:'khoa-qa-'+unique(),level:'BEGINNER',language:'vi',price:0});",
+                  "const sectionBody = () => ({title:'Chuong QA',position:1});",
+                  "const lessonBody = () => ({title:'Bai QA',type:'ARTICLE',durationSeconds:60,position:1,isPreview:true,content:'Noi dung xem thu QA',contentUrl:'https://example.com/preview'});",
+                  "const resourceBody = () => ({name:'Tai lieu QA',fileUrl:'https://example.com/qa.pdf'});",
+                  "async function category(body=categoryBody()) { return call('POST','/api/categories',body,'tokenA',201); }",
+                  "async function course(body=courseBody(),who='tokenA') { return call('POST','/api/courses',body,who,201); }",
+                  "async function section(courseId=id('publishedCourseId')) { return call('POST','/api/courses/'+courseId+'/sections',sectionBody(),'tokenA',201); }",
+                  "async function lesson(sectionId=id('sectionAId'),body=lessonBody()) { return call('POST','/api/sections/'+sectionId+'/lessons',body,'tokenA',201); }",
+                  "async function resource(lessonId=id('lessonAId')) { return call('POST','/api/lessons/'+lessonId+'/resources',resourceBody(),'tokenA',201); }",
+                  "async function status(courseId,value) { return call('PATCH','/api/courses/'+courseId+'/status',{status:value}); }",
+                  "async function eventually(fn, message) {",
+                  "  let last;",
+                  "  for (let n=0;n<30;n++) { try { return await fn(); } catch(e) { last=e; await new Promise(resolve=>setTimeout(resolve,1000)); } }",
+                  "  throw new Error(message+': '+last.message);",
+                  "}",
+                  "",
+                  "pm.test('HTTP 400',()=>pm.expect(pm.response.code).to.be.oneOf([400]));",
+                  "const json = pm.response.json();",
+                  "const d = json.data;",
+                  "if (!pm.request.url.toString().includes('/actuator/health')) {",
+                  "  pm.test('Vỏ response đúng',()=>{pm.expect(json.success).to.eql(pm.response.code < 400); if(pm.response.code >= 400) { pm.expect(json.code).to.be.a('string'); pm.expect(json.message).to.be.a('string'); }});",
+                  "}",
+                  "try { pm.test('Lỗi nằm ở ô URL',()=>{pm.expect(json.code).eql('VALIDATION_FAILED');pm.expect(json.fieldErrors.some(e=>e.field==='fileUrl')).eql(true);}); const l=await call('GET','/api/lessons/'+id('urlLessonId'));pm.test('Không lưu URL sai',()=>pm.expect(l.resources.length).eql(2)); } catch(e) { pm.test('Nghiệp vụ đúng',()=>{throw e;}); }",
+                  "",
+                  "})().catch(error => { pm.test('Script chạy thành công', () => { throw error; }); pm.execution.setNextRequest(null); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COURSE-26.7 Chặn FTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/lessons/{{urlLessonId}}/resources",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Chặn FTP\",\n  \"fileUrl\": \"ftp://example.com/a\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mong đợi theo course.md: 400; VALIDATION_FAILED, fieldErrors.fileUrl; không lưu. Dùng fixture riêng cho thao tác làm thay đổi/xóa dữ liệu."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async () => {",
+                  "",
+                  "const cv = pm.collectionVariables;",
+                  "const get = (key) => cv.get(key);",
+                  "const set = (key,value) => cv.set(key,value);",
+                  "const id = (key) => Number(get(key));",
+                  "const unique = () => get('runId') + '-' + pm.variables.replaceIn('{{$guid}}').slice(0,8);",
+                  "async function call(method, url, body, who='tokenA', expected=200) {",
+                  "  const header = {'Content-Type':'application/json'};",
+                  "  if (who) header.Authorization = 'Bearer ' + get(who);",
+                  "  const response = await new Promise((resolve,reject)=>pm.sendRequest({method,url:get('baseUrl')+url,header,...(body === undefined ? {} : {body:{mode:'raw',raw:JSON.stringify(body)}})},(error,response)=>error?reject(error):resolve(response)));",
+                  "  pm.expect(response.code,method+' '+url).to.eql(expected);",
+                  "  const json = response.json();",
+                  "  pm.expect(json.success,method+' '+url+' success').to.eql(expected < 400);",
+                  "  return json.data;",
+                  "}",
+                  "const categoryBody = () => ({name:'QA '+unique(),slug:'qa-'+unique(),position:0});",
+                  "const courseBody = () => ({categoryId:id('categoryId'),title:'Khoa QA '+unique(),slug:'khoa-qa-'+unique(),level:'BEGINNER',language:'vi',price:0});",
+                  "const sectionBody = () => ({title:'Chuong QA',position:1});",
+                  "const lessonBody = () => ({title:'Bai QA',type:'ARTICLE',durationSeconds:60,position:1,isPreview:true,content:'Noi dung xem thu QA',contentUrl:'https://example.com/preview'});",
+                  "const resourceBody = () => ({name:'Tai lieu QA',fileUrl:'https://example.com/qa.pdf'});",
+                  "async function category(body=categoryBody()) { return call('POST','/api/categories',body,'tokenA',201); }",
+                  "async function course(body=courseBody(),who='tokenA') { return call('POST','/api/courses',body,who,201); }",
+                  "async function section(courseId=id('publishedCourseId')) { return call('POST','/api/courses/'+courseId+'/sections',sectionBody(),'tokenA',201); }",
+                  "async function lesson(sectionId=id('sectionAId'),body=lessonBody()) { return call('POST','/api/sections/'+sectionId+'/lessons',body,'tokenA',201); }",
+                  "async function resource(lessonId=id('lessonAId')) { return call('POST','/api/lessons/'+lessonId+'/resources',resourceBody(),'tokenA',201); }",
+                  "async function status(courseId,value) { return call('PATCH','/api/courses/'+courseId+'/status',{status:value}); }",
+                  "async function eventually(fn, message) {",
+                  "  let last;",
+                  "  for (let n=0;n<30;n++) { try { return await fn(); } catch(e) { last=e; await new Promise(resolve=>setTimeout(resolve,1000)); } }",
+                  "  throw new Error(message+': '+last.message);",
+                  "}",
+                  "",
+                  "pm.test('HTTP 400',()=>pm.expect(pm.response.code).to.be.oneOf([400]));",
+                  "const json = pm.response.json();",
+                  "const d = json.data;",
+                  "if (!pm.request.url.toString().includes('/actuator/health')) {",
+                  "  pm.test('Vỏ response đúng',()=>{pm.expect(json.success).to.eql(pm.response.code < 400); if(pm.response.code >= 400) { pm.expect(json.code).to.be.a('string'); pm.expect(json.message).to.be.a('string'); }});",
+                  "}",
+                  "try { pm.test('Lỗi nằm ở ô URL',()=>{pm.expect(json.code).eql('VALIDATION_FAILED');pm.expect(json.fieldErrors.some(e=>e.field==='fileUrl')).eql(true);}); const l=await call('GET','/api/lessons/'+id('urlLessonId'));pm.test('Không lưu URL sai',()=>pm.expect(l.resources.length).eql(2)); } catch(e) { pm.test('Nghiệp vụ đúng',()=>{throw e;}); }",
+                  "",
+                  "})().catch(error => { pm.test('Script chạy thành công', () => { throw error; }); pm.execution.setNextRequest(null); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COURSE-26.8 Chặn URL tương đối",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/lessons/{{urlLessonId}}/resources",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Chặn URL tương đối\",\n  \"fileUrl\": \"/a.pdf\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mong đợi theo course.md: 400; VALIDATION_FAILED, fieldErrors.fileUrl; không lưu. Dùng fixture riêng cho thao tác làm thay đổi/xóa dữ liệu."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async () => {",
+                  "",
+                  "const cv = pm.collectionVariables;",
+                  "const get = (key) => cv.get(key);",
+                  "const set = (key,value) => cv.set(key,value);",
+                  "const id = (key) => Number(get(key));",
+                  "const unique = () => get('runId') + '-' + pm.variables.replaceIn('{{$guid}}').slice(0,8);",
+                  "async function call(method, url, body, who='tokenA', expected=200) {",
+                  "  const header = {'Content-Type':'application/json'};",
+                  "  if (who) header.Authorization = 'Bearer ' + get(who);",
+                  "  const response = await new Promise((resolve,reject)=>pm.sendRequest({method,url:get('baseUrl')+url,header,...(body === undefined ? {} : {body:{mode:'raw',raw:JSON.stringify(body)}})},(error,response)=>error?reject(error):resolve(response)));",
+                  "  pm.expect(response.code,method+' '+url).to.eql(expected);",
+                  "  const json = response.json();",
+                  "  pm.expect(json.success,method+' '+url+' success').to.eql(expected < 400);",
+                  "  return json.data;",
+                  "}",
+                  "const categoryBody = () => ({name:'QA '+unique(),slug:'qa-'+unique(),position:0});",
+                  "const courseBody = () => ({categoryId:id('categoryId'),title:'Khoa QA '+unique(),slug:'khoa-qa-'+unique(),level:'BEGINNER',language:'vi',price:0});",
+                  "const sectionBody = () => ({title:'Chuong QA',position:1});",
+                  "const lessonBody = () => ({title:'Bai QA',type:'ARTICLE',durationSeconds:60,position:1,isPreview:true,content:'Noi dung xem thu QA',contentUrl:'https://example.com/preview'});",
+                  "const resourceBody = () => ({name:'Tai lieu QA',fileUrl:'https://example.com/qa.pdf'});",
+                  "async function category(body=categoryBody()) { return call('POST','/api/categories',body,'tokenA',201); }",
+                  "async function course(body=courseBody(),who='tokenA') { return call('POST','/api/courses',body,who,201); }",
+                  "async function section(courseId=id('publishedCourseId')) { return call('POST','/api/courses/'+courseId+'/sections',sectionBody(),'tokenA',201); }",
+                  "async function lesson(sectionId=id('sectionAId'),body=lessonBody()) { return call('POST','/api/sections/'+sectionId+'/lessons',body,'tokenA',201); }",
+                  "async function resource(lessonId=id('lessonAId')) { return call('POST','/api/lessons/'+lessonId+'/resources',resourceBody(),'tokenA',201); }",
+                  "async function status(courseId,value) { return call('PATCH','/api/courses/'+courseId+'/status',{status:value}); }",
+                  "async function eventually(fn, message) {",
+                  "  let last;",
+                  "  for (let n=0;n<30;n++) { try { return await fn(); } catch(e) { last=e; await new Promise(resolve=>setTimeout(resolve,1000)); } }",
+                  "  throw new Error(message+': '+last.message);",
+                  "}",
+                  "",
+                  "pm.test('HTTP 400',()=>pm.expect(pm.response.code).to.be.oneOf([400]));",
+                  "const json = pm.response.json();",
+                  "const d = json.data;",
+                  "if (!pm.request.url.toString().includes('/actuator/health')) {",
+                  "  pm.test('Vỏ response đúng',()=>{pm.expect(json.success).to.eql(pm.response.code < 400); if(pm.response.code >= 400) { pm.expect(json.code).to.be.a('string'); pm.expect(json.message).to.be.a('string'); }});",
+                  "}",
+                  "try { pm.test('Lỗi nằm ở ô URL',()=>{pm.expect(json.code).eql('VALIDATION_FAILED');pm.expect(json.fieldErrors.some(e=>e.field==='fileUrl')).eql(true);}); const l=await call('GET','/api/lessons/'+id('urlLessonId'));pm.test('Không lưu URL sai',()=>pm.expect(l.resources.length).eql(2)); } catch(e) { pm.test('Nghiệp vụ đúng',()=>{throw e;}); }",
+                  "",
+                  "})().catch(error => { pm.test('Script chạy thành công', () => { throw error; }); pm.execution.setNextRequest(null); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COURSE-26.9 Chặn thiếu giao thức",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/lessons/{{urlLessonId}}/resources",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Chặn thiếu giao thức\",\n  \"fileUrl\": \"//example.com/a\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mong đợi theo course.md: 400; VALIDATION_FAILED, fieldErrors.fileUrl; không lưu. Dùng fixture riêng cho thao tác làm thay đổi/xóa dữ liệu."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async () => {",
+                  "",
+                  "const cv = pm.collectionVariables;",
+                  "const get = (key) => cv.get(key);",
+                  "const set = (key,value) => cv.set(key,value);",
+                  "const id = (key) => Number(get(key));",
+                  "const unique = () => get('runId') + '-' + pm.variables.replaceIn('{{$guid}}').slice(0,8);",
+                  "async function call(method, url, body, who='tokenA', expected=200) {",
+                  "  const header = {'Content-Type':'application/json'};",
+                  "  if (who) header.Authorization = 'Bearer ' + get(who);",
+                  "  const response = await new Promise((resolve,reject)=>pm.sendRequest({method,url:get('baseUrl')+url,header,...(body === undefined ? {} : {body:{mode:'raw',raw:JSON.stringify(body)}})},(error,response)=>error?reject(error):resolve(response)));",
+                  "  pm.expect(response.code,method+' '+url).to.eql(expected);",
+                  "  const json = response.json();",
+                  "  pm.expect(json.success,method+' '+url+' success').to.eql(expected < 400);",
+                  "  return json.data;",
+                  "}",
+                  "const categoryBody = () => ({name:'QA '+unique(),slug:'qa-'+unique(),position:0});",
+                  "const courseBody = () => ({categoryId:id('categoryId'),title:'Khoa QA '+unique(),slug:'khoa-qa-'+unique(),level:'BEGINNER',language:'vi',price:0});",
+                  "const sectionBody = () => ({title:'Chuong QA',position:1});",
+                  "const lessonBody = () => ({title:'Bai QA',type:'ARTICLE',durationSeconds:60,position:1,isPreview:true,content:'Noi dung xem thu QA',contentUrl:'https://example.com/preview'});",
+                  "const resourceBody = () => ({name:'Tai lieu QA',fileUrl:'https://example.com/qa.pdf'});",
+                  "async function category(body=categoryBody()) { return call('POST','/api/categories',body,'tokenA',201); }",
+                  "async function course(body=courseBody(),who='tokenA') { return call('POST','/api/courses',body,who,201); }",
+                  "async function section(courseId=id('publishedCourseId')) { return call('POST','/api/courses/'+courseId+'/sections',sectionBody(),'tokenA',201); }",
+                  "async function lesson(sectionId=id('sectionAId'),body=lessonBody()) { return call('POST','/api/sections/'+sectionId+'/lessons',body,'tokenA',201); }",
+                  "async function resource(lessonId=id('lessonAId')) { return call('POST','/api/lessons/'+lessonId+'/resources',resourceBody(),'tokenA',201); }",
+                  "async function status(courseId,value) { return call('PATCH','/api/courses/'+courseId+'/status',{status:value}); }",
+                  "async function eventually(fn, message) {",
+                  "  let last;",
+                  "  for (let n=0;n<30;n++) { try { return await fn(); } catch(e) { last=e; await new Promise(resolve=>setTimeout(resolve,1000)); } }",
+                  "  throw new Error(message+': '+last.message);",
+                  "}",
+                  "",
+                  "pm.test('HTTP 400',()=>pm.expect(pm.response.code).to.be.oneOf([400]));",
+                  "const json = pm.response.json();",
+                  "const d = json.data;",
+                  "if (!pm.request.url.toString().includes('/actuator/health')) {",
+                  "  pm.test('Vỏ response đúng',()=>{pm.expect(json.success).to.eql(pm.response.code < 400); if(pm.response.code >= 400) { pm.expect(json.code).to.be.a('string'); pm.expect(json.message).to.be.a('string'); }});",
+                  "}",
+                  "try { pm.test('Lỗi nằm ở ô URL',()=>{pm.expect(json.code).eql('VALIDATION_FAILED');pm.expect(json.fieldErrors.some(e=>e.field==='fileUrl')).eql(true);}); const l=await call('GET','/api/lessons/'+id('urlLessonId'));pm.test('Không lưu URL sai',()=>pm.expect(l.resources.length).eql(2)); } catch(e) { pm.test('Nghiệp vụ đúng',()=>{throw e;}); }",
+                  "",
+                  "})().catch(error => { pm.test('Script chạy thành công', () => { throw error; }); pm.execution.setNextRequest(null); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COURSE-26.10 Chặn thiếu host",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/lessons/{{urlLessonId}}/resources",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Chặn thiếu host\",\n  \"fileUrl\": \"https://\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mong đợi theo course.md: 400; VALIDATION_FAILED, fieldErrors.fileUrl; không lưu. Dùng fixture riêng cho thao tác làm thay đổi/xóa dữ liệu."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async () => {",
+                  "",
+                  "const cv = pm.collectionVariables;",
+                  "const get = (key) => cv.get(key);",
+                  "const set = (key,value) => cv.set(key,value);",
+                  "const id = (key) => Number(get(key));",
+                  "const unique = () => get('runId') + '-' + pm.variables.replaceIn('{{$guid}}').slice(0,8);",
+                  "async function call(method, url, body, who='tokenA', expected=200) {",
+                  "  const header = {'Content-Type':'application/json'};",
+                  "  if (who) header.Authorization = 'Bearer ' + get(who);",
+                  "  const response = await new Promise((resolve,reject)=>pm.sendRequest({method,url:get('baseUrl')+url,header,...(body === undefined ? {} : {body:{mode:'raw',raw:JSON.stringify(body)}})},(error,response)=>error?reject(error):resolve(response)));",
+                  "  pm.expect(response.code,method+' '+url).to.eql(expected);",
+                  "  const json = response.json();",
+                  "  pm.expect(json.success,method+' '+url+' success').to.eql(expected < 400);",
+                  "  return json.data;",
+                  "}",
+                  "const categoryBody = () => ({name:'QA '+unique(),slug:'qa-'+unique(),position:0});",
+                  "const courseBody = () => ({categoryId:id('categoryId'),title:'Khoa QA '+unique(),slug:'khoa-qa-'+unique(),level:'BEGINNER',language:'vi',price:0});",
+                  "const sectionBody = () => ({title:'Chuong QA',position:1});",
+                  "const lessonBody = () => ({title:'Bai QA',type:'ARTICLE',durationSeconds:60,position:1,isPreview:true,content:'Noi dung xem thu QA',contentUrl:'https://example.com/preview'});",
+                  "const resourceBody = () => ({name:'Tai lieu QA',fileUrl:'https://example.com/qa.pdf'});",
+                  "async function category(body=categoryBody()) { return call('POST','/api/categories',body,'tokenA',201); }",
+                  "async function course(body=courseBody(),who='tokenA') { return call('POST','/api/courses',body,who,201); }",
+                  "async function section(courseId=id('publishedCourseId')) { return call('POST','/api/courses/'+courseId+'/sections',sectionBody(),'tokenA',201); }",
+                  "async function lesson(sectionId=id('sectionAId'),body=lessonBody()) { return call('POST','/api/sections/'+sectionId+'/lessons',body,'tokenA',201); }",
+                  "async function resource(lessonId=id('lessonAId')) { return call('POST','/api/lessons/'+lessonId+'/resources',resourceBody(),'tokenA',201); }",
+                  "async function status(courseId,value) { return call('PATCH','/api/courses/'+courseId+'/status',{status:value}); }",
+                  "async function eventually(fn, message) {",
+                  "  let last;",
+                  "  for (let n=0;n<30;n++) { try { return await fn(); } catch(e) { last=e; await new Promise(resolve=>setTimeout(resolve,1000)); } }",
+                  "  throw new Error(message+': '+last.message);",
+                  "}",
+                  "",
+                  "pm.test('HTTP 400',()=>pm.expect(pm.response.code).to.be.oneOf([400]));",
+                  "const json = pm.response.json();",
+                  "const d = json.data;",
+                  "if (!pm.request.url.toString().includes('/actuator/health')) {",
+                  "  pm.test('Vỏ response đúng',()=>{pm.expect(json.success).to.eql(pm.response.code < 400); if(pm.response.code >= 400) { pm.expect(json.code).to.be.a('string'); pm.expect(json.message).to.be.a('string'); }});",
+                  "}",
+                  "try { pm.test('Lỗi nằm ở ô URL',()=>{pm.expect(json.code).eql('VALIDATION_FAILED');pm.expect(json.fieldErrors.some(e=>e.field==='fileUrl')).eql(true);}); const l=await call('GET','/api/lessons/'+id('urlLessonId'));pm.test('Không lưu URL sai',()=>pm.expect(l.resources.length).eql(2)); } catch(e) { pm.test('Nghiệp vụ đúng',()=>{throw e;}); }",
+                  "",
+                  "})().catch(error => { pm.test('Script chạy thành công', () => { throw error; }); pm.execution.setNextRequest(null); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COURSE-26.11 Chặn URL chứa khoảng trắng",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/lessons/{{urlLessonId}}/resources",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Chặn URL chứa khoảng trắng\",\n  \"fileUrl\": \"https://example.com/a b\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mong đợi theo course.md: 400; VALIDATION_FAILED, fieldErrors.fileUrl; không lưu. Dùng fixture riêng cho thao tác làm thay đổi/xóa dữ liệu."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async () => {",
+                  "",
+                  "const cv = pm.collectionVariables;",
+                  "const get = (key) => cv.get(key);",
+                  "const set = (key,value) => cv.set(key,value);",
+                  "const id = (key) => Number(get(key));",
+                  "const unique = () => get('runId') + '-' + pm.variables.replaceIn('{{$guid}}').slice(0,8);",
+                  "async function call(method, url, body, who='tokenA', expected=200) {",
+                  "  const header = {'Content-Type':'application/json'};",
+                  "  if (who) header.Authorization = 'Bearer ' + get(who);",
+                  "  const response = await new Promise((resolve,reject)=>pm.sendRequest({method,url:get('baseUrl')+url,header,...(body === undefined ? {} : {body:{mode:'raw',raw:JSON.stringify(body)}})},(error,response)=>error?reject(error):resolve(response)));",
+                  "  pm.expect(response.code,method+' '+url).to.eql(expected);",
+                  "  const json = response.json();",
+                  "  pm.expect(json.success,method+' '+url+' success').to.eql(expected < 400);",
+                  "  return json.data;",
+                  "}",
+                  "const categoryBody = () => ({name:'QA '+unique(),slug:'qa-'+unique(),position:0});",
+                  "const courseBody = () => ({categoryId:id('categoryId'),title:'Khoa QA '+unique(),slug:'khoa-qa-'+unique(),level:'BEGINNER',language:'vi',price:0});",
+                  "const sectionBody = () => ({title:'Chuong QA',position:1});",
+                  "const lessonBody = () => ({title:'Bai QA',type:'ARTICLE',durationSeconds:60,position:1,isPreview:true,content:'Noi dung xem thu QA',contentUrl:'https://example.com/preview'});",
+                  "const resourceBody = () => ({name:'Tai lieu QA',fileUrl:'https://example.com/qa.pdf'});",
+                  "async function category(body=categoryBody()) { return call('POST','/api/categories',body,'tokenA',201); }",
+                  "async function course(body=courseBody(),who='tokenA') { return call('POST','/api/courses',body,who,201); }",
+                  "async function section(courseId=id('publishedCourseId')) { return call('POST','/api/courses/'+courseId+'/sections',sectionBody(),'tokenA',201); }",
+                  "async function lesson(sectionId=id('sectionAId'),body=lessonBody()) { return call('POST','/api/sections/'+sectionId+'/lessons',body,'tokenA',201); }",
+                  "async function resource(lessonId=id('lessonAId')) { return call('POST','/api/lessons/'+lessonId+'/resources',resourceBody(),'tokenA',201); }",
+                  "async function status(courseId,value) { return call('PATCH','/api/courses/'+courseId+'/status',{status:value}); }",
+                  "async function eventually(fn, message) {",
+                  "  let last;",
+                  "  for (let n=0;n<30;n++) { try { return await fn(); } catch(e) { last=e; await new Promise(resolve=>setTimeout(resolve,1000)); } }",
+                  "  throw new Error(message+': '+last.message);",
+                  "}",
+                  "",
+                  "pm.test('HTTP 400',()=>pm.expect(pm.response.code).to.be.oneOf([400]));",
+                  "const json = pm.response.json();",
+                  "const d = json.data;",
+                  "if (!pm.request.url.toString().includes('/actuator/health')) {",
+                  "  pm.test('Vỏ response đúng',()=>{pm.expect(json.success).to.eql(pm.response.code < 400); if(pm.response.code >= 400) { pm.expect(json.code).to.be.a('string'); pm.expect(json.message).to.be.a('string'); }});",
+                  "}",
+                  "try { pm.test('Lỗi nằm ở ô URL',()=>{pm.expect(json.code).eql('VALIDATION_FAILED');pm.expect(json.fieldErrors.some(e=>e.field==='fileUrl')).eql(true);}); const l=await call('GET','/api/lessons/'+id('urlLessonId'));pm.test('Không lưu URL sai',()=>pm.expect(l.resources.length).eql(2)); } catch(e) { pm.test('Nghiệp vụ đúng',()=>{throw e;}); }",
+                  "",
+                  "})().catch(error => { pm.test('Script chạy thành công', () => { throw error; }); pm.execution.setNextRequest(null); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COURSE-26.12 Chặn thông tin đăng nhập trong URL",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/lessons/{{urlLessonId}}/resources",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Chặn thông tin đăng nhập trong URL\",\n  \"fileUrl\": \"https://u:p@example.com/a\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mong đợi theo course.md: 400; VALIDATION_FAILED, fieldErrors.fileUrl; không lưu. Dùng fixture riêng cho thao tác làm thay đổi/xóa dữ liệu."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async () => {",
+                  "",
+                  "const cv = pm.collectionVariables;",
+                  "const get = (key) => cv.get(key);",
+                  "const set = (key,value) => cv.set(key,value);",
+                  "const id = (key) => Number(get(key));",
+                  "const unique = () => get('runId') + '-' + pm.variables.replaceIn('{{$guid}}').slice(0,8);",
+                  "async function call(method, url, body, who='tokenA', expected=200) {",
+                  "  const header = {'Content-Type':'application/json'};",
+                  "  if (who) header.Authorization = 'Bearer ' + get(who);",
+                  "  const response = await new Promise((resolve,reject)=>pm.sendRequest({method,url:get('baseUrl')+url,header,...(body === undefined ? {} : {body:{mode:'raw',raw:JSON.stringify(body)}})},(error,response)=>error?reject(error):resolve(response)));",
+                  "  pm.expect(response.code,method+' '+url).to.eql(expected);",
+                  "  const json = response.json();",
+                  "  pm.expect(json.success,method+' '+url+' success').to.eql(expected < 400);",
+                  "  return json.data;",
+                  "}",
+                  "const categoryBody = () => ({name:'QA '+unique(),slug:'qa-'+unique(),position:0});",
+                  "const courseBody = () => ({categoryId:id('categoryId'),title:'Khoa QA '+unique(),slug:'khoa-qa-'+unique(),level:'BEGINNER',language:'vi',price:0});",
+                  "const sectionBody = () => ({title:'Chuong QA',position:1});",
+                  "const lessonBody = () => ({title:'Bai QA',type:'ARTICLE',durationSeconds:60,position:1,isPreview:true,content:'Noi dung xem thu QA',contentUrl:'https://example.com/preview'});",
+                  "const resourceBody = () => ({name:'Tai lieu QA',fileUrl:'https://example.com/qa.pdf'});",
+                  "async function category(body=categoryBody()) { return call('POST','/api/categories',body,'tokenA',201); }",
+                  "async function course(body=courseBody(),who='tokenA') { return call('POST','/api/courses',body,who,201); }",
+                  "async function section(courseId=id('publishedCourseId')) { return call('POST','/api/courses/'+courseId+'/sections',sectionBody(),'tokenA',201); }",
+                  "async function lesson(sectionId=id('sectionAId'),body=lessonBody()) { return call('POST','/api/sections/'+sectionId+'/lessons',body,'tokenA',201); }",
+                  "async function resource(lessonId=id('lessonAId')) { return call('POST','/api/lessons/'+lessonId+'/resources',resourceBody(),'tokenA',201); }",
+                  "async function status(courseId,value) { return call('PATCH','/api/courses/'+courseId+'/status',{status:value}); }",
+                  "async function eventually(fn, message) {",
+                  "  let last;",
+                  "  for (let n=0;n<30;n++) { try { return await fn(); } catch(e) { last=e; await new Promise(resolve=>setTimeout(resolve,1000)); } }",
+                  "  throw new Error(message+': '+last.message);",
+                  "}",
+                  "",
+                  "pm.test('HTTP 400',()=>pm.expect(pm.response.code).to.be.oneOf([400]));",
+                  "const json = pm.response.json();",
+                  "const d = json.data;",
+                  "if (!pm.request.url.toString().includes('/actuator/health')) {",
+                  "  pm.test('Vỏ response đúng',()=>{pm.expect(json.success).to.eql(pm.response.code < 400); if(pm.response.code >= 400) { pm.expect(json.code).to.be.a('string'); pm.expect(json.message).to.be.a('string'); }});",
+                  "}",
+                  "try { pm.test('Lỗi nằm ở ô URL',()=>{pm.expect(json.code).eql('VALIDATION_FAILED');pm.expect(json.fieldErrors.some(e=>e.field==='fileUrl')).eql(true);}); const l=await call('GET','/api/lessons/'+id('urlLessonId'));pm.test('Không lưu URL sai',()=>pm.expect(l.resources.length).eql(2)); } catch(e) { pm.test('Nghiệp vụ đúng',()=>{throw e;}); }",
+                  "",
+                  "})().catch(error => { pm.test('Script chạy thành công', () => { throw error; }); pm.execution.setNextRequest(null); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COURSE-26.13 Xóa tài liệu",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/lessons/{{urlLessonId}}/resources/{{urlResourceId}}",
+            "description": "Mong đợi theo course.md: 200; GET bài không còn tài liệu. Dùng fixture riêng cho thao tác làm thay đổi/xóa dữ liệu."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(async () => {",
+                  "",
+                  "const cv = pm.collectionVariables;",
+                  "const get = (key) => cv.get(key);",
+                  "const set = (key,value) => cv.set(key,value);",
+                  "const id = (key) => Number(get(key));",
+                  "const unique = () => get('runId') + '-' + pm.variables.replaceIn('{{$guid}}').slice(0,8);",
+                  "async function call(method, url, body, who='tokenA', expected=200) {",
+                  "  const header = {'Content-Type':'application/json'};",
+                  "  if (who) header.Authorization = 'Bearer ' + get(who);",
+                  "  const response = await new Promise((resolve,reject)=>pm.sendRequest({method,url:get('baseUrl')+url,header,...(body === undefined ? {} : {body:{mode:'raw',raw:JSON.stringify(body)}})},(error,response)=>error?reject(error):resolve(response)));",
+                  "  pm.expect(response.code,method+' '+url).to.eql(expected);",
+                  "  const json = response.json();",
+                  "  pm.expect(json.success,method+' '+url+' success').to.eql(expected < 400);",
+                  "  return json.data;",
+                  "}",
+                  "const categoryBody = () => ({name:'QA '+unique(),slug:'qa-'+unique(),position:0});",
+                  "const courseBody = () => ({categoryId:id('categoryId'),title:'Khoa QA '+unique(),slug:'khoa-qa-'+unique(),level:'BEGINNER',language:'vi',price:0});",
+                  "const sectionBody = () => ({title:'Chuong QA',position:1});",
+                  "const lessonBody = () => ({title:'Bai QA',type:'ARTICLE',durationSeconds:60,position:1,isPreview:true,content:'Noi dung xem thu QA',contentUrl:'https://example.com/preview'});",
+                  "const resourceBody = () => ({name:'Tai lieu QA',fileUrl:'https://example.com/qa.pdf'});",
+                  "async function category(body=categoryBody()) { return call('POST','/api/categories',body,'tokenA',201); }",
+                  "async function course(body=courseBody(),who='tokenA') { return call('POST','/api/courses',body,who,201); }",
+                  "async function section(courseId=id('publishedCourseId')) { return call('POST','/api/courses/'+courseId+'/sections',sectionBody(),'tokenA',201); }",
+                  "async function lesson(sectionId=id('sectionAId'),body=lessonBody()) { return call('POST','/api/sections/'+sectionId+'/lessons',body,'tokenA',201); }",
+                  "async function resource(lessonId=id('lessonAId')) { return call('POST','/api/lessons/'+lessonId+'/resources',resourceBody(),'tokenA',201); }",
+                  "async function status(courseId,value) { return call('PATCH','/api/courses/'+courseId+'/status',{status:value}); }",
+                  "async function eventually(fn, message) {",
+                  "  let last;",
+                  "  for (let n=0;n<30;n++) { try { return await fn(); } catch(e) { last=e; await new Promise(resolve=>setTimeout(resolve,1000)); } }",
+                  "  throw new Error(message+': '+last.message);",
+                  "}",
+                  "",
+                  "pm.test('HTTP 200',()=>pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const json = pm.response.json();",
+                  "const d = json.data;",
+                  "if (!pm.request.url.toString().includes('/actuator/health')) {",
+                  "  pm.test('Vỏ response đúng',()=>{pm.expect(json.success).to.eql(pm.response.code < 400); if(pm.response.code >= 400) { pm.expect(json.code).to.be.a('string'); pm.expect(json.message).to.be.a('string'); }});",
+                  "}",
+                  "try { const l=await call('GET','/api/lessons/'+id('urlLessonId'));pm.test('Đã xóa tài liệu',()=>pm.expect(l.resources.map(r=>r.id)).not.include(id('urlResourceId'))); } catch(e) { pm.test('Nghiệp vụ đúng',()=>{throw e;}); }",
+                  "",
+                  "})().catch(error => { pm.test('Script chạy thành công', () => { throw error; }); pm.execution.setNextRequest(null); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }
