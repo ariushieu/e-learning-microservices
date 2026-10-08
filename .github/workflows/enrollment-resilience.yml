@@ -8,6 +8,7 @@ on:
       - '.github/workflows/enrollment-resilience.yml'
       - 'infra/enrollment-resilience.compose.yml'
       - 'scripts/check-enrollment-resilience.py'
+      - 'scripts/check-enrollment-quiz-recovery.py'
       - 'scripts/report-demo-newman.cjs'
       - 'enrollment-service/**'
       - 'shared-common/**'
@@ -67,7 +68,9 @@ jobs:
           fi
       - name: ENROLL-09 with real MySQL and Kafka failures
         run: python scripts/check-enrollment-resilience.py
-      - name: Verify services after recovery
+      - name: Quiz progress after MySQL outage and identical event replay
+        run: python -B scripts/check-enrollment-quiz-recovery.py
+      - name: Verify services after quiz recovery
         run: bash scripts/smoke-test.sh
       - name: Upload sanitized evidence
         if: always()

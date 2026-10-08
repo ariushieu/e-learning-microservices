@@ -293,6 +293,40 @@ Collection có thư mục 7 tạo khóa riêng và kiểm ca 1–11 (thêm IN_PR
 CI Full stack in Docker chạy collection sau smoke test, tạm tắt rate limit trên stack CI dùng một lần.
 Kiểm tra bằng trình duyệt và các ca outage ENROLL-09 cần bằng chứng riêng, không suy ra từ unit test.
 
+## ENROLL-13 — đạt quiz tự hoàn thành bài học
+
+Biên bản: [API, Chromium và phục hồi MySQL/Kafka ngày 08/10](ket-qua/enrollment-quiz-progress.md).
+
+Fixture: khóa PUBLISHED có hai bài, S ghi danh ACTIVE và đã hoàn thành bài 1; quiz đạt từ
+50 điểm, gắn bài 2. Snapshot phải đã nhận `lessonIds` từ course-service mới. Mọi thao tác
+tạo khóa, ghi danh, làm bài và đọc kết quả đi qua gateway, không nạp snapshot bằng SQL.
+
+| Mã | Thao tác | Mong đợi | Cách kiểm |
+|---|---|---|---|
+| ENROLL-13.1 | S đạt quiz bài 2 | Bài 2 COMPLETED; khóa 100%/COMPLETED; đúng một chứng chỉ và một thông báo mỗi loại hoàn thành/cấp chứng chỉ | Collection + Docker + Chromium |
+| ENROLL-13.2 | S trượt | Giữ 50%, bài 2 chưa hoàn thành | Collection quan sát 5 lần; integration |
+| ENROLL-13.3 | Đạt quiz không gắn bài | Không đổi tiến độ | Collection quan sát 5 lần; compatibility/integration |
+| ENROLL-13.4 | Tác giả làm thử, chưa ghi danh | Submit thành công, không tự tạo ghi danh/tiến độ/chứng chỉ | Collection + integration |
+| ENROLL-13.5 | B bắt đầu lượt, hủy ghi danh, sau đó nộp đạt | B vẫn CANCELLED/0%, không có chứng chỉ | Collection + integration |
+| ENROLL-13.6 | Phát lại nguyên key/payload/eventId | Chỉ một dòng sổ, một lần tiến độ/chứng chỉ/outbox; consumer vẫn commit offset bản trùng | Kafka integration + runner MySQL/Kafka thật replay 3 bản |
+| ENROLL-13.7 | Tắt MySQL khi quiz-service phát kết quả | Offset quiz không vượt message lỗi; bật DB thì hoàn tất cùng transaction | Runner Docker; integration kiểm rollback giữa lúc lưu outbox |
+| ENROLL-13.8 | lessonId ngoài đề cương; thiếu snapshot; snapshot cũ thiếu lessonIds | Bỏ qua, không suy đoán bài từ tổng số bài | Integration |
+| ENROLL-13.9 | Hai bản consumer cùng nhận một event hoặc hai event cho bài cuối | Một chứng chỉ, một cặp outbox; mỗi eventId ghi sổ tối đa một lần | Integration đồng thời với khóa database |
+| ENROLL-13.10 | Bài đã xong, sự kiện đến lại hoặc request IN_PROGRESS đến sau | Giữ completedAt, không hạ trạng thái, watchedSeconds không giảm | Integration |
+| ENROLL-13.11 | JSON hỏng, thiếu định danh/passed; hoặc lỗi DB quá ngân sách | DLT giữ payload/key/topic/offset/group; sự kiện hợp lệ tiếp theo vẫn được xử lý | Consumer unit + Kafka integration |
+| ENROLL-13.12 | Ghi danh cũ chưa có learnerName | Vẫn cấp mã chứng chỉ; tên để trống để chính chủ bổ sung khi mở chứng chỉ, không lấy từ payload quiz | Integration; theo hợp đồng chứng chỉ V2 |
+| ENROLL-13.13 | Từ trang học mở quiz, đạt rồi bấm Back | Bài tự được tích, tiến độ và liên kết chứng chỉ cập nhật; không tràn ở 375/768/1366px | Chromium trên Docker |
+
+Nhóm 8 của collection tự tạo quiz/câu hỏi và lưu ID từ response. Các ca chờ sự kiện hỏi
+lại mỗi giây, tối đa 12 lần thử lại, kiểm điều kiện ở response; hết hạn thì FAIL. Ca phủ
+định quan sát nhiều lần sau thông báo quiz để tránh kiểm ngay trước khi Kafka có cơ hội chạy.
+Collection **không** tự phát Kafka/tắt DB và không được tính ENROLL-13.6/13.7 là PASS từ HTTP.
+
+Workflow `Enrollment resilience` chạy thêm `scripts/check-enrollment-quiz-recovery.py` sau
+ENROLL-09 trên MySQL riêng. `quiz-recovery.json` ghi source commit, offset, số dòng ledger,
+tiến độ, chứng chỉ, outbox; không ghi token. `Full stack in Docker` chạy collection và
+`scripts/check-enrollment-quiz-ui.cjs`, lưu `quiz-progress-browser.json` cùng ảnh trước/sau.
+
 ## Truy vết nguồn
 
 - [EnrollmentController](../../enrollment-service/src/main/java/com/hunre/enrollmentservice/controller/EnrollmentController.java),

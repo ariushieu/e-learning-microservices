@@ -26,6 +26,7 @@ class CourseEventPublisherTest {
     @Mock
     private OutboxEventRepository repository;
     @Mock private jakarta.persistence.EntityManager entityManager;
+    @Mock private com.hunre.courseservice.repository.LessonRepository lessons;
 
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
@@ -33,7 +34,7 @@ class CourseEventPublisherTest {
 
     @BeforeEach
     void setUp() {
-        publisher = new CourseEventPublisher(repository, objectMapper, entityManager);
+        publisher = new CourseEventPublisher(repository, objectMapper, entityManager, lessons);
     }
 
     @Test
@@ -50,6 +51,7 @@ class CourseEventPublisherTest {
                 .status(CourseStatus.PUBLISHED)
                 .build();
 
+        when(lessons.findIdsByCourseId(100L)).thenReturn(java.util.List.of(1001L, 1002L));
         publisher.publishCourseUpdated(course);
         ArgumentCaptor<OutboxEvent> eventCaptor = ArgumentCaptor.forClass(OutboxEvent.class);
         verify(repository).save(eventCaptor.capture());
@@ -65,6 +67,7 @@ class CourseEventPublisherTest {
         assertThat(readEvent.instructorName()).isEqualTo("Giảng viên A");
         assertThat(readEvent.totalLessons()).isEqualTo(15);
         assertThat(readEvent.status()).isEqualTo("PUBLISHED");
+        assertThat(readEvent.lessonIds()).containsExactly(1001L, 1002L);
     }
 
     @Test

@@ -203,6 +203,23 @@ người rơi vào cùng partition.
 Cột cuối trỏ tới `notification_templates.code` đã nạp sẵn trong migration của
 notification-service.
 
+### Trường bổ sung cho quiz hoàn thành bài học
+
+`QuizGradedEvent.lessonId` (`Long`, nullable) là bài gắn với quiz tại lúc chấm.
+Quiz cấp khóa học hoặc producer cũ không có trường này: enrollment bỏ qua, notification
+vẫn gửi kết quả chấm bình thường. `score` vẫn là BigDecimal, không đổi độ chính xác.
+
+`CourseUpdatedEvent.lessonIds` (`List<Long>`, nullable) bổ sung đề cương dạng danh sách ID
+để enrollment kiểm quyền cập nhật trên luồng Kafka, nơi không có JWT của request HTTP.
+Chỉ truyền ID, không truyền nội dung. Null/thiếu trường là snapshot cũ chưa biết đề cương,
+`[]` là đề cương đã biết và rỗng. Course producer phát danh sách hiện tại trong cùng
+transaction cập nhật khóa học; snapshot consumer thay thế toàn bộ danh sách cùng các cột khác.
+ID phải dương, không null, không trùng. Consumer cũ bỏ qua hai trường mới qua `ignoreUnknown`.
+
+Đây là phần bổ sung phục vụ nhiệm vụ enrollment trong `phan-cong.md`; thay đổi publisher
+course là cần thiết vì snapshot trước đó chỉ có tổng số bài. Triển khai cùng các producer
+và phát lại snapshot của khóa cũ qua API trước khi kiểm tính năng.
+
 ### `CourseUpdatedEvent` khác các sự kiện còn lại
 
 Bốn sự kiện kia báo **một việc vừa xảy ra** (ghi danh, chấm bài). Sự kiện này thì mang

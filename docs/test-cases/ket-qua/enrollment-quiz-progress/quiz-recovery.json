@@ -1,0 +1,51 @@
+{
+  "sourceCommit": "8302c773bf4f09462bc6601bd1f17737f7661a8d",
+  "startedAt": "2026-10-08T15:20:02.117290Z",
+  "cases": [
+    {
+      "case": "ENROLL-13.7",
+      "status": "PASS",
+      "offsetsDuringOutage": [
+        -1001,
+        -1001,
+        -1001,
+        -1001,
+        -1001,
+        -1001
+      ],
+      "databaseFailureLogLines": 8,
+      "source": {
+        "topic": "elearning.quiz.events",
+        "partition": 1,
+        "offset": 0,
+        "eventId": "3eea6482-26e2-491b-b0d3-4883b641f654"
+      },
+      "state": {
+        "status": "COMPLETED",
+        "progress": 100.0,
+        "ledgerCount": 1,
+        "lessonCount": 2,
+        "completedEvents": 1,
+        "certificateCount": 1,
+        "certificateEvents": 1
+      }
+    },
+    {
+      "case": "ENROLL-13.6",
+      "status": "PASS",
+      "replayedCopies": 3,
+      "lastReplayOffset": 3,
+      "committedOffset": 4,
+      "state": {
+        "status": "COMPLETED",
+        "progress": 100.0,
+        "ledgerCount": 1,
+        "lessonCount": 2,
+        "completedEvents": 1,
+        "certificateCount": 1,
+        "certificateEvents": 1
+      }
+    }
+  ],
+  "completedAt": "2026-10-08T15:20:51.217162Z"
+}

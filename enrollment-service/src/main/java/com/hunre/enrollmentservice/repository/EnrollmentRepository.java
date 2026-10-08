@@ -37,6 +37,10 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     @Query("select e from Enrollment e where e.userId = :userId and e.courseId = :courseId")
     Optional<Enrollment> findForProgressUpdate(@Param("userId") Long userId, @Param("courseId") Long courseId);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select e from Enrollment e where e.id = :id")
+    Optional<Enrollment> findForStatusUpdate(@Param("id") Long id);
+
     boolean existsByUserIdAndCourseId(Long userId, Long courseId);
 
     Page<Enrollment> findAllByUserId(Long userId, Pageable pageable);

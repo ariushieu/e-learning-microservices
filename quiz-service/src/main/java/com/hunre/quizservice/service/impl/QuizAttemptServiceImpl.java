@@ -228,7 +228,8 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
                 userId,
                 quiz.getTitle(),
                 finalScorePercent,
-                passed
+                passed,
+                quiz.getLessonId()
         );
         outboxEventRepository.save(OutboxEvent.builder()
                 .eventId(event.eventId())

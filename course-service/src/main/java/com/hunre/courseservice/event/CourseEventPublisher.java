@@ -18,6 +18,7 @@ public class CourseEventPublisher {
     private final OutboxEventRepository repository;
     private final ObjectMapper objectMapper;
     private final EntityManager entityManager;
+    private final com.hunre.courseservice.repository.LessonRepository lessons;
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void publishCourseUpdated(Course course) {
@@ -27,7 +28,7 @@ public class CourseEventPublisher {
         entityManager.flush();
         CourseUpdatedEvent event = CourseUpdatedEvent.of(course.getId(), course.getTitle(), course.getSlug(),
                 course.getThumbnailUrl(), course.getInstructorId(), course.getInstructorName(),
-                course.getTotalLessons(), course.getStatus().name());
+                course.getTotalLessons(), course.getStatus().name(), lessons.findIdsByCourseId(course.getId()));
         // Không nuốt lỗi: nếu không lưu được sự kiện thì thay đổi khóa học cũng phải rollback.
         repository.save(OutboxEvent.builder().eventId(event.eventId()).aggregateType("COURSE")
                 .aggregateId(String.valueOf(course.getId())).eventType(event.eventType())

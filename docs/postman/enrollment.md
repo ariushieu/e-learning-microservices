@@ -1,8 +1,13 @@
 # Chạy collection enrollment qua gateway
 
 Import [enrollment.postman_collection.json](enrollment.postman_collection.json), chọn **No environment**,
-chạy toàn collection từ **0. Chuẩn bị**, một iteration, theo thứ tự đã lưu. Collection có 215 request
+chạy toàn collection từ **0. Chuẩn bị**, một iteration, theo thứ tự đã lưu. Collection có 252 request
 và hai PUT đồng thời trong script ENROLL-07.16. Không cần nhập ID hoặc token bằng tay.
+
+Nhóm **8. ENROLL-13** kiểm quiz → tiến độ → chứng chỉ → thông báo trên khóa riêng, gồm
+trượt, quiz không gắn bài, tác giả làm thử, ghi danh đã hủy và làm đạt bài cuối. Các ca chờ
+Kafka truy vấn lại tối đa 12 lần, mỗi giây; quá hạn là FAIL. Hai ca giao trùng nguyên sự kiện
+và mất MySQL chạy riêng trong workflow `Enrollment resilience`, không tính từ số request HTTP.
 
 ## Môi trường
 

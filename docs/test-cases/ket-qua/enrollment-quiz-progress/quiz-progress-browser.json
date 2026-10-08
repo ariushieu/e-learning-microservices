@@ -1,0 +1,11 @@
+{
+  "sourceCommit": "8302c773bf4f09462bc6601bd1f17737f7661a8d",
+  "checkedAt": "2026-10-08T15:22:21.216Z",
+  "checks": [
+    "Linked quiz displays automatic-completion hint; manual completion remains available",
+    "Pass via real quiz API, browser Back refreshes progress through Kafka, certificate link appears",
+    "Before/after layouts fit 1366, 768 and 375 pixels"
+  ],
+  "errors": [],
+  "passed": true
+}

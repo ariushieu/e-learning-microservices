@@ -28,7 +28,8 @@ public record QuizGradedEvent(
         Long userId,
         String quizTitle,
         BigDecimal score,
-        boolean passed
+        boolean passed,
+        Long lessonId
 ) implements DomainEvent {
 
     @Override
@@ -45,6 +46,13 @@ public record QuizGradedEvent(
             String quizTitle,
             BigDecimal score,
             boolean passed) {
+        return of(attemptId, quizId, courseId, userId, quizTitle, score, passed, null);
+    }
+
+    /** lessonId null: đề cấp khóa học hoặc sự kiện từ producer phiên bản cũ. */
+    public static QuizGradedEvent of(
+            Long attemptId, Long quizId, Long courseId, Long userId, String quizTitle,
+            BigDecimal score, boolean passed, Long lessonId) {
 
         return new QuizGradedEvent(
                 UUID.randomUUID().toString(),
@@ -55,6 +63,7 @@ public record QuizGradedEvent(
                 userId,
                 quizTitle,
                 score,
-                passed);
+                passed,
+                lessonId);
     }
 }

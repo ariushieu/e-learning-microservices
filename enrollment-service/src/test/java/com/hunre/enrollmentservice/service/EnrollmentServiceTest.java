@@ -193,7 +193,7 @@ class EnrollmentServiceTest {
                 .status(EnrollmentStatus.ACTIVE)
                 .build();
 
-        when(enrollmentRepository.findById(enrollmentId)).thenReturn(Optional.of(enrollment));
+        when(enrollmentRepository.findForStatusUpdate(enrollmentId)).thenReturn(Optional.of(enrollment));
         when(enrollmentRepository.save(any(Enrollment.class))).thenAnswer(i -> i.getArgument(0));
         when(courseClient.getCourseById(3L)).thenReturn(Optional.of(CourseDto.builder().id(3L).title("Docker").build()));
 
@@ -210,7 +210,7 @@ class EnrollmentServiceTest {
         Long courseId = 3L;
         Enrollment enrollment = Enrollment.builder().id(100L).userId(userId).courseId(courseId).build();
 
-        when(enrollmentRepository.findByUserIdAndCourseId(userId, courseId)).thenReturn(Optional.of(enrollment));
+        when(enrollmentRepository.findForProgressUpdate(userId, courseId)).thenReturn(Optional.of(enrollment));
 
         enrollmentService.unenrollCourse(userId, courseId);
 

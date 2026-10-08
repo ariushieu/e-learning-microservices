@@ -3,6 +3,7 @@
  * Chạy từ gốc repo: node scripts/build-enrollment-postman.mjs
  */
 import { writeFileSync } from "node:fs";
+import { addQuizProgressCases } from "./enrollment-quiz-postman.mjs";
 
 const folders = [];
 let current;
@@ -29,9 +30,9 @@ function request(name, method, path, status, body, token = "studentToken", check
       "const ready = (" + options.poll + ");",
       "const pollKey = 'poll:' + pm.info.requestName;",
       "const attempts = Number(cv(pollKey) || 0);",
-      "if (!ready && pm.response.code < 500 && attempts < 15) {",
+      "if (!ready && pm.response.code < 500 && attempts < " + (options.maxPolls ?? 15) + ") {",
       "  pm.collectionVariables.set(pollKey, attempts + 1);",
-      "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), 2000);",
+      "  setTimeout(() => pm.execution.setNextRequest(pm.info.requestName), " + (options.pollInterval ?? 2000) + ");",
       "} else {",
       "  pm.collectionVariables.unset(pollKey);",
     ] : []),
@@ -43,7 +44,7 @@ function request(name, method, path, status, body, token = "studentToken", check
       "pm.expect(response.success).to.eql(true);", check, "});", "}"] : []),
     ...(!success ? ["pm.test('Lỗi có hợp đồng API', () => { pm.expect(response.success).to.eql(false); pm.expect(response.code).to.be.a('string'); });"] : []),
     ...(options.poll ? ["}"] : []),
-    ...(options.stopOnFailure ? ["if (pm.response.code >= 400 && pm.response.code !== 409" + (options.poll ? " && attempts >= 15" : "") + ") pm.execution.setNextRequest(null);"] : []),
+    ...(options.stopOnFailure ? ["if (pm.response.code >= 400 && pm.response.code !== 409" + (options.poll ? " && attempts >= " + (options.maxPolls ?? 15) : "") + ") pm.execution.setNextRequest(null);"] : []),
   ].join("\n");
   const req = { name, request: { method,
     auth: token ? { type: "bearer", bearer: [{ key: "token", value: V(token), type: "string" }] } : { type: "noauth" },
@@ -388,7 +389,9 @@ GET("ENROLL-12.11 Chi tiết khóa vẫn qua course-service", "/api/courses/" + 
 GET("ENROLL-12.11 Đề cương vẫn qua course-service", "/api/courses/" + V("summaryCourseId") + "/curriculum", 200, "tokenA",
   eq("d.length", 1) + eq("d[0].lessons.length", 2));
 
-folders.push({ name: "8. ENROLL-09 — thao tác hạ tầng thủ công", item: [], description:
+addQuizProgressCases({ folder, R, GET, V, save, eq, cv, id });
+
+folders.push({ name: "9. ENROLL-09 — thao tác hạ tầng thủ công", item: [], description:
   "Không giả PASS bằng HTTP. Năm ca ENROLL-09.1–09.5 cần dừng MySQL, gửi Kafka và làm DLT lỗi trên môi trường thử riêng. Thực hiện đúng docs/test-cases/enrollment.md, khôi phục hạ tầng sau mỗi ca; ghi HTTP là N/A cùng log, offset và message DLT trong biên bản. Runner không thực hiện năm ca này." });
 const collection = { info: { name: "Enrollment — gateway, progress and certificates",
   description: "Chạy một iteration theo thứ tự từ 0. Chuẩn bị. Biến collection, không environment, không SQL snapshot. Chỉ dùng dữ liệu dev; tạo khóa mới mỗi lần chạy. ENROLL-09 phải kiểm thủ công và không được tính PASS của Runner. Chi tiết: docs/postman/enrollment.md.",

@@ -239,6 +239,13 @@ jobs:
           node "$RUNNER_TEMP/enrollment-ui/node_modules/playwright/cli.js" install --with-deps chromium
           node scripts/check-enrollment-summary-ui.cjs
 
+      - name: Check quiz-driven lesson completion in Chromium
+        env:
+          SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+          ENROLLMENT_PLAYWRIGHT_MODULE: ${{ runner.temp }}/enrollment-ui/node_modules/playwright
+          ENROLLMENT_UI_OUTPUT: ${{ runner.temp }}/enrollment-summary-evidence
+        run: node scripts/check-enrollment-quiz-ui.cjs
+
       - name: Upload enrollment UI evidence
         if: always()
         uses: actions/upload-artifact@v7

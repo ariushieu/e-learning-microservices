@@ -50,6 +50,7 @@ public class CourseSnapshotConsumer {
                 .courseId(event.courseId()).title(event.title()).slug(event.slug())
                 .thumbnailUrl(event.thumbnailUrl()).instructorId(event.instructorId())
                 .instructorName(event.instructorName()).totalLessons(event.totalLessons())
+                .lessonIds(event.lessonIds())
                 .status(event.status()).syncedAt(Instant.now()).build());
     }
 
@@ -62,7 +63,9 @@ public class CourseSnapshotConsumer {
                 || event.status() == null || !Set.of("DRAFT", "PUBLISHED", "ARCHIVED").contains(event.status())
                 || tooLong(event.slug(), 220) || tooLong(event.thumbnailUrl(), 500)
                 || tooLong(event.instructorName(), 150)
-                || (event.instructorId() != null && event.instructorId() <= 0)) {
+                || (event.instructorId() != null && event.instructorId() <= 0)
+                || (event.lessonIds() != null && (event.lessonIds().stream().anyMatch(id -> id == null || id <= 0)
+                    || event.lessonIds().stream().distinct().count() != event.lessonIds().size()))) {
             throw new IllegalArgumentException("Thiếu hoặc sai trường trong snapshot khóa học");
         }
     }

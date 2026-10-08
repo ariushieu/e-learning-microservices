@@ -10,6 +10,7 @@ import { CurriculumSheet } from "@/components/enrollment/curriculum-sheet";
 import { LearnSidebar } from "@/components/enrollment/learn-sidebar";
 import { LessonActions } from "@/components/enrollment/lesson-actions";
 import { LessonContent } from "@/components/enrollment/lesson-content";
+import { QuizProgressSync } from "@/components/enrollment/quiz-progress-sync";
 import { CourseQuizzes, QuizList } from "@/components/quiz/course-quizzes";
 import { FocusLayout } from "@/components/templates/focus-layout";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,13 @@ export default async function LearnPage({ params, searchParams }: PageProps<"/le
       panel={{ title: "Nội dung khóa học", subtitle: `${summary} hoàn thành`, content: curriculum }}
       mobileBar={<CurriculumSheet summary={`${summary} hoàn thành`}>{curriculum}</CurriculumSheet>}
     >
+      {!finished && (
+        <QuizProgressSync courseId={course.id} pendingLessonIds={[
+          ...new Set((published ?? []).flatMap((quiz) =>
+            quiz.lessonId && status.get(quiz.lessonId) !== "COMPLETED" ? [quiz.lessonId] : [],
+          )),
+        ]} />
+      )}
       {finished && (
         <Callout
           icon={TrophyIcon}
@@ -147,6 +155,7 @@ function LessonPanel({
       {quizzes.length > 0 && (
         <section className="space-y-3">
           <h3 className="text-subheading">Bài kiểm tra của bài học</h3>
+          <p className="text-sm text-muted-foreground">Đạt bài kiểm tra thì bài này tự hoàn thành.</p>
           <QuizList quizzes={quizzes} />
         </section>
       )}

@@ -167,7 +167,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         if (currentUserId == null) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED, "Người dùng chưa được xác thực");
         }
-        Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
+        Enrollment enrollment = enrollmentRepository.findForStatusUpdate(enrollmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("lượt ghi danh", "id", enrollmentId));
 
         if (!enrollment.getUserId().equals(currentUserId)) {
@@ -200,7 +200,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         if (currentUserId == null) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED, "Người dùng chưa được xác thực");
         }
-        Enrollment enrollment = enrollmentRepository.findByUserIdAndCourseId(currentUserId, courseId)
+        Enrollment enrollment = enrollmentRepository.findForProgressUpdate(currentUserId, courseId)
                 .orElseThrow(() -> new ResourceNotFoundException("lượt ghi danh của khóa học", "courseId", courseId));
 
         // Xóa sạch tiến độ bài học của lượt ghi danh này
