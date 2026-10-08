@@ -55,4 +55,16 @@ public interface CourseRepository extends JpaRepository<Course, Long>, JpaSpecif
     Page<Course> findByInstructorId(Long instructorId, Pageable pageable);
 
     Page<Course> findByInstructorIdAndStatus(Long instructorId, CourseStatus status, Pageable pageable);
+
+    Optional<Course> findFirstByInstructorIdAndStatusOrderByIdDesc(Long instructorId, CourseStatus status);
+
+    // Chỉ tổng hợp khóa đã xuất bản, kể cả khi người gọi là chủ khóa hoặc admin.
+    @Query("""
+            SELECT COUNT(c) AS publishedCourses, COALESCE(SUM(c.studentCount), 0) AS totalStudents,
+                   COALESCE(SUM(c.ratingAvg * c.ratingCount), 0) AS weightedRating,
+                   COALESCE(SUM(c.ratingCount), 0) AS ratingCount
+            FROM Course c WHERE c.instructorId = :instructorId AND c.status = :status
+            """)
+    InstructorStatistics aggregateInstructor(@Param("instructorId") Long instructorId,
+                                             @Param("status") CourseStatus status);
 }

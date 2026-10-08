@@ -19,6 +19,7 @@ import { logoutToLoginAction } from "@/lib/server/auth-actions";
 export interface LoginSession {
   id: number;
   createdAt: string;
+  startedAt: string;
   device: string;
   current: boolean;
 }
@@ -100,7 +101,7 @@ export function SessionList({ initial }: { initial: LoginSession[] | null }) {
                   <span className="font-medium">{session.device}</span>
                   {session.current && <Badge variant="secondary">Thiết bị này</Badge>}
                 </div>
-                <p className="text-sm text-muted-foreground">Bắt đầu: {formatDate(session.createdAt)}</p>
+                <p className="text-sm text-muted-foreground">Bắt đầu: {formatDate(session.startedAt)}</p>
               </div>
               <Button variant="outline" className="shrink-0" disabled={pending || loading}
                 aria-label={`Đăng xuất ${session.current ? "thiết bị này" : session.device}`}

@@ -1,0 +1,9 @@
+{
+  "tag": "profile-ui-1791471027411",
+  "courseIds": [],
+  "checks": [
+    "Course-service dừng: gateway 502, web hiện lỗi tải hồ sơ thay vì 404/đăng nhập",
+    "Trang lỗi không có lỗi JavaScript"
+  ],
+  "errors": []
+}

@@ -73,6 +73,8 @@ const text=`# Biên bản kiểm thử course-service
   khi sửa sao, xóa theo đánh giá, không lộ phản hồi khóa nháp và sửa đồng thời trên MySQL.
 - COURSE-29 kiểm inbox giảng viên/admin qua gateway, phân trang, lọc khóa/trạng thái,
   số chưa trả lời và nhãn phản hồi dựa trên người sở hữu khóa, không lộ ID nội bộ.
+- COURSE-30 kiểm hồ sơ giảng viên công khai, điểm có trọng số, thống kê chỉ từ PUBLISHED,
+  phân trang khóa, không lộ giảng viên chỉ có khóa nháp và cập nhật số liệu khi sửa/xóa đánh giá.
 - Fixture riêng theo runId; các ca xóa dùng bản sao. Tài khoản QA cố định theo gateway.md.
   Dữ liệu được giữ cho demo. Không có token/password/header đăng nhập trong bằng chứng đã xuất.
 - Đây là biên bản API của course-service. Không suy ra các service khác hay mọi tình huống đồng thời

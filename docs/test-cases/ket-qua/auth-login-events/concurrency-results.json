@@ -1,0 +1,18 @@
+{
+  "result": "PASS",
+  "concurrentFailures": 8,
+  "failedHttp": [
+    401,
+    401,
+    401,
+    401,
+    401,
+    401,
+    401,
+    401
+  ],
+  "loginHttp": 200,
+  "meHttp": 200,
+  "warningCount": 8,
+  "historyCount": 9
+}

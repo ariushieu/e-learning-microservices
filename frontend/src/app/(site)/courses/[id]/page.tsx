@@ -89,7 +89,12 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
             <>
               {course.status !== "PUBLISHED" && <StatusBadge status={course.status} />}
               <HeroMeta icon={<UserIcon />}>
-                <span className="font-medium text-white">{course.instructorName || "Giảng viên HUNRE"}</span>
+                <Link
+                  href={`/instructors/${course.instructorId}`}
+                  className="rounded-sm font-medium text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-white"
+                >
+                  {course.instructorName || "Giảng viên HUNRE"}
+                </Link>
               </HeroMeta>
               <HeroMeta icon={<SignalIcon />}>{label(course.level)}</HeroMeta>
               <HeroMeta icon={<ListVideoIcon />}>{course.totalLessons} bài học</HeroMeta>

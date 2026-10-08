@@ -83,6 +83,9 @@ class AuthServiceTest {
     @Mock
     private JwtService jwtService;
 
+    @Mock
+    private LoginEventService loginEvents;
+
     @InjectMocks
     private AuthServiceImpl authService;
 
