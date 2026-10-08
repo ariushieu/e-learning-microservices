@@ -82,7 +82,10 @@ def run():
             recovery.require(offset <= source.offset(), "Quiz offset advanced during MySQL outage")
             observations.append(offset)
             time.sleep(2)
-        recovery.require("quiz-progress-0-C-1" in probe.logs(since), "No quiz consumer failure observed")
+        # Spring Boot abbreviates thread names to 15 characters in its default log pattern.
+        failure_lines = sum("progress-0-C-1" in line and "Connection is not available" in line
+                            for line in probe.logs(since).splitlines())
+        recovery.require(failure_lines > 0, "No quiz consumer database failure observed")
         recovery.db_start()
         outage = False
         recovery.wait_for("quiz committed after recovery", lambda: committed(source.partition()) > source.offset(), timeout=100)
@@ -102,6 +105,7 @@ def run():
                     "completedEvents": 1, "certificateEvents": 1, "ledgerCount": 1}
         recovery.require(before == expected, "Recovery did not commit exactly one complete progress transaction")
         evidence["cases"].append({"case": "ENROLL-13.7", "status": "PASS", "offsetsDuringOutage": observations,
+                                  "databaseFailureLogLines": failure_lines,
                                   "source": {"topic": TOPIC, "partition": source.partition(), "offset": source.offset(), "eventId": event["eventId"]}, "state": before})
 
         # Replay identical bytes/key, including eventId; no new submission or newly generated event.

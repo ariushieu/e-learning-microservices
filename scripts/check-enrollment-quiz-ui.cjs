@@ -74,6 +74,10 @@ async function run() {
   await page.locator(`a[href="/certificates/${enrollment.id}"]`).waitFor();
   checks.push("Pass via real quiz API, browser Back refreshes progress through Kafka, certificate link appears");
 
+  // Back đã được kiểm ở trên. Tải lại để ảnh bố cục không bị toast SSE tạm thời che header.
+  await page.reload();
+  await page.getByText("Chúc mừng! Bạn đã hoàn thành khóa học.", { exact: true }).waitFor();
+
   for (const width of [1366, 768, 375]) {
     await page.setViewportSize({ width, height: 900 });
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `Horizontal overflow at ${width}px`);
