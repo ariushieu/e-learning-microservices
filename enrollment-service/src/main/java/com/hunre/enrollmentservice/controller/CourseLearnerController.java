@@ -1,6 +1,7 @@
 package com.hunre.enrollmentservice.controller;
 
 import com.hunre.enrollmentservice.dto.response.CourseLearnerResponse;
+import com.hunre.enrollmentservice.dto.response.CourseLearnerSummaryResponse;
 import com.hunre.enrollmentservice.entity.EnrollmentStatus;
 import com.hunre.enrollmentservice.service.CourseLearnerService;
 import com.hunre.sharedcommon.dto.ApiResponse;
@@ -24,6 +25,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class CourseLearnerController {
     private final CourseLearnerService learners;
+
+    @GetMapping("/api/courses/{courseId}/learners/summary")
+    public ResponseEntity<ApiResponse<CourseLearnerSummaryResponse>> summary(
+            @PathVariable @Positive Long courseId, AuthenticatedUser user) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(ApiResponse.ok(learners.summary(courseId, user)));
+    }
 
     @GetMapping("/api/courses/{courseId}/learners")
     public ResponseEntity<ApiResponse<PageResponse<CourseLearnerResponse>>> list(

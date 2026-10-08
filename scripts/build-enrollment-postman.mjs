@@ -331,7 +331,64 @@ enroll("ENROLL-05.8 Ghi danh lại có ID mới", 201, "studentToken", V("publis
   "pm.expect(d.id).not.to.eql(id('enrollmentId'));" + percent(0) + eq("d.status", "'ACTIVE'") + save("resetEnrollmentId"));
 progressGet("ENROLL-05.8 Không khôi phục tiến độ cũ", percent(0) + eq("d.lessons", "[]") + eq("d.certificateCode", "null"));
 
-folders.push({ name: "7. ENROLL-09 — thao tác hạ tầng thủ công", item: [], description:
+folder("7. Số liệu học tập toàn khóa", "ENROLL-12: khóa riêng hai bài, S hoàn thành cả hai, B xong bài một, C chưa học, D học một bài rồi hủy. Chỉ tạo fixture bằng API qua gateway; số liệu không phụ thuộc bộ lọc danh sách.");
+for (const label of ["C", "D"]) {
+  const email = `qa.summary.${label.toLowerCase()}@example.com`;
+  R("SETUP-16." + label + " Đăng ký học viên thống kê", "POST", "/api/auth/register", [201, 409],
+    { email, fullName: "Học viên " + label, password: "Test@123456" }, null, "", { stopOnFailure: true });
+  R("SETUP-17." + label + " Đăng nhập học viên thống kê", "POST", "/api/auth/login", 200,
+    { email, password: "Test@123456" }, null, save("summaryToken" + label, "d.accessToken"), { stopOnFailure: true });
+}
+R("SETUP-18 Tạo khóa thống kê riêng", "POST", "/api/courses", 201,
+  { categoryId: V("categoryId"), title: "Thống kê học tập " + V("runId"), slug: "enrollment-summary-" + V("runId"), price: 0, level: "BEGINNER", language: "vi" },
+  "tokenA", save("summaryCourseId"), { stopOnFailure: true });
+R("SETUP-19 Tạo chương thống kê", "POST", "/api/courses/" + V("summaryCourseId") + "/sections", 201,
+  { title: "Chương thống kê", position: 1 }, "tokenA", save("summarySectionId"), { stopOnFailure: true });
+for (const lesson of [1, 2]) {
+  R("SETUP-20." + lesson + " Tạo bài thống kê", "POST", "/api/sections/" + V("summarySectionId") + "/lessons", 201,
+    { title: "Bài thống kê " + lesson, type: "ARTICLE", content: "Nội dung kiểm thử thống kê", position: lesson, isPreview: false },
+    "tokenA", save("summaryLesson" + lesson + "Id"), { stopOnFailure: true });
+}
+R("SETUP-21 Xuất bản khóa thống kê", "PATCH", "/api/courses/" + V("summaryCourseId") + "/status", 200,
+  { status: "PUBLISHED" }, "tokenA", "", { stopOnFailure: true });
+const summary = "/api/courses/" + V("summaryCourseId") + "/learners/summary";
+const summaryFields = "pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store');" +
+  "pm.expect(Object.keys(d).sort()).to.eql(['active','averageProgress','cancelled','certificatesIssued','completed','completionRate','lessons']);" +
+  "d.lessons.forEach(l => pm.expect(Object.keys(l).sort()).to.eql(['completedCount','completionRate','lessonId']));";
+const zeroSummary = eq("d.active", 0) + eq("d.completed", 0) + eq("d.averageProgress", 0) + eq("d.completionRate", 0) + eq("d.certificatesIssued", 0) + eq("d.lessons", "[]");
+GET("ENROLL-12.1 Khóa chưa có học viên", summary, 200, "tokenA", summaryFields + zeroSummary + eq("d.cancelled", 0),
+  { poll: "pm.response.code === 200", stopOnFailure: true });
+enroll("SETUP-22 D ghi danh khóa thống kê", 201, "summaryTokenD", V("summaryCourseId"), save("summaryEnrollmentDId"));
+progress("SETUP-23 D học bài một trước khi hủy", 200, { courseId: V("summaryCourseId") }, V("summaryLesson1Id"), "summaryTokenD");
+cancel("SETUP-24 D hủy lượt đã học một bài", 200, "summaryTokenD", "/api/enrollments/" + V("summaryEnrollmentDId"));
+GET("ENROLL-12.2 Chỉ có lượt đã hủy không chia cho không", summary, 200, "tokenA", summaryFields + zeroSummary + eq("d.cancelled", 1));
+for (const [label, token] of [["S", "studentToken"], ["B", "tokenB"], ["C", "summaryTokenC"]]) {
+  enroll("SETUP-25." + label + " Ghi danh khóa thống kê", 201, token, V("summaryCourseId"));
+}
+progress("SETUP-26 S hoàn thành bài một", 200, { courseId: V("summaryCourseId") }, V("summaryLesson1Id"));
+progress("SETUP-27 S hoàn thành bài hai", 200, { courseId: V("summaryCourseId") }, V("summaryLesson2Id"));
+progress("SETUP-28 B hoàn thành bài một", 200, { courseId: V("summaryCourseId") }, V("summaryLesson1Id"), "tokenB");
+progress("SETUP-29 C chỉ bắt đầu bài một", 200, { courseId: V("summaryCourseId"), status: "IN_PROGRESS" }, V("summaryLesson1Id"), "summaryTokenC");
+const acceptanceSummary = summaryFields + eq("d.active", 2) + eq("d.completed", 1) + eq("d.cancelled", 1) +
+  eq("d.averageProgress", 50) + eq("d.completionRate", 33.33) + eq("d.certificatesIssued", 1) + eq("d.lessons.length", 2) +
+  "const first = d.lessons.find(l => l.lessonId === id('summaryLesson1Id')); const second = d.lessons.find(l => l.lessonId === id('summaryLesson2Id'));" +
+  eq("first.completedCount", 2) + eq("first.completionRate", 66.67) + eq("second.completedCount", 1) + eq("second.completionRate", 33.33);
+GET("ENROLL-12.3 Đúng số liệu nghiệm thu S B C D", summary, 200, "tokenA", acceptanceSummary);
+GET("ENROLL-12.4 Bộ lọc học viên không đổi số liệu", summary + "?status=CANCELLED&page=99&size=1", 200, "tokenA", acceptanceSummary);
+GET("ENROLL-12.5 Admin xem được số liệu", summary, 200, "adminToken", acceptanceSummary);
+GET("ENROLL-12.6 Không token qua gateway", summary, 401, null);
+GET("ENROLL-12.7 Giảng viên B đã ghi danh vẫn không xem được", summary + "?instructorId=" + V("instructorAId"), 403, "tokenB");
+GET("ENROLL-12.8 Học viên không giả chủ khóa qua query", summary + "?userId=" + V("instructorAId"), 403);
+GET("ENROLL-12.9 Khóa không có snapshot", "/api/courses/" + V("missingId") + "/learners/summary", 404, "tokenA");
+for (const value of ["0", "-1", "abc"]) {
+  GET("ENROLL-12.10 ID khóa " + value, "/api/courses/" + value + "/learners/summary", 400, "tokenA");
+}
+GET("ENROLL-12.11 Chi tiết khóa vẫn qua course-service", "/api/courses/" + V("summaryCourseId"), 200, null,
+  eq("d.id", id("summaryCourseId")) + eq("d.status", "'PUBLISHED'"));
+GET("ENROLL-12.11 Đề cương vẫn qua course-service", "/api/courses/" + V("summaryCourseId") + "/curriculum", 200, "tokenA",
+  eq("d.length", 1) + eq("d[0].lessons.length", 2));
+
+folders.push({ name: "8. ENROLL-09 — thao tác hạ tầng thủ công", item: [], description:
   "Không giả PASS bằng HTTP. Năm ca ENROLL-09.1–09.5 cần dừng MySQL, gửi Kafka và làm DLT lỗi trên môi trường thử riêng. Thực hiện đúng docs/test-cases/enrollment.md, khôi phục hạ tầng sau mỗi ca; ghi HTTP là N/A cùng log, offset và message DLT trong biên bản. Runner không thực hiện năm ca này." });
 const collection = { info: { name: "Enrollment — gateway, progress and certificates",
   description: "Chạy một iteration theo thứ tự từ 0. Chuẩn bị. Biến collection, không environment, không SQL snapshot. Chỉ dùng dữ liệu dev; tạo khóa mới mỗi lần chạy. ENROLL-09 phải kiểm thủ công và không được tính PASS của Runner. Chi tiết: docs/postman/enrollment.md.",
