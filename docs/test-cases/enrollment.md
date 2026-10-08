@@ -295,6 +295,8 @@ Kiểm tra bằng trình duyệt và các ca outage ENROLL-09 cần bằng chứ
 
 ## ENROLL-13 — đạt quiz tự hoàn thành bài học
 
+Biên bản: [API, Chromium và phục hồi MySQL/Kafka ngày 08/10](ket-qua/enrollment-quiz-progress.md).
+
 Fixture: khóa PUBLISHED có hai bài, S ghi danh ACTIVE và đã hoàn thành bài 1; quiz đạt từ
 50 điểm, gắn bài 2. Snapshot phải đã nhận `lessonIds` từ course-service mới. Mọi thao tác
 tạo khóa, ghi danh, làm bài và đọc kết quả đi qua gateway, không nạp snapshot bằng SQL.

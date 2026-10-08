@@ -9,7 +9,8 @@ const result = {
   startedAt: new Date(run.timings.started).toISOString(),
   completedAt: new Date(run.timings.completed).toISOString(),
   stats: run.stats,
-  manualCasesNotExecuted: ["ENROLL-09.1", "ENROLL-09.2", "ENROLL-09.3", "ENROLL-09.4", "ENROLL-09.5"],
+  manualCasesNotExecuted: ["ENROLL-09.1", "ENROLL-09.2", "ENROLL-09.3", "ENROLL-09.4", "ENROLL-09.5",
+    "ENROLL-13.6", "ENROLL-13.7"],
   executions: run.executions.map((execution) => ({
     name: execution.item.name,
     http: execution.response?.code ?? null,
