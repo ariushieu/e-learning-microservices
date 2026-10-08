@@ -250,7 +250,27 @@ Trang chi tiết chỉ hiện nút **Gỡ** cho admin, có xác nhận và báo 
 Gỡ thành công tải lại điểm/danh sách và về trang đánh giá đầu để tránh trang cuối rỗng.
 Các ca API nằm ở `COURSE-27`; kiểm thử trình duyệt: `scripts/check-course-moderation.cjs`.
 
-### Các bộ kiểm thử
+### Giảng viên trả lời đánh giá
+
+Migration V6 thêm `reply` (1000 ký tự), `replied_at`, `replied_by` nullable vào `course_reviews`;
+đánh giá cũ không có phản hồi. Không sửa migration đã chạy.
+
+- `PUT /api/courses/{courseId}/reviews/{reviewId}/reply`, body `{"content":"Cảm ơn bạn"}`:
+  tạo hoặc sửa một phản hồi, trả 200 với đánh giá đã cập nhật. Nội dung bắt buộc, không chỉ
+  gồm khoảng trắng, tối đa 1000 ký tự; lỗi trả 400 `VALIDATION_FAILED` theo ô `content`.
+- `DELETE` cùng đường dẫn: xóa riêng phản hồi, trả 200; chưa có phản hồi trả 404.
+- Cả hai yêu cầu `ROLE_ADMIN` hoặc `ROLE_INSTRUCTOR` đúng chủ khóa; người khác 403,
+  không token 401, không tìm thấy khóa/đánh giá hoặc sai khóa cha 404.
+- `replied_by` lấy từ JWT, chỉ lưu nội bộ. Response công khai thêm `reply`, `repliedAt`,
+  không lộ ID người trả lời. Quyền đọc vẫn theo trạng thái khóa và quyền học hiện có.
+- Ghi/xóa phản hồi dùng khóa dòng `courses` cùng thứ tự với đánh giá; không thay số sao
+  hoặc số lượt. Học viên sửa đánh giá giữ nguyên phản hồi; xóa đánh giá xóa cả phản hồi.
+- Web dùng văn bản thuần, nhãn **Phản hồi của giảng viên**, cho chủ khóa/admin Trả lời/Sửa/Xóa,
+  xác nhận khi xóa, lỗi theo ô và giữ dữ liệu khi API lỗi. Giữ nguyên trang phân trang khi lưu.
+
+Kiểm thử API trong `COURSE-28`, trình duyệt bằng `scripts/check-course-replies.cjs`.
+
+### Chạy kiểm thử
 
 Các thao tác sửa khóa học, đổi trạng thái và sửa chương/bài khóa hàng `courses`
 trước khi ghi dữ liệu. Khi nhiều request cùng thêm/xóa/sửa bài, mỗi request đọc lại

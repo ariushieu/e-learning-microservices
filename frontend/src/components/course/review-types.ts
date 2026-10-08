@@ -5,6 +5,8 @@ export interface CourseReview {
   authorName: string;
   createdAt: string;
   updatedAt: string;
+  reply: string | null;
+  repliedAt: string | null;
 }
 
 export interface MyCourseReview {

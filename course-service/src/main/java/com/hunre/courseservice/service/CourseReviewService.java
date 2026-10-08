@@ -1,6 +1,7 @@
 package com.hunre.courseservice.service;
 
 import com.hunre.courseservice.dto.request.SaveCourseReviewRequest;
+import com.hunre.courseservice.dto.request.SaveReviewReplyRequest;
 import com.hunre.courseservice.dto.response.CourseReviewResponse;
 import com.hunre.courseservice.dto.response.MyCourseReviewResponse;
 import com.hunre.courseservice.entity.Course;
@@ -96,6 +97,42 @@ public class CourseReviewService {
         reviews.delete(review);
         reviews.flush();
         courses.recalculateRating(courseId);
+    }
+
+    @Transactional
+    public CourseReviewResponse saveReply(Long courseId, Long reviewId, SaveReviewReplyRequest request,
+                                          AuthenticatedUser user) {
+        var review = requireReplyManagerAndLock(courseId, reviewId, user);
+        review.setReply(request.content().strip());
+        review.setRepliedAt(java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS));
+        review.setRepliedBy(user.userId());
+        // Phản hồi không thay đổi số sao, số lượt hay thứ tự ngày tạo của đánh giá.
+        return CourseReviewResponse.from(reviews.saveAndFlush(review));
+    }
+
+    @Transactional
+    public void deleteReply(Long courseId, Long reviewId, AuthenticatedUser user) {
+        var review = requireReplyManagerAndLock(courseId, reviewId, user);
+        if (review.getReply() == null) throw new ResourceNotFoundException("phản hồi", "reviewId", reviewId);
+        review.setReply(null);
+        review.setRepliedAt(null);
+        review.setRepliedBy(null);
+        reviews.saveAndFlush(review);
+    }
+
+    private CourseReview requireReplyManagerAndLock(Long courseId, Long reviewId, AuthenticatedUser user) {
+        requireRole(user);
+        if (!user.hasAnyRole(Roles.INSTRUCTOR, Roles.ADMIN)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "Chỉ giảng viên của khóa hoặc quản trị viên được phản hồi");
+        }
+        // Khóa trước khi đọc: không ghi đè sửa sao hoặc làm sống lại đánh giá vừa bị xóa.
+        courses.lockForLearnerUpdate(courseId).orElseThrow(() -> missing(courseId));
+        var course = courses.findById(courseId).orElseThrow(() -> missing(courseId));
+        if (!user.hasRole(Roles.ADMIN) && !user.userId().equals(course.getInstructorId())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "Bạn không phải giảng viên của khóa học này");
+        }
+        return reviews.findByIdAndCourseId(reviewId, courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("đánh giá", "id", reviewId));
     }
 
     private void requireLearnerAndLock(Long courseId, AuthenticatedUser user) {

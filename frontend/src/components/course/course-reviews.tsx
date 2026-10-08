@@ -12,6 +12,7 @@ import { attempt } from "./queries";
 import { RatingStars } from "./rating-stars";
 import { ReviewForm } from "./review-form";
 import { RemoveReviewButton } from "./remove-review-button";
+import { ReviewReply } from "./review-reply";
 import type { CourseReview, MyCourseReview } from "./review-types";
 
 export async function CourseReviews({
@@ -19,11 +20,13 @@ export async function CourseReviews({
   loggedIn,
   page,
   isAdmin,
+  canReply,
 }: {
   course: Course;
   loggedIn: boolean;
   page: number;
   isAdmin: boolean;
+  canReply: boolean;
 }) {
   const [result, mine] = await Promise.all([
     attempt(gateway<Page<CourseReview>>(`/api/courses/${course.id}/reviews?page=${page}&size=5`)),
@@ -98,6 +101,12 @@ export async function CourseReviews({
                       {review.comment && (
                         <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed">{review.comment}</p>
                       )}
+                      <ReviewReply
+                        key={`${review.id}:${review.repliedAt ?? "empty"}`}
+                        courseId={course.id}
+                        review={review}
+                        canReply={canReply}
+                      />
                       {isAdmin && (
                         <div className="mt-3 flex justify-end">
                           <RemoveReviewButton
