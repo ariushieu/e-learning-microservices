@@ -33,8 +33,8 @@ export function RegisterForm({ next }: { next: string }) {
   const [state, action, pending] = useActionState<FormState, FormData>(registerAction, {});
   const err = state.fieldErrors ?? {};
   return (
-    // Use server validation so Unicode email errors appear inline in Vietnamese,
-    // instead of being intercepted by the browser's native email tooltip.
+    // Validate on the server and keep the raw address: type="email" can silently
+    // convert a Unicode domain to ASCII punycode before it reaches validation.
     <form action={action} className="space-y-5" noValidate>
       <input type="hidden" name="next" value={next} />
       {state.error && <ErrorAlert message={state.error} />}
@@ -45,7 +45,9 @@ export function RegisterForm({ next }: { next: string }) {
         <Input
           id="email"
           name="email"
-          type="email"
+          type="text"
+          inputMode="email"
+          autoCapitalize="none"
           required
           autoComplete="email"
           maxLength={255}

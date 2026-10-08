@@ -181,8 +181,8 @@ Các service cần dùng cùng `JWT_SECRET`.
 
 Đăng ký chỉ nhận email ASCII hợp lệ, tối đa 255 ký tự; email Unicode trả 400
 `VALIDATION_FAILED` cùng `fieldErrors.email`. Đăng ký/đăng nhập chuẩn hóa bằng trim và
-lowercase `Locale.ROOT`. Migration V5 chuẩn hóa email cũ rồi đổi `users.email` sang
-`utf8mb4_bin`: dấu không còn bị bỏ qua khi đăng nhập, kiểm trùng hay admin tìm email.
+lowercase `Locale.ROOT`. Migration V5 kiểm trùng khóa cuối, đổi `users.email` sang `utf8mb4_bin`
+rồi chuẩn hóa email cũ: dấu không còn bị bỏ qua khi đăng nhập, kiểm trùng hay admin tìm email.
 Tìm họ tên vẫn theo collation của cột họ tên.
 
 V5 kiểm toàn bộ khóa email sau chuẩn hóa trước khi sửa dữ liệu. Nếu báo duplicate key
