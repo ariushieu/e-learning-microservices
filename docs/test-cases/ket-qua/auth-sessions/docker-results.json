@@ -1,0 +1,2098 @@
+{
+  "sourceCommit": "cfed7381ac35df059c5411498c83b6fe0b0afd18",
+  "collectionSha256": "22653019caeb6424727ed3e6158b9ff6494676f6a50e1347f80cf702224793cf",
+  "startedAt": "2026-10-08T13:51:41.130Z",
+  "completedAt": "2026-10-08T13:51:56.515Z",
+  "stats": {
+    "iterations": {
+      "total": 1,
+      "pending": 0,
+      "failed": 0
+    },
+    "items": {
+      "total": 341,
+      "pending": 0,
+      "failed": 0
+    },
+    "scripts": {
+      "total": 343,
+      "pending": 0,
+      "failed": 0
+    },
+    "prerequests": {
+      "total": 341,
+      "pending": 0,
+      "failed": 0
+    },
+    "requests": {
+      "total": 338,
+      "pending": 0,
+      "failed": 0
+    },
+    "tests": {
+      "total": 338,
+      "pending": 0,
+      "failed": 0
+    },
+    "assertions": {
+      "total": 839,
+      "pending": 0,
+      "failed": 0
+    },
+    "testScripts": {
+      "total": 338,
+      "pending": 0,
+      "failed": 0
+    },
+    "prerequestScripts": {
+      "total": 5,
+      "pending": 0,
+      "failed": 0
+    }
+  },
+  "blocked": [
+    {
+      "id": "AUTH-03.8",
+      "reason": "Requires a genuinely expired refresh token"
+    },
+    {
+      "id": "AUTH-05.5",
+      "reason": "Requires a genuinely expired access token"
+    },
+    {
+      "id": "AUTH-07.10",
+      "reason": "Requires a valid access token issued before its account was deleted"
+    }
+  ],
+  "executions": [
+    {
+      "name": "Đăng nhập admin",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "Chuẩn bị A (201 mới / 409 đã có)",
+      "http": 201,
+      "assertions": 1,
+      "failedAssertions": []
+    },
+    {
+      "name": "Đăng nhập A",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "Chuẩn hóa quyền A",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "Lấy token đúng quyền A",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "Chuẩn bị B (201 mới / 409 đã có)",
+      "http": 201,
+      "assertions": 1,
+      "failedAssertions": []
+    },
+    {
+      "name": "Đăng nhập B",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "Chuẩn hóa quyền B",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "Lấy token đúng quyền B",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "Chuẩn bị student (201 mới / 409 đã có)",
+      "http": 201,
+      "assertions": 1,
+      "failedAssertions": []
+    },
+    {
+      "name": "Đăng nhập student",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "Chuẩn hóa quyền student",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "Lấy token đúng quyền student",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "Lưu hồ sơ S để khôi phục",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.1 Đăng ký công khai",
+      "http": 201,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.2 Token admin không cấp quyền",
+      "http": 201,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.3 Email trùng",
+      "http": 409,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.4 Email sai",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.5 Mật khẩu ngắn",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.6 Thiếu tên",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.7 Email chữ hoa",
+      "http": 409,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.8 JSON hỏng",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.9 Từ chối phone sai #1: 'abc'",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.9 Từ chối phone sai #2: '+++++++++'",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.9 Từ chối phone sai #3: '  12345678'",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.9 Từ chối phone sai #4: '09-12'",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.9 Từ chối phone sai #5: '0912  345678'",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.9 Từ chối phone sai #6: '0912+345678'",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.9 Từ chối phone sai #7: '++84912345678'",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.9 Từ chối phone sai #8: '1234567890123456'",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.9 Từ chối phone sai #9: '0912\\t345678'",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.9 Từ chối phone sai #10: '０９１２３４５６７８'",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.9 Không tạo tài khoản sau đăng ký lỗi",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.10 Đăng ký phone #1",
+      "http": 201,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.10 Đăng nhập phone #1",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.10 Đọc lại phone #1",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.10 Đăng ký phone #2",
+      "http": 201,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.10 Đăng nhập phone #2",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.10 Đọc lại phone #2",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.10 Đăng ký phone #3",
+      "http": 201,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.10 Đăng nhập phone #3",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.10 Đọc lại phone #3",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.10 Đăng ký phone #4",
+      "http": 201,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.10 Đăng nhập phone #4",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.10 Đọc lại phone #4",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.10 Đăng ký phone #5",
+      "http": 201,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.10 Đăng nhập phone #5",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.10 Đọc lại phone #5",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.10 Đăng ký phone #6",
+      "http": 201,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.10 Đăng nhập phone #6",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.10 Đọc lại phone #6",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.11 Đăng ký phone #7",
+      "http": 201,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.11 Đăng nhập phone #7",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.11 Đọc lại phone #7",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.11 Đăng ký phone #8",
+      "http": 201,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.11 Đăng nhập phone #8",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.11 Đọc lại phone #8",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.11 Đăng ký phone #9",
+      "http": 201,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.11 Đăng nhập phone #9",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-01.11 Đọc lại phone #9",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-02.1 Đăng nhập công khai",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-02.2 Admin seed",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-02.3 Email không tồn tại",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-02.4 Sai mật khẩu",
+      "http": 401,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-02.5 Thiếu mật khẩu",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-02.6 Email sai",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-02.7 Token admin không đổi danh tính",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-02.8 Chuẩn bị cấp instructor",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-02.8 JWT mới nhận quyền",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-02.8 Khôi phục quyền",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-02.8 Đăng nhập lại sau khôi phục",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-03.1 Chuẩn bị token riêng",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-03.1 Refresh hợp lệ",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-03.2 Không dùng lại token đã rotate",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-03.3 Token không tồn tại",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-03.4 Chuẩn bị token thu hồi",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-03.4 Thu hồi token",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-03.4 Token đã thu hồi",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-03.5 Thiếu refreshToken",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-03.6 Refresh rỗng",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-03.7 Lưu JWT trước cấp quyền",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-03.7 Cấp instructor",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-03.7 Refresh nhận quyền hiện tại",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-03.7 Khôi phục quyền",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-03.7 Đăng nhập lại S",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-03.9 Không dùng access thay refresh",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-04.1 Chuẩn bị phiên đăng xuất",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-04.1 Đăng xuất hợp lệ",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-04.1 Xác nhận token bị thu hồi",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-04.2 Đăng xuất lặp lại",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-04.3 Token không tồn tại",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-04.4 Không body",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-04.5 Token rỗng",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-04.6 JSON hỏng",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-04.7 Access còn hạn sau logout",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-04.8 Phiên một",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-04.8 Phiên hai",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-04.8 Đăng xuất phiên một",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-04.8 Phiên hai vẫn hoạt động",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-05.1 Đúng danh tính",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-05.2 Không token",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-05.3 Giảng viên đọc mình",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-05.4 Token hỏng",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-05.6 Query không giả danh",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-05.7 Không lộ dữ liệu nhạy cảm",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.1 Cấp instructor",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.1 Nhận JWT instructor",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.12 Chuẩn bị danh mục riêng",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.12 Chuẩn bị khóa do S sở hữu",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.2 Không token",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.3 Học viên không tự nâng quyền",
+      "http": 403,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.4 Giảng viên không cấp quyền",
+      "http": 403,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.5 Người dùng không tồn tại",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.6 ID sai kiểu",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.7 Roles thiếu",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.7 Roles rỗng",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.7 Roles null",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.7 Roles phần tử null",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.8 Vai trò không tồn tại",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.9 Gỡ instructor",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.9 Token mới chỉ STUDENT",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.9 JWT mới không tạo quiz",
+      "http": 403,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.10 Admin không tự hạ quyền",
+      "http": 422,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.11 Admin giữ quyền ADMIN",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.12 JWT instructor cũ còn hiệu lực",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.12 Dọn quiz thử nghiệm",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.12 Dọn khóa thử nghiệm",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-06.12 Dọn danh mục thử nghiệm",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.1 Lưu hồ sơ",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.1 Đọc lại dữ liệu mới",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.2 Không token",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.3 Token hỏng",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.4 Họ tên thiếu",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.4 Họ tên trắng",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.5 Tên quá dài",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.6 Số điện thoại quá dài",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.7 Lưu số trước Xóa phone bỏ",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.7 Xóa phone bỏ",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.7 Lưu số trước Xóa phone null",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.7 Xóa phone null",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.7 Lưu số trước Xóa phone trắng",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.7 Xóa phone trắng",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.8 Không sửa trường nhạy cảm",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.9 Cắt khoảng trắng",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.7 Lưu số trước xóa phone rỗng",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.7 Xóa phone rỗng",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.11 Số hợp lệ 9 chữ số",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.11 Số hợp lệ 15 chữ số",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.11 Số hợp lệ có dấu cộng",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.11 Số hợp lệ có khoảng trắng",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.11 Đọc số đã lưu",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.11 Mã quốc gia có khoảng trắng",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.11 Đọc lại Mã quốc gia có khoảng trắng",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.11 15 chữ số, chuỗi lưu 30 ký tự",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.11 Đọc lại 15 chữ số, chuỗi lưu 30 ký tự",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.12 Chuẩn bị hồ sơ gốc",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.12 Từ chối chữ cái",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.12 Từ chối trộn chữ",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.12 Từ chối dấu gạch",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.12 Từ chối tab",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.12 Từ chối xuống dòng",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.12 Từ chối chữ số Unicode",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.12 Hồ sơ không đổi sau lỗi",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.13 Từ chối số dài 8 chữ số",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.13 Hồ sơ không đổi sau số quá ngắn",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.14 Chỉ dấu cộng",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.14 Hai khoảng trắng liên tiếp",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.14 Dấu cộng ở giữa",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.14 Dấu cộng ở cuối",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.14 Hai dấu cộng đầu",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.14 Khoảng trắng sau dấu cộng",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.14 Dấu gạch",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.14 Hồ sơ không đổi sau lỗi dấu cộng/khoảng trắng",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.13 Hai khoảng trắng đầu và 8 chữ số",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-07.13 Hồ sơ không đổi sau 8 chữ số có khoảng trắng đầu",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "Khôi phục hồ sơ S",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "Chuẩn bị tài khoản riêng cho đổi mật khẩu",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "Chuẩn bị phiên một",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "Chuẩn bị phiên hai",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.1 Đổi mật khẩu",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.1 Mật khẩu cũ bị từ chối",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.1 Mật khẩu mới dùng được",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.2 Phiên một bị thu hồi",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.2 Phiên hai bị thu hồi",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.2 Phiên mới vẫn refresh được",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.3 Lấy phiên của S",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.3 Tài khoản khác không ảnh hưởng",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.4 Mật khẩu hiện tại sai",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.4 Mật khẩu không đổi",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.4 Phiên không bị thu hồi",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.5 Mật khẩu hiện tại thiếu",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.5 Mật khẩu hiện tại trắng",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.6 Mật khẩu mới thiếu",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.6 Mật khẩu mới trắng",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.7 Mật khẩu mới dài 5",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.7 Mật khẩu mới dài 51",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.8 Không token",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.9 Token hỏng",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.10 Không đổi mật khẩu người khác",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.10 Tài khoản test đổi đúng",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.10 S vẫn giữ mật khẩu cũ",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-08.11 Access cũ chưa hết hạn",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "Chuẩn bị quản trị: tạo a",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "Chuẩn bị quản trị: tạo b",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "Chuẩn bị quản trị: tạo admin",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "Chuẩn bị quản trị: vai trò b",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "Chuẩn bị quản trị: vai trò admin",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "Chuẩn bị quản trị: phiên managementSession1",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "Chuẩn bị quản trị: phiên managementSession2",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "Chuẩn bị quản trị: phiên managementOther",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.1 Danh sách mặc định không lộ dữ liệu nội bộ",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.2 Tìm email không phân biệt hoa thường và trim",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.3 Tìm họ tên",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.4 Kết hợp vai trò trạng thái từ khóa",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.5 Phân trang 0",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.5 Phân trang 1",
+      "http": 200,
+      "assertions": 4,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.6 Sắp xếp createdAt asc",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.6 Sắp xếp createdAt desc",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.6 Sắp xếp email asc",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.6 Sắp xếp email desc",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.6 Sắp xếp fullName asc",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.6 Sắp xếp fullName desc",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.7 Từ chối sort abcxyz",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.7 Từ chối sort passwordHash",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.7 Từ chối sort roles.code",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.7 Từ chối sort id",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.7 Từ chối sort email,invalid",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.8 Tham số sai page=-1",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.8 Offset vượt giới hạn JPA",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.8 Tham số sai page=abc",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.8 Tham số sai size=0",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.8 Tham số sai size=101",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.8 Tham số sai size=abc",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.8 Tham số sai role=ADMIN",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.8 Tham số sai status=DELETED",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.9 Chưa xác thực None",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.9 Chưa xác thực INVALID",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.10 Không phải admin studentToken",
+      "http": 403,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.10 Không phải admin tokenA",
+      "http": 403,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.11 Không có kết quả và trang vượt phạm vi",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.12 Tìm ký tự LIKE theo nghĩa đen %25",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-09.12 Tìm ký tự LIKE theo nghĩa đen _",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.1 Khóa tài khoản học viên",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.1 Danh sách phản ánh trạng thái đã khóa",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.2 Đăng nhập bị khóa",
+      "http": 403,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.3 Thu hồi mọi phiên managementSession1",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.3 Thu hồi mọi phiên managementSession2",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.4 Access token đã phát vẫn còn hạn",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.5 Mở khóa",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.5 Đăng nhập lại sau mở khóa",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.5 Không phục hồi refresh token đã thu hồi",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.6 Đặt trạng thái lặp LOCKED",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.6 Đặt trạng thái lặp LOCKED",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.6 Đặt trạng thái lặp ACTIVE",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.6 Đặt trạng thái lặp ACTIVE",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.7 Không tự khóa",
+      "http": 422,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.8 Không khóa admin khác có nhiều vai trò",
+      "http": 422,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.9 Tài khoản không tồn tại",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.10 ID sai kiểu",
+      "http": 400,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.11 Body không hợp lệ 0",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.11 Body không hợp lệ 1",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.11 Body không hợp lệ 2",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.11 Body không hợp lệ 3",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.11 Body không hợp lệ 4",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.11 Body không hợp lệ 5",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.12 Không phải admin studentToken",
+      "http": 403,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.12 Không phải admin tokenA",
+      "http": 403,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.13 Chưa xác thực None",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.13 Chưa xác thực INVALID",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-10.14 Không thu hồi phiên tài khoản khác",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "Khôi phục fixture quản trị: bỏ quyền admin thử nghiệm",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-11.1 Thống kê đủ trường và lưu mốc ban đầu",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-11.2 Đăng ký học viên a",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-11.2 Đăng ký học viên b",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-11.2 Tổng và mới 7 ngày tăng hai",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-11.3 Cấp thêm giảng viên cho A",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-11.3 Đa vai trò không làm tăng tổng",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-11.4 Đổi trạng thái A thành LOCKED",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-11.4 Thống kê trạng thái LOCKED",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-11.4 Link bộ lọc trả đúng A",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-11.5 Đổi trạng thái A thành ACTIVE",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-11.5 Thống kê trạng thái ACTIVE",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-11.6 Không xác thực None",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-11.6 Không xác thực INVALID",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-11.7 Không phải admin studentToken",
+      "http": 403,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-11.7 Không phải admin tokenA",
+      "http": 403,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-11.8 Năm tài khoản mới nhất",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-11.8 Hai tài khoản fixture mới theo đúng thứ tự",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-12.1 Tạo tài khoản email ASCII",
+      "http": 201,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-12.2 Email có dấu không vào tài khoản không dấu",
+      "http": 401,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-12.3 Email chữ hoa đăng nhập đúng tài khoản",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-12.4 Từ chối đăng ký thử.{{runId}}@example.com",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-12.4 Từ chối đăng ký qa.hocviên.{{runId}}@example.com",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-12.4 Từ chối đăng ký qa.{{runId}}@vídụ.com",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-12.4 Từ chối đăng ký qa.tést.{{runId}}@example.com",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-12.4 Từ chối đăng ký ｔest.{{runId}}@example.com",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-12.5 Đăng ký chữ hoa trùng tài khoản cũ",
+      "http": 409,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-12.6 Admin tìm email có dấu không ra email không dấu",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-12.7 Admin tìm email chữ hoa và khoảng trắng",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.1 Đăng ký email thừa khoảng trắng",
+      "http": 201,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.1 Đăng ký email thừa khoảng trắng",
+      "http": 201,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.2 Đăng nhập edge với email có khoảng trắng",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.2 Đăng nhập postman với email có khoảng trắng",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.2 Đăng nhập foreign với email có khoảng trắng",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.3 Danh sách riêng đủ trường mới nhất trước",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.4 Phiên hiện tại theo access token Postman",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.5 Lấy phiên người dùng B",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.5 Xóa phiên người khác hoặc không tồn tại {{foreignId}}",
+      "http": 404,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.5 Xóa phiên người khác hoặc không tồn tại 999999999",
+      "http": 404,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.6 Đăng xuất riêng phiên Postman",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.6 Refresh của phiên vừa thu hồi",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.7 Access token đã phát vẫn còn dùng được",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.8 Phiên thu hồi không nằm trong danh sách",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.8 Xóa lại phiên đã thu hồi",
+      "http": 404,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.9 Đổi token tạo sid mới",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.9 Phiên cũ biến mất phiên mới là hiện tại",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.10 Sid đã rotate không được thu hồi các phiên khác",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.11 Tạo thêm phiên extra1",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.11 Tạo thêm phiên extra2",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.11 Đăng xuất mọi thiết bị khác",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.11 Chỉ giữ phiên hiện tại",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.11 Phiên khác không refresh được extra1",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.11 Phiên khác không refresh được extra2",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.12 Phiên người dùng khác không bị ảnh hưởng",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.13 Đăng xuất mọi thiết bị khác lần hai",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.14 Phiên hiện tại vẫn refresh được",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.15 Lấy id phiên hiện tại",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.15 Đăng xuất thiết bị này",
+      "http": 200,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.15 Refresh thiết bị này bị thu hồi",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.16 Không còn phiên đang hoạt động",
+      "http": 200,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.17 Không xác thực GET None",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.17 Không xác thực DELETE None",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.17 Không xác thực POST None",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.17 Không xác thực GET INVALID",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.17 Không xác thực DELETE INVALID",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.17 Không xác thực POST INVALID",
+      "http": 401,
+      "assertions": 2,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.18 Email toàn khoảng trắng register",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    },
+    {
+      "name": "AUTH-13.18 Email toàn khoảng trắng login",
+      "http": 400,
+      "assertions": 3,
+      "failedAssertions": []
+    }
+  ],
+  "failures": []
+}

@@ -156,7 +156,7 @@ class AuthServiceTest {
 
         when(userRepository.findByEmailForUpdate("test@hunre.edu.vn")).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches("password123", testUser.getPasswordHash())).thenReturn(true);
-        when(jwtService.generateAccessToken(testUser)).thenReturn("valid.access.token");
+        when(jwtService.generateAccessToken(eq(testUser), isNull())).thenReturn("valid.access.token");
         when(jwtService.generateRefreshToken()).thenReturn("raw-refresh-token-123");
         when(jwtService.hashToken("raw-refresh-token-123")).thenReturn("hash-123");
         when(jwtService.getAccessTokenExpirationMs()).thenReturn(900000L);
@@ -223,7 +223,7 @@ class AuthServiceTest {
         when(refreshTokenRepository.findUserIdByTokenHash("hash-abc")).thenReturn(Optional.of(1L));
         when(userRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(testUser));
         when(refreshTokenRepository.findByTokenHashForUpdate("hash-abc")).thenReturn(Optional.of(existingToken));
-        when(jwtService.generateAccessToken(testUser)).thenReturn("new.access.token");
+        when(jwtService.generateAccessToken(eq(testUser), isNull())).thenReturn("new.access.token");
         when(jwtService.generateRefreshToken()).thenReturn("new-raw-refresh-token");
         when(jwtService.hashToken("new-raw-refresh-token")).thenReturn("new-hash-xyz");
         when(jwtService.getAccessTokenExpirationMs()).thenReturn(900000L);

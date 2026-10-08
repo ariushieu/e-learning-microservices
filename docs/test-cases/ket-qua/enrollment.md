@@ -169,6 +169,10 @@ Tab từ nút in tới liên kết xác minh có viền focus. `pnpm next typege
 
 ## Cần chạy tiếp trên môi trường nhóm
 
+Cập nhật 08/10: ENROLL-09.1–09.5 đã được chạy và đạt ở
+[biên bản Docker riêng](enrollment-resilience.md). Các trạng thái BLOCKED phía trên là kết quả
+lịch sử của L1/L2, không thay bằng kết quả của lượt mới.
+
 1. Lượt chạy collection trên Docker/MySQL đã có bằng chứng E2 (310/310). Khi kiểm phiên bản mới, ghi thêm commit và kết quả của lượt đó, không thay số liệu L1/E2.
 2. Đối chiếu snapshot ARCHIVED cho ENROLL-01.10 bằng database/log; thực hiện ENROLL-09.1–09.5 và lưu offset/payload/header DLT.
 3. Nếu có FAIL nghiệp vụ, mở PR sửa riêng và ghi đúng mã ca theo phan-cong.md.
