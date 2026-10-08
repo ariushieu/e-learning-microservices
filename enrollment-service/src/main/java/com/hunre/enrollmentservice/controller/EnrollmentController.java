@@ -46,7 +46,7 @@ public class EnrollmentController {
             @Valid @RequestBody EnrollCourseRequest request,
             AuthenticatedUser user) {
 
-        EnrollmentResponse response = enrollmentService.enroll(user.userId(), request);
+        EnrollmentResponse response = enrollmentService.enroll(user.userId(), user.fullName(), request);
         return ApiResponse.ok(response, "Đăng ký khóa học thành công");
     }
 

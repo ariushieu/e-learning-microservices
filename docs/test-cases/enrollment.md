@@ -25,7 +25,7 @@ có courseId cho đến khi nhóm chốt hợp đồng khác.
 
 Các API này cho phép **mọi người đã đăng nhập thao tác dữ liệu của chính mình**; không tự
 đặt yêu cầu chỉ ROLE_STUDENT khi code/hợp đồng không có. Dùng B/ADM để kiểm truy cập dữ liệu
-của S. Chỉ GET danh sách ghi danh có Pageable; các API khác không nhận sort.
+của S. GET danh sách ghi danh và GET học viên của khóa (ENROLL-11) có phân trang/sort.
 
 ## Body mẫu
 
@@ -206,10 +206,52 @@ Web: mở link ở cửa sổ chưa đăng nhập thấy Hợp lệ; mã lạ hi
 ErrorAlert, không nhầm với mã không tồn tại. Kiểm 375/768/1366px và liên kết trên bản in chứng chỉ.
 
 
+## ENROLL-11 — GET /api/courses/{courseId}/learners
+
+Route gateway `enrollment-course-learners`, order -10, GET → enrollment-service. Service tự kiểm
+JWT vì gateway public `GET:/api/courses/**`. A là INSTRUCTOR sở hữu snapshot, B là giảng viên khác
+đã ghi danh, S là STUDENT. ADMIN được đọc; chỉ có userId trùng chủ khóa nhưng đã mất vai trò
+INSTRUCTOR vẫn bị từ chối. Khóa ARCHIVED còn snapshot thì chủ khóa vẫn xem được.
+
+Response `ApiResponse<PageResponse<...>>`: `enrollmentId`, `userId` (để web hiển thị tên dự phòng),
+`learnerName`, `status`, `progressPercent`, `enrolledAt`, `lastAccessedAt`, `completedAt`,
+`certificateCode` nullable. Không email, token hoặc thông tin tài khoản khác; `Cache-Control: no-store`.
+Mặc định page=0, size=10, sort=enrolledAt,desc; size 1–100; chỉ sort enrolledAt/progressPercent,
+có thể gửi nhiều tham số sort. ID giảm dần là thứ tự phụ khi giá trị bằng nhau.
+
+| # | Tình huống | Tài khoản | Mong đợi |
+|---|---|---|---|
+| 1 | S/B ghi danh, khóa khác cũng có lượt | A | 200; chỉ S/B của khóa này; đúng tên token, tiến độ 0, chưa có chứng chỉ; đúng 9 trường |
+| 2 | Không token hoặc token sai | — | 401 ở enrollment-service, dù gateway cho GET đi qua |
+| 3 | B đã ghi danh, giả instructorId=A | B | 403 |
+| 4 | S giả userId=A; A mất vai trò INSTRUCTOR | S/A | 403 |
+| 5 | ADMIN không phải chủ khóa | ADMIN | 200 |
+| 6 | Khóa chưa có snapshot | A | 404 |
+| 7 | courseId=0/-1/abc | A | 400 |
+| 8 | size=1, trang 0/1; trang vượt cuối; giá trị sort bằng nhau | A | 200; không trùng lượt giữa trang, total đúng; trang vượt cuối rỗng, total vẫn giữ |
+| 9 | page=-1/abc, size=0/101/abc, status lạ, sort ngoài whitelist hoặc nhiều sort có trường lạ | A | 400, không 500 |
+| 10 | Khóa đã có snapshot nhưng chưa có ai; khóa ARCHIVED | A | 200; danh sách rỗng hoặc giữ danh sách hiện tại |
+| 11 | Lọc ACTIVE/CANCELLED/COMPLETED | A | 200; content và total chỉ tính đúng trạng thái |
+| 12 | Giả tên trong body/query; hủy rồi kích hoạt bằng token mang tên mới | S/A | Tên từ JWT của S; cùng enrollmentId, cập nhật tên khi kích hoạt; đọc bằng token A không ghi tên A vào lượt |
+| 13 | S hoàn thành một trong hai bài | A | 200; S 50%, B 0% |
+| 14 | S hoàn thành bài cuối | A | 200; 100%, COMPLETED, completedAt và mã đúng với chứng chỉ đã cấp |
+| 15 | sort=progressPercent asc/desc và enrolledAt asc/desc | A | 200; đúng thứ tự, cùng giá trị thì id desc |
+| 16 | S/B xóa lượt ghi danh | A | 200; không còn lượt hoặc chứng chỉ trong danh sách |
+| 17 | Migration V3 trên database có lượt cũ | A | Cột learner_name VARCHAR(150) NULL; dữ liệu cũ giữ NULL; web hiện Học viên #userId; đọc không backfill |
+| 18 | Token ghi danh thiếu tên, tên trắng hoặc dài >150 | S | 401; không ghi enrollment/outbox, cần đăng nhập lại |
+| 19 | Web tại /instructor/courses/{id}, 375/768/1366px | A | Tên dài không tràn; đủ tên, trạng thái, ProgressMeter, ngày ghi danh/hoàn thành; lọc/sort về trang đầu; phân trang/back giữ query |
+| 20 | Web đang tải, khóa rỗng, trang vượt cuối, API lỗi, đổi bộ lọc nhanh | A | Skeleton/EmptyState/ErrorAlert phù hợp; có làm mới; không hiển thị response cũ sai bộ lọc; Tab tới được điều khiển |
+
+ENROLL-11 trong collection được đặt tại đúng thời điểm trước/sau hủy, học 50%, hoàn thành và xóa.
+Ca token đặc biệt, dữ liệu cũ và sort bằng nhau được kiểm trong `CourseLearnerApiIntegrationTest`.
+Ca migration MySQL và kiểm web phải ghi bằng chứng riêng; không tính PASS chỉ từ Newman/H2.
+
 ## Truy vết nguồn
 
 - [EnrollmentController](../../enrollment-service/src/main/java/com/hunre/enrollmentservice/controller/EnrollmentController.java),
   [ProgressController](../../enrollment-service/src/main/java/com/hunre/enrollmentservice/controller/ProgressController.java).
+- [CourseLearnerController](../../enrollment-service/src/main/java/com/hunre/enrollmentservice/controller/CourseLearnerController.java),
+  [CourseLearnerService](../../enrollment-service/src/main/java/com/hunre/enrollmentservice/service/CourseLearnerService.java).
 - [EnrollmentServiceImpl](../../enrollment-service/src/main/java/com/hunre/enrollmentservice/service/impl/EnrollmentServiceImpl.java),
   [ProgressServiceImpl](../../enrollment-service/src/main/java/com/hunre/enrollmentservice/service/impl/ProgressServiceImpl.java).
 - [DTO](../../enrollment-service/src/main/java/com/hunre/enrollmentservice/dto/request),
