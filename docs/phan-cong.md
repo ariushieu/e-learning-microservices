@@ -95,10 +95,9 @@ Mọi request trong Postman đi qua **gateway `http://localhost:8080`**. Đừng
 8081–8085: trong Docker các cổng đó không mở ra ngoài, và gọi thẳng thì bỏ qua đúng hai thứ
 hay hỏng nhất là định tuyến và kiểm token ở vòng ngoài.
 
-**Gateway giới hạn số lần đăng nhập theo địa chỉ IP** (#34): 10 lần liền, sau đó 6 giây mới
-được thêm một lần. Mọi request từ máy mình vào Docker đều mang chung một IP, nên khi chạy
-Postman Runner hay nhiều người đăng nhập liên tục trên cùng một máy sẽ nhận **429**. Đó là
-gateway chặn đúng, không phải lỗi của service. Chờ một phút, hoặc tắt hẳn trong lúc test:
+**Gateway giới hạn số lần đăng nhập** (#34): mỗi tài khoản 10 lần liền, sau đó 6 giây mới được
+thêm một lần; mỗi máy 60 lần liền cho mọi tài khoản. Chạy Postman Runner dồn dập vẫn có thể nhận
+**429**. Đó là gateway chặn đúng, không phải lỗi của service. Chờ một phút, hoặc tắt hẳn trong lúc test:
 
 ```bash
 RATE_LIMIT_ENABLED=false docker compose --profile app up -d api-gateway

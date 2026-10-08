@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Nạp hai chính sách giới hạn vào {@link RedisRateLimiter} mà Spring Cloud Gateway tự tạo
+ * Nạp ba chính sách giới hạn vào {@link RedisRateLimiter} mà Spring Cloud Gateway tự tạo
  * khi có Redis trong classpath, rồi dựng filter dùng nó.
  */
 @Configuration(proxyBeanMethods = false)
@@ -17,6 +17,7 @@ public class RateLimitConfiguration {
     RateLimitGatewayFilter rateLimitGatewayFilter(RedisRateLimiter redisRateLimiter,
                                                   RateLimitProperties properties) {
         register(redisRateLimiter, RateLimitGatewayFilter.LOGIN_POLICY, "login", properties.login());
+        register(redisRateLimiter, RateLimitGatewayFilter.LOGIN_IP_POLICY, "login-ip", properties.loginIp());
         register(redisRateLimiter, RateLimitGatewayFilter.API_POLICY, "api", properties.api());
         return new RateLimitGatewayFilter(redisRateLimiter, properties);
     }

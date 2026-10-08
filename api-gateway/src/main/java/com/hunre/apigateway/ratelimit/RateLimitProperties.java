@@ -15,7 +15,9 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  *
  * @param enabled tắt hẳn việc giới hạn, dùng khi chạy thử tải hoặc khi cần loại trừ nguyên
  *                nhân lúc gỡ lỗi
- * @param login   chính sách cho đăng nhập, đăng ký, làm mới token — tính theo địa chỉ IP
+ * @param login   chính sách chặt cho đăng nhập, đăng ký — tính theo tài khoản (email)
+ * @param loginIp chính sách nới hơn cho đăng nhập, đăng ký, làm mới token — tính theo địa
+ *                chỉ IP, chặn một máy thử hàng loạt tài khoản
  * @param api     chính sách cho mọi đường dẫn còn lại — tính theo người dùng nếu đã đăng
  *                nhập, theo địa chỉ IP nếu chưa
  */
@@ -23,6 +25,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 public record RateLimitProperties(
         @DefaultValue("true") boolean enabled,
         Policy login,
+        Policy loginIp,
         Policy api) {
 
     public record Policy(int replenishRate, int burstCapacity, @DefaultValue("1") int requestedTokens) {
