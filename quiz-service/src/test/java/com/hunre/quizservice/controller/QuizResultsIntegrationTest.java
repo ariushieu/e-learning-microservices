@@ -64,6 +64,77 @@ class QuizResultsIntegrationTest {
                 .signWith(Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8))).compact();
     }
     String path() { return "/api/quizzes/" + quiz.getId() + "/results"; }
+
+    @Test void csvExportsEveryLearnerWithBestScoreVietnamTimeAndUtf8Bom() throws Exception {
+        attempt(20, 1, AttemptStatus.SUBMITTED, false, "Tên cũ", 100);
+        attempt(20, 2, AttemptStatus.SUBMITTED, false, "Nguyễn Thị Ánh", 50);
+        for (long id = 30; id < 51; id++) {
+            attempt(id, 1, AttemptStatus.SUBMITTED, false, "Học viên " + id, 50);
+        }
+        attempt(10, 1, AttemptStatus.SUBMITTED, false, "Tác giả", 100);
+        attempt(90, 1, AttemptStatus.SUBMITTED, true, "Admin preview", 100);
+        attempt(91, 1, AttemptStatus.SUBMITTED, null, "Legacy", 100);
+        attempt(92, 1, AttemptStatus.EXPIRED, false, "Expired", 0);
+        attempt(93, 1, AttemptStatus.IN_PROGRESS, false, "Ongoing", 0);
+        var bytes = mvc.perform(get(path() + "/export").param("page", "9").param("size", "1")
+                        .accept("application/json").header("Authorization", token(10, "ROLE_INSTRUCTOR")))
+                .andExpect(status().isOk()).andExpect(content().contentType("text/csv;charset=UTF-8"))
+                .andExpect(header().string("Content-Disposition", "attachment; filename=\"ket-qua-quiz-" + quiz.getId() + ".csv\""))
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andReturn().getResponse().getContentAsByteArray();
+        assertThat(bytes).startsWith((byte) 0xef, (byte) 0xbb, (byte) 0xbf);
+        var csv = new String(bytes, StandardCharsets.UTF_8);
+        assertThat(csv.lines().count()).isEqualTo(23); // header + all 22 learners, not a page
+        assertThat(csv).contains("Nguyễn Thị Ánh,2,100.00,Đạt,08/10/2026 08:00:02\r\n",
+                "Học viên 50,1,50.00,Chưa đạt,08/10/2026 08:00:01\r\n")
+                .doesNotContain("Tên cũ", "Tác giả", "Admin preview", "Legacy", "Expired", "Ongoing", "correctOptionIds");
+        mvc.perform(get(path() + "/export").header("Authorization", token(99, "ROLE_ADMIN")))
+                .andExpect(status().isOk()).andExpect(content().bytes(bytes));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"=1+1", "+SUM(1,2)", "-1+1", "@SUM(A1)", "\t=1+1", "\r=1+1", "\n=1+1"})
+    void csvNeutralizesFormulaPrefixesBeforeQuoting(String name) throws Exception {
+        attempt(20, 1, AttemptStatus.SUBMITTED, false, name, 50);
+        String escaped = "'" + name;
+        if (name.contains(",") || name.contains("\r") || name.contains("\n")) escaped = "\"" + escaped + "\"";
+        var csv = mvc.perform(get(path() + "/export").header("Authorization", token(10, "ROLE_INSTRUCTOR")))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(csv).contains("\r\n" + escaped + ",1,50.00,Chưa đạt,");
+    }
+
+    @Test void csvQuotesCommasQuotesAndMultilineNamesAndKeepsStoredNameUnchanged() throws Exception {
+        String name = "Nguyễn, \"Ánh\"\r\nLớp A";
+        var saved = attempt(20, 1, AttemptStatus.SUBMITTED, false, name, 100);
+        attempt(30, 1, AttemptStatus.SUBMITTED, false, null, 50);
+        var csv = mvc.perform(get(path() + "/export").header("Authorization", token(10, "ROLE_INSTRUCTOR")))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(csv).contains("\"Nguyễn, \"\"Ánh\"\"\r\nLớp A\",1,100.00,Đạt,", "Học viên #30,1,50.00,");
+        assertThat(attempts.findById(saved.getId()).orElseThrow().getLearnerName()).isEqualTo(name);
+    }
+
+    @ParameterizedTest @ValueSource(strings = {"ROLE_STUDENT", "ROLE_INSTRUCTOR"})
+    void csvRejectsOtherUsersWithoutAttachment(String role) throws Exception {
+        mvc.perform(get(path() + "/export").param("userId", "10").param("isAdmin", "true")
+                        .header("Authorization", token(20, role)))
+                .andExpect(status().isForbidden()).andExpect(header().doesNotExist("Content-Disposition"))
+                .andExpect(content().contentTypeCompatibleWith("application/json"));
+    }
+
+    @Test void csvRequiresLoginAndReturns404ForUnknownQuizAnd400ForInvalidId() throws Exception {
+        mvc.perform(get(path() + "/export")).andExpect(status().isUnauthorized())
+                .andExpect(header().doesNotExist("Content-Disposition"));
+        mvc.perform(get("/api/quizzes/999999/results/export").header("Authorization", token(10, "ROLE_INSTRUCTOR")))
+                .andExpect(status().isNotFound()).andExpect(header().doesNotExist("Content-Disposition"));
+        mvc.perform(get("/api/quizzes/abc/results/export").header("Authorization", token(10, "ROLE_INSTRUCTOR")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test void emptyCsvStillContainsOnlyTheUtf8Header() throws Exception {
+        mvc.perform(get(path() + "/export").accept("application/json").header("Authorization", token(10, "ROLE_INSTRUCTOR")))
+                .andExpect(status().isOk()).andExpect(content().bytes(
+                        "\uFEFFHọc viên,Lượt nộp,Điểm cao nhất,Kết quả,Nộp gần nhất (giờ Việt Nam)\r\n".getBytes(StandardCharsets.UTF_8)));
+    }
     QuizAttempt attempt(long user, int no, AttemptStatus status, Boolean preview, String name, int score, boolean... correct) {
         var a = QuizAttempt.builder().quiz(quiz).userId(user).attemptNo(no).status(status).preview(preview)
                 .learnerName(name).score(BigDecimal.valueOf(score)).passed(score >= 75)

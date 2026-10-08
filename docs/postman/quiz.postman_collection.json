@@ -9005,6 +9005,801 @@
           ]
         }
       ]
+    },
+    {
+      "name": "8. Xuất CSV (QUIZ-18)",
+      "description": "Chạy sau QUIZ-17; đổi tên tài khoản QA S qua API rồi đăng nhập lại trước khi bắt đầu. Khôi phục tên sau ca thử.",
+      "item": [
+        {
+          "name": "QUIZ-18.1 Chủ đề xuất toàn bộ, bỏ tham số trang",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{statsQuizId}}/results/export?page=99&size=1",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('CSV download headers',()=>{pm.expect(pm.response.headers.get('Content-Type').toLowerCase()).to.include('text/csv');pm.expect(pm.response.headers.get('Content-Type').toLowerCase()).to.include('charset=utf-8');pm.expect(pm.response.headers.get('Content-Disposition')).to.eql('attachment; filename=\"ket-qua-quiz-'+pm.collectionVariables.get('statsQuizId')+'.csv\"');});pm.test('Two learners, no previews, best scores',()=>{const rows=pm.response.text().trim().split(/\\r?\\n/);pm.expect(rows.length).to.eql(3);pm.expect(rows[1]).to.include(',2,50.00,Chưa đạt,');pm.expect(rows[2]).to.include(',1,100.00,Đạt,');pm.collectionVariables.set('csvBaseline',pm.response.text());});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-18.2 Admin tải cùng kết quả",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{statsQuizId}}/results/export",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('CSV download headers',()=>{pm.expect(pm.response.headers.get('Content-Type').toLowerCase()).to.include('text/csv');pm.expect(pm.response.headers.get('Content-Type').toLowerCase()).to.include('charset=utf-8');pm.expect(pm.response.headers.get('Content-Disposition')).to.eql('attachment; filename=\"ket-qua-quiz-'+pm.collectionVariables.get('statsQuizId')+'.csv\"');});pm.test('Same results as author',()=>pm.expect(pm.response.text()).to.eql(pm.collectionVariables.get('csvBaseline')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-18.3 Giảng viên khác",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{statsQuizId}}/results/export?userId={{instructorAId}}&isAdmin=true",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenB}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403',()=>pm.response.to.have.status(403));",
+                  "pm.test('Error without attachment',()=>{pm.expect(pm.response.json().success).to.eql(false);pm.expect(pm.response.headers.get('Content-Disposition')).to.not.exist;});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-18.4 Học viên giả danh",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{statsQuizId}}/results/export?userId={{instructorAId}}&isAdmin=true",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403',()=>pm.response.to.have.status(403));",
+                  "pm.test('Error without attachment',()=>{pm.expect(pm.response.json().success).to.eql(false);pm.expect(pm.response.headers.get('Content-Disposition')).to.not.exist;});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-18.5 Không token",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{statsQuizId}}/results/export?userId={{instructorAId}}&isAdmin=true",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401',()=>pm.response.to.have.status(401));",
+                  "pm.test('Error without attachment',()=>{pm.expect(pm.response.json().success).to.eql(false);pm.expect(pm.response.headers.get('Content-Disposition')).to.not.exist;});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-18.6 Đề không tồn tại",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{missingId}}/results/export",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404',()=>pm.response.to.have.status(404));",
+                  "pm.test('Missing resource',()=>pm.expect(pm.response.json().code).to.eql('RESOURCE_NOT_FOUND'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-18 chuẩn bị tên công thức",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/auth/me",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"=1+1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-18 đăng nhập lại nhận tên từ JWT",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa.student@example.com\",\n  \"password\": \"{{qaPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('studentToken',pm.response.json().data.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-18 bắt đầu với tên công thức",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{statsQuizId}}/attempts",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('csvAttemptId',pm.response.json().data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-18 nộp với tên công thức",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/attempts/{{csvAttemptId}}/submit",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-18.7 Tên công thức được vô hiệu hóa",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{statsQuizId}}/results/export",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('CSV download headers',()=>{pm.expect(pm.response.headers.get('Content-Type').toLowerCase()).to.include('text/csv');pm.expect(pm.response.headers.get('Content-Type').toLowerCase()).to.include('charset=utf-8');pm.expect(pm.response.headers.get('Content-Disposition')).to.eql('attachment; filename=\"ket-qua-quiz-'+pm.collectionVariables.get('statsQuizId')+'.csv\"');});pm.test('Formula escaped, best score preserved',()=>{pm.expect(pm.response.text()).to.include(\"\\r\\n'=1+1,3,50.00,Chưa đạt,\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-18 chuẩn bị tên có dấu phẩy và ngoặc kép",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/auth/me",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Nguyễn, \\\"Ánh\\\"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-18 đăng nhập lại tên tiếng Việt",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa.student@example.com\",\n  \"password\": \"{{qaPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('studentToken',pm.response.json().data.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-18 bắt đầu tên tiếng Việt",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes/{{statsQuizId}}/attempts",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('csvAttemptId',pm.response.json().data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-18 nộp tên tiếng Việt",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/attempts/{{csvAttemptId}}/submit",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-18.8 CSV giữ tiếng Việt và escape dấu kép",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{statsQuizId}}/results/export",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('CSV download headers',()=>{pm.expect(pm.response.headers.get('Content-Type').toLowerCase()).to.include('text/csv');pm.expect(pm.response.headers.get('Content-Type').toLowerCase()).to.include('charset=utf-8');pm.expect(pm.response.headers.get('Content-Disposition')).to.eql('attachment; filename=\"ket-qua-quiz-'+pm.collectionVariables.get('statsQuizId')+'.csv\"');});pm.test('Quoted Vietnamese name',()=>pm.expect(pm.response.text()).to.include('\"Nguyễn, \"\"Ánh\"\"\",4,50.00,Chưa đạt,'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-18 khôi phục tên tài khoản QA",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/auth/me",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Hoc vien QA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-18 đăng nhập lại sau khôi phục",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa.student@example.com\",\n  \"password\": \"{{qaPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('studentToken',pm.response.json().data.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-18 chuẩn bị đề rỗng",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/quizzes",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": \"{{publishedCourseId}}\",\n  \"title\": \"CSV rỗng {{runId}}\",\n  \"passScore\": 75\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('csvEmptyQuizId',pm.response.json().data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QUIZ-18.9 Đề rỗng vẫn có header",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/quizzes/{{csvEmptyQuizId}}/results/export",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenA}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Only Vietnamese header',()=>pm.expect(pm.response.text().replace(/^\\uFEFF/, '')).to.eql('Học viên,Lượt nộp,Điểm cao nhất,Kết quả,Nộp gần nhất (giờ Việt Nam)\\r\\n'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }
