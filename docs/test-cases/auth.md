@@ -233,7 +233,7 @@ không giả định database rỗng. Giữ đúng thứ tự request và khôi 
 | 5 | Mở khóa A | 200; LOCKED/ACTIVE trở về số trước khi khóa |
 | 6 | Thiếu token hoặc token hỏng | 401 |
 | 7 | Học viên hoặc giảng viên | 403 |
-| 8 | Lấy 5 tài khoản mới nhất | 200; size=5; createdAt giảm dần, hai học viên vừa tạo nằm đầu |
+| 8 | Lấy 5 tài khoản mới nhất; đối chiếu thêm bộ lọc fixture riêng | 200; size=5; createdAt giảm dần; lọc fixture trả đúng hai học viên theo thứ tự tạo. Không giả định thứ tự của dữ liệu có sẵn |
 
 Controller còn kiểm DB rỗng trả đủ nhóm 0, trạng thái PENDING, cửa sổ 7 ngày gồm hai đầu,
 loại bản ghi cũ/tương lai. Trình duyệt kiểm `/admin`, link thống kê, sidebar, lỗi tải/thử lại;

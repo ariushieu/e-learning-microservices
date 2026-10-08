@@ -11227,7 +11227,37 @@
                   "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
                   "const j=pm.response.json(); const d=j.data;",
                   "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
-                  "pm.test(\"Business result\",()=>{pm.expect(d.content.length).to.eql(5);pm.expect(d.size).to.eql(5);pm.expect(d.content[0].id).to.eql(Number(pm.collectionVariables.get(\"stats_b_id\")));pm.expect(d.content[1].id).to.eql(Number(pm.collectionVariables.get(\"stats_a_id\")));for(let i=1;i<d.content.length;i++)pm.expect(Date.parse(d.content[i-1].createdAt)).to.be.at.least(Date.parse(d.content[i].createdAt));});"
+                  "pm.test(\"Business result\",()=>{pm.expect(d.content.length).to.eql(5);pm.expect(d.size).to.eql(5);for(let i=1;i<d.content.length;i++)pm.expect(Date.parse(d.content[i-1].createdAt)).to.be.at.least(Date.parse(d.content[i].createdAt));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-11.8 Hai tài khoản fixture mới theo đúng thứ tự",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users?keyword=qa.stats.{{runId}}&sort=createdAt,desc&size=5",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json(); const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Business result\",()=>{pm.expect(d.content.length).to.eql(2);pm.expect(d.content[0].id).to.eql(Number(pm.collectionVariables.get(\"stats_b_id\")));pm.expect(d.content[1].id).to.eql(Number(pm.collectionVariables.get(\"stats_a_id\")));});"
                 ]
               }
             }
