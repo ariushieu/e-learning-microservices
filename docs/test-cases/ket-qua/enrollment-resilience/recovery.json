@@ -1,0 +1,330 @@
+{
+  "sourceCommit": "046f321631841840f52431d146eb5b0b8bc37e0a",
+  "startedAt": "2026-10-08T13:58:01.333524Z",
+  "database": "MySQL 8.4 (dedicated enrollment DB)",
+  "broker": "Kafka 4.3.1",
+  "cases": [
+    {
+      "case": "ENROLL-09.1",
+      "startedAt": "2026-10-08T13:58:02.457256Z",
+      "status": "PASS",
+      "evidence": {
+        "outageSeconds": 41.2,
+        "publishHttp": 200,
+        "source": {
+          "topic": "elearning.course.events",
+          "partition": 2,
+          "offset": 0,
+          "key": "2",
+          "payload": "{\"eventId\":\"8c3bd985-4858-4131-8fe7-0bebdf688732\",\"occurredAt\":\"2026-10-08T13:58:06.582010168Z\",\"courseId\":2,\"title\":\"ENROLL-09 recovery 57c3fd39095e4d0cb81c2df904e65fe0\",\"slug\":\"recovery-57c3fd39095e4d0cb81c2df904e65fe0\",\"thumbnailUrl\":null,\"instructorId\":1,\"instructorName\":\"Administrator\",\"totalLessons\":1,\"status\":\"PUBLISHED\",\"eventType\":\"course.updated\"}"
+        },
+        "offsetsDuringOutage": [
+          {
+            "seconds": 3.0,
+            "committed": -1001
+          },
+          {
+            "seconds": 5.0,
+            "committed": -1001
+          },
+          {
+            "seconds": 7.0,
+            "committed": -1001
+          },
+          {
+            "seconds": 9.0,
+            "committed": -1001
+          },
+          {
+            "seconds": 11.0,
+            "committed": -1001
+          },
+          {
+            "seconds": 13.0,
+            "committed": -1001
+          },
+          {
+            "seconds": 15.0,
+            "committed": -1001
+          },
+          {
+            "seconds": 17.0,
+            "committed": -1001
+          },
+          {
+            "seconds": 19.0,
+            "committed": -1001
+          },
+          {
+            "seconds": 21.0,
+            "committed": -1001
+          },
+          {
+            "seconds": 23.0,
+            "committed": -1001
+          },
+          {
+            "seconds": 25.0,
+            "committed": -1001
+          },
+          {
+            "seconds": 27.1,
+            "committed": -1001
+          },
+          {
+            "seconds": 29.1,
+            "committed": -1001
+          },
+          {
+            "seconds": 31.1,
+            "committed": -1001
+          },
+          {
+            "seconds": 33.1,
+            "committed": -1001
+          },
+          {
+            "seconds": 35.1,
+            "committed": -1001
+          },
+          {
+            "seconds": 37.1,
+            "committed": -1001
+          },
+          {
+            "seconds": 39.1,
+            "committed": -1001
+          }
+        ],
+        "databaseFailureCount": 12,
+        "snapshot": {
+          "title": "ENROLL-09 recovery 57c3fd39095e4d0cb81c2df904e65fe0",
+          "status": "PUBLISHED",
+          "courseId": 2,
+          "totalLessons": 1
+        },
+        "committedAfterRecovery": 1,
+        "noDeadLetter": true
+      },
+      "completedAt": "2026-10-08T13:59:20.394401Z"
+    },
+    {
+      "case": "ENROLL-09.2",
+      "startedAt": "2026-10-08T13:59:20.395060Z",
+      "status": "PASS",
+      "evidence": {
+        "source": {
+          "topic": "elearning.course.events",
+          "partition": 0,
+          "offset": 2,
+          "key": "8001472462139",
+          "payload": "{\"eventType\":\"course.updated\",\"eventId\":\"923fc082-6596-49ec-b443-95649adb726e\",\"occurredAt\":\"2026-10-08T13:59:20.395123Z\",\"courseId\":8001472462139,\"title\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"slug\":\"qa-8001472462139\",\"thumbnailUrl\":null,\"instructorId\":1,\"instructorName\":\"Resilience QA\",\"totalLessons\":2,\"status\":\"PUBLISHED\"}",
+          "qaHeader": "57c3fd39095e4d0cb81c2df904e65fe0"
+        },
+        "deadLetter": {
+          "topic": "elearning.course.events.DLT",
+          "partition": 0,
+          "offset": 0,
+          "key": "8001472462139",
+          "payload": "{\"eventType\":\"course.updated\",\"eventId\":\"923fc082-6596-49ec-b443-95649adb726e\",\"occurredAt\":\"2026-10-08T13:59:20.395123Z\",\"courseId\":8001472462139,\"title\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"slug\":\"qa-8001472462139\",\"thumbnailUrl\":null,\"instructorId\":1,\"instructorName\":\"Resilience QA\",\"totalLessons\":2,\"status\":\"PUBLISHED\"}",
+          "payloadSha256": "7c7304f549bfe2bc6745baed8d998e4c84e9069eba9ac932772a9241f72fde01",
+          "originalTopic": "elearning.course.events",
+          "originalPartition": 0,
+          "originalOffset": 2,
+          "originalConsumerGroup": "enrollment-service",
+          "otherConsumerGroupsObserved": [],
+          "exceptionClass": "org.springframework.kafka.listener.ListenerExecutionFailedException",
+          "sourceHeaderPreserved": true
+        },
+        "followingSource": {
+          "topic": "elearning.course.events",
+          "partition": 0,
+          "offset": 3,
+          "key": "8001472462140",
+          "payload": "{\"eventType\":\"course.updated\",\"eventId\":\"a24ad2ff-26f5-4c0e-957d-06cb1d0b2c78\",\"occurredAt\":\"2026-10-08T13:59:20.396709Z\",\"courseId\":8001472462140,\"title\":\"After invalid event\",\"slug\":\"qa-8001472462140\",\"thumbnailUrl\":null,\"instructorId\":1,\"instructorName\":\"Resilience QA\",\"totalLessons\":2,\"status\":\"PUBLISHED\"}",
+          "qaHeader": "57c3fd39095e4d0cb81c2df904e65fe0"
+        },
+        "followingSnapshot": {
+          "title": "After invalid event",
+          "status": "PUBLISHED",
+          "courseId": 8001472462140,
+          "totalLessons": 2
+        },
+        "committedAfterRecovery": 4
+      },
+      "completedAt": "2026-10-08T13:59:20.655401Z"
+    },
+    {
+      "case": "ENROLL-09.3",
+      "startedAt": "2026-10-08T13:59:20.656001Z",
+      "status": "PASS",
+      "evidence": {
+        "source": {
+          "topic": "elearning.course.events",
+          "partition": 0,
+          "offset": 4,
+          "key": "8001472462141",
+          "payload": "not-json",
+          "qaHeader": "57c3fd39095e4d0cb81c2df904e65fe0"
+        },
+        "deadLetter": {
+          "topic": "elearning.course.events.DLT",
+          "partition": 2,
+          "offset": 0,
+          "key": "8001472462141",
+          "payload": "not-json",
+          "payloadSha256": "0c21a879c732a67910d80988df4919d794f6a070aab610ef865032a28046b021",
+          "originalTopic": "elearning.course.events",
+          "originalPartition": 0,
+          "originalOffset": 4,
+          "originalConsumerGroup": "enrollment-service",
+          "otherConsumerGroupsObserved": [],
+          "exceptionClass": "org.springframework.kafka.listener.ListenerExecutionFailedException",
+          "sourceHeaderPreserved": true
+        },
+        "followingSource": {
+          "topic": "elearning.course.events",
+          "partition": 0,
+          "offset": 5,
+          "key": "8001472462142",
+          "payload": "{\"eventType\":\"course.updated\",\"eventId\":\"8f69432d-1084-4bbe-9016-bcea15605fb0\",\"occurredAt\":\"2026-10-08T13:59:20.657333Z\",\"courseId\":8001472462142,\"title\":\"After invalid event\",\"slug\":\"qa-8001472462142\",\"thumbnailUrl\":null,\"instructorId\":1,\"instructorName\":\"Resilience QA\",\"totalLessons\":2,\"status\":\"PUBLISHED\"}",
+          "qaHeader": "57c3fd39095e4d0cb81c2df904e65fe0"
+        },
+        "followingSnapshot": {
+          "title": "After invalid event",
+          "status": "PUBLISHED",
+          "courseId": 8001472462142,
+          "totalLessons": 2
+        },
+        "committedAfterRecovery": 6
+      },
+      "completedAt": "2026-10-08T13:59:21.005768Z"
+    },
+    {
+      "case": "ENROLL-09.4",
+      "startedAt": "2026-10-08T13:59:21.006489Z",
+      "status": "PASS",
+      "evidence": {
+        "retryBudget": "5s",
+        "elapsedSeconds": 11.1,
+        "databaseFailureCount": 8,
+        "source": {
+          "topic": "elearning.course.events",
+          "partition": 0,
+          "offset": 7,
+          "key": "8001472462144",
+          "payload": "{\"eventType\":\"course.updated\",\"eventId\":\"bf72971b-5f8f-499c-bc46-18ec51f73e3d\",\"occurredAt\":\"2026-10-08T13:59:34.219445Z\",\"courseId\":8001472462144,\"title\":\"Retry budget exceeded\",\"slug\":\"qa-8001472462144\",\"thumbnailUrl\":null,\"instructorId\":1,\"instructorName\":\"Resilience QA\",\"totalLessons\":2,\"status\":\"PUBLISHED\"}",
+          "qaHeader": "57c3fd39095e4d0cb81c2df904e65fe0"
+        },
+        "deadLetter": {
+          "topic": "elearning.course.events.DLT",
+          "partition": 1,
+          "offset": 0,
+          "key": "8001472462144",
+          "payload": "{\"eventType\":\"course.updated\",\"eventId\":\"bf72971b-5f8f-499c-bc46-18ec51f73e3d\",\"occurredAt\":\"2026-10-08T13:59:34.219445Z\",\"courseId\":8001472462144,\"title\":\"Retry budget exceeded\",\"slug\":\"qa-8001472462144\",\"thumbnailUrl\":null,\"instructorId\":1,\"instructorName\":\"Resilience QA\",\"totalLessons\":2,\"status\":\"PUBLISHED\"}",
+          "payloadSha256": "36d1867d68491b8ca80d71c8f167645c23583a60205bebb3fcaba5397dcd19a9",
+          "originalTopic": "elearning.course.events",
+          "originalPartition": 0,
+          "originalOffset": 7,
+          "originalConsumerGroup": "enrollment-service",
+          "otherConsumerGroupsObserved": [],
+          "exceptionClass": "org.springframework.kafka.listener.ListenerExecutionFailedException",
+          "sourceHeaderPreserved": true
+        },
+        "committedAfterDlt": 8,
+        "followingSource": {
+          "topic": "elearning.course.events",
+          "partition": 0,
+          "offset": 8,
+          "key": "8001472462145",
+          "payload": "{\"eventType\":\"course.updated\",\"eventId\":\"6c6381b7-823a-4b08-a5a1-124b72903403\",\"occurredAt\":\"2026-10-08T13:59:51.614101Z\",\"courseId\":8001472462145,\"title\":\"Database available again\",\"slug\":\"qa-8001472462145\",\"thumbnailUrl\":null,\"instructorId\":1,\"instructorName\":\"Resilience QA\",\"totalLessons\":2,\"status\":\"PUBLISHED\"}",
+          "qaHeader": "57c3fd39095e4d0cb81c2df904e65fe0"
+        },
+        "followingSnapshot": {
+          "title": "Database available again",
+          "status": "PUBLISHED",
+          "courseId": 8001472462145,
+          "totalLessons": 2
+        },
+        "restoredRetryBudget": "5m"
+      },
+      "completedAt": "2026-10-08T14:00:09.406684Z"
+    },
+    {
+      "case": "ENROLL-09.5",
+      "startedAt": "2026-10-08T14:00:09.407692Z",
+      "status": "PASS",
+      "evidence": {
+        "fault": "DENY WRITE ACL on DLT; source writes and DLT reads allowed",
+        "faultProbe": "TOPIC_AUTHORIZATION_FAILED",
+        "source": {
+          "topic": "elearning.course.events",
+          "partition": 0,
+          "offset": 11,
+          "key": "8001472462148",
+          "payload": "not-json-dlt-unavailable",
+          "qaHeader": "57c3fd39095e4d0cb81c2df904e65fe0"
+        },
+        "offsetsWhileDltUnavailable": [
+          {
+            "seconds": 0.0,
+            "committed": 11
+          },
+          {
+            "seconds": 3.4,
+            "committed": 11
+          },
+          {
+            "seconds": 6.7,
+            "committed": 11
+          },
+          {
+            "seconds": 10.1,
+            "committed": 11
+          }
+        ],
+        "publicationFailedAtSeconds": 3.4,
+        "deadLetter": {
+          "topic": "elearning.course.events.DLT",
+          "partition": 2,
+          "offset": 3,
+          "key": "8001472462148",
+          "payload": "not-json-dlt-unavailable",
+          "payloadSha256": "75b0329d8051e9dd25f38cb275dfee36707d2915a784cfcfcfab8e8e40739783",
+          "originalTopic": "elearning.course.events",
+          "originalPartition": 0,
+          "originalOffset": 11,
+          "originalConsumerGroup": "enrollment-service",
+          "otherConsumerGroupsObserved": [
+            "notification-service"
+          ],
+          "exceptionClass": "org.springframework.kafka.listener.ListenerExecutionFailedException",
+          "sourceHeaderPreserved": true
+        },
+        "followingSource": {
+          "topic": "elearning.course.events",
+          "partition": 0,
+          "offset": 12,
+          "key": "8001472462149",
+          "payload": "{\"eventType\":\"course.updated\",\"eventId\":\"599dcc54-0add-483a-860b-bb7029761cb9\",\"occurredAt\":\"2026-10-08T14:00:09.584962Z\",\"courseId\":8001472462149,\"title\":\"After DLT recovery\",\"slug\":\"qa-8001472462149\",\"thumbnailUrl\":null,\"instructorId\":1,\"instructorName\":\"Resilience QA\",\"totalLessons\":2,\"status\":\"PUBLISHED\"}",
+          "qaHeader": "57c3fd39095e4d0cb81c2df904e65fe0"
+        },
+        "followingSnapshot": {
+          "title": "After DLT recovery",
+          "status": "PUBLISHED",
+          "courseId": 8001472462149,
+          "totalLessons": 2
+        },
+        "committedAfterRecovery": 13,
+        "dltConfigRestored": true
+      },
+      "completedAt": "2026-10-08T14:00:21.516775Z"
+    }
+  ],
+  "cleanup": {
+    "mysqlRestored": true,
+    "retryBudgetRestored": true,
+    "dltConfigRestored": true
+  },
+  "updatedAt": "2026-10-08T14:00:22.791506Z"
+}

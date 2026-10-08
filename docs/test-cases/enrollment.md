@@ -176,6 +176,7 @@ Chạy trên môi trường thử riêng; khôi phục MySQL và cấu hình ret
 Có [bộ kiểm thử Docker tự động](enrollment-resilience.md) cho cả năm ca, chạy trong workflow
 `Enrollment resilience`. Ca 1 dùng MySQL riêng của enrollment để course-service vẫn xuất bản
 được trong lúc database enrollment dừng. Kết quả của bộ này tách khỏi collection HTTP.
+Lượt nghiệm thu 08/10: [5/5 ca đạt trên MySQL/Kafka thật](ket-qua/enrollment-resilience.md).
 
 | # | Tình huống | Thao tác | Mong đợi |
 |---|---|---|---|
