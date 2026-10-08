@@ -245,8 +245,10 @@ class Probe:
 
     def database_failures(self, since):
         # Count connection failures on the Kafka listener, not the scheduled outbox worker.
+        # Hibernate 7.4 reports JDBC errors at WARN; older versions used ERROR.
         return sum("snapshots-0-C-1" in line and "Connection is not available" in line
-                   and "ERROR" in line for line in self.logs(since).splitlines())
+                   and re.search(r"\b(?:WARN|ERROR)\b", line) is not None
+                   for line in self.logs(since).splitlines())
 
     def case_one(self):
         token = api("POST", "/api/auth/login", {"email": "admin@elearning.hunre.edu.vn",
@@ -274,6 +276,8 @@ class Probe:
                 observations.append({"seconds": round(time.monotonic() - outage_start, 1), "committed": offset})
                 time.sleep(2)
             failures = self.database_failures(since)
+            self.evidence["cases"][-1]["evidence"] = {
+                "source": source, "offsetsDuringOutage": observations, "databaseFailureCount": failures}
             require(failures >= 2, "Did not observe repeated real database connection failures")
         finally:
             duration = round(time.monotonic() - outage_start, 1)
@@ -315,6 +319,9 @@ class Probe:
             dead_letter = self.dlt(source, timeout=90)
             elapsed = round(time.monotonic() - started, 1)
             failures = self.database_failures(since)
+            self.evidence["cases"][-1]["evidence"] = {
+                "source": source, "deadLetter": dead_letter, "databaseFailureCount": failures,
+                "elapsedSeconds": elapsed}
             require(elapsed >= 5 and failures >= 2, "Event did not exhaust retry budget through real DB failures")
             committed = self.consumed(source)
         finally:
@@ -350,6 +357,8 @@ class Probe:
         require(next_source["offset"] == source["offset"] + 1, "Following record is not adjacent")
         started = time.monotonic()
         observations = []
+        self.evidence["cases"][-1]["evidence"] = {
+            "source": source, "followingSource": next_source, "offsetsWhileDltUnavailable": observations}
         publication_failed_at = None
         try:
             # Producer's real delivery.timeout.ms is 120s. Wait for a failed recovery
