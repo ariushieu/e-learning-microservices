@@ -19,7 +19,7 @@
 
 | Người | Service | Việc đang mở | Ưu tiên | Cỡ |
 |---|---|---|---|---|
-| Hiếu | api-gateway, web | [Giới hạn đăng nhập theo IP thật](#hiếu--giới-hạn-đăng-nhập-theo-ip-thật) — hiện cả lớp dùng chung một xô | **Cao — xong trước demo** | ~1h |
+| Hiếu | api-gateway | [Giới hạn đăng nhập theo tài khoản](#hiếu--giới-hạn-đăng-nhập-theo-tài-khoản) — #76, chờ duyệt | **Cao — xong trước demo** | ~1h |
 | quocluibotre | auth | [Trang tổng quan quản trị, hoàn thiện #70](#quocluibotre--trang-tổng-quan-quản-trị) | Trung bình | ~2h |
 | phamquyet19042005-netizen | enrollment | [Số liệu học tập của khóa: tỉ lệ hoàn thành, bài nào học viên bỏ dở](#phamquyet19042005-netizen--số-liệu-học-tập-của-khóa) | Trung bình | ~2h |
 | hiepdeptrai0111 | quiz | [Tải kết quả bài kiểm tra dạng CSV, hoàn thiện #71](#hiepdeptrai0111--tải-kết-quả-bài-kiểm-tra-dạng-csv) | Trung bình | ~2h |
@@ -364,20 +364,30 @@ Gỡ với `courseId` của khóa khác → 404. A (giảng viên của khóa) g
 
 ---
 
-### Hiếu — giới hạn đăng nhập theo IP thật
+### Hiếu — giới hạn đăng nhập theo tài khoản
 
 > Phát hiện khi review: đăng nhập trên web đi qua Server Action của Next.js, nên gateway thấy **mọi
 > người dùng chung một IP là container frontend**. Sau 10 lần đăng nhập trong một phút, cả lớp nhận
-> 429 — buổi demo cho người xem thử đăng nhập là dính. Đã thử trên Docker: 11 lần đăng nhập của 11 email
-> khác nhau gửi từ container frontend thì lần thứ 11 nhận 429, trong khi `curl` từ máy ngoài cùng lúc
-> vẫn 401 bình thường.
+> 429 — buổi demo cho người xem thử đăng nhập là dính.
 
-**Cần làm.**
+**Đổi hướng so với kế hoạch ban đầu.** Định chuyển IP thật của trình duyệt qua `X-Forwarded-For`,
+nhưng thử trên máy thì không làm được:
 
-- Gateway chỉ tin `X-Forwarded-For` khi kết nối đến từ proxy tin cậy, khai bằng biến môi trường;
-  trong Docker là container frontend. Từ IP khác thì vẫn bỏ qua header như bây giờ (G-RATE-4).
-- Frontend gửi IP thật của trình duyệt khi đăng nhập, đăng ký, refresh token.
-- Ca G-RATE mới trong collection gateway.
+- Docker Desktop đổi IP nguồn của mọi kết nối từ ngoài thành IP của mạng Docker (`172.17.0.1`), nên
+  frontend cũng không biết IP thật.
+- Next.js giữ nguyên `x-forwarded-for` nếu trình duyệt tự gửi, tin header đó là tin client.
+
+**Đã làm ở #76, chờ duyệt.**
+
+- Đăng nhập, đăng ký đếm **theo tài khoản** (chặt như cũ, 10 lần), thêm xô **theo IP** nới hơn (60 lần)
+  để chặn một máy thử hàng loạt tài khoản. Làm mới token chỉ đếm theo IP.
+- Email chuẩn hóa trước khi đếm (hoa thường, khoảng trắng, dấu) và băm SHA-256.
+- Sửa lỗi có từ trước: xô đăng nhập theo IP và xô API của khách dùng chung một bộ đếm trong Redis.
+- Collection gateway thêm G-RATE-9, G-RATE-10; G-RATE chạy lại 37/37 trên Docker.
+
+**Còn lại cho quocluibotre, sau demo:** cột `email` của auth-service so sánh không phân biệt dấu
+(`utf8mb4_0900_ai_ci`), nên `hocviên@hunre.edu.vn` đăng nhập được vào `hocvien@hunre.edu.vn` (vẫn cần
+đúng mật khẩu). Gateway đã gộp hai cách viết vào một xô, nên không lách được giới hạn.
 
 **Sau demo:** kênh email cho thông báo (`emailEnabled` đã lưu nhưng chưa có kênh gửi; notification-service
 cũng chưa biết email người dùng).
