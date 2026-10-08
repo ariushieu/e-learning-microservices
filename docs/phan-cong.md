@@ -1,6 +1,6 @@
 # Bảng theo dõi công việc
 
-> **Cập nhật lần cuối:** 08/10/2026 — `main` ở `762c17d`
+> **Cập nhật lần cuối:** 08/10/2026 — `main` ở `d47bc5a`
 >
 > File này là nơi duy nhất ghi ai đang làm gì. Xong một việc thì nhóm trưởng cập nhật ngay
 > tại đây, nên **cứ `git pull` là biết việc tiếp theo của mình**, không phải hỏi ai.
@@ -21,19 +21,20 @@
 |---|---|---|---|---|
 | Hiếu | api-gateway, web | [Giới hạn đăng nhập theo IP thật](#hiếu--giới-hạn-đăng-nhập-theo-ip-thật) — hiện cả lớp dùng chung một xô | **Cao — xong trước demo** | ~1h |
 | quocluibotre | auth | [Trang tổng quan quản trị, hoàn thiện #70](#quocluibotre--trang-tổng-quan-quản-trị) | Trung bình | ~2h |
-| phamquyet19042005-netizen | enrollment | [Giảng viên xem học viên của khóa và tiến độ](#phamquyet19042005-netizen--giảng-viên-xem-học-viên-của-khóa) — #73, chờ review | Trung bình | ~3h |
-| hiepdeptrai0111 | quiz | [Giảng viên xem kết quả bài kiểm tra](#hiepdeptrai0111--giảng-viên-xem-kết-quả-bài-kiểm-tra) — #71, chờ review | Trung bình | ~3h |
-| duyd92689-debug | course | [Admin gỡ đánh giá vi phạm](#duyd92689-debug--admin-gỡ-đánh-giá-vi-phạm) — góp ý của #69 đang ở #72, chờ review | Trung bình | ~2h |
+| phamquyet19042005-netizen | enrollment | [Giảng viên xem học viên của khóa và tiến độ](#phamquyet19042005-netizen--giảng-viên-xem-học-viên-của-khóa) — #73 chạy thử đạt, đang để draft: bấm **Ready for review** để merge | Trung bình | ~3h |
+| hiepdeptrai0111 | quiz | [Tải kết quả bài kiểm tra dạng CSV, hoàn thiện #71](#hiepdeptrai0111--tải-kết-quả-bài-kiểm-tra-dạng-csv) | Trung bình | ~2h |
+| duyd92689-debug | course | [Admin gỡ đánh giá vi phạm](#duyd92689-debug--admin-gỡ-đánh-giá-vi-phạm) | Trung bình | ~2h |
 
 Bốn việc của nhóm đều là **tính năng cho giảng viên và admin** — phần học viên đã đủ cho demo. Đã xong
-ở lượt này: tài liệu đính kèm trên khu giảng dạy (#69), admin tìm và khóa tài khoản (#70).
+ở lượt này: tài liệu đính kèm trên khu giảng dạy (#69, #72), admin tìm và khóa tài khoản (#70), giảng viên
+xem kết quả bài kiểm tra (#71).
 
 **Khung giao diện đã có** (#54): mọi việc web ở trên làm theo [frontend/DESIGN.md](../frontend/DESIGN.md)
 và trang `/design`. Chạy cả hệ thống: `docker compose --profile app up -d --build --wait` rồi mở
 http://localhost:3000.
 
 **Collection Postman: đủ cả 7 file**, đều đã chạy thật trên Docker — auth, course, enrollment, quiz
-(#56, #57, #59, #60, cập nhật ở #64, #65, #67, #69, #70) và gateway, notification, demo-flow (#66). Trước buổi demo, chạy
+(#56, #57, #59, #60, cập nhật ở #64, #65, #67, #69, #70, #71) và gateway, notification, demo-flow (#66). Trước buổi demo, chạy
 `demo-flow` trên máy mình để xem cả chuỗi còn thông (81 assertion, khoảng 12 giây). Quy ước chung ở
 [mục dưới](#cả-nhóm--collection-postman-của-service-mình). Ca FAIL hay việc mới sinh ra khi chạy
 collection thì sửa ở PR riêng như các việc trong bảng trên.
@@ -183,7 +184,7 @@ service đó. Không gộp chung một file: năm người cùng sửa một JSO
 | quocluibotre | `docs/postman/auth.postman_collection.json` | [auth.md](test-cases/auth.md) | Xong #57, #65, #70 — 665/665 assertion (3 ca BLOCKED vì cần fixture riêng) |
 | duyd92689-debug | `docs/postman/course.postman_collection.json` | [course.md](test-cases/course.md) | Xong #56, #64, #69 — 827/827 |
 | phamquyet19042005-netizen | `docs/postman/enrollment.postman_collection.json` | [enrollment.md](test-cases/enrollment.md) | Xong #60 — 310/310 |
-| hiepdeptrai0111 | `docs/postman/quiz.postman_collection.json` | [quiz.md](test-cases/quiz.md) | Xong #59, #67 — 417/417 |
+| hiepdeptrai0111 | `docs/postman/quiz.postman_collection.json` | [quiz.md](test-cases/quiz.md) | Xong #59, #67, #71 — 479/479 |
 | Hiếu | `gateway`, `notification`, `demo-flow` | [gateway.md](test-cases/gateway.md), [notification.md](test-cases/notification.md) | Xong #66 — gateway 31/31 ca, notification 55/55 ca, demo-flow 81/81 |
 
 Chạy collection bằng dòng lệnh (chỉ dùng pnpm):
@@ -301,32 +302,35 @@ gọi → 403, S gọi → 403, không token → 401. Thêm nhóm ca ENROLL-11 v
 
 ---
 
-### hiepdeptrai0111 — giảng viên xem kết quả bài kiểm tra
+### hiepdeptrai0111 — tải kết quả bài kiểm tra dạng CSV
 
-> Giảng viên soạn đề được nhưng không biết học viên làm ra sao. `GET /api/quizzes/{quizId}/attempts`
-> là lịch sử của chính người gọi (B6), không dùng cho việc này.
+> Từ #71 giảng viên xem được kết quả trên web, nhưng muốn nhập điểm vào bảng điểm của lớp thì phải chép
+> tay từng dòng. Tên học viên do người dùng tự đặt, nên file xuất ra phải an toàn khi mở bằng Excel.
 
 **Cần làm.**
 
 - quiz-service:
-  - Migration mới: thêm `learner_name` vào `quiz_attempts`, lấy từ token khi bắt đầu lượt.
-  - `GET /api/quizzes/{quizId}/results?page=&size=`: chỉ tác giả quiz hoặc ADMIN, người khác 403.
-    Trả một object gồm:
-    - `summary`:
-      - số người đã nộp, số lượt nộp, số lượt hết giờ;
-      - điểm trung bình (lấy lượt cao nhất của mỗi người), tỉ lệ đạt;
-      - tỉ lệ đúng từng câu: `questionId`, `content`, `correctRate`.
-    - `learners` (phân trang): mỗi học viên một dòng gồm `learnerName`, số lượt đã nộp, điểm cao
-      nhất, đạt hay chưa, lần nộp gần nhất.
-    - Chỉ tính lượt `SUBMITTED`. Lượt làm thử của tác giả và admin không tính.
-- Web `/instructor/quizzes/{id}/results`:
-  - Thẻ số liệu (`StatGrid`), bảng học viên, bảng tỉ lệ đúng từng câu; câu có tỉ lệ thấp làm nổi
-    bật để giảng viên biết câu nào khó.
-  - Có link tới đây từ trang soạn đề.
+  - `GET /api/quizzes/{quizId}/results/export`: cùng quyền với `/results` (tác giả hoặc ADMIN; người
+    khác 403, không token 401, quiz không tồn tại 404).
+  - Trả `text/csv; charset=UTF-8` có BOM đầu file để Excel hiện đúng tiếng Việt, kèm
+    `Content-Disposition: attachment; filename="ket-qua-quiz-<id>.csv"`.
+  - Mỗi học viên một dòng, không phân trang, cùng cách tính với `/results`: học viên, số lượt nộp, điểm
+    cao nhất, đạt / chưa đạt, lần nộp gần nhất (giờ Việt Nam).
+  - Chống CSV injection: ô bắt đầu bằng `=`, `+`, `-`, `@`, tab hoặc CR thì thêm `'` ở đầu. Ô có dấu
+    phẩy, ngoặc kép hoặc xuống dòng thì đặt trong ngoặc kép.
+  - Không khai `produces` cứng: route `/api` của web luôn gửi `Accept: application/json`, đặt
+    `Content-Type` trong `ResponseEntity`.
+- Web:
+  - Nút "Tải CSV" trên `/instructor/quizzes/{id}/results`, là link thường tới
+    `/api/quizzes/{id}/results/export`.
+  - Thêm `content-disposition` vào `PASS_HEADERS` trong `app/api/[...path]/route.ts` để file tải về đúng
+    tên (file của Hiếu, CODEOWNERS tự mời review).
+- Hoàn thiện #71: `results/page.tsx` tách các dòng JSX dài (header bảng, `TableRow` viết trên một dòng)
+  cho giống các file khác trong `components/`.
 
-**Tự kiểm.** S đúng 1/2 câu, B đúng cả 2 → 2 người, điểm trung bình 75, tỉ lệ đạt 50%, câu 2 đúng 50%.
-B (không phải tác giả) gọi → 403, S gọi → 403. A tự làm thử → số liệu không đổi. Thêm nhóm ca QUIZ-17
-vào `quiz.md` và collection.
+**Tự kiểm.** S đổi họ tên thành `=1+1` rồi nộp bài → trong file, ô tên là `'=1+1`, mở bằng Excel không thành
+công thức. Tên có dấu hiện đúng trong Excel. B (không phải tác giả) tải → 403. Bấm nút trên web → tải về
+file `ket-qua-quiz-<id>.csv`. Thêm ca vào `quiz.md` và collection.
 
 ---
 
@@ -347,9 +351,6 @@ vào `quiz.md` và collection.
 - Web, mục "Đánh giá từ học viên" ở trang khóa học:
   - Admin thấy nút "Gỡ" trên từng nhận xét, có hộp thoại xác nhận; người khác không thấy nút.
   - Gỡ xong thì danh sách, điểm và số sao cập nhật ngay.
-- Hai góp ý khi review #69 (`aria-label` của `RatingStars`, gom `safeUrl` vào `lib/`) đã có PR #72,
-  không làm lại ở đây.
-
 **Tự kiểm.** S đánh giá 5, B đánh giá 1 → trung bình 3. Admin gỡ đánh giá của B → trung bình 5, còn 1 lượt.
 Gỡ với `courseId` của khóa khác → 404. A (giảng viên của khóa) gọi → 403. B viết lại được. Thêm ca vào
 `course.md` và collection, chạy lại collection course trên Docker.
@@ -380,6 +381,8 @@ cũng chưa biết email người dùng).
 
 | Ngày | PR | Việc | Người |
 |---|---|---|---|
+| 08/10 | #72 | Gom kiểm link về `lib/safe-url.ts`, chặn link có dấu `\`, `aria-label` sao đọc "4,5" | duyd92689-debug |
+| 08/10 | #71 | Giảng viên xem kết quả bài kiểm tra: điểm trung bình, tỉ lệ đạt, tỉ lệ đúng từng câu; không tính lượt làm thử | hiepdeptrai0111 |
 | 08/10 | #70 | Admin tìm, lọc người dùng; khóa / mở khóa tài khoản (thu hồi refresh token); cấp quyền ngay trên từng dòng | quocluibotre |
 | 08/10 | #69 | Thêm / xóa tài liệu đính kèm trong form sửa bài, chỉ nhận URL `http(s)`, tổng điểm hiện nửa sao | duyd92689-debug |
 | 07/10 | #67 | Không lộ đáp án khi đang làm bài (QUIZ-14.8), nộp quá giờ lưu đúng EXPIRED | hiepdeptrai0111 |
