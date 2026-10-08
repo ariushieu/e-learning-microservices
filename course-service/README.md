@@ -3,6 +3,22 @@
 Quản lý danh mục, khóa học, chương, bài học và tài liệu. Request của client đi qua
 gateway `http://localhost:8080`; service chạy nội bộ ở cổng `8082`.
 
+## Tài liệu đính kèm trên khu giảng dạy
+
+Vào khóa học → menu bài học → **Sửa bài học** → **Tài liệu đính kèm**.
+Mục này cũng dùng chung với lối tắt **Tài liệu** trong menu bài học.
+Thêm tên và URL là lưu tài liệu ngay, độc lập với nút **Lưu bài học**.
+Xóa cần xác nhận; lỗi API giữ dữ liệu nhập và cho thử lại.
+
+`POST /api/lessons/{lessonId}/resources` chỉ chấp nhận URL tuyệt đối có host,
+giao thức HTTP hoặc HTTPS (không phân biệt hoa thường), không chứa thông tin đăng nhập.
+URL sai trả 400 `VALIDATION_FAILED`, kèm `fieldErrors` cho `fileUrl` để hiện dưới ô.
+Không có thao tác tải tệp lên máy chủ; tài liệu là liên kết tới tệp đã có.
+Các URL cũ không hợp lệ không được mở từ màn quản lý; giảng viên có thể xóa và thêm lại.
+
+Kiểm thử trình duyệt: `scripts/check-course-resources.cjs` (Playwright), gồm luồng
+giảng viên thêm/xóa, học viên mở link, lỗi mạng, quyền truy cập và sao trung bình 4,5.
+
 ## Quyền truy cập
 
 - Các thao tác ghi khóa học, chương, bài học và tài liệu yêu cầu token có
