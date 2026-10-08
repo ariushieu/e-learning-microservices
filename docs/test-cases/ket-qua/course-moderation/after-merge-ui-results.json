@@ -1,0 +1,22 @@
+{
+  "tag": "moderation-ui-1791432546111",
+  "courseId": 444,
+  "checks": [
+    "S 5 sao và B 1 sao: trung bình 3, hai đánh giá",
+    "khách không thấy nút Gỡ",
+    "S không thấy nút Gỡ",
+    "B không thấy nút Gỡ",
+    "chủ khóa không thấy nút Gỡ",
+    "Admin thấy nút Gỡ trên từng nhận xét",
+    "Hủy xác nhận giữ nguyên đánh giá và điểm",
+    "API lỗi: hiện thông báo trong hộp thoại, không xóa hoặc đổi điểm",
+    "Gỡ B thành công: danh sách và tổng điểm cập nhật ngay thành 5/1",
+    "B viết lại qua form thành bản ghi mới, điểm 4,5/2",
+    "Gỡ nhận xét cuối trang 2: về trang đầu, không kẹt trang rỗng; điểm 3,2/5",
+    "Nút Gỡ và danh sách không tràn ngang tại 375px",
+    "Nút Gỡ và danh sách không tràn ngang tại 768px",
+    "Nút Gỡ và danh sách không tràn ngang tại 1366px",
+    "Không có lỗi JavaScript"
+  ],
+  "errors": []
+}

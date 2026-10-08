@@ -17,6 +17,12 @@ Ngày 08/10/2026 (UTC+7), mã nguồn `ca5663dd46588c5c8291eaef5646ea014b4a0d9c`
   [Kết quả trình duyệt](course-moderation/moderation-ui-results.json).
 - Generator sinh lại collection giống hệt bản đã commit (chuẩn hóa CRLF/LF).
 
+Sau khi đồng bộ `main` mới `7a3cc03` (quiz xuất CSV), commit gộp `f34f877`:
+frontend typegen/TypeScript/lint/production build và chạy lại **15/15** ca trình duyệt đều đạt.
+[Kết quả sau đồng bộ](course-moderation/after-merge-ui-results.json).
+API course/backend không đổi so với commit kiểm thử ở trên; số liệu Newman và Maven
+ở trên thuộc lần chạy `ca5663d`, không gán lại cho commit gộp.
+
 ## Phạm vi kiểm tra
 
 1. Không token 401; học viên, người viết, giảng viên chủ khóa 403. Token sửa vai trò nhưng
