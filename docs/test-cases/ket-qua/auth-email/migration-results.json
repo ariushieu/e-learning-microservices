@@ -1,0 +1,20 @@
+{
+  "mysql": "8.0.43",
+  "results": [
+    {
+      "scenario": "empty",
+      "result": "PASS",
+      "collation": "utf8mb4_bin"
+    },
+    {
+      "scenario": "existing",
+      "result": "PASS",
+      "collation": "utf8mb4_bin"
+    },
+    {
+      "scenario": "collision",
+      "result": "PASS",
+      "collation": "utf8mb4_unicode_ci"
+    }
+  ]
+}

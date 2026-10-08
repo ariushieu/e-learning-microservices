@@ -1,0 +1,128 @@
+{
+  "sourceCommit": "69eaef1",
+  "browser": "Microsoft Edge (Playwright)",
+  "web": "http://127.0.0.1:3100",
+  "gateway": "http://127.0.0.1:18080",
+  "results": [
+    {
+      "width": 1366,
+      "case": "Inline ASCII error: thử@example.com",
+      "result": "PASS"
+    },
+    {
+      "width": 1366,
+      "case": "Inline ASCII error: test@vídụ.com",
+      "result": "PASS"
+    },
+    {
+      "width": 1366,
+      "case": "Inline ASCII error: tést@example.com",
+      "result": "PASS"
+    },
+    {
+      "width": 1366,
+      "case": "Email validation: empty",
+      "result": "PASS"
+    },
+    {
+      "width": 1366,
+      "case": "Email validation: invalid-email",
+      "result": "PASS"
+    },
+    {
+      "width": 1366,
+      "case": "Phone validation remains inline",
+      "result": "PASS"
+    },
+    {
+      "width": 1366,
+      "case": "Password minimum enforced by server",
+      "result": "PASS"
+    },
+    {
+      "width": 1366,
+      "case": "Corrected ASCII registration logs in; no overflow or JS errors",
+      "result": "PASS"
+    },
+    {
+      "width": 768,
+      "case": "Inline ASCII error: thử@example.com",
+      "result": "PASS"
+    },
+    {
+      "width": 768,
+      "case": "Inline ASCII error: test@vídụ.com",
+      "result": "PASS"
+    },
+    {
+      "width": 768,
+      "case": "Inline ASCII error: tést@example.com",
+      "result": "PASS"
+    },
+    {
+      "width": 768,
+      "case": "Email validation: empty",
+      "result": "PASS"
+    },
+    {
+      "width": 768,
+      "case": "Email validation: invalid-email",
+      "result": "PASS"
+    },
+    {
+      "width": 768,
+      "case": "Phone validation remains inline",
+      "result": "PASS"
+    },
+    {
+      "width": 768,
+      "case": "Password minimum enforced by server",
+      "result": "PASS"
+    },
+    {
+      "width": 768,
+      "case": "Corrected ASCII registration logs in; no overflow or JS errors",
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "case": "Inline ASCII error: thử@example.com",
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "case": "Inline ASCII error: test@vídụ.com",
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "case": "Inline ASCII error: tést@example.com",
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "case": "Email validation: empty",
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "case": "Email validation: invalid-email",
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "case": "Phone validation remains inline",
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "case": "Password minimum enforced by server",
+      "result": "PASS"
+    },
+    {
+      "width": 375,
+      "case": "Corrected ASCII registration logs in; no overflow or JS errors",
+      "result": "PASS"
+    }
+  ]
+}

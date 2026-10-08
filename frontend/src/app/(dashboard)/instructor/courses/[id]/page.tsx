@@ -225,7 +225,7 @@ export default async function ManageCoursePage({ params }: PageProps<"/instructo
           </Section>
         </TabsContent>
       </Tabs>
-      <CourseLearners courseId={course.id} />
+      <CourseLearners courseId={course.id} sections={sections} />
     </DashboardPage>
   );
 }

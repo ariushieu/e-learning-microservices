@@ -22,6 +22,12 @@ public class CourseReview {
     private String comment;
     @Column(name = "author_name", length = 150)
     private String authorName;
+    @Column(length = 1000)
+    private String reply;
+    @Column(name = "replied_at")
+    private Instant repliedAt;
+    @Column(name = "replied_by")
+    private Long repliedBy;
     @CreationTimestamp @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
     @UpdateTimestamp @Column(name = "updated_at", nullable = false)

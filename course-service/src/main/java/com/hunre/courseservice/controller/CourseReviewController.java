@@ -1,6 +1,7 @@
 package com.hunre.courseservice.controller;
 
 import com.hunre.courseservice.dto.request.SaveCourseReviewRequest;
+import com.hunre.courseservice.dto.request.SaveReviewReplyRequest;
 import com.hunre.courseservice.dto.response.*;
 import com.hunre.courseservice.service.CourseReviewService;
 import com.hunre.courseservice.security.CurrentUserProvider;
@@ -52,5 +53,17 @@ public class CourseReviewController {
                                           AuthenticatedUser user) {
         service.removeByAdmin(courseId, reviewId, user);
         return ApiResponse.message("Đã gỡ đánh giá");
+    }
+
+    @PutMapping("/{reviewId}/reply")
+    public ApiResponse<CourseReviewResponse> saveReply(@PathVariable Long courseId, @PathVariable Long reviewId,
+            @Valid @RequestBody SaveReviewReplyRequest request, AuthenticatedUser user) {
+        return ApiResponse.ok(service.saveReply(courseId, reviewId, request, user), "Đã lưu phản hồi");
+    }
+
+    @DeleteMapping("/{reviewId}/reply")
+    public ApiResponse<Void> deleteReply(@PathVariable Long courseId, @PathVariable Long reviewId, AuthenticatedUser user) {
+        service.deleteReply(courseId, reviewId, user);
+        return ApiResponse.message("Đã xóa phản hồi");
     }
 }

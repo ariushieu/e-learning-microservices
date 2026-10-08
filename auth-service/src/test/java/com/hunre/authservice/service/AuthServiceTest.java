@@ -34,6 +34,40 @@ import java.util.Set;
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
+    @Test
+    void login_normalizesWithRootLocaleWithoutRemovingAccents() {
+        java.util.Locale previous = java.util.Locale.getDefault();
+        try {
+            java.util.Locale.setDefault(java.util.Locale.forLanguageTag("tr-TR"));
+            for (String email : new String[]{"  HOCVIEN@EXAMPLE.COM  ", "HOCVIÊN@EXAMPLE.COM"}) {
+                String normalized = email.trim().toLowerCase(java.util.Locale.ROOT);
+                when(userRepository.findByEmailForUpdate(normalized)).thenReturn(Optional.empty());
+                assertThatThrownBy(() -> authService.login(
+                        LoginRequest.builder().email(email).password("password").build(), null, null))
+                        .isInstanceOf(BusinessException.class);
+                verify(userRepository).findByEmailForUpdate(normalized);
+            }
+        } finally {
+            java.util.Locale.setDefault(previous);
+        }
+    }
+
+    @Test
+    void register_checksNormalizedEmailWithRootLocale() {
+        java.util.Locale previous = java.util.Locale.getDefault();
+        try {
+            java.util.Locale.setDefault(java.util.Locale.forLanguageTag("tr-TR"));
+            when(userRepository.existsByEmail("hocvien@example.com")).thenReturn(true);
+            assertThatThrownBy(() -> authService.register(RegisterRequest.builder()
+                    .email("  HOCVIEN@EXAMPLE.COM  ").build()))
+                    .isInstanceOf(DuplicateResourceException.class);
+            verify(userRepository).existsByEmail("hocvien@example.com");
+            verify(userRepository, never()).save(any());
+        } finally {
+            java.util.Locale.setDefault(previous);
+        }
+    }
+
     @Mock
     private UserRepository userRepository;
 

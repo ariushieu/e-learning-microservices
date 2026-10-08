@@ -111,4 +111,34 @@ class CourseReviewConcurrencyTest {
         assertThat(missing.get()).isEqualTo(1);
         stats(0, "0.00");
     }
+
+    @Test void concurrentReplyAndRatingEditsPreserveBothValues() throws Exception {
+        Long reviewId = service.save(id, new SaveCourseReviewRequest(BigDecimal.valueOf(5), null), user(1)).id();
+        var teacher = new AuthenticatedUser(50L, "teacher@example.com", "Teacher", Set.of(Roles.INSTRUCTOR));
+        List<Callable<Void>> tasks = new ArrayList<>();
+        for (int i=0; i<6; i++) {
+            tasks.add(() -> { service.saveReply(id, reviewId, new SaveReviewReplyRequest("Cảm ơn"), teacher); return null; });
+            tasks.add(() -> { service.save(id, new SaveCourseReviewRequest(BigDecimal.valueOf(2), "Đã sửa"), user(1)); return null; });
+        }
+        parallel(tasks);
+        var mine = service.mine(id, user(1)).review();
+        assertThat(mine.reply()).isEqualTo("Cảm ơn");
+        assertThat(mine.comment()).isEqualTo("Đã sửa");
+        stats(1, "2.00");
+    }
+
+    @Test void replyRacingWithReviewDeletionNeverResurrectsReview() throws Exception {
+        Long reviewId = service.save(id, new SaveCourseReviewRequest(BigDecimal.valueOf(5), null), user(1)).id();
+        var teacher = new AuthenticatedUser(50L, "teacher@example.com", "Teacher", Set.of(Roles.INSTRUCTOR));
+        parallel(List.of(
+                () -> {
+                    try { service.saveReply(id, reviewId, new SaveReviewReplyRequest("Cảm ơn"), teacher); }
+                    catch (com.hunre.sharedcommon.exception.ResourceNotFoundException expected) { /* Xóa thắng thì phản hồi nhận 404. */ }
+                    return null;
+                },
+                () -> { service.delete(id, user(1)); return null; }
+        ));
+        assertThat(service.mine(id, user(1)).review()).isNull();
+        stats(0, "0.00");
+    }
 }

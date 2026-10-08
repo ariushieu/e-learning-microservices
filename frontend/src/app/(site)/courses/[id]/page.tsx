@@ -151,7 +151,8 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
         actions={
           curriculum.data && (
             <p className="text-sm text-muted-foreground tabular-nums">
-              {curriculum.data.length} chương · {course.totalLessons} bài học · {formatDuration(course.totalDurationSeconds)}
+              {curriculum.data.length} chương · {course.totalLessons} bài học ·{" "}
+              {formatDuration(course.totalDurationSeconds)}
             </p>
           )
         }
@@ -173,8 +174,23 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
         </Section>
       )}
 
-      <Suspense fallback={<div role="status" aria-label="Đang tải đánh giá"><Skeleton className="h-64 rounded-xl" /></div>}>
-        <CourseReviews course={course} loggedIn={session !== null} page={reviewPage} isAdmin={hasRole(session, "ROLE_ADMIN")} />
+      <Suspense
+        fallback={
+          <div role="status" aria-label="Đang tải đánh giá">
+            <Skeleton className="h-64 rounded-xl" />
+          </div>
+        }
+      >
+        <CourseReviews
+          course={course}
+          loggedIn={session !== null}
+          page={reviewPage}
+          isAdmin={hasRole(session, "ROLE_ADMIN")}
+          canReply={
+            hasRole(session, "ROLE_ADMIN") ||
+            (hasRole(session, "ROLE_INSTRUCTOR") && course.instructorId === session?.userId)
+          }
+        />
       </Suspense>
 
       {showQuizzes && (

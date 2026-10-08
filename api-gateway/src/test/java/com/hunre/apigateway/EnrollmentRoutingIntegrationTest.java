@@ -69,6 +69,18 @@ class EnrollmentRoutingIntegrationTest {
     }
 
     @Test
+    void learnerSummaryReachesEnrollmentWithoutCapturingCoursePaths() throws Exception {
+        String path = "/api/courses/10/learners/summary";
+        var response = request("GET", path, true);
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.body()).startsWith("enrollment GET " + path + " Bearer ");
+        assertThat(request("GET", path, false).body()).startsWith("enrollment GET " + path + " null");
+        assertThat(request("GET", "/api/courses/10", false).body()).startsWith("course GET /api/courses/10");
+        assertThat(request("POST", path, true).body()).startsWith("course POST " + path);
+        assertThat(request("GET", path + "/unknown", true).body()).startsWith("course GET " + path + "/unknown");
+    }
+
+    @Test
     void anonymousLearnerReadsReachEnrollmentForServiceAuthentication() throws Exception {
         // The actual service's JWT rejection is covered by CourseLearnerApiIntegrationTest.
         assertThat(request("GET", "/api/courses/10/learners", false).body())

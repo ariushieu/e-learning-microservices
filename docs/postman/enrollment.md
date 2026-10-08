@@ -1,7 +1,7 @@
 # Chạy collection enrollment qua gateway
 
 Import [enrollment.postman_collection.json](enrollment.postman_collection.json), chọn **No environment**,
-chạy toàn collection từ **0. Chuẩn bị**, một iteration, theo thứ tự đã lưu. Collection có 182 request
+chạy toàn collection từ **0. Chuẩn bị**, một iteration, theo thứ tự đã lưu. Collection có 215 request
 và hai PUT đồng thời trong script ENROLL-07.16. Không cần nhập ID hoặc token bằng tay.
 
 ## Môi trường
@@ -29,7 +29,7 @@ Admin phải tồn tại từ migration. Setup đăng ký A/B/S, lấy ID bằng
 
 ## Dữ liệu và thứ tự
 
-Mỗi lượt tạo một danh mục và bốn khóa có slug chứa runId ngẫu nhiên. Khóa chính có hai bài;
+Mỗi lượt tạo một danh mục và năm khóa có slug chứa runId ngẫu nhiên. Khóa chính có hai bài;
 ba khóa còn lại phục vụ ca giả userId/chưa có chứng chỉ, cập nhật đồng thời và ARCHIVED.
 Collection chỉ xóa lượt ghi danh thuộc fixture của lần chạy; khóa/danh mục được giữ để đối chiếu.
 Không chạy các thư mục ghi/xóa rời rạc khi chưa có tiền điều kiện.
@@ -47,6 +47,11 @@ Không chạy các thư mục ghi/xóa rời rạc khi chưa có tiền điều 
   phân trang/sort, tiến độ 50% và chứng chỉ khi hoàn thành. Các ca nằm ở nhiều thư mục theo vòng đời
   fixture; không chạy riêng thư mục 1b để kết luận đã kiểm đủ. Dữ liệu cũ NULL và JWT thiếu tên được
   kiểm bằng test tích hợp; migration MySQL và giao diện cần kiểm riêng.
+- ENROLL-12 tạo khóa thứ năm gồm hai bài, thêm học viên C/D. S hoàn thành hai bài, B hoàn thành
+  bài một, C chỉ IN_PROGRESS, D hoàn thành bài một rồi hủy. Kết quả: 2 ACTIVE, 1 COMPLETED,
+  1 CANCELLED, trung bình 50%, hoàn thành khóa 33,33%, hai bài 66,67%/33,33%, một chứng chỉ.
+  Có ca rỗng/chỉ lượt hủy, quyền 401/403, snapshot thiếu 404, ID sai 400 và route course lân cận.
+  CI Full stack in Docker chạy cả collection sau smoke test với rate limit tạm tắt; JWT luôn bật.
 
 **ENROLL-01.10:** HTTP 404 chưa đủ chứng minh snapshot ARCHIVED đã đến. Đối chiếu thêm log consumer
 hoặc đọc snapshot trong database; nếu chưa xác nhận đồng bộ, biên bản vẫn ghi BLOCKED cho tiền điều kiện này.
