@@ -433,6 +433,53 @@ add(inbox,29,16,'GET',inboxUrl+'?courseId=abc','IA',400,null);
 add(inbox,29,17,'GET',inboxUrl+'?sort=comment,desc','IA',400,null);
 add(inbox,29,18,'GET',inboxUrl+'?courseId={{missingId}}','IA',404,null);
 add(inbox,29,19,'GET',inboxUrl+'?page=999','IA',200,null,'',inboxCheck(2,2)+"pm.test('Trang rỗng',()=>pm.expect(d.reviews.content).eql([]));");
+const profiles=folder('30. Hồ sơ giảng viên công khai');
+tokens.PA='profileTokenA';tokens.PT='profileTokenT';
+const profileUrl='/api/instructors/{{profileAId}}';
+const profileCheck=(courses,students,count,avg)=>`pm.test('Thống kê đúng phạm vi công khai',()=>{pm.expect(d.publishedCourses).eql(${courses});pm.expect(d.totalStudents).eql(${students});pm.expect(d.ratingCount).eql(${count});pm.expect(d.ratingAvg).eql(${avg});pm.expect(d.name).eql(get('profileName'));pm.expect(d).not.have.property('email');});`;
+add(profiles,30,1,'GET',profileUrl,'',200,null,`
+  const password=get('qaPassword');
+  for(const who of ['A','B','T']) {
+    const email='qa-profile-'+who+'-'+unique()+'@example.com';
+    await call('POST','/api/auth/register',{email,password,fullName:'Giảng viên hồ sơ '+who},null,201);
+    const first=await call('POST','/api/auth/login',{email,password},null);
+    if(who!=='T')await call('PATCH','/api/users/'+first.user.id+'/roles',{roles:['ROLE_STUDENT','ROLE_INSTRUCTOR']},'adminToken');
+    const auth=await call('POST','/api/auth/login',{email,password},null);
+    set('profileToken'+who,auth.accessToken);set('profile'+who+'Id',auth.user.id);
+    if(who==='A')set('profileName',auth.user.fullName);
+  }
+  for(const n of [1,2,3,4]) {
+    const c=await course(courseBody(),'profileTokenA');set('profileCourse'+n,c.id);
+    if(n===3)continue;
+    await call('PATCH','/api/courses/'+c.id+'/status',{status:'PUBLISHED'},'profileTokenA');
+    for(const who of n===1?['studentToken','profileTokenT']:['studentToken']) {
+      await eventually(()=>call('POST','/api/enrollments',{courseId:c.id},who,201),'Chờ snapshot hồ sơ');
+      await eventually(async()=>pm.expect((await call('GET','/api/courses/'+c.id+'/reviews/me',undefined,who)).canReview).eql(true),'Chờ sổ học viên');
+      await call('PUT','/api/courses/'+c.id+'/reviews/me',{rating:n===1?5:n===2?2:1,comment:'Đánh giá hồ sơ'},who);
+    }
+    if(n===4)await call('PATCH','/api/courses/'+c.id+'/status',{status:'ARCHIVED'},'profileTokenA');
+  }
+  const draft=await course(courseBody(),'profileTokenB');set('profileDraftB',draft.id);
+`,profileCheck(2,3,3,4));
+add(profiles,30,2,'GET',profileUrl,'PA',200,null,'',profileCheck(2,3,3,4));
+add(profiles,30,3,'GET',profileUrl,'ADM',200,null,'',profileCheck(2,3,3,4));
+add(profiles,30,4,'GET',profileUrl,'S',200,null,'',profileCheck(2,3,3,4));
+add(profiles,30,5,'GET','/api/courses?instructorId={{profileAId}}&sort=id,desc','',200,null,'',"pm.test('Chỉ khóa công khai',()=>{pm.expect(d.totalElements).eql(2);pm.expect(d.content.map(c=>c.id)).eql([id('profileCourse2'),id('profileCourse1')]);d.content.forEach(c=>pm.expect(c.status).eql('PUBLISHED'));});");
+add(profiles,30,6,'GET','/api/courses?instructorId={{profileAId}}&sort=id,desc&size=1&page=1','',200,null,'',"pm.test('Trang 2 đúng',()=>{pm.expect(d.totalElements).eql(2);pm.expect(d.content.map(c=>c.id)).eql([id('profileCourse1')]);});");
+add(profiles,30,7,'GET','/api/instructors/{{profileBId}}','',404,null);
+add(profiles,30,8,'GET','/api/instructors/{{missingId}}','',404,null);
+add(profiles,30,9,'GET','/api/instructors/abc','',400,null);
+tokens.BAD_PROFILE='badProfileToken';
+add(profiles,30,10,'GET',profileUrl,'BAD_PROFILE',200,null,"set('badProfileToken','forged');",profileCheck(2,3,3,4));
+add(profiles,30,11,'GET','/api/instructors/{{profileBId}}','',200,null,"await call('PATCH','/api/courses/'+id('profileDraftB')+'/status',{status:'PUBLISHED'},'profileTokenB');","pm.test('Chưa có đánh giá',()=>{pm.expect(d.publishedCourses).eql(1);pm.expect(d.totalStudents).eql(0);pm.expect(d.ratingAvg).eql(0);pm.expect(d.ratingCount).eql(0);});");
+add(profiles,30,12,'GET',profileUrl,'',200,null,"const c=await course(courseBody(),'profileTokenA');set('profileUnrated',c.id);await call('PATCH','/api/courses/'+c.id+'/status',{status:'PUBLISHED'},'profileTokenA');",profileCheck(3,3,3,4));
+add(profiles,30,13,'GET',profileUrl,'',200,null,"await call('PUT','/api/courses/'+id('profileCourse1')+'/reviews/me',{rating:1,comment:'Đã sửa'},'studentToken');",profileCheck(3,3,3,2.67));
+add(profiles,30,14,'GET',profileUrl,'',200,null,"await call('DELETE','/api/courses/'+id('profileCourse1')+'/reviews/me',undefined,'profileTokenT');",profileCheck(3,3,2,1.5));
+add(profiles,30,15,'GET',profileUrl,'',200,null,"await call('PATCH','/api/courses/'+id('profileCourse2')+'/status',{status:'ARCHIVED'},'profileTokenA');",profileCheck(2,2,1,1));
+add(profiles,30,16,'GET',profileUrl,'',404,null,"for(const c of [id('profileCourse1'),id('profileUnrated')])await call('PATCH','/api/courses/'+c+'/status',{status:'ARCHIVED'},'profileTokenA');");
+add(profiles,30,17,'GET',profileUrl,'PA',404,null);
+add(profiles,30,18,'POST','/api/instructors/{{profileBId}}','',401,null);
+add(profiles,30,19,'GET','/api/instructor/reviews','',401,null);
 for(const key of cases.keys())if(!seen.has(key))throw Error('Missing case '+key);
 // Giữ thứ tự đọc trước ghi để các tình huống đọc luôn có fixture nền nguyên vẹn.
 fs.writeFileSync(path.join(root,'docs/postman/course.postman_collection.json'),JSON.stringify(collection,null,2)+'\n');

@@ -298,6 +298,35 @@ trang cuối hết dòng thì về trang hợp lệ gần nhất, giữ bộ l�
 lỗi ô nhập và hiện lại bộ đếm. API lỗi hiện thông báo, không hiển thị số 0 giả.
 Ca API: `COURSE-29`; trình duyệt: `scripts/check-course-inbox.cjs`.
 
+### Hồ sơ giảng viên công khai
+
+`GET /api/instructors/{id}` qua gateway 8080 trả `name`, `publishedCourses`,
+`totalStudents`, `ratingAvg`, `ratingCount` trong `ApiResponse`. Không cần đăng nhập;
+chỉ phương thức GET được khai công khai ở cả gateway và course-service.
+
+- Mọi số liệu chỉ lấy từ khóa `PUBLISHED`, kể cả chủ khóa/admin gọi API. Không có
+  khóa PUBLISHED (kể cả chỉ có DRAFT, PENDING_REVIEW hoặc ARCHIVED) trả 404 như ID
+  không tồn tại. ID sai kiểu trả 400.
+- Tên lấy từ `instructorName` của khóa PUBLISHED có ID lớn nhất. Đây là snapshot
+  trong course-service, không gọi auth; tên null/trắng dùng “Giảng viên HUNRE”.
+- `totalStudents` là tổng `student_count` theo khóa: cùng người học hai khóa được
+  tính ở cả hai. Đây là số từng ghi danh, không phải số người duy nhất/đang học.
+- `ratingCount = SUM(rating_count)`;
+  `ratingAvg = SUM(rating_avg * rating_count) / SUM(rating_count)`, làm tròn hai
+  chữ số HALF_UP. Dùng điểm đã tổng hợp của từng khóa (lưu hai chữ số thập phân),
+  không lấy trung bình cộng các khóa. Không có lượt đánh giá thì trả 0.00/0;
+  khóa chưa được đánh giá không làm giảm điểm. Số đếm tổng dùng `long`.
+
+Web `/instructors/{id}` dùng khuôn chi tiết và thẻ khóa chung, 12 khóa/trang. Cả hồ
+sơ và `GET /api/courses?instructorId=` được gọi ẩn danh trên trang này để chủ khóa
+hay admin đang đăng nhập cũng không thấy khóa riêng tư. API danh sách khi gọi với
+token chủ khóa vẫn giữ hành vi quản lý cũ. Proxy chỉ bảo vệ đúng `/instructor/`,
+không nhầm với `/instructors/`. Tên trên thẻ và trang chi tiết liên kết về hồ sơ;
+thẻ dùng hai liên kết riêng, không lồng thẻ `<a>`.
+
+Ca API: `COURSE-30`; test tích hợp: `InstructorProfileIntegrationTest`; script UI:
+`scripts/check-course-instructors.cjs`.
+
 ### Chạy kiểm thử
 
 Các thao tác sửa khóa học, đổi trạng thái và sửa chương/bài khóa hàng `courses`
