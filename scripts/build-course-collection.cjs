@@ -395,6 +395,44 @@ add(replies,28,26,'PUT',repliesUrl+'/me','S',200,{rating:5},'',replyState(null,1
 add(replies,28,27,'DELETE',repliesUrl+'/{{replyReviewId}}','ADM',200,null,"await call('PUT','/api/courses/'+id('replyCourseId')+'/reviews/'+id('replyReviewId')+'/reply',{content:'Sắp gỡ'});",replyState(null,0,0));
 add(replies,28,28,'PUT',replyUrl,'A',200,{content:'Phản hồi nháp'},"const s=await call('PUT','/api/courses/'+id('replyCourseId')+'/reviews/me',{rating:5},'studentToken');set('replyReviewId',s.id);await status(id('replyCourseId'),'DRAFT');",replyState('Phản hồi nháp',1,5)+"await call('GET','/api/courses/'+id('replyCourseId')+'/reviews',undefined,null,404);");
 add(replies,28,29,'PUT',replyUrl,'A',200,{content:'Phản hồi lưu trữ'},"await status(id('replyCourseId'),'ARCHIVED');",replyState('Phản hồi lưu trữ',1,5)+"const l=await call('GET','/api/courses/'+id('replyCourseId')+'/reviews',undefined,'studentToken');pm.test('Học viên cũ thấy phản hồi',()=>pm.expect(l.content[0].reply).eql('Phản hồi lưu trữ'));await call('GET','/api/courses/'+id('replyCourseId')+'/reviews',undefined,null,404);");
+const inbox=folder('COURSE-29 — Đánh giá chờ phản hồi');
+tokens.IA='inboxTokenA';tokens.IB='inboxTokenB';
+const inboxUrl='/api/instructor/reviews';
+const inboxCheck=(count,total)=>`pm.test('Đúng số đếm và tổng',()=>{pm.expect(d.unrepliedCount).eql(${count});pm.expect(d.reviews.totalElements).eql(${total});});`;
+add(inbox,29,1,'GET',inboxUrl,'',401,null,`
+  for(const who of ['A','B']) {
+    const email='inbox-'+who+'-'+unique()+'@example.com',password=get('qaPassword');
+    await call('POST','/api/auth/register',{email,password,fullName:'Giảng viên inbox '+who},null,201);
+    const first=await call('POST','/api/auth/login',{email,password},null);
+    await call('PATCH','/api/users/'+first.user.id+'/roles',{roles:['ROLE_STUDENT','ROLE_INSTRUCTOR']},'adminToken');
+    const auth=await call('POST','/api/auth/login',{email,password},null);set('inboxToken'+who,auth.accessToken);
+  }
+  for(const n of [1,2]) {
+    const c=await course(courseBody(),'inboxTokenA');set('inboxCourse'+n,c.id);
+    await call('PATCH','/api/courses/'+c.id+'/status',{status:'PUBLISHED'},'inboxTokenA');
+    await eventually(()=>call('POST','/api/enrollments',{courseId:c.id},'studentToken',201),'Ghi danh inbox');
+    await eventually(async()=>pm.expect((await call('GET','/api/courses/'+c.id+'/reviews/me',undefined,'studentToken')).canReview).eql(true),'Chờ quyền đánh giá');
+    const r=await call('PUT','/api/courses/'+c.id+'/reviews/me',{rating:5,comment:'Góp ý inbox'},'studentToken');set('inboxReview'+n,r.id);
+  }
+`);
+add(inbox,29,2,'GET',inboxUrl,'S',403,null);
+add(inbox,29,3,'GET',inboxUrl+'?replied=false','IA',200,null,'',inboxCheck(2,2)+"pm.test('Có tên và ID khóa',()=>{pm.expect(d.courses.length).eql(2);d.reviews.content.forEach(r=>{pm.expect([id('inboxCourse1'),id('inboxCourse2')]).include(r.courseId);pm.expect(r.courseTitle).to.be.a('string');});});");
+add(inbox,29,4,'GET',inboxUrl+'?size=1','IA',200,null,'',inboxCheck(2,2)+"pm.test('Mới nhất trước',()=>pm.expect(d.reviews.content[0].review.id).eql(id('inboxReview2')));");
+add(inbox,29,5,'GET',inboxUrl+'?size=1&page=1','IA',200,null,'',"pm.test('Trang sau không trùng',()=>pm.expect(d.reviews.content[0].review.id).eql(id('inboxReview1')));");
+add(inbox,29,6,'GET',inboxUrl+'?replied=true','IA',200,null,'',inboxCheck(2,0));
+add(inbox,29,7,'GET',inboxUrl+'?courseId={{inboxCourse1}}','IA',200,null,'',inboxCheck(1,1));
+add(inbox,29,8,'GET',inboxUrl,'IB',200,null,'',inboxCheck(0,0)+"pm.test('Không lộ tùy chọn khóa',()=>pm.expect(d.courses).eql([]));");
+add(inbox,29,9,'GET',inboxUrl+'?courseId={{inboxCourse1}}','IB',403,null);
+add(inbox,29,10,'GET',inboxUrl+'?size=100','ADM',200,null,'',"pm.test('Admin thấy hai khóa mới',()=>pm.expect(d.reviews.content.map(x=>x.review.id)).include.members([id('inboxReview1'),id('inboxReview2')]));");
+add(inbox,29,11,'GET',inboxUrl+'?replied=false','IA',200,null,"await call('PUT','/api/courses/'+id('inboxCourse1')+'/reviews/'+id('inboxReview1')+'/reply',{content:'Giảng viên trả lời'},'inboxTokenA');",inboxCheck(1,1));
+add(inbox,29,12,'GET',inboxUrl+'?replied=true','IA',200,null,'',inboxCheck(1,1)+"pm.test('Nhãn giảng viên',()=>pm.expect(d.reviews.content[0].review.replyAuthorRole).eql('INSTRUCTOR'));");
+add(inbox,29,13,'GET','/api/courses/{{inboxCourse1}}/reviews','',200,null,"await call('PUT','/api/courses/'+id('inboxCourse1')+'/reviews/'+id('inboxReview1')+'/reply',{content:'Admin trả lời'},'adminToken');","pm.test('Nhãn admin không lộ danh tính',()=>{pm.expect(d.content[0].replyAuthorRole).eql('ADMIN');pm.expect(d.content[0]).not.have.property('repliedBy');});");
+add(inbox,29,14,'GET',inboxUrl,'IA',200,null,"await call('DELETE','/api/courses/'+id('inboxCourse1')+'/reviews/'+id('inboxReview1')+'/reply',undefined,'inboxTokenA');",inboxCheck(2,2));
+add(inbox,29,15,'GET',inboxUrl+'?replied=bad','IA',400,null);
+add(inbox,29,16,'GET',inboxUrl+'?courseId=abc','IA',400,null);
+add(inbox,29,17,'GET',inboxUrl+'?sort=comment,desc','IA',400,null);
+add(inbox,29,18,'GET',inboxUrl+'?courseId={{missingId}}','IA',404,null);
+add(inbox,29,19,'GET',inboxUrl+'?page=999','IA',200,null,'',inboxCheck(2,2)+"pm.test('Trang rỗng',()=>pm.expect(d.reviews.content).eql([]));");
 for(const key of cases.keys())if(!seen.has(key))throw Error('Missing case '+key);
 // Giữ thứ tự đọc trước ghi để các tình huống đọc luôn có fixture nền nguyên vẹn.
 fs.writeFileSync(path.join(root,'docs/postman/course.postman_collection.json'),JSON.stringify(collection,null,2)+'\n');
