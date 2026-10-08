@@ -396,3 +396,29 @@ Integration bổ sung: 4 tổ hợp bật/tắt độc lập; mặc định fals
 trùng vẫn ổn định nhờ id; take không thay dữ liệu soạn đề/thống kê/CSV.
 Web: bật/lưu hai cài đặt, bắt đầu phải lấy đề sau khi tạo lượt, tải lại rồi làm tiếp không
 đổi thứ tự, nộp đúng đạt 100%, kết quả thứ tự gốc; thử 375/768/1366px.
+
+## QUIZ-21 — rút câu theo lượt
+
+Nhóm 11 của collection tạo 12 câu, mỗi câu 1 điểm, lấy 5; S đã ghi danh từ setup.
+Ca xóa theo lựa chọn của người phụ trách: bỏ câu đã xóa khi chấm, không rút bù; giữ kết quả cũ.
+
+| # | Tình huống | Mong đợi |
+|---|---|---|
+| 1 | Bắt đầu và tải 5 lần | Cùng bộ 5 câu/5 điểm, cùng thứ tự; không lộ đáp án |
+| 2 | Làm tiếp | Cùng ID lượt và bộ đã lưu |
+| 3 | Gửi câu ngoài bộ | 400; chưa nộp, chưa có đáp án/outbox; thử lại được |
+| 4 | Đổi cài đặt 5 thành 12 giữa lượt | Lượt hiện tại vẫn 5 câu |
+| 5 | Xóa một câu đã chọn | Còn đúng 4 câu ban đầu; không rút bù |
+| 6 | Nộp đủ đáp án đúng, kể cả câu đã xóa | 100%, chấm 4 câu/4 điểm |
+| 7 | Xem kết quả | Chỉ 4 câu đã chấm, không có 7 câu chưa gặp |
+| 8 | Xem thống kê | Câu đã gặp có mẫu số 1, đúng 100%; chưa gặp có mẫu số 0 |
+| 9 | Lượt thứ hai | ID mới, rút lại từ ngân hàng còn lại; không có câu đã xóa |
+| 10 | Lưu 0, -1, 201 | 400, không đổi cài đặt |
+| 11 | B sửa cài đặt của A | 403 |
+| 12 | Xóa trống cài đặt; A bắt đầu làm thử | null, lấy hết 11 câu còn lại |
+
+Integration: 1/5/12/200 câu, null; xáo tắt vẫn chọn đúng số câu; 100 điểm trên 5 câu;
+bộ mới trên fixture 12 câu khác bộ cũ; thêm câu/đổi nội dung không đổi membership;
+toàn bộ bộ câu bị xóa trả 422, không có quiz.graded; xóa câu từng được chấm vẫn giữ lịch sử.
+Web: lưu 5 và xóa trống, lỗi giới hạn, “Đề có 12 câu”, làm/nộp 5 câu, Câu k/5,
+reload/resume, lượt mới, kết quả 100%, “Chưa có lượt nào”, 375/768/1366px không tràn.

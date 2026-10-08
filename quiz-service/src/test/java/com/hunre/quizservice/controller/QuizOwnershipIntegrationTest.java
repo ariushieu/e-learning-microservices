@@ -153,7 +153,10 @@ class QuizOwnershipIntegrationTest {
             case 3 -> assertThat(quizzes.existsById(quiz.getId())).isFalse();
             case 4 -> assertThat(questions.findByQuizIdOrderByPositionAsc(quiz.getId())).hasSize(2);
             case 5 -> assertThat(questions.findById(question.getId()).orElseThrow().getContent()).isEqualTo("Changed question");
-            case 6 -> assertThat(questions.existsById(question.getId())).isFalse();
+            case 6 -> {
+                assertThat(questions.findById(question.getId()).orElseThrow().isDeleted()).isTrue();
+                assertThat(questions.findByQuizIdOrderByPositionAsc(quiz.getId())).isEmpty();
+            }
             default -> { }
         }
         verifyNoInteractions(courseClient);

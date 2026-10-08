@@ -230,6 +230,7 @@ export interface Quiz {
   maxAttempts: number;
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
+  questionsPerAttempt: number | null;
   status: QuizStatus;
   createdBy: number;
   totalQuestions: number;
@@ -248,6 +249,7 @@ export interface QuizInput {
   maxAttempts?: number;
   shuffleQuestions?: boolean;
   shuffleOptions?: boolean;
+  questionsPerAttempt?: number | null;
 }
 
 export interface AnswerOption {

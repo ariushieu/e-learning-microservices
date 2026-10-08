@@ -29,6 +29,7 @@ public class QuizDetailResponse {
     private Integer maxAttempts;
     private boolean shuffleQuestions;
     private boolean shuffleOptions;
+    private Integer questionsPerAttempt;
     private QuizStatus status;
     private Long createdBy;
     private int totalQuestions;
@@ -62,6 +63,7 @@ public class QuizDetailResponse {
                 .maxAttempts(quiz.getMaxAttempts())
                 .shuffleQuestions(quiz.isShuffleQuestions())
                 .shuffleOptions(quiz.isShuffleOptions())
+                .questionsPerAttempt(quiz.getQuestionsPerAttempt())
                 .status(quiz.getStatus())
                 .createdBy(quiz.getCreatedBy())
                 .totalQuestions(totalQuestions)

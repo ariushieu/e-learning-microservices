@@ -81,7 +81,7 @@ public class QuizResultsService {
                     SELECT aa.* FROM attempt_answers aa JOIN quiz_attempts qa ON qa.id = aa.attempt_id
                     WHERE qa.quiz_id = ? AND qa.is_preview = false AND qa.user_id <> ? AND qa.status = 'SUBMITTED'
                 ) a ON a.question_id = q.id
-                WHERE q.quiz_id = ? GROUP BY q.id, q.content, q.position ORDER BY q.position, q.id
+                WHERE q.quiz_id = ? AND q.deleted = false GROUP BY q.id, q.content, q.position ORDER BY q.position, q.id
                 """, (rs, row) -> new QuestionRate(rs.getLong("id"), rs.getString("content"),
                 rs.getLong("graded"), percent(rs.getLong("correct"), rs.getLong("graded"))), quizId, owner, quizId);
         return new QuizResultsResponse(quizId, quiz.getTitle(),

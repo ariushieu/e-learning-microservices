@@ -165,6 +165,7 @@ class QuizAttemptServiceTest {
                 .attemptNo(1)
                 .status(AttemptStatus.IN_PROGRESS)
                 .startedAt(Instant.now().minusSeconds(60))
+                .questionIds(new java.util.HashSet<>(Set.of(10L, 20L)))
                 .answers(new ArrayList<>())
                 .build();
 
@@ -207,6 +208,7 @@ class QuizAttemptServiceTest {
                 .attemptNo(1)
                 .status(AttemptStatus.IN_PROGRESS)
                 .startedAt(Instant.now().minusSeconds(60))
+                .questionIds(new java.util.HashSet<>(Set.of(10L, 20L)))
                 .answers(new ArrayList<>())
                 .build();
 

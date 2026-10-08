@@ -108,6 +108,7 @@ class QuestionServiceTest {
 
         questionService.deleteQuestion(1L, 10L, 100L, false);
 
-        verify(questionRepository).delete(question);
+        assertThat(question.isDeleted()).isTrue();
+        verify(questionRepository).save(question);
     }
 }

@@ -303,7 +303,7 @@ function QuizTaking({ quiz, attempt, deadline, onClose }: {
               <QuestionCard
                 key={q.id}
                 question={q}
-                index={i}
+                index={i} total={questions.length}
                 selected={answers[q.id] ?? []}
                 locked={locked}
                 onChoose={(optionId, checked) => choose(q, optionId, checked)}
@@ -383,12 +383,14 @@ function QuizTaking({ quiz, attempt, deadline, onClose }: {
 function QuestionCard({
   question: q,
   index,
+  total,
   selected,
   locked,
   onChoose,
 }: {
   question: Question;
   index: number;
+  total: number;
   selected: number[];
   locked: boolean;
   onChoose: (optionId: number, checked: boolean) => void;
@@ -430,7 +432,7 @@ function QuestionCard({
     <Card id={`question-${q.id}`} className="scroll-mt-36">
       <CardHeader className="gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-subheading">Câu {index + 1}</span>
+          <span className="text-subheading">Câu {index + 1}/{total}</span>
           <QuestionTypeTag type={q.type} />
           <span className="ml-auto text-caption text-muted-foreground tabular-nums">{formatPoints(q.score)} điểm</span>
         </div>

@@ -73,6 +73,7 @@ public class QuestionServiceImpl implements QuestionService {
     public QuestionResponse updateQuestion(Long quizId, Long questionId, UpdateQuestionRequest request, Long currentUserId, boolean isAdmin) {
         log.info("Cập nhật câu hỏi id: {} của bài kiểm tra id: {}", questionId, quizId);
         Question question = questionRepository.findById(questionId)
+                .filter(q -> !q.isDeleted())
                 .orElseThrow(() -> new ResourceNotFoundException("câu hỏi", "id", questionId));
 
         Quiz quiz = question.getQuiz();
@@ -114,6 +115,7 @@ public class QuestionServiceImpl implements QuestionService {
     public void deleteQuestion(Long quizId, Long questionId, Long currentUserId, boolean isAdmin) {
         log.info("Xóa câu hỏi id: {} của bài kiểm tra id: {}", questionId, quizId);
         Question question = questionRepository.findById(questionId)
+                .filter(q -> !q.isDeleted())
                 .orElseThrow(() -> new ResourceNotFoundException("câu hỏi", "id", questionId));
 
         Quiz quiz = question.getQuiz();
@@ -122,7 +124,9 @@ public class QuestionServiceImpl implements QuestionService {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "Câu hỏi không thuộc bài kiểm tra này");
         }
 
-        questionRepository.delete(question);
+        // Keep references used by past results; active attempts omit this question at grading.
+        question.setDeleted(true);
+        questionRepository.save(question);
     }
 
     @Override

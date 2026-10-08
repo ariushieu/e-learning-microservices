@@ -9,5 +9,6 @@ import java.util.List;
 @Repository
 public interface QuestionRepository extends JpaRepository<Question, Long> {
 
+    @org.springframework.data.jpa.repository.Query("SELECT q FROM Question q WHERE q.quiz.id = :quizId AND q.deleted = false ORDER BY q.position, q.id")
     List<Question> findByQuizIdOrderByPositionAsc(Long quizId);
 }

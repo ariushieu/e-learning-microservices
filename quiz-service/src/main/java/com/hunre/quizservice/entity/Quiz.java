@@ -68,6 +68,9 @@ public class Quiz {
     @Column(name = "shuffle_options", nullable = false)
     private boolean shuffleOptions = false;
 
+    @Column(name = "questions_per_attempt")
+    private Integer questionsPerAttempt;
+
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20, nullable = false)
@@ -85,6 +88,7 @@ public class Quiz {
     @Builder.Default
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("position ASC, id ASC")
+    @org.hibernate.annotations.SQLRestriction("deleted = false")
     private List<Question> questions = new ArrayList<>();
 
     @PrePersist
