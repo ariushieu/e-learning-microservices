@@ -15,6 +15,9 @@ Collection enrollment chỉ kiểm HTTP, không tự tắt database hoặc chặ
   ENROLL-09.1 dùng ngân sách retry mặc định 5 phút; riêng ENROLL-09.4 đổi thành 5 giây rồi trả về 5 phút.
 - Mọi HTTP đi qua gateway 8080. Các ca message hỏng gửi trực tiếp vào Kafka để thử đúng đầu vào consumer.
 - Script kiểm cờ môi trường, Compose project và DB_HOST trước khi dừng database.
+- Broker thử nghiệm bật `StandardAuthorizer`, mặc định cho qua các resource chưa có ACL.
+  Riêng ca 5 thêm ACL từ chối WRITE vào DLT; vẫn cho đọc DLT và ghi source topic. Script kiểm
+  DLT chưa có ACL trước khi bắt đầu và chỉ xóa đúng những ACL do lượt kiểm tra tạo.
 
 ## Cách chạy trên Linux có Docker Compose
 
@@ -53,7 +56,7 @@ bash scripts/smoke-test.sh
 | ENROLL-09.2 | Tiêu đề 300 ký tự | Key/payload gốc và header topic/partition/offset/group trong DLT; message kế tiếp liền kề trên cùng partition vẫn tạo snapshot; message lỗi không ghi DB |
 | ENROLL-09.3 | Payload `not-json` | Cùng điều kiện DLT và xử lý message kế tiếp như ca 2 |
 | ENROLL-09.4 | Retry 5 giây, MySQL dừng tới khi xuất hiện DLT | Có thử lại thật, quá ngân sách mới vào DLT; message sau xử lý được khi DB lên; trả cấu hình về 5 phút |
-| ENROLL-09.5 | DLT yêu cầu 2 replica đồng bộ, broker thử nghiệm chỉ có 1; source topic vẫn ghi được | Quan sát một lần gửi DLT thực sự thất bại (delivery timeout mặc định khoảng 120 giây), tiếp tục kiểm offset không bị bỏ qua và snapshot sau chưa được ghi; khôi phục cấu hình thì DLT giữ payload/header và xử lý được message kế tiếp |
+| ENROLL-09.5 | ACL từ chối WRITE vào DLT; probe phải nhận `TOPIC_AUTHORIZATION_FAILED` trước khi gửi source event | Quan sát một lần gửi DLT thực sự thất bại, tiếp tục kiểm ít nhất 5 giây sau đó: offset không bị bỏ qua và snapshot sau chưa được ghi; gỡ ACL thì DLT giữ payload/header và xử lý được message kế tiếp |
 
 Không yêu cầu DLT đúng một bản: Kafka có thể gửi lại khi việc xác nhận/commit gặp lỗi. Điều bắt buộc
 là không mất payload gốc và không vượt offset trước khi recovery thành công.

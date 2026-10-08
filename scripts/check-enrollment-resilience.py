@@ -16,8 +16,9 @@ import urllib.request
 import uuid
 from datetime import datetime, timezone
 
-from confluent_kafka import Consumer, ConsumerGroupTopicPartitions, Producer, TopicPartition
-from confluent_kafka.admin import AdminClient, AlterConfigOpType, ConfigEntry, ConfigResource, NewTopic
+from confluent_kafka import Consumer, ConsumerGroupTopicPartitions, KafkaError, Producer, TopicPartition
+from confluent_kafka.admin import (AdminClient, AclBinding, AclBindingFilter, AclOperation,
+                                  AclPermissionType, NewTopic, ResourcePatternType, ResourceType)
 
 
 TOPIC = "elearning.course.events"
@@ -113,8 +114,11 @@ class Probe:
         self.producer = Producer({"bootstrap.servers": "localhost:9092", "acks": "all",
                                   "delivery.timeout.ms": 15000})
         self.readers = []
-        self.original_isr = None
-        self.isr_changed = False
+        self.acls_changed = False
+        self.dlt_acls = [AclBinding(ResourceType.TOPIC, DLT, ResourcePatternType.LITERAL,
+                                   "User:ANONYMOUS", "*", operation, permission)
+                         for operation, permission in [(AclOperation.ALL, AclPermissionType.ALLOW),
+                                                        (AclOperation.WRITE, AclPermissionType.DENY)]]
         self.evidence = {"sourceCommit": os.environ.get("SOURCE_COMMIT"),
                          "startedAt": now(), "database": "MySQL 8.4 (dedicated enrollment DB)",
                          "broker": "Kafka 4.3.1", "cases": [], "cleanup": {}}
@@ -145,14 +149,12 @@ class Probe:
         enrollment = json.loads(command("docker", "inspect", compose("ps", "-q", "enrollment-service")))[0]
         require("DB_HOST=" + DB in enrollment["Config"]["Env"], "Enrollment is not using dedicated MySQL")
         metadata = self.admin.list_topics(timeout=15)
-        require(len(metadata.brokers) == 1, "DLT outage test requires a single-broker test cluster")
         require(TOPIC in metadata.topics, "Run demo-flow before this test to create the course topic")
         if DLT not in metadata.topics:
             self.admin.create_topics([NewTopic(DLT, num_partitions=3, replication_factor=1)])[DLT].result(15)
-        resource = ConfigResource(ConfigResource.Type.TOPIC, DLT)
-        config = self.admin.describe_configs([resource])[resource].result(15)["min.insync.replicas"]
-        self.original_isr = (config.value, config.is_default)
-        require(config.value == "1", "DLT must start writable with min.insync.replicas=1")
+        acl_filter = AclBindingFilter(ResourceType.TOPIC, DLT, ResourcePatternType.MATCH,
+                                     None, None, AclOperation.ANY, AclPermissionType.ANY)
+        require(not self.admin.describe_acls(acl_filter).result(15), "DLT already has ACLs; refuse to modify them")
         self.dlt_reader = self.reader(DLT)
         self.source_reader = self.reader(TOPIC)
         self.barrier()
@@ -337,20 +339,31 @@ class Probe:
                 "source": source, "deadLetter": dead_letter, "committedAfterDlt": committed,
                 "followingSource": next_source, "followingSnapshot": row, "restoredRetryBudget": "5m"}
 
-    def set_isr(self, value, delete=False):
-        operation = AlterConfigOpType.DELETE if delete else AlterConfigOpType.SET
-        resource = ConfigResource(ConfigResource.Type.TOPIC, DLT,
-                                  incremental_configs=[ConfigEntry("min.insync.replicas", None if delete else value,
-                                                                    incremental_operation=operation)])
-        self.admin.incremental_alter_configs([resource])[resource].result(15)
-        wait_for("DLT configuration applied", lambda: self.admin.describe_configs([resource])[resource]
-                 .result(15)["min.insync.replicas"].value == value, timeout=30)
+    def deny_dlt_writes(self):
+        self.acls_changed = True
+        for future in self.admin.create_acls(self.dlt_acls).values():
+            future.result(15)
+        probe = Producer({"bootstrap.servers": "localhost:9092", "acks": "all",
+                          "delivery.timeout.ms": 5000})
+
+        def denied():
+            delivered = []
+            probe.produce(DLT, key="qa-dlt-write-probe", value=self.run_id,
+                          on_delivery=lambda error, message: delivered.append(error))
+            require(probe.flush(6) == 0 and bool(delivered), "DLT fault probe did not complete")
+            error = delivered[0]
+            require(error is None or error.code() == KafkaError.TOPIC_AUTHORIZATION_FAILED,
+                    "DLT probe failed for a reason other than denied write permission")
+            return error is not None
+
+        # ACL metadata can reach the broker after the admin response. Prove the
+        # failure is effective before evaluating application recovery behavior.
+        wait_for("broker rejects DLT writes", denied, timeout=20)
 
     def case_five(self):
         self.barrier()
         since = now()
-        self.isr_changed = True
-        self.set_isr("2")
+        self.deny_dlt_writes()
         source = self.send(raw="not-json-dlt-unavailable", key=self.event()["courseId"])
         following = self.event("After DLT recovery")
         next_source = self.send(following, partition=source["partition"])
@@ -358,12 +371,13 @@ class Probe:
         started = time.monotonic()
         observations = []
         self.evidence["cases"][-1]["evidence"] = {
-            "source": source, "followingSource": next_source, "offsetsWhileDltUnavailable": observations}
+            "source": source, "followingSource": next_source, "offsetsWhileDltUnavailable": observations,
+            "faultProbe": "TOPIC_AUTHORIZATION_FAILED"}
         publication_failed_at = None
         try:
-            # Producer's real delivery.timeout.ms is 120s. Wait for a failed recovery
-            # and another observation, not just for an in-flight send to be blocked.
-            while time.monotonic() - started < 210:
+            # Require an actual failed recovery plus further observations, not
+            # just an in-flight send. Source writes and DLT reads remain allowed.
+            while time.monotonic() - started < 60:
                 elapsed = round(time.monotonic() - started, 1)
                 offset = self.committed(source["partition"])
                 require(offset <= source["offset"], "Lost source offset before DLT acknowledged")
@@ -381,11 +395,11 @@ class Probe:
                 time.sleep(3)
             require(publication_failed_at is not None, "No actual failed DLT publication observed")
         finally:
-            self.set_isr(self.original_isr[0], delete=self.original_isr[1])
-            self.isr_changed = False
+            self.restore_dlt()
         dead_letter = self.dlt(source, timeout=150)
         row = expect_snapshot(following)
-        return {"fault": "min.insync.replicas=2 on DLT with one broker; source topic writable",
+        return {"fault": "DENY WRITE ACL on DLT; source writes and DLT reads allowed",
+                "faultProbe": "TOPIC_AUTHORIZATION_FAILED",
                 "source": source, "offsetsWhileDltUnavailable": observations,
                 "publicationFailedAtSeconds": publication_failed_at, "deadLetter": dead_letter,
                 "followingSource": next_source, "followingSnapshot": row,
@@ -427,9 +441,13 @@ class Probe:
         require(all(self.evidence["cleanup"].values()), "Test infrastructure cleanup failed")
 
     def restore_dlt(self):
-        if self.isr_changed:
-            self.set_isr(self.original_isr[0], delete=self.original_isr[1])
-            self.isr_changed = False
+        if self.acls_changed:
+            filters = [AclBindingFilter(acl.restype, acl.name, acl.resource_pattern_type,
+                                        acl.principal, acl.host, acl.operation, acl.permission_type)
+                       for acl in self.dlt_acls]
+            for future in self.admin.delete_acls(filters).values():
+                future.result(15)
+            self.acls_changed = False
 
     def save(self):
         OUTPUT.parent.mkdir(parents=True, exist_ok=True)

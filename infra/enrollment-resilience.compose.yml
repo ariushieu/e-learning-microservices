@@ -1,6 +1,12 @@
 # Test-only overlay. Use a disposable host/project, never the demo database.
 # A separate MySQL lets course-service publish while enrollment's database is down.
 services:
+  kafka:
+    environment:
+      # Test-only authorizer: normal traffic is unchanged until the runner denies DLT writes.
+      KAFKA_AUTHORIZER_CLASS_NAME: org.apache.kafka.metadata.authorizer.StandardAuthorizer
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+
   enrollment-resilience-db:
     image: mysql:8.4
     environment:
