@@ -4,6 +4,7 @@ import com.hunre.authservice.domain.RoleCode;
 import com.hunre.authservice.domain.User;
 import com.hunre.authservice.domain.UserStatus;
 import com.hunre.authservice.dto.UserResponse;
+import com.hunre.authservice.dto.UserStatsResponse;
 import com.hunre.authservice.repository.RefreshTokenRepository;
 import com.hunre.authservice.repository.UserRepository;
 import com.hunre.sharedcommon.dto.PageResponse;
@@ -17,8 +18,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Isolation;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.EnumMap;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Set;
@@ -30,6 +34,21 @@ public class UserManagementService {
     private final UserRepository users;
     private final RefreshTokenRepository refreshTokens;
     private static final Set<String> SORT_FIELDS = Set.of("createdAt", "email", "fullName");
+
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public UserStatsResponse statistics() {
+        Instant now = Instant.now();
+        var byRole = new EnumMap<RoleCode, Long>(RoleCode.class);
+        var byStatus = new EnumMap<UserStatus, Long>(UserStatus.class);
+        for (RoleCode role : RoleCode.values()) byRole.put(role, 0L);
+        for (UserStatus status : UserStatus.values()) byStatus.put(status, 0L);
+        users.countByRole().forEach(row -> byRole.put(row.getRole(), row.getTotal()));
+        users.countByStatus().forEach(row -> byStatus.put(row.getStatus(), row.getTotal()));
+        // Status partitions users; roles overlap for accounts with multiple roles.
+        long total = byStatus.values().stream().mapToLong(Long::longValue).sum();
+        return new UserStatsResponse(total, byRole, byStatus,
+                users.countCreatedBetween(now.minus(7, ChronoUnit.DAYS), now));
+    }
 
     @Transactional(readOnly = true)
     public PageResponse<UserResponse> list(String keyword, RoleCode role, UserStatus status, Pageable pageable) {
