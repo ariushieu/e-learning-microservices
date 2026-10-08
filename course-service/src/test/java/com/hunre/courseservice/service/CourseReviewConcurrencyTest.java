@@ -68,4 +68,47 @@ class CourseReviewConcurrencyTest {
         }
         parallel(tasks); stats(6,"3.00");
     }
+
+    @Test void adminRemovalsAndLearnerEditsKeepExactAverage() throws Exception {
+        var admin = new AuthenticatedUser(99L, "admin@example.com", "Admin", Set.of(Roles.ADMIN));
+        Map<Long, Long> reviewIds = new HashMap<>();
+        for (long i=1; i<=12; i++) {
+            reviewIds.put(i, service.save(id, new SaveCourseReviewRequest(BigDecimal.valueOf(5), null), user(i)).id());
+        }
+        List<Callable<Void>> tasks = new ArrayList<>();
+        for (long i=1; i<=12; i++) {
+            final long learner = i;
+            tasks.add(() -> {
+                if (learner % 2 == 0) service.removeByAdmin(id, reviewIds.get(learner), admin);
+                else service.save(id, new SaveCourseReviewRequest(BigDecimal.valueOf(3), null), user(learner));
+                return null;
+            });
+        }
+        parallel(tasks);
+        stats(6, "3.00");
+    }
+
+    @Test void adminAndAuthorDeletingSameReviewReturnOneSuccessAndOneNotFound() throws Exception {
+        var admin = new AuthenticatedUser(99L, "admin@example.com", "Admin", Set.of(Roles.ADMIN));
+        Long reviewId = service.save(id, new SaveCourseReviewRequest(BigDecimal.valueOf(5), null), user(1)).id();
+        var successes = new java.util.concurrent.atomic.AtomicInteger();
+        var missing = new java.util.concurrent.atomic.AtomicInteger();
+        List<Callable<Void>> tasks = new ArrayList<>();
+        for (boolean moderator : List.of(true, false)) {
+            tasks.add(() -> {
+                try {
+                    if (moderator) service.removeByAdmin(id, reviewId, admin);
+                    else service.delete(id, user(1));
+                    successes.incrementAndGet();
+                } catch (com.hunre.sharedcommon.exception.ResourceNotFoundException expected) {
+                    missing.incrementAndGet();
+                }
+                return null;
+            });
+        }
+        parallel(tasks);
+        assertThat(successes.get()).isEqualTo(1);
+        assertThat(missing.get()).isEqualTo(1);
+        stats(0, "0.00");
+    }
 }

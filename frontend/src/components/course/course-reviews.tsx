@@ -11,9 +11,20 @@ import type { Course, Page } from "@/lib/types";
 import { attempt } from "./queries";
 import { RatingStars } from "./rating-stars";
 import { ReviewForm } from "./review-form";
+import { RemoveReviewButton } from "./remove-review-button";
 import type { CourseReview, MyCourseReview } from "./review-types";
 
-export async function CourseReviews({ course, loggedIn, page }: { course: Course; loggedIn: boolean; page: number }) {
+export async function CourseReviews({
+  course,
+  loggedIn,
+  page,
+  isAdmin,
+}: {
+  course: Course;
+  loggedIn: boolean;
+  page: number;
+  isAdmin: boolean;
+}) {
   const [result, mine] = await Promise.all([
     attempt(gateway<Page<CourseReview>>(`/api/courses/${course.id}/reviews?page=${page}&size=5`)),
     loggedIn ? attempt(gateway<MyCourseReview>(`/api/courses/${course.id}/reviews/me`)) : Promise.resolve(null),
@@ -86,6 +97,15 @@ export async function CourseReviews({ course, loggedIn, page }: { course: Course
                       </div>
                       {review.comment && (
                         <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed">{review.comment}</p>
+                      )}
+                      {isAdmin && (
+                        <div className="mt-3 flex justify-end">
+                          <RemoveReviewButton
+                            courseId={course.id}
+                            reviewId={review.id}
+                            authorName={review.authorName}
+                          />
+                        </div>
                       )}
                     </article>
                   ))}

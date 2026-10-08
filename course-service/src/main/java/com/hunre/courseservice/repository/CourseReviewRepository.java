@@ -9,4 +9,5 @@ import java.util.Optional;
 public interface CourseReviewRepository extends JpaRepository<CourseReview, Long> {
     Page<CourseReview> findByCourseId(Long courseId, Pageable pageable);
     Optional<CourseReview> findByCourseIdAndUserId(Long courseId, Long userId);
+    Optional<CourseReview> findByIdAndCourseId(Long id, Long courseId);
 }

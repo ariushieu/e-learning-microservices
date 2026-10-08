@@ -234,6 +234,24 @@ thấy khóa được giữ ở `elearning.enrollment.events.DLT`; không ghi s�
 
 ## Kiểm tra
 
+### Admin gỡ đánh giá
+
+`DELETE /api/courses/{courseId}/reviews/{reviewId}` chỉ dành cho `ROLE_ADMIN`:
+không đăng nhập trả 401, học viên hoặc giảng viên (kể cả chủ khóa/người viết) trả 403.
+Không tìm thấy khóa/đánh giá hoặc đánh giá thuộc khóa khác trả 404. Thành công trả 200.
+Admin không cần ghi danh và có thể gỡ ở mọi trạng thái khóa học.
+
+Giao dịch khóa hàng `courses` trước khi tìm đánh giá, xóa và tính lại
+`ratingAvg`/`ratingCount`, cùng thứ tự khóa với ghi/sửa/tự xóa đánh giá.
+Xóa lượt cuối đặt cả hai số liệu về 0. Gỡ không cấm tài khoản: người viết
+vẫn có thể tạo đánh giá mới nếu đủ điều kiện theo sổ học viên và trạng thái khóa.
+
+Trang chi tiết chỉ hiện nút **Gỡ** cho admin, có xác nhận và báo lỗi trong hộp thoại.
+Gỡ thành công tải lại điểm/danh sách và về trang đánh giá đầu để tránh trang cuối rỗng.
+Các ca API nằm ở `COURSE-27`; kiểm thử trình duyệt: `scripts/check-course-moderation.cjs`.
+
+### Các bộ kiểm thử
+
 Các thao tác sửa khóa học, đổi trạng thái và sửa chương/bài khóa hàng `courses`
 trước khi ghi dữ liệu. Khi nhiều request cùng thêm/xóa/sửa bài, mỗi request đọc lại
 số bài và thời lượng sau khi lấy được khóa, tránh ghi đè số liệu và tránh deadlock
