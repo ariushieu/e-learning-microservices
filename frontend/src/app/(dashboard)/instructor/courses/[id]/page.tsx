@@ -22,6 +22,7 @@ import { StatusPage } from "@/components/common/status-page";
 import { CourseForm } from "@/components/course/course-form";
 import { CourseStatusActions } from "@/components/course/course-status-actions";
 import { CurriculumBuilder } from "@/components/course/curriculum-builder";
+import { CourseLearners } from "@/components/enrollment/course-learners";
 import { CreateQuizButton } from "@/components/quiz/create-quiz-button";
 import { DashboardPage } from "@/components/templates/dashboard-page";
 import { Badge } from "@/components/ui/badge";
@@ -224,6 +225,7 @@ export default async function ManageCoursePage({ params }: PageProps<"/instructo
           </Section>
         </TabsContent>
       </Tabs>
+      <CourseLearners courseId={course.id} />
     </DashboardPage>
   );
 }

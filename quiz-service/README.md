@@ -133,6 +133,33 @@ vẫn rollback toàn bộ. Web chỉ mở kết quả lượt đã nộp, lượ
 sau lỗi (không bọc test trong transaction), gồm ẩn đáp án, quyền sở hữu, nộp lặp,
 lịch sử EXPIRED, và rollback khi lưu outbox thất bại.
 
+### Thống kê dành cho giảng viên (QUIZ-17)
+
+`GET /api/quizzes/{quizId}/results?page=0&size=20` dành cho tác giả có vai trò
+INSTRUCTOR hoặc ADMIN. Không token: 401; người khác: 403; không có quiz: 404.
+Trả `summary` và `learners` theo `PageResponse`; danh sách được gom nhóm và phân trang
+trong database. Sort chỉ nhận `lastSubmittedAt,asc|desc` (mặc định desc), ổn định theo
+userId khi cùng thời điểm; sort không hỗ trợ trả 400.
+
+- `summary`: `submittedLearners`, `submittedAttempts`, `expiredAttempts`,
+  `averageBestScore`, `passRate`, `questions` và `unclassifiedAttempts`.
+- `learners`: mỗi người một dòng, tên ở lượt nộp mới nhất, số lượt nộp, điểm cao nhất,
+  đã từng đạt hay chưa, thời điểm nộp gần nhất. Thiếu tên: `Học viên #<id>`; không email.
+- Điểm trung bình lấy điểm cao nhất mỗi người. Tỉ lệ đạt = số người có ít nhất một lượt
+  đạt / số người đã nộp. Các giá trị phần trăm 0–100, làm tròn 2 chữ số; mẫu rỗng trả 0.
+- Tỉ lệ đúng câu hỏi tính trên tất cả lượt đã chấm câu đó, kể cả làm lại. Câu thêm sau
+  không lấy những lượt cũ chưa chấm câu đó vào mẫu số. `gradedAnswers=0` nghĩa chưa có dữ liệu.
+- Chỉ SUBMITTED tham gia điểm/số người; EXPIRED chỉ tính riêng số lượt hết giờ.
+
+Migration V4 thêm tên từ JWT và cờ `is_preview` tại lúc bắt đầu lượt: tác giả/admin là
+làm thử. Resume không đổi phân loại dù vai trò người gọi thay đổi. Lượt cũ có cờ NULL
+vì không có lịch sử vai trò để phân loại admin: loại khỏi thống kê và trả số lượt bị loại
+trong `unclassifiedAttempts`, web hiện thông báo. Không phỏng đoán hoặc sửa điểm lịch sử.
+
+Web `/instructor/quizzes/{id}/results` liên kết từ trang soạn đề, có thẻ số liệu, bảng
+học viên/phân trang, tỉ lệ đúng từng câu (dưới 50% được đánh dấu), trạng thái trống/tải/lỗi.
+Kiểm thử mới nằm ở `QuizResultsIntegrationTest` và nhóm QUIZ-17 trong collection.
+
 ### Kết quả kiểm chứng ngày 06/10/2026
 
 Phần kiểm ghi danh (sau thay đổi quyền sở hữu):

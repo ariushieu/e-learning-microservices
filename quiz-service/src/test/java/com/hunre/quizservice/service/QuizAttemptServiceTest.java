@@ -133,7 +133,7 @@ class QuizAttemptServiceTest {
             return a;
         });
 
-        QuizAttemptResponse response = quizAttemptService.startAttempt(1L, 99L, false, "Bearer student-token");
+        QuizAttemptResponse response = quizAttemptService.startAttempt(1L, 99L, false, "Bearer student-token", null);
 
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(500L);
@@ -150,7 +150,7 @@ class QuizAttemptServiceTest {
                 .thenReturn(Optional.empty());
         when(quizAttemptRepository.countByQuizIdAndUserId(1L, 99L)).thenReturn(2L); // max = 2
 
-        assertThatThrownBy(() -> quizAttemptService.startAttempt(1L, 99L, false, "Bearer student-token"))
+        assertThatThrownBy(() -> quizAttemptService.startAttempt(1L, 99L, false, "Bearer student-token", null))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("đã sử dụng hết số lần làm bài tối đa");
     }

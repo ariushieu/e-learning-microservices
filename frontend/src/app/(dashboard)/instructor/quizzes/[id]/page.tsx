@@ -58,6 +58,9 @@ export default async function QuizEditorPage({ params }: PageProps<"/instructor/
       actions={
         // PageHeader không cho cột nút co lại; giới hạn theo bề ngang màn hình để nút tự xuống dòng trên điện thoại.
         <div className="flex flex-wrap items-start gap-2">
+          <Button asChild variant="outline">
+            <Link href={`/instructor/quizzes/${quiz.id}/results`}>Xem kết quả học viên</Link>
+          </Button>
           <Button asChild variant="ghost">
             <Link href={`/instructor/courses/${quiz.courseId}`}>
               <ArrowLeftIcon /> Về khóa học

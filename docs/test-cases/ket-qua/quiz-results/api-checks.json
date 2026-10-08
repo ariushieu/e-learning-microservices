@@ -1,0 +1,452 @@
+{
+  "environment": "MySQL 8.0.46, Flyway V1-V4, Hibernate validate; gateway 8080; Kafka workers and rate limiting disabled",
+  "stats": {
+    "iterations": {
+      "total": 1,
+      "pending": 0,
+      "failed": 0
+    },
+    "items": {
+      "total": 228,
+      "pending": 0,
+      "failed": 0
+    },
+    "scripts": {
+      "total": 236,
+      "pending": 0,
+      "failed": 0
+    },
+    "prerequests": {
+      "total": 228,
+      "pending": 0,
+      "failed": 0
+    },
+    "requests": {
+      "total": 221,
+      "pending": 0,
+      "failed": 0
+    },
+    "tests": {
+      "total": 221,
+      "pending": 0,
+      "failed": 0
+    },
+    "assertions": {
+      "total": 492,
+      "pending": 0,
+      "failed": 0
+    },
+    "testScripts": {
+      "total": 221,
+      "pending": 0,
+      "failed": 0
+    },
+    "prerequestScripts": {
+      "total": 15,
+      "pending": 0,
+      "failed": 0
+    }
+  },
+  "failures": [],
+  "quiz17": [
+    {
+      "name": "QUIZ-17 chuẩn bị đề thống kê",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 chuẩn bị câu 1",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 chuẩn bị câu 2",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 xuất bản",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.1 Đề chưa có bài nộp",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Empty results"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 bắt đầu S",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.2 Đang làm không tính",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Ongoing excluded"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 nộp S",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Graded score"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 bắt đầu B",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 nộp B",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Graded score"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.3 Chủ đề xem thống kê 75 điểm",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Two learners, best average and question rates"
+        },
+        {
+          "name": "Names and privacy"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.4 Admin xem thống kê",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Two learners, best average and question rates"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.5 Giảng viên khác bị chặn",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.6 Học viên giả userId vẫn bị chặn",
+      "http": 403,
+      "assertions": [
+        {
+          "name": "HTTP 403"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.7 Không token",
+      "http": 401,
+      "assertions": [
+        {
+          "name": "HTTP 401"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.8 Đề không tồn tại",
+      "http": 404,
+      "assertions": [
+        {
+          "name": "HTTP 404"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.9 Trang đầu vẫn thống kê toàn bộ",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Two learners, best average and question rates"
+        },
+        {
+          "name": "Pagination"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.10 Trang sau không lặp học viên",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Next page"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.11 Sort sai",
+      "http": 400,
+      "assertions": [
+        {
+          "name": "HTTP 400"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 bắt đầu A",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 nộp A",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Graded score"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 bắt đầu Admin",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 nộp Admin",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Graded score"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.12 Lượt làm thử không đổi thống kê",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Two learners, best average and question rates"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 bắt đầu S",
+      "http": 201,
+      "assertions": [
+        {
+          "name": "HTTP 201"
+        },
+        {
+          "name": "Response contract"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17 nộp S",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Graded score"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.13 Làm lại lấy điểm cao nhất",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Best score and all graded question rates"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.14 Trang vượt cuối",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Beyond end"
+        }
+      ]
+    },
+    {
+      "name": "QUIZ-17.15 Hết giờ chỉ tính bộ đếm hết giờ",
+      "http": 200,
+      "assertions": [
+        {
+          "name": "HTTP 200"
+        },
+        {
+          "name": "Response contract"
+        },
+        {
+          "name": "Expired only"
+        }
+      ]
+    }
+  ]
+}

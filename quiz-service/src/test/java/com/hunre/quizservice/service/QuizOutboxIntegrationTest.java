@@ -69,7 +69,7 @@ class QuizOutboxIntegrationTest {
         quiz = quizRepository.saveAndFlush(quiz);
 
         when(enrollmentAccessClient.hasEnrollment(12L, 99L, "Bearer student-token")).thenReturn(true);
-        Long attemptId = quizAttemptService.startAttempt(quiz.getId(), 99L, false, "Bearer student-token").getId();
+        Long attemptId = quizAttemptService.startAttempt(quiz.getId(), 99L, false, "Bearer student-token", null).getId();
         SubmitQuizAttemptRequest request = SubmitQuizAttemptRequest.builder()
                 .answers(List.of(SubmitAnswerItemRequest.builder()
                         .questionId(question.getId())

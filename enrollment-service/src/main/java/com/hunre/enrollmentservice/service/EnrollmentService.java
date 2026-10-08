@@ -11,10 +11,11 @@ public interface EnrollmentService {
      * Đăng ký một khóa học mới cho học viên.
      *
      * @param currentUserId ID của học viên đang đăng nhập (từ JWT hoặc null)
+     * @param learnerName   Tên học viên từ JWT đã xác thực
      * @param request       Dữ liệu yêu cầu ghi danh
      * @return Thông tin lượt ghi danh thành công
      */
-    EnrollmentResponse enroll(Long currentUserId, EnrollCourseRequest request);
+    EnrollmentResponse enroll(Long currentUserId, String learnerName, EnrollCourseRequest request);
 
     /**
      * Lấy danh sách các khóa học mà học viên đã ghi danh kèm tiến độ.

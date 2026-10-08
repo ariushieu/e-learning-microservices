@@ -84,7 +84,7 @@ class EnrollmentControllerTest {
                 .enrolledAt(Instant.now())
                 .build();
 
-        when(enrollmentService.enroll(eq(1L), any(EnrollCourseRequest.class))).thenReturn(response);
+        when(enrollmentService.enroll(eq(1L), eq("Nguyễn Văn A"), any(EnrollCourseRequest.class))).thenReturn(response);
 
         mockMvc.perform(post("/api/enrollments")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, mockUser)
