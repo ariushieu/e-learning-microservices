@@ -231,7 +231,7 @@ Ca Kafka dùng quy trình khôi phục trong gateway.md; không có Kafka thì v
 | 4 | Attempt không tồn tại | S | POST /api/attempts/{{missingId}}/submit + body hợp lệ | 404 |
 | 5 | Sai ID | S | POST /api/attempts/abc/submit + body hợp lệ | 400 |
 | 6 | Nộp lần hai | S | Nộp lại attempt đã SUBMITTED | 422 |
-| 7 | Quá giờ | S | Quiz timeLimitMinutes=1; nộp sau hơn 90 giây | 422; không chấm bài |
+| 7 | Quá giờ | S | Quiz timeLimitMinutes=1; đợi 100 giây rồi nộp | 422; không chấm bài; lưu EXPIRED, điểm 0; lịch sử vẫn EXPIRED ở request sau, không tạo quiz.graded |
 | 8 | Answers null | S | Body {"answers":null} | 400 |
 | 9 | Bỏ trống tất cả đáp án | S | Body {"answers":[]} | 200; score=0; không nhầm với answers=null |
 | 10 | Đúng cả hai câu | S | Chọn optionCorrectId và option2CorrectId trên attempt mới | 200; score=100, passed=true |
@@ -249,7 +249,7 @@ Ca Kafka dùng quy trình khôi phục trong gateway.md; không có Kafka thì v
 | 5 | Sai ID | S | GET /api/attempts/abc | 400 |
 | 6 | Admin đọc hộ | ADM | GET kết quả của S | 404; API hiện chỉ dành cho người làm |
 | 7 | Giả userId | B | GET /api/attempts/{{attemptId}}?userId={{studentId}} | 404 |
-| 8 | Lộ đáp án trước khi nộp [CẦN CHỐT] | S | GET attempt IN_PROGRESS vừa tạo | 422; không được trả đáp án khi đang làm. Giữ kỳ vọng này để phát hiện lỗi, ghi FAIL nếu backend vẫn trả đáp án; cần PR sửa riêng |
+| 8 | Không lộ đáp án trước khi nộp | S | GET attempt IN_PROGRESS vừa tạo; thử lại với lượt EXPIRED | 422; không có data, correctOptionIds hoặc questionResults. Quy tắc đã chốt trong review #59: chỉ SUBMITTED mới được xem kết quả |
 
 ## QUIZ-15 — GET /api/quizzes/{quizId}/attempts
 

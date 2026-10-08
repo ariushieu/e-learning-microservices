@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { api } from "@/lib/client";
 import { fieldErrorMap, formErrorMessage } from "@/lib/forms";
 import type { User } from "@/lib/types";
-import { logoutToLoginAction } from "@/lib/server/auth-actions";
+import { logoutToLoginAction, refreshSessionAction } from "@/lib/server/auth-actions";
 
 export function ProfileDetailsForm({ user }: { user: User }) {
   const router = useRouter();
@@ -34,6 +34,8 @@ export function ProfileDetailsForm({ user }: { user: User }) {
       setFullName(updated.fullName);
       setPhone(updated.phone ?? "");
       toast.success("Đã cập nhật thông tin cá nhân");
+      // Họ tên trên header đọc từ access token, nên phải lấy token mới thì header mới đổi.
+      await refreshSessionAction();
       router.refresh();
     } catch (cause) {
       const fieldErrors = fieldErrorMap(cause);
@@ -71,7 +73,7 @@ export function ProfileDetailsForm({ user }: { user: User }) {
           type="tel"
           autoComplete="tel"
           inputMode="tel"
-          maxLength={20}
+          maxLength={30}
           value={phone}
           aria-invalid={Boolean(errors.phone)}
           onChange={(event) => setPhone(event.target.value)}

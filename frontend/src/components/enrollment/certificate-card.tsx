@@ -56,11 +56,11 @@ export function CertificateCard({ certificate }: { certificate: Certificate }) {
           <p className={cn("mx-auto mt-2 max-w-3xl font-semibold text-balance text-primary-strong", certificate.courseTitle.length > 100 ? "text-sm sm:text-base print:text-sm" : "text-lg sm:text-2xl")}>{certificate.courseTitle}</p>
         </div>
 
-        <div className="grid w-full grid-cols-1 items-end gap-x-4 gap-y-5 text-xs sm:grid-cols-3 sm:text-sm">
+        <div className="grid w-full grid-cols-1 items-end gap-x-4 gap-y-5 text-xs sm:grid-cols-3 sm:text-sm lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] print:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
           <div className="space-y-1 sm:text-left">
             <p className="text-muted-foreground">{issuedDate(certificate.issuedAt)}</p>
             <p className="text-muted-foreground">
-              Mã chứng chỉ: <span className="block font-mono font-medium break-all text-foreground">{certificate.certificateCode}</span>
+              Mã chứng chỉ: <span className="block font-mono font-medium break-all text-foreground lg:break-normal lg:whitespace-nowrap print:break-normal print:whitespace-nowrap">{certificate.certificateCode}</span>
             </p>
           </div>
 

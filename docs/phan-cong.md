@@ -1,6 +1,6 @@
 # Bảng theo dõi công việc
 
-> **Cập nhật lần cuối:** 07/10/2026 (chiều) — `main` ở `ee05eff`
+> **Cập nhật lần cuối:** 08/10/2026 — `main` ở `3f0e35f`
 >
 > File này là nơi duy nhất ghi ai đang làm gì. Xong một việc thì nhóm trưởng cập nhật ngay
 > tại đây, nên **cứ `git pull` là biết việc tiếp theo của mình**, không phải hỏi ai.
@@ -19,20 +19,22 @@
 
 | Người | Service | Việc đang mở | Ưu tiên | Cỡ |
 |---|---|---|---|---|
-| hiepdeptrai0111 | quiz | [Không lộ đáp án khi đang làm bài (QUIZ-14.8), lưu đúng EXPIRED](#hiepdeptrai0111--không-lộ-đáp-án-khi-đang-làm-bài) | **Cao — lỗ hổng gian lận, xong trước demo** | ~1h |
-| quocluibotre | auth | [Kiểm định dạng số điện thoại khi sửa hồ sơ](#quocluibotre--kiểm-định-dạng-số-điện-thoại) | Trung bình | ~45 phút |
-| duyd92689-debug | course | [Đánh giá khóa học: sao + nhận xét](#duyd92689-debug--đánh-giá-khóa-học) | Trung bình — tính năng mới cho demo | ~3h |
-| phamquyet19042005-netizen | enrollment | [Dọn sau #60](#phamquyet19042005-netizen--dọn-sau-60) | Thấp | ~30 phút |
-| Hiếu | web (khung chung) | Tên trên header đổi ngay sau khi sửa hồ sơ, không phải đăng nhập lại | Trung bình | ~30 phút |
-| Hiếu | gateway, notification | Collection Postman `gateway`, `notification` và `demo-flow` (luồng xuyên service) | **Cao** | ~2h |
-| Hiếu | api-gateway | Giới hạn đăng nhập theo IP thật của người dùng khi đi qua frontend | Thấp — sau demo | ~1h |
+| Hiếu | api-gateway, web | [Giới hạn đăng nhập theo IP thật](#hiếu--giới-hạn-đăng-nhập-theo-ip-thật) — hiện cả lớp dùng chung một xô | **Cao — xong trước demo** | ~1h |
+| quocluibotre | auth | [Quản lý người dùng cho admin: danh sách, tìm kiếm, khóa tài khoản](#quocluibotre--quản-lý-người-dùng-cho-admin) | Trung bình | ~3h |
+| phamquyet19042005-netizen | enrollment | [Giảng viên xem học viên của khóa và tiến độ](#phamquyet19042005-netizen--giảng-viên-xem-học-viên-của-khóa) | Trung bình | ~3h |
+| hiepdeptrai0111 | quiz | [Giảng viên xem kết quả bài kiểm tra](#hiepdeptrai0111--giảng-viên-xem-kết-quả-bài-kiểm-tra) | Trung bình | ~3h |
+| duyd92689-debug | course | [Tài liệu đính kèm bài học trên khu giảng dạy, hoàn thiện đánh giá](#duyd92689-debug--tài-liệu-đính-kèm-bài-học-hoàn-thiện-đánh-giá) | Trung bình | ~2h |
+
+Bốn việc của nhóm đều là **tính năng cho giảng viên và admin** — phần học viên đã đủ cho demo, còn phía
+giảng dạy mới chỉ soạn được nội dung mà chưa xem được ai học, học ra sao.
 
 **Khung giao diện đã có** (#54): mọi việc web ở trên làm theo [frontend/DESIGN.md](../frontend/DESIGN.md)
 và trang `/design`. Chạy cả hệ thống: `docker compose --profile app up -d --build --wait` rồi mở
 http://localhost:3000.
 
-**Collection Postman:** auth, course, enrollment, quiz đã có và đã chạy thật trên Docker (#56, #57,
-#59, #60). Còn `gateway`, `notification`, `demo-flow` của Hiếu. Quy ước chung ở
+**Collection Postman: đủ cả 7 file**, đều đã chạy thật trên Docker — auth, course, enrollment, quiz
+(#56, #57, #59, #60, cập nhật ở #64, #65, #67) và gateway, notification, demo-flow (#66). Trước buổi demo, chạy
+`demo-flow` trên máy mình để xem cả chuỗi còn thông (81 assertion, khoảng 12 giây). Quy ước chung ở
 [mục dưới](#cả-nhóm--collection-postman-của-service-mình). Ca FAIL hay việc mới sinh ra khi chạy
 collection thì sửa ở PR riêng như các việc trong bảng trên.
 
@@ -159,15 +161,12 @@ mà không cần đăng nhập.
   thường (#37). Sự kiện khóa học giờ cũng đi qua outbox (#44): Kafka chết thì sự kiện nằm chờ, và
   snapshot cũ không cho người lạ ghi danh vào khóa đã lưu trữ.
 
-**Lỗ hổng đang mở:**
-
-- **Lộ đáp án khi đang làm bài (QUIZ-14.8).** Học viên gọi `GET /api/attempts/{id}` trong lúc làm là
-  thấy `correctOptionIds`, tức gian lận được. Collection quiz đã bắt được, đã chạy thật xác nhận.
-  Giao hiepdeptrai0111, xong trước demo.
-- `PUT /api/auth/me` nhận số điện thoại bất kỳ (`"abc"` → 200). Giao quocluibotre.
+**Lỗ hổng đang mở:** không còn.
 
 Đã đóng: chưa ghi danh thì không làm được bài (#49), bài đã hoàn thành không bị hạ trạng thái (#50),
-số học viên đếm mỗi người một lần (#51), lọc theo danh mục cha thấy cả khóa ở danh mục con (#56).
+số học viên đếm mỗi người một lần (#51), lọc theo danh mục cha thấy cả khóa ở danh mục con (#56), lộ
+đáp án khi đang làm bài và nộp quá giờ bị trả về "đang làm" (#67), số điện thoại sai định dạng khi
+đăng ký và sửa hồ sơ (#65).
 
 ---
 
@@ -179,13 +178,13 @@ Mỗi người làm **một file collection cho service mình** và tự chạy 
 service đó. Không gộp chung một file: năm người cùng sửa một JSON lớn thì lần merge nào cũng xung
 đột.
 
-| Người | File | Chạy tình huống | Trạng thái (chạy thật trên Docker, 07/10) |
+| Người | File | Chạy tình huống | Trạng thái (chạy thật trên Docker) |
 |---|---|---|---|
-| quocluibotre | `docs/postman/auth.postman_collection.json` | [auth.md](test-cases/auth.md) | Xong #57 — 294/294 assertion |
-| duyd92689-debug | `docs/postman/course.postman_collection.json` | [course.md](test-cases/course.md) | Xong #56 — 703/703 |
+| quocluibotre | `docs/postman/auth.postman_collection.json` | [auth.md](test-cases/auth.md) | Xong #57, #65 — 497/497 assertion |
+| duyd92689-debug | `docs/postman/course.postman_collection.json` | [course.md](test-cases/course.md) | Xong #56, #64 — 778/778 |
 | phamquyet19042005-netizen | `docs/postman/enrollment.postman_collection.json` | [enrollment.md](test-cases/enrollment.md) | Xong #60 — 310/310 |
-| hiepdeptrai0111 | `docs/postman/quiz.postman_collection.json` | [quiz.md](test-cases/quiz.md) | Xong #59 — 416/417, còn QUIZ-14.8 (lỗ hổng thật) |
-| Hiếu | `gateway`, `notification`, `demo-flow` | [gateway.md](test-cases/gateway.md), [notification.md](test-cases/notification.md) | Đang làm |
+| hiepdeptrai0111 | `docs/postman/quiz.postman_collection.json` | [quiz.md](test-cases/quiz.md) | Xong #59, #67 — 417/417 |
+| Hiếu | `gateway`, `notification`, `demo-flow` | [gateway.md](test-cases/gateway.md), [notification.md](test-cases/notification.md) | Xong #66 — gateway 31/31 ca, notification 55/55 ca, demo-flow 81/81 |
 
 Chạy collection bằng dòng lệnh (chỉ dùng pnpm):
 
@@ -235,82 +234,137 @@ với nguyên dữ liệu cũ là khóa được đồng bộ. Hoặc dùng khó
 
 ---
 
-### hiepdeptrai0111 — không lộ đáp án khi đang làm bài
+### quocluibotre — quản lý người dùng cho admin
 
-> Lỗ hổng thật, collection của bạn đã bắt được (QUIZ-14.8). Đang làm bài mà mở DevTools gọi
-> `GET /api/attempts/{id}` là thấy đáp án đúng.
-
-**Cần làm** ở `QuizAttemptServiceImpl`:
-
-- `getAttemptResult`: lượt chưa `SUBMITTED` (đang làm, hết giờ chưa nộp) thì trả **422**, không dựng
-  `correctOptionIds`. Lượt đã nộp vẫn trả đầy đủ như cũ.
-- Nộp quá giờ: hiện trả 422 nhưng lượt **vẫn `IN_PROGRESS`**, vì `markAttemptExpired` lưu EXPIRED rồi
-  ném `BusinessException` trong cùng transaction nên bị rollback. Lưu EXPIRED phải còn sau khi trả lỗi
-  (ví dụ `@Transactional(noRollbackFor = …)` hoặc tách phần lưu ra transaction riêng).
-- Test cho cả hai, và QUIZ-14.8 trong collection chuyển sang PASS.
-- Biên bản: chép kết quả chạy Docker trong review #59 (193 request, 416/417, QUIZ-13.7 nhận 422) vào
-  chỗ đang ghi BLOCKED. README: `newman run …` → `pnpm dlx newman@6.2.2 run …`.
-
-**Tự kiểm.** Bắt đầu một lượt, gọi `GET /api/attempts/{id}` → 422, response không có đáp án. Nộp xong
-gọi lại → 200 có đáp án. Đề có giới hạn thời gian, chờ quá giờ rồi nộp → 422 và lịch sử làm bài hiện
-"Hết giờ" chứ không phải "Đang làm". Chạy lại collection quiz → 417/417.
-
----
-
-### quocluibotre — kiểm định dạng số điện thoại
-
-> Phát hiện khi chạy thật #57: gửi `"phone": "abc"` vào `PUT /api/auth/me` → 200 và lưu thẳng vào DB.
+> `/admin/users` hiện bắt admin **gõ tay ID** mới cấp được quyền, không có danh sách người dùng.
+> `UserStatus.LOCKED` có sẵn, đăng nhập và refresh đã chặn tài khoản `LOCKED` (403 "Tài khoản của
+> bạn đã bị khóa"), nhưng chưa có API nào đặt được trạng thái này.
 
 **Cần làm.**
 
-- `UpdateProfileRequest.phone`: thêm `@Pattern` — chỉ chữ số, `+`, khoảng trắng, 9–15 ký tự; rỗng
-  hoặc `null` vẫn hợp lệ (xóa số). Sai thì 400 `VALIDATION_FAILED`, `fieldErrors.phone` bằng tiếng Việt.
-- Test controller cho số đúng, số sai, chuỗi rỗng. Thêm ca vào `auth.md` và collection.
-- Web không phải sửa: form hồ sơ đã hiện lỗi dưới ô theo `fieldErrors`.
+- auth-service, chỉ ADMIN (người khác 403):
+  - `GET /api/users?keyword=&role=&status=&page=&size=`: `keyword` tìm theo email hoặc họ tên.
+    Phân trang (C1), sort cho phép `createdAt`, `email`, `fullName`; sort khác trả 400. Trả `id`,
+    `email`, `fullName`, `phone`, `roles`, `status`, `createdAt`; không trả `passwordHash`.
+  - `PATCH /api/users/{id}/status` body `{"status": "LOCKED"}` hoặc `"ACTIVE"` (B4).
+    - Không tự khóa chính mình, không khóa tài khoản có `ROLE_ADMIN`: cả hai trả 422, để không ai
+      khóa được hết admin.
+    - Khóa thì gọi `revokeAllUserTokens` trong cùng transaction: refresh token cũ hết dùng được.
+  - README ghi rõ: access token đã phát vẫn dùng được tới khi hết hạn (tối đa 15 phút), vì gateway
+    không tra DB mỗi request.
+- Web `/admin/users`:
+  - Bảng người dùng (`DataTableCard`), ô tìm kiếm, lọc vai trò và trạng thái, phân trang.
+  - Mỗi dòng có nút cấp quyền (dùng lại form hiện có, bỏ ô gõ ID) và nút Khóa / Mở khóa có hộp
+    thoại xác nhận. Trạng thái hiện bằng `StatusBadge`.
 
-**Tự kiểm.** Trên `/profile` nhập "abc" → lỗi dưới ô Số điện thoại, không lưu. Nhập `0912 345 678`
-→ lưu được. Tự chạy collection auth trên máy mình và ghi biên bản (lần trước biên bản dựa vào lượt
-chạy của reviewer). Máy không chạy được Docker thì nhắn Hiếu để chạy chung.
+**Tự kiểm.** Admin tìm "qa.student" ra đúng một dòng. Học viên gọi `GET /api/users` → 403. Khóa S →
+S đăng nhập nhận 403, refresh token cũ của S không đổi được token; mở khóa → đăng nhập lại được.
+Admin tự khóa mình → 422. Thêm ca vào `auth.md` và collection, chạy lại collection auth trên Docker.
 
 ---
 
-### duyd92689-debug — đánh giá khóa học
+### phamquyet19042005-netizen — giảng viên xem học viên của khóa
 
-> Bảng `course_reviews` (mỗi người một đánh giá, 1–5 sao) và cột `rating_avg`, `rating_count` của
-> `courses` đã có từ V1 nhưng chưa có API nào dùng. Bảng `course_learners` (#51) cho biết ai đã ghi
-> danh, nên không phải gọi sang enrollment-service.
+> Khu giảng dạy chưa cho giảng viên biết ai đang học khóa mình và học tới đâu.
+> `course_snapshots.instructor_id` đã có, nên enrollment-service tự kiểm được quyền, không phải gọi
+> sang course-service.
 
 **Cần làm.**
 
-- course-service:
-  - `GET /api/courses/{id}/reviews` công khai, phân trang, mới nhất trước. Trả `rating`, `comment`,
-    `createdAt` và tên người viết; không trả email.
-  - `PUT /api/courses/{id}/reviews/me` (tạo hoặc sửa đánh giá của mình), `DELETE /api/courses/{id}/reviews/me`.
-    Chỉ người có trong `course_learners` của khóa mới được viết, còn lại trả 403. `rating` 1–5,
-    `comment` tối đa 2000 ký tự.
-  - Mỗi lần ghi hoặc xóa thì tính lại `rating_avg`, `rating_count` trong cùng transaction, khóa dòng
-    khóa học (`lockForLearnerUpdate` như #51) để hai người đánh giá cùng lúc không làm lệch số.
-  - Tên người viết: lấy từ token lúc ghi và lưu kèm (thêm cột bằng migration mới), giống cách #60 lưu
-    tên trên chứng chỉ.
-  - Khai đường dẫn công khai `GET` ở cả gateway lẫn course-service.
-- Web, trang chi tiết khóa:
-  - Mục **"Đánh giá"**: điểm trung bình, số lượt, danh sách nhận xét.
-  - Người đã ghi danh thấy form chọn sao và nhận xét; đã viết rồi thì hiện để sửa hoặc xóa.
-  - Thẻ khóa học trên trang chủ hiện số sao khi `ratingCount > 0`.
+- enrollment-service:
+  - Migration mới: thêm `learner_name` vào `enrollments`, lấy từ token lúc ghi danh và lúc kích hoạt
+    lại (giống `learner_name` của chứng chỉ ở #60). Lượt cũ để NULL; web hiện "Học viên #<id>".
+  - `GET /api/courses/{courseId}/learners?status=&page=&size=`:
+    - Chỉ giảng viên của khóa (theo snapshot) hoặc ADMIN; người khác 403; khóa chưa có snapshot 404.
+    - Trả `enrollmentId`, `learnerName`, `status`, `progressPercent`, `enrolledAt`,
+      `lastAccessedAt`, `completedAt`, `certificateCode` (nếu đã cấp). Không trả email.
+    - Phân trang; sort `enrolledAt`, `progressPercent`.
+  - Route (A4): đường dẫn nằm dưới `/api/courses/**` của course-service, nên khai route riêng ở gateway
+    với `order` âm, giống `enrollment-lesson-progress` (routes[5]).
+  - Gateway đang mở công khai `GET:/api/courses/**`, nên enrollment-service phải tự trả 401 khi không
+    có token. Có ca test riêng cho chuyện này.
+- Web: component `components/enrollment/course-learners.tsx` gắn vào trang `/instructor/courses/{id}`.
+  - Bảng: tên, trạng thái, thanh tiến độ (`ProgressMeter`), ngày ghi danh, ngày hoàn thành.
+  - Lọc theo trạng thái; khóa chưa có ai thì hiện `EmptyState`.
+  - Trang đó là của duyd92689-debug: chỉ thêm một dòng import và gắn component; CODEOWNERS tự mời
+    duyd review.
 
-**Tự kiểm.** Học viên chưa ghi danh gửi đánh giá → 403. Ghi danh rồi đánh giá 5 sao → trung bình 5.0,
-1 lượt. Người thứ hai 3 sao → 4.0, 2 lượt. Sửa lại → số tính lại đúng. Xóa → trở về như trước. Có
-test cho hai người đánh giá song song. Thêm ca vào `course.md` và collection.
+**Tự kiểm.** A thấy S và B với đúng tiến độ; S học xong 1/2 bài → bảng hiện 50%. B (giảng viên khác)
+gọi → 403, S gọi → 403, không token → 401. Thêm nhóm ca ENROLL-11 vào `enrollment.md` và collection.
 
 ---
 
-### phamquyet19042005-netizen — dọn sau #60
+### hiepdeptrai0111 — giảng viên xem kết quả bài kiểm tra
 
-- `docs/postman/enrollment.md`: `npx --yes newman…` → `pnpm dlx newman@6.2.2 run …` (dự án chỉ dùng pnpm).
-- Trang chứng chỉ: mã `CERT-…` đang bị ngắt giữa dòng ("…F5 / 8E"). Cho cột mã rộng hơn hoặc không
-  ngắt ở màn rộng.
-- Biên bản: chép kết quả chạy trên MySQL trong review #60 (161 request, 310/310) vào biên bản. Lần
-  trước bạn chạy H2.
+> Giảng viên soạn đề được nhưng không biết học viên làm ra sao. `GET /api/quizzes/{quizId}/attempts`
+> là lịch sử của chính người gọi (B6), không dùng cho việc này.
+
+**Cần làm.**
+
+- quiz-service:
+  - Migration mới: thêm `learner_name` vào `quiz_attempts`, lấy từ token khi bắt đầu lượt.
+  - `GET /api/quizzes/{quizId}/results?page=&size=`: chỉ tác giả quiz hoặc ADMIN, người khác 403.
+    Trả một object gồm:
+    - `summary`:
+      - số người đã nộp, số lượt nộp, số lượt hết giờ;
+      - điểm trung bình (lấy lượt cao nhất của mỗi người), tỉ lệ đạt;
+      - tỉ lệ đúng từng câu: `questionId`, `content`, `correctRate`.
+    - `learners` (phân trang): mỗi học viên một dòng gồm `learnerName`, số lượt đã nộp, điểm cao
+      nhất, đạt hay chưa, lần nộp gần nhất.
+    - Chỉ tính lượt `SUBMITTED`. Lượt làm thử của tác giả và admin không tính.
+- Web `/instructor/quizzes/{id}/results`:
+  - Thẻ số liệu (`StatGrid`), bảng học viên, bảng tỉ lệ đúng từng câu; câu có tỉ lệ thấp làm nổi
+    bật để giảng viên biết câu nào khó.
+  - Có link tới đây từ trang soạn đề.
+
+**Tự kiểm.** S đúng 1/2 câu, B đúng cả 2 → 2 người, điểm trung bình 75, tỉ lệ đạt 50%, câu 2 đúng 50%.
+B (không phải tác giả) gọi → 403, S gọi → 403. A tự làm thử → số liệu không đổi. Thêm nhóm ca QUIZ-17
+vào `quiz.md` và collection.
+
+---
+
+### duyd92689-debug — tài liệu đính kèm bài học, hoàn thiện đánh giá
+
+> `POST /api/lessons/{lessonId}/resources` và `DELETE …/resources/{resourceId}` đã có, trang học đã hiện
+> danh sách tài liệu, nhưng **khu giảng dạy chưa có chỗ thêm hay xóa** — giảng viên chỉ thêm được bằng
+> Postman. Theo luật ở [trên](#giao-diện-web-ai-giữ-trang-nào), API không có chỗ dùng trên web coi như
+> chưa xong.
+
+**Cần làm.**
+
+- course-service: `fileUrl` hiện nhận chuỗi bất kỳ, kể cả `javascript:…`. Chỉ cho `http://` và
+  `https://`, sai thì 400 `VALIDATION_FAILED`.
+- Web, form sửa bài học ở khu giảng dạy:
+  - Mục "Tài liệu đính kèm": danh sách tên + link, thêm (tên, URL), xóa có hộp thoại xác nhận.
+  - Lỗi `fieldErrors` hiện dưới ô.
+- Hoàn thiện #64:
+  - Tổng điểm 4,5 đang tô kín 5 sao (`Math.round`): hiện nửa sao, hoặc làm tròn xuống.
+  - `course-reviews.tsx` và `review-form.tsx`: tách các dòng JSX dài cho giống cách định dạng của các
+    file khác trong `components/`.
+
+**Tự kiểm.** Thêm tài liệu `https://…` cho một bài → trang học hiện link, bấm mở đúng. URL
+`javascript:alert(1)` → 400, lỗi dưới ô. Xóa → trang học hết link. Khóa 4,5 điểm hiện 4 sao rưỡi. Thêm
+ca vào `course.md` và collection.
+
+---
+
+### Hiếu — giới hạn đăng nhập theo IP thật
+
+> Phát hiện khi review: đăng nhập trên web đi qua Server Action của Next.js, nên gateway thấy **mọi
+> người dùng chung một IP là container frontend**. Sau 10 lần đăng nhập trong một phút, cả lớp nhận
+> 429 — buổi demo cho người xem thử đăng nhập là dính. Đã thử trên Docker: 11 lần đăng nhập của 11 email
+> khác nhau gửi từ container frontend thì lần thứ 11 nhận 429, trong khi `curl` từ máy ngoài cùng lúc
+> vẫn 401 bình thường.
+
+**Cần làm.**
+
+- Gateway chỉ tin `X-Forwarded-For` khi kết nối đến từ proxy tin cậy, khai bằng biến môi trường;
+  trong Docker là container frontend. Từ IP khác thì vẫn bỏ qua header như bây giờ (G-RATE-4).
+- Frontend gửi IP thật của trình duyệt khi đăng nhập, đăng ký, refresh token.
+- Ca G-RATE mới trong collection gateway.
+
+**Sau demo:** kênh email cho thông báo (`emailEnabled` đã lưu nhưng chưa có kênh gửi; notification-service
+cũng chưa biết email người dùng).
 
 ---
 
@@ -318,6 +372,12 @@ test cho hai người đánh giá song song. Thêm ca vào `course.md` và colle
 
 | Ngày | PR | Việc | Người |
 |---|---|---|---|
+| 07/10 | #67 | Không lộ đáp án khi đang làm bài (QUIZ-14.8), nộp quá giờ lưu đúng EXPIRED | hiepdeptrai0111 |
+| 07/10 | #65 | Kiểm định dạng số điện thoại khi đăng ký và sửa hồ sơ, form hiện lỗi dưới ô | quocluibotre |
+| 07/10 | #64 | Đánh giá khóa học: sao + nhận xét, điểm trung bình trên thẻ khóa | duyd92689-debug |
+| 07/10 | #63 | Mã chứng chỉ không ngắt dòng ở màn rộng, biên bản MySQL của #60 | phamquyet19042005-netizen |
+| 07/10 | #66 | Collection gateway, notification, demo-flow; `readAt` khớp giá trị đã lưu (MySQL làm tròn nano giây) | Hiếu |
+| 07/10 | #62 | Tên trên header đổi ngay sau khi sửa hồ sơ | Hiếu |
 | 07/10 | #58 | Thông báo tức thời (SSE + Redis pub/sub), đọc tất cả, bấm thông báo mở đúng trang, cài đặt nhận thông báo | Hiếu |
 | 07/10 | #60 | Xác minh chứng chỉ công khai `/verify/<mã>`, mã chứng chỉ không lộ id, collection enrollment | phamquyet19042005-netizen |
 | 07/10 | #56 | Chip danh mục và sắp xếp ở trang chủ, lọc danh mục cha gồm cả danh mục con, collection course | duyd92689-debug |
