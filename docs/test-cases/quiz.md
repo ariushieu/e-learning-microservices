@@ -343,3 +343,30 @@ là đã mở file bằng Excel; ghi riêng việc đó trong biên bản nếu 
 - [QuestionServiceImpl](../../quiz-service/src/main/java/com/hunre/quizservice/service/impl/QuestionServiceImpl.java).
 - [QuizAttemptServiceImpl](../../quiz-service/src/main/java/com/hunre/quizservice/service/impl/QuizAttemptServiceImpl.java).
 - [Phân công outbox/đường dẫn](../phan-cong.md), [quy ước B7/C1](../api-conventions.md).
+
+## QUIZ-19 — nhập câu hỏi CSV
+
+Chạy nhóm 9 của collection sau setup. Multipart `file` được tạo ngay trong collection,
+không phụ thuộc đường dẫn trên máy người chạy. Câu nhập thành công được thêm cuối đề.
+
+| # | Tình huống | Mong đợi |
+|---|---|---|
+| 1 | A tải mẫu | 200, CSV UTF-8, attachment mau-cau-hoi.csv |
+| 2 | A nhập file mẫu | 201, imported=3; đủ SINGLE/MULTIPLE/TRUE_FALSE |
+| 3 | Dòng 2 không có đáp án đúng, dòng 3 hợp lệ | 400, lỗi dòng 2; đề vẫn 3 câu, không lưu dòng 3 |
+| 4–6 | B, học viên, khách nhập | 403, 403, 401 |
+| 7 | File 2 MB | 400 VALIDATION_FAILED, lỗi toàn file dòng 1 |
+| 8 | File 201 câu | 400 dòng 202; không lưu một phần |
+| 9 | Admin nhập BOM, phẩy/kép/xuống dòng trong ô | 201, lưu nguyên tiếng Việt/ký tự đặc biệt |
+| 10 | Lỗi sau ô nhiều dòng | 400, đúng dòng vật lý 4 |
+| 11 | File dùng dấu chấm phẩy | 201 |
+| 12 | Ngoặc kép chưa đóng | 400 dòng 2 |
+| 13 | Ô đáp án dài 1001 ký tự | 400 dòng 2 |
+| 14 | B tải mẫu đề của A | 403 |
+| 15 | Đề không tồn tại | 404 |
+| 16 | Xuất bản, làm thử và nộp các câu vừa nhập | Đúng 5 câu sau các lần nhập hợp lệ, không lộ isCorrect khi làm; nộp đúng đạt 100 |
+
+Integration bổ sung: rollback khi lưu câu thứ hai lỗi; đủ 200 câu; mọi loại câu thiếu/thừa
+đáp án đúng, ô trống, điểm không hợp lệ, nội dung/giải thích quá dài, UTF-8 lỗi, file rỗng,
+thiếu part, header/cột sai, admin, JWT thật. Kiểm web: chọn file, tải mẫu, bảng lỗi và sửa
+file rồi nhập, danh sách cập nhật, thông báo file lớn/rỗng, 375/768/1366px không tràn.

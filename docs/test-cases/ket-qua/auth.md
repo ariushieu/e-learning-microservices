@@ -162,3 +162,8 @@ Dấu `→` thể hiện thứ tự các request cùng mã ca, kể cả chuẩn
 - N1 (`ee88921`, báo cáo tại `46a02ab`): 153/153 request và 358/358 assertion PASS trên MySQL/gateway native, đủ ba fixture. Regex lúc đó đếm ký tự và chỉ áp dụng cho cập nhật; **không chứng minh các ca phát sinh sau review đạt**.
 - Reviewer chạy Docker/MySQL tại `46a02ab`: 150 request, 351/351 assertion PASS, ba ca BLOCKED vì thiếu fixture; thử tay phát hiện `+++++++++`, `  12345678` và đăng ký `abc` vẫn được lưu. N2 bổ sung chính các ca này và sửa cả hai API.
 - Review PR #57 trước đó: 130/133 request, 294/294 assertion PASS, ba ca BLOCKED; kiểm thử giao diện 13/13 là kết quả của reviewer, không phải lượt N2. [Review](https://github.com/ariushieu/e-learning-microservices/pull/57#pullrequestreview-5438638977).
+
+## Email so khớp chính xác (AUTH-12)
+
+Xem [biên bản email ngày 08/10/2026](auth-email.md): kết quả API, migration MySQL thật,
+Edge 375/768/1366px và bằng chứng Docker CI. Kết quả cũ bên trên giữ nguyên theo commit đã chạy.

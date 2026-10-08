@@ -16,6 +16,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -35,6 +37,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @ExtendWith(MockitoExtension.class)
 class AuthControllerTest {
+
+    @ParameterizedTest
+    @ValueSource(strings = {"thử@example.com", "hocviên@hunre.edu.vn", "test@vídụ.com", "tést@example.com", "te\u0301st@example.com", "ｔest@example.com"})
+    void register_nonAsciiEmail_hasFieldError(String email) throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","password":"Student@123456","fullName":"Email validation"}
+                                """.formatted(email)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.fieldErrors[?(@.field == 'email')].message")
+                        .value(org.hamcrest.Matchers.hasItem("Email chỉ được chứa ký tự ASCII, không dùng chữ có dấu")));
+        org.mockito.Mockito.verifyNoInteractions(authService);
+    }
 
     private MockMvc mockMvc;
 

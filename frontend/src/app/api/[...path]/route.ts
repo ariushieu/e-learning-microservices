@@ -30,7 +30,7 @@ const PASS_HEADERS = ["content-type", "content-disposition", "retry-after", "x-r
 // gom cả body như response JSON.
 const EVENT_STREAM = "text/event-stream";
 
-async function forward(request: NextRequest, path: string, body: string | undefined, token?: string) {
+async function forward(request: NextRequest, path: string, body: ArrayBuffer | undefined, token?: string) {
   const wantsStream = request.headers.get("accept")?.includes(EVENT_STREAM);
   const headers: Record<string, string> = { Accept: wantsStream ? EVENT_STREAM : "application/json" };
   const contentType = request.headers.get("content-type");
@@ -59,7 +59,8 @@ async function handle(request: NextRequest, ctx: RouteContext<"/api/[...path]">)
     );
   }
 
-  const body = request.method === "GET" || request.method === "HEAD" ? undefined : await request.text();
+  // Preserve multipart boundaries and file bytes, also when retrying after token refresh.
+  const body = request.method === "GET" || request.method === "HEAD" ? undefined : await request.arrayBuffer();
   let token = request.cookies.get(ACCESS_COOKIE)?.value;
   const refresh = request.cookies.get(REFRESH_COOKIE)?.value;
   let refreshed: AuthResponse | null = null;

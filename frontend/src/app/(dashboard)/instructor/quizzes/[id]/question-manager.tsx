@@ -9,6 +9,7 @@ import { ErrorAlert } from "@/components/common/error-alert";
 import { Section } from "@/components/common/section";
 import { formatPoints, QuestionTypeTag } from "@/components/quiz/labels";
 import { QuestionForm } from "@/components/quiz/question-form";
+import { ImportQuestionsDialog } from "@/components/quiz/import-questions-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -73,11 +74,14 @@ export function QuestionManager({
       count={questions.length}
       description={<span className="tabular-nums">Tổng điểm: {formatPoints(totalScore)}</span>}
       actions={
-        editing !== "new" && (
-          <Button variant="outline" onClick={() => setEditing("new")}>
-            <PlusIcon /> Thêm câu hỏi
-          </Button>
-        )
+        <div className="flex flex-wrap gap-2">
+          <ImportQuestionsDialog quizId={quizId} onImported={() => { setEditing(null); setError(null); }} />
+          {editing !== "new" && (
+            <Button variant="outline" onClick={() => setEditing("new")}>
+              <PlusIcon /> Thêm câu hỏi
+            </Button>
+          )}
+        </div>
       }
       className="min-w-0"
     >

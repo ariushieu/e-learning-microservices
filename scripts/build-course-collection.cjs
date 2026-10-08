@@ -362,6 +362,39 @@ add(moderation,27,15,'GET',moderationUrl,'',200,null,`
 `,moderationStats(1,4)+"pm.test('Không lệch danh sách',()=>pm.expect(d.totalElements).eql(1));");
 add(moderation,27,16,'DELETE',moderationUrl+'/{{moderationSId}}','ADM',200,null,"await status(id('moderationCourseId'),'ARCHIVED');",moderationStats(0,0));
 add(moderation,27,17,'DELETE',moderationUrl+'/{{moderationSId}}','ADM',200,null,"await status(id('moderationCourseId'),'PUBLISHED');const s=await call('PUT','/api/courses/'+id('moderationCourseId')+'/reviews/me',{rating:5},'studentToken');set('moderationSId',s.id);await status(id('moderationCourseId'),'DRAFT');",moderationStats(0,0));
+const replies=folder('COURSE-28 — Giảng viên trả lời đánh giá');
+const repliesUrl='/api/courses/{{replyCourseId}}/reviews';
+const replyUrl=repliesUrl+'/{{replyReviewId}}/reply';
+const replyState=(content,count=1,avg=2)=>`const list=await call('GET','/api/courses/'+id('replyCourseId')+'/reviews');const c=await call('GET','/api/courses/'+id('replyCourseId'));pm.test('Phản hồi và số liệu đúng',()=>{pm.expect(list.totalElements).eql(${count});pm.expect(c.ratingCount).eql(${count});pm.expect(c.ratingAvg).eql(${avg});${count ? 'pm.expect(list.content[0].reply).eql('+JSON.stringify(content)+');' : ''}});`;
+add(replies,28,1,'PUT',replyUrl,'',401,{content:'Cảm ơn'},`
+  const c=await course();set('replyCourseId',c.id);await status(c.id,'PUBLISHED');
+  await eventually(()=>call('POST','/api/enrollments',{courseId:c.id},'studentToken',201),'Ghi danh để đánh giá');
+  await eventually(async()=>pm.expect((await call('GET','/api/courses/'+c.id+'/reviews/me',undefined,'studentToken')).canReview).eql(true),'Chờ quyền đánh giá');
+  const s=await call('PUT','/api/courses/'+c.id+'/reviews/me',{rating:5,comment:'Hữu ích'},'studentToken');set('replyReviewId',s.id);
+`,replyState(null,1,5));
+for(const [n,who] of [[2,'S'],[3,'B']])add(replies,28,n,'PUT',replyUrl,who,403,{content:'Cảm ơn'},'',replyState(null,1,5));
+add(replies,28,4,'PUT',replyUrl,'A',200,{content:' Cảm ơn bạn ',repliedBy:999},'',replyState('Cảm ơn bạn',1,5)+"set('replyTime',d.repliedAt);pm.test('Không lộ ID, có thời gian',()=>{pm.expect(d).not.have.property('repliedBy');pm.expect(d.repliedAt).to.be.a('string');});");
+add(replies,28,5,'GET',repliesUrl,'',200,null,'',"pm.test('Khách thấy đúng phản hồi/thời gian',()=>{pm.expect(d.content[0].reply).eql('Cảm ơn bạn');pm.expect(d.content[0].repliedAt).eql(get('replyTime'));pm.expect(d.content[0]).not.have.property('repliedBy');});");
+add(replies,28,6,'PUT',replyUrl,'A',200,{content:'Đã cập nhật'},'',replyState('Đã cập nhật',1,5)+"set('replyTime',d.repliedAt);");
+add(replies,28,7,'PUT',repliesUrl+'/me','S',200,{rating:2,comment:'Đã sửa',reply:'Giả mạo',repliedBy:999},'',replyState('Đã cập nhật')+"pm.test('Không sửa thời gian phản hồi',()=>pm.expect(d.repliedAt).eql(get('replyTime')));");
+add(replies,28,8,'PUT',replyUrl,'ADM',200,{content:'Admin trả lời'},'',replyState('Admin trả lời'));
+for(const [n,who,code] of [[9,'B',403],[10,'S',403],[11,'',401]])add(replies,28,n,'DELETE',replyUrl,who,code,null,'',replyState('Admin trả lời'));
+add(replies,28,12,'PUT','/api/courses/{{reviewCourseId}}/reviews/{{replyReviewId}}/reply','A',404,{content:'Sai khóa'},'',replyState('Admin trả lời'));
+add(replies,28,13,'DELETE','/api/courses/{{reviewCourseId}}/reviews/{{replyReviewId}}/reply','ADM',404,null,'',replyState('Admin trả lời'));
+add(replies,28,14,'PUT',repliesUrl+'/{{missingId}}/reply','A',404,{content:'Không tồn tại'});
+for(const [n,body] of [[15,{content:' \t\n '}],[16,{}],[17,{content:null}],[18,{content:'x'.repeat(1001)}]])
+  add(replies,28,n,'PUT',replyUrl,'A',400,body,'',replyState('Admin trả lời')+"pm.test('Lỗi theo ô content',()=>{pm.expect(json.code).eql('VALIDATION_FAILED');pm.expect(json.fieldErrors.some(e=>e.field==='content')).eql(true);});");
+add(replies,28,19,'PUT',replyUrl,'A',200,{content:'x'.repeat(1000)},'',replyState('x'.repeat(1000)));
+add(replies,28,20,'PUT',replyUrl,'A',200,{content:'X'},'',replyState('X'));
+add(replies,28,21,'PUT',replyUrl,'A',200,{content:'<script>alert(1)</script>'},'',replyState('<script>alert(1)</script>'));
+add(replies,28,22,'DELETE',replyUrl,'A',200,null,'',replyState(null)+"const mine=await call('GET','/api/courses/'+id('replyCourseId')+'/reviews/me',undefined,'studentToken');pm.test('Xóa cả thời gian',()=>pm.expect(mine.review.repliedAt).eql(null));");
+add(replies,28,23,'DELETE',replyUrl,'ADM',404,null);
+add(replies,28,24,'GET',repliesUrl,'',200,null,"const u='/api/courses/'+id('replyCourseId')+'/reviews';await Promise.all([call('PUT',u+'/'+id('replyReviewId')+'/reply',{content:'Đồng thời'}),call('PUT',u+'/me',{rating:4},'studentToken')]);",replyState('Đồng thời',1,4));
+add(replies,28,25,'DELETE',repliesUrl+'/me','S',200,null,'',replyState(null,0,0));
+add(replies,28,26,'PUT',repliesUrl+'/me','S',200,{rating:5},'',replyState(null,1,5)+"pm.test('Tạo bản ghi mới',()=>pm.expect(d.id).not.eql(id('replyReviewId')));set('replyReviewId',d.id);");
+add(replies,28,27,'DELETE',repliesUrl+'/{{replyReviewId}}','ADM',200,null,"await call('PUT','/api/courses/'+id('replyCourseId')+'/reviews/'+id('replyReviewId')+'/reply',{content:'Sắp gỡ'});",replyState(null,0,0));
+add(replies,28,28,'PUT',replyUrl,'A',200,{content:'Phản hồi nháp'},"const s=await call('PUT','/api/courses/'+id('replyCourseId')+'/reviews/me',{rating:5},'studentToken');set('replyReviewId',s.id);await status(id('replyCourseId'),'DRAFT');",replyState('Phản hồi nháp',1,5)+"await call('GET','/api/courses/'+id('replyCourseId')+'/reviews',undefined,null,404);");
+add(replies,28,29,'PUT',replyUrl,'A',200,{content:'Phản hồi lưu trữ'},"await status(id('replyCourseId'),'ARCHIVED');",replyState('Phản hồi lưu trữ',1,5)+"const l=await call('GET','/api/courses/'+id('replyCourseId')+'/reviews',undefined,'studentToken');pm.test('Học viên cũ thấy phản hồi',()=>pm.expect(l.content[0].reply).eql('Phản hồi lưu trữ'));await call('GET','/api/courses/'+id('replyCourseId')+'/reviews',undefined,null,404);");
 for(const key of cases.keys())if(!seen.has(key))throw Error('Missing case '+key);
 // Giữ thứ tự đọc trước ghi để các tình huống đọc luôn có fixture nền nguyên vẹn.
 fs.writeFileSync(path.join(root,'docs/postman/course.postman_collection.json'),JSON.stringify(collection,null,2)+'\n');
