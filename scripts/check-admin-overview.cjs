@@ -56,7 +56,29 @@ async function confirm(page) {
     .click();
 }
 async function noOverflow(page) {
-  assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  const overflow = await page.evaluate(() => ({
+    width: innerWidth,
+    scroll: document.documentElement.scrollWidth,
+    elements: [
+      ...document.querySelectorAll(
+        'main, form, input, select, [data-slot="card"], [data-slot="table-container"]',
+      ),
+    ]
+      .map((element) => ({
+        tag: element.tagName,
+        class: element.className,
+        width: element.getBoundingClientRect().width,
+        right: element.getBoundingClientRect().right,
+      }))
+      .filter((element) => element.right > innerWidth + 1),
+  }));
+  if (overflow.scroll > overflow.width) {
+    await page.screenshot({
+      path: path.join(out, `overflow-${page.viewportSize().width}.png`),
+      fullPage: true,
+    });
+  }
+  assert(overflow.scroll <= overflow.width, JSON.stringify(overflow));
 }
 
 (async () => {
@@ -66,7 +88,7 @@ async function noOverflow(page) {
   });
   const browser = await chromium.launch({ channel: "msedge", headless: true });
   try {
-    for (const width of [1366, 768, 375]) {
+    for (const width of (process.env.AUTH_UI_WIDTHS || "1366,768,375").split(",").map(Number)) {
       const prefix = `qa.admin-ui.${Date.now()}.${width}`;
       const people = [];
       for (let index = 0; index < 15; index++) {
