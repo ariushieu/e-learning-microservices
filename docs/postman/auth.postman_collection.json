@@ -8619,7 +8619,7 @@
                 "value": "Bearer {{adminToken}}"
               }
             ],
-            "url": "{{baseUrl}}/api/users?keyword=%20QA.MANAGEMENT.{{runId}}.A%20",
+            "url": "{{baseUrl}}/api/users?keyword=%20QA.MANAGEMENT.{{runId}}.A%40EXAMPLE.COM%20",
             "auth": {
               "type": "noauth"
             }

@@ -4,7 +4,7 @@
 Mọi request qua `{{baseUrl}}=http://localhost:8080`; đây là **kế hoạch kiểm thử**.
 Kết quả từng lượt chạy được ghi riêng trong [biên bản auth](ket-qua/auth.md).
 Các endpoint auth/user dưới đây không đổi đường dẫn trong đợt chuẩn hóa.
-Không endpoint nào hỗ trợ phân trang/sort; không áp ca sort=abcxyz cho chúng.
+Chỉ `GET /api/users` hỗ trợ phân trang/sort (AUTH-09); các endpoint còn lại không áp ca sort sai.
 Các endpoint login/register/refresh/logout là công khai, nên không token không mặc định là 401.
 
 ## Body mẫu
@@ -178,7 +178,7 @@ kết quả không phụ thuộc dữ liệu có sẵn. Mặc định page=0, si
 | 5 | size=1, page=0 rồi page=1, sort=email,asc | 200; totalElements=3, totalPages=3, hai trang khác user |
 | 6 | createdAt/email/fullName, asc/desc | 200; sort hợp lệ, ID là khóa phụ khi trùng giá trị |
 | 7 | sort=abcxyz/passwordHash/roles.code/id hoặc direction sai | 400 |
-| 8 | page âm/sai kiểu, size=0/101/sai kiểu, role/status không tồn tại | 400 |
+| 8 | page âm/sai kiểu/offset vượt Integer.MAX_VALUE, size=0/101/sai kiểu, role/status không tồn tại | 400 |
 | 9 | Thiếu token hoặc token hỏng | 401 |
 | 10 | Token học viên hoặc giảng viên | 403 |
 | 11 | Trang ngoài phạm vi | 200; content rỗng, tổng số phần tử vẫn đúng |
