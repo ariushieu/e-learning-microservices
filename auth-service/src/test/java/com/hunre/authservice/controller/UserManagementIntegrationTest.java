@@ -38,6 +38,7 @@ class UserManagementIntegrationTest {
     @Autowired RoleRepository roles;
     @Autowired PasswordEncoder encoder;
     @Autowired JwtService jwt;
+    @Autowired com.hunre.authservice.service.UserManagementService management;
     @MockitoSpyBean RefreshTokenRepository refreshTokens;
     private final HttpClient client = HttpClient.newHttpClient();
     private static final String PASSWORD = "Test@123456";
@@ -62,6 +63,75 @@ class UserManagementIntegrationTest {
         for (RoleCode code : codes) assigned.add(roles.findByCode(code).orElseThrow());
         return users.save(User.builder().email(email).fullName(name).passwordHash(hash).status(UserStatus.ACTIVE)
                 .createdAt(Instant.parse("2026-01-01T00:00:00Z")).roles(assigned).build());
+    }
+
+    @Test void statisticsIncludeEveryRoleAndStatusWithoutDoubleCountingTotal() throws Exception {
+        JsonNode stats = request("GET", "/api/users/stats", adminToken, null, 200).path("data");
+        assertThat(stats.path("total").asLong()).isEqualTo(4);
+        assertThat(stats.path("byRole").path("ROLE_STUDENT").asLong()).isEqualTo(3);
+        assertThat(stats.path("byRole").path("ROLE_INSTRUCTOR").asLong()).isEqualTo(1);
+        assertThat(stats.path("byRole").path("ROLE_ADMIN").asLong()).isEqualTo(2);
+        assertThat(stats.path("byStatus").path("ACTIVE").asLong()).isEqualTo(4);
+        assertThat(stats.path("byStatus").path("LOCKED").asLong()).isZero();
+        assertThat(stats.path("byStatus").path("PENDING").asLong()).isZero();
+        assertThat(stats.path("newLast7Days").asLong()).isZero();
+        assertThat(stats.size()).isEqualTo(4);
+        assertThat(stats.toString()).doesNotContain("email", "password", "token");
+    }
+
+    @Test void statisticsRequireAuthenticationAndAdmin() throws Exception {
+        for (String token : new String[]{null, "invalid"}) {
+            request("GET", "/api/users/stats", token, null, 401);
+        }
+        for (User user : new User[]{student, instructor}) {
+            request("GET", "/api/users/stats", jwt.generateAccessToken(user), null, 403);
+        }
+    }
+
+    @Test void statisticsFollowRegistrationRoleChangesLockAndUnlock() throws Exception {
+        for (int i = 0; i < 2; i++) {
+            request("POST", "/api/auth/register", null,
+                    Map.of("email", "new" + i + "@example.com", "fullName", "New learner", "password", PASSWORD), 201);
+        }
+        JsonNode stats = request("GET", "/api/users/stats", adminToken, null, 200).path("data");
+        assertThat(stats.path("total").asLong()).isEqualTo(6);
+        assertThat(stats.path("newLast7Days").asLong()).isEqualTo(2);
+        assertThat(stats.path("byRole").path("ROLE_STUDENT").asLong()).isEqualTo(5);
+        request("PATCH", "/api/users/" + student.getId() + "/roles", adminToken,
+                Map.of("roles", List.of("ROLE_STUDENT", "ROLE_INSTRUCTOR")), 200);
+        status(student.getId(), "LOCKED", adminToken, 200);
+        stats = request("GET", "/api/users/stats", adminToken, null, 200).path("data");
+        assertThat(stats.path("total").asLong()).isEqualTo(6);
+        assertThat(stats.path("byRole").path("ROLE_INSTRUCTOR").asLong()).isEqualTo(2);
+        assertThat(stats.path("byStatus").path("LOCKED").asLong()).isEqualTo(1);
+        assertThat(stats.path("byStatus").path("ACTIVE").asLong()).isEqualTo(5);
+        status(student.getId(), "ACTIVE", adminToken, 200);
+        assertThat(request("GET", "/api/users/stats", adminToken, null, 200)
+                .path("data").path("byStatus").path("LOCKED").asLong()).isZero();
+    }
+
+    @Test void emptyDatabaseReturnsZeroForEveryBucket() {
+        jdbc.update("DELETE FROM user_roles");
+        jdbc.update("DELETE FROM users");
+        var stats = management.statistics();
+        assertThat(stats.total()).isZero();
+        assertThat(stats.newLast7Days()).isZero();
+        assertThat(stats.byRole()).hasSize(3).allSatisfy((key, count) -> assertThat(count).isZero());
+        assertThat(stats.byStatus()).hasSize(3).allSatisfy((key, count) -> assertThat(count).isZero());
+    }
+
+    @Test void rollingWindowIncludesItsBoundariesAndExcludesOlderAndFutureRows() throws Exception {
+        Instant now = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS);
+        Instant cutoff = now.minus(Duration.ofDays(7));
+        jdbc.update("UPDATE users SET created_at=? WHERE id=?", java.sql.Timestamp.from(cutoff), admin.getId());
+        jdbc.update("UPDATE users SET created_at=? WHERE id=?", java.sql.Timestamp.from(cutoff.minusSeconds(1)), otherAdmin.getId());
+        jdbc.update("UPDATE users SET created_at=? WHERE id=?", java.sql.Timestamp.from(now), student.getId());
+        jdbc.update("UPDATE users SET created_at=?, status='PENDING' WHERE id=?", java.sql.Timestamp.from(now.plusSeconds(3600)), instructor.getId());
+        assertThat(users.countCreatedBetween(cutoff, now)).isEqualTo(2);
+        JsonNode stats = request("GET", "/api/users/stats", adminToken, null, 200).path("data");
+        assertThat(stats.path("newLast7Days").asLong()).isEqualTo(1);
+        assertThat(stats.path("byStatus").path("PENDING").asLong()).isEqualTo(1);
+        assertThat(stats.path("total").asLong()).isEqualTo(4);
     }
 
     @Test void listHasBoundedStablePagesAndSafeDto() throws Exception {

@@ -1,5 +1,12 @@
 # Biên bản kiểm thử auth-service
 
+## Tổng quan quản trị và hoàn thiện #70 — 08/10/2026
+
+Xem [biên bản tổng quan quản trị](auth-overview.md): HTTP thực tế của toàn bộ collection,
+kết quả Docker CI, 54 kiểm tra trình duyệt ở 1366/768/375px và ảnh giao diện.
+Kết quả native: 291 request, 714/714 assertion PASS với ba fixture thật; tách riêng kết quả
+Docker không có fixture đặc biệt để không ghi nhầm các ca BLOCKED thành PASS.
+
 ## N3 — Lỗi phone trên form đăng ký và giới hạn 30 ký tự
 
 - **Thời gian:** 2026-10-07 22:02:15–22:02:44 (UTC+7).

@@ -164,18 +164,31 @@ gateway (`elearning.rate-limit.*`).
 
 | Đường dẫn | Đếm theo | Ngưỡng | Để chống |
 |---|---|---|---|
-| `POST /api/auth/login`, `/register`, `/refresh-token` | địa chỉ IP | 10 lần liền, sau đó 1 lần mỗi 6 giây | Dò mật khẩu, tạo tài khoản rác hàng loạt |
+| `POST /api/auth/login`, `/register` | tài khoản (email trong body) | 10 lần liền, sau đó 1 lần mỗi 6 giây | Dò mật khẩu một tài khoản |
+| `POST /api/auth/login`, `/register`, `/refresh-token` | địa chỉ IP | 60 lần liền, sau đó 1 lần mỗi 2 giây | Một máy thử hàng loạt tài khoản, tạo tài khoản rác |
 | Mọi đường dẫn khác | người dùng (chưa đăng nhập thì IP) | 20 request/giây, dồn tối đa 40 | Một người gửi dồn dập làm chậm cả hệ thống |
 
-Response 429 có cùng hình dạng lỗi với mọi API khác (`code: TOO_MANY_REQUESTS`) và header
-`Retry-After` cho biết bao nhiêu giây nữa thì gửi lại được. Mọi response đều kèm
-`X-RateLimit-Remaining` — số request còn được gửi ngay.
+Đăng nhập và đăng ký phải qua cả hai xô đầu. Response 429 có cùng hình dạng lỗi với mọi API khác
+(`code: TOO_MANY_REQUESTS`) và header `Retry-After` cho biết bao nhiêu giây nữa thì gửi lại được.
+Mọi response đều kèm `X-RateLimit-Remaining` — số request còn được gửi ngay; với đăng nhập là số lần
+còn lại của tài khoản đó.
 
-**Redis chết thì gateway cho request qua hết** thay vì chặn hết: mất giới hạn một lúc còn
-hơn cả hệ thống ngừng phục vụ vì một thành phần phụ. Lúc đó `X-RateLimit-Remaining` bằng -1
-và mỗi request chậm thêm khoảng nửa giây (thời gian chờ Redis). Bật Redis lại là tự đếm tiếp.
+**Vì sao đăng nhập đếm theo tài khoản chứ không chỉ theo IP.** Đăng nhập trên web đi qua server
+Next.js, nên gateway thấy mọi người dùng chung một IP là container frontend. Đếm chặt theo IP thì
+mười người đăng nhập trong một phút là người thứ mười một nhận 429. Lấy IP thật cũng không được:
+Docker Desktop đổi IP nguồn của mọi kết nối từ ngoài vào thành IP của mạng Docker, và header
+`X-Forwarded-For` thì client tự ghi được. Dò mật khẩu luôn nhắm vào một tài khoản, nên đếm theo
+tài khoản vẫn chặn được, kể cả khi kẻ dò đổi IP. Email được chuẩn hóa trước khi đếm (bỏ khoảng
+trắng, không phân biệt hoa thường và dấu, giống cách MySQL so email), rồi băm SHA-256 nên Redis
+và log không chứa email.
 
-Thử nhanh: đăng nhập sai mật khẩu 11 lần liền, lần thứ 11 nhận 429.
+**Redis chết thì gateway cho request qua hết** thay vì chặn hết: mất giới hạn một lúc còn hơn cả
+hệ thống ngừng phục vụ vì một thành phần phụ. Lúc đó `X-RateLimit-Remaining` bằng -1 và mỗi request
+chậm thêm khoảng nửa giây (thời gian chờ Redis), đăng nhập chậm khoảng một giây vì hỏi hai xô. Bật
+Redis lại là tự đếm tiếp.
+
+Thử nhanh: đăng nhập sai mật khẩu 11 lần liền **cùng một email**, lần thứ 11 nhận 429; đổi sang
+email khác thì vẫn đăng nhập được.
 
 ```bash
 for i in $(seq 1 11); do
@@ -183,9 +196,8 @@ for i in $(seq 1 11); do
 done
 ```
 
-Khi gateway chạy trong Docker, mọi request từ máy host đều mang cùng một IP (của mạng
-Docker), nên cả nhóm test trên **một máy** dùng chung xô đăng nhập. Test đăng nhập nhiều
-mà bị 429 thì chờ một phút, hoặc tạm tắt:
+Chạy Postman Runner dồn dập vẫn có thể nhận 429 (xô IP, hoặc 20 request/giây của API). Đó là
+gateway chặn đúng; chờ một phút, hoặc tạm tắt:
 
 ```bash
 RATE_LIMIT_ENABLED=false docker compose --profile app up -d api-gateway   # tắt

@@ -166,16 +166,22 @@ Lỗi timeout/502 cần token còn hạn để tránh nhận 401 trước khi ga
 
 | # | Tình huống | Tài khoản | Request | Mong đợi |
 |---|---|---|---|---|
-| 1 | Quota login đầy | — | POST /api/auth/login + email S và mật khẩu sai, sau 60 giây không gọi nhóm login | 401; có X-RateLimit-Remaining |
-| 2 | Vượt burst | — | Sau 60 giây, gửi 11 request login sai trong dưới 6 giây, cùng IP | 10 request đầu 401, request thứ 11 là 429; code=TOO_MANY_REQUESTS; Retry-After=6 |
-| 3 | Phục hồi quota | — | Sau ca 2, đợi ít nhất 6 giây rồi login sai một lần | 401, không còn 429 |
-| 4 | Không lách bằng header IP | — | Hết quota, đổi X-Forwarded-For liên tục rồi login sai ngay | 429; header giả không tạo quota mới |
-| 5 | Nhóm auth dùng chung quota | — | 10 login sai rồi POST /api/auth/refresh-token với refresh giả trong cùng cửa sổ | 429 |
+| 1 | Quota login của tài khoản đầy | — | POST /api/auth/login + email S và mật khẩu sai, sau 60 giây không đăng nhập bằng email S | 401; X-RateLimit-Remaining=54 |
+| 2 | Dò một tài khoản | — | Sau 60 giây, gửi 11 request login sai cùng email S trong dưới 6 giây | 10 request đầu 401, request thứ 11 là 429; code=TOO_MANY_REQUESTS; Retry-After=6 |
+| 3 | Phục hồi quota | — | Sau ca 2, đợi 9 giây rồi login sai một lần | 401, không còn 429 |
+| 4 | Không lách bằng header IP | — | Hết quota của S, đổi X-Forwarded-For liên tục rồi login sai ngay | 429; header giả không tạo quota mới |
+| 5 | Tài khoản khác không bị chặn theo | — | Hết quota của S: login sai bằng email B, rồi POST /api/auth/refresh-token với refresh giả | 401 và 401; không 429 |
 | 6 | Quota API riêng từng người | S, B | Dồn request GET /api/notifications bằng S đủ để nhận 429; ngay sau đó B gọi một lần | S có 429, B trả 200; login quota không bị dùng chung với quota API |
 | 7 | Redis ngừng | S | Stop redis, GET /api/notifications, sau đó start lại redis | 200; X-RateLimit-Remaining=-1 khi Redis lỗi; gateway vẫn phục vụ |
 | 8 | Health không bị trừ quota | — | GET /actuator/health nhiều lần | 200; status=UP; không bị 429 do rate limiter |
+| 9 | Viết khác cùng email | — | Hết quota của S: login sai bằng `  QA.Student@Example.com `, `qa.studént@example.com`, `QA.STUDENT@EXAMPLE.COM` | 429 cả ba; hoa thường, khoảng trắng, dấu không tạo quota mới |
+| 10 | Một máy thử hàng loạt tài khoản | — | Đợi 120 giây, gửi cùng lúc 70 request login sai, mỗi request một email khác, rồi refresh giả | 60–62 request 401, phần còn lại 429 với Retry-After=2; refresh cũng 429 |
 
-Ca burst phải đủ nhanh: gửi chậm sẽ được nạp token giữa chừng và không thể kết luận quota sai.
+Đăng nhập, đăng ký đếm ở hai xô: theo tài khoản (10 lần, rồi 1 lần mỗi 6 giây) và theo IP (60 lần,
+rồi 1 lần mỗi 2 giây); làm mới token chỉ đếm theo IP. Ca burst phải đủ nhanh: gửi chậm sẽ được nạp
+token giữa chừng và không thể kết luận quota sai. Redis nạp token theo đồng hồ của máy ảo Docker;
+đồng hồ này có lúc chạy chậm vài phần trăm khi đang được chỉnh giờ, nên ca 3 chờ 9 giây chứ không
+đúng 6 giây.
 Tắt Runner retry tự động cho các ca này. Kết thúc phải khôi phục Redis và cấu hình rate limit.
 
 ## G-CORS — Preflight

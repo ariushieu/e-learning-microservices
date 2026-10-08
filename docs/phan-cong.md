@@ -1,6 +1,6 @@
 # Bảng theo dõi công việc
 
-> **Cập nhật lần cuối:** 08/10/2026 — `main` ở `04cd6bc`
+> **Cập nhật lần cuối:** 08/10/2026 — `main` ở `94bb008`
 >
 > File này là nơi duy nhất ghi ai đang làm gì. Xong một việc thì nhóm trưởng cập nhật ngay
 > tại đây, nên **cứ `git pull` là biết việc tiếp theo của mình**, không phải hỏi ai.
@@ -19,22 +19,29 @@
 
 | Người | Service | Việc đang mở | Ưu tiên | Cỡ |
 |---|---|---|---|---|
-| Hiếu | api-gateway, web | [Giới hạn đăng nhập theo IP thật](#hiếu--giới-hạn-đăng-nhập-theo-ip-thật) — hiện cả lớp dùng chung một xô | **Cao — xong trước demo** | ~1h |
-| quocluibotre | auth | [Trang tổng quan quản trị, hoàn thiện #70](#quocluibotre--trang-tổng-quan-quản-trị) | Trung bình | ~2h |
+| Hiếu | api-gateway, web | [Khách chưa đăng nhập dùng chung xô API](#hiếu--khách-chưa-đăng-nhập-dùng-chung-xô-api) — 30 khách mở trang chủ thì 4 trang lỗi | **Cao — xong trước demo** | ~2h |
+| quocluibotre | auth | [Email so khớp chính xác: `hocviên@…` không vào được `hocvien@…`](#quocluibotre--email-so-khớp-chính-xác) | Trung bình | ~2h |
 | phamquyet19042005-netizen | enrollment | [Số liệu học tập của khóa: tỉ lệ hoàn thành, bài nào học viên bỏ dở](#phamquyet19042005-netizen--số-liệu-học-tập-của-khóa) | Trung bình | ~2h |
-| hiepdeptrai0111 | quiz | [Tải kết quả bài kiểm tra dạng CSV, hoàn thiện #71](#hiepdeptrai0111--tải-kết-quả-bài-kiểm-tra-dạng-csv) | Trung bình | ~2h |
-| duyd92689-debug | course | [Admin gỡ đánh giá vi phạm](#duyd92689-debug--admin-gỡ-đánh-giá-vi-phạm) | Trung bình | ~2h |
+| hiepdeptrai0111 | quiz | [Nhập câu hỏi từ file CSV](#hiepdeptrai0111--nhập-câu-hỏi-từ-file-csv) | Trung bình | ~3h |
+| duyd92689-debug | course | [Giảng viên trả lời đánh giá](#duyd92689-debug--giảng-viên-trả-lời-đánh-giá) | Trung bình | ~2h |
 
-Bốn việc của nhóm đều là **tính năng cho giảng viên và admin** — phần học viên đã đủ cho demo. Đã xong
-ở lượt này: tài liệu đính kèm trên khu giảng dạy (#69, #72), admin tìm và khóa tài khoản (#70), giảng viên
-xem kết quả bài kiểm tra (#71), giảng viên xem học viên và tiến độ của khóa (#73).
+Đã xong ở lượt này:
+
+- Trang tổng quan quản trị (#78) và admin gỡ đánh giá vi phạm (#79).
+- Xuất kết quả bài kiểm tra ra CSV (#75).
+- Giới hạn đăng nhập theo tài khoản, không còn cả lớp chung một xô (#76).
+
+**Luật merge mới (#77): không tự merge pull request của mình.** Ruleset của `main` giờ bắt CI xanh và
+nhóm trưởng duyệt. Mở pull request, chờ CI, rồi để đó: nhóm trưởng chạy thử trên Docker rồi duyệt và merge
+bằng **Squash and merge**. CODEOWNERS đã sửa đúng tên GitHub của `DuyJunior` và `Quytsdragon`, nên giờ
+pull request đụng phần của hai bạn sẽ tự mời đúng người.
 
 **Khung giao diện đã có** (#54): mọi việc web ở trên làm theo [frontend/DESIGN.md](../frontend/DESIGN.md)
 và trang `/design`. Chạy cả hệ thống: `docker compose --profile app up -d --build --wait` rồi mở
 http://localhost:3000.
 
 **Collection Postman: đủ cả 7 file**, đều đã chạy thật trên Docker — auth, course, enrollment, quiz
-(#56, #57, #59, #60, cập nhật ở #64, #65, #67, #69, #70, #71, #73) và gateway, notification, demo-flow (#66). Trước buổi demo, chạy
+(#56, #57, #59, #60, cập nhật ở #64, #65, #67, #69, #70, #71, #73, #75, #78, #79) và gateway, notification, demo-flow (#66). Collection auth chạy luôn trong CI ở mọi pull request (#78). Trước buổi demo, chạy
 `demo-flow` trên máy mình để xem cả chuỗi còn thông (81 assertion, khoảng 12 giây). Quy ước chung ở
 [mục dưới](#cả-nhóm--collection-postman-của-service-mình). Ca FAIL hay việc mới sinh ra khi chạy
 collection thì sửa ở PR riêng như các việc trong bảng trên.
@@ -95,10 +102,9 @@ Mọi request trong Postman đi qua **gateway `http://localhost:8080`**. Đừng
 8081–8085: trong Docker các cổng đó không mở ra ngoài, và gọi thẳng thì bỏ qua đúng hai thứ
 hay hỏng nhất là định tuyến và kiểm token ở vòng ngoài.
 
-**Gateway giới hạn số lần đăng nhập theo địa chỉ IP** (#34): 10 lần liền, sau đó 6 giây mới
-được thêm một lần. Mọi request từ máy mình vào Docker đều mang chung một IP, nên khi chạy
-Postman Runner hay nhiều người đăng nhập liên tục trên cùng một máy sẽ nhận **429**. Đó là
-gateway chặn đúng, không phải lỗi của service. Chờ một phút, hoặc tắt hẳn trong lúc test:
+**Gateway giới hạn số lần đăng nhập** (#34): mỗi tài khoản 10 lần liền, sau đó 6 giây mới được
+thêm một lần; mỗi máy 60 lần liền cho mọi tài khoản. Chạy Postman Runner dồn dập vẫn có thể nhận
+**429**. Đó là gateway chặn đúng, không phải lỗi của service. Chờ một phút, hoặc tắt hẳn trong lúc test:
 
 ```bash
 RATE_LIMIT_ENABLED=false docker compose --profile app up -d api-gateway
@@ -181,11 +187,11 @@ service đó. Không gộp chung một file: năm người cùng sửa một JSO
 
 | Người | File | Chạy tình huống | Trạng thái (chạy thật trên Docker) |
 |---|---|---|---|
-| quocluibotre | `docs/postman/auth.postman_collection.json` | [auth.md](test-cases/auth.md) | Xong #57, #65, #70 — 665/665 assertion (3 ca BLOCKED vì cần fixture riêng) |
-| duyd92689-debug | `docs/postman/course.postman_collection.json` | [course.md](test-cases/course.md) | Xong #56, #64, #69 — 827/827 |
+| quocluibotre | `docs/postman/auth.postman_collection.json` | [auth.md](test-cases/auth.md) | Xong #57, #65, #70, #78 — 707/707 assertion (3 ca BLOCKED vì cần fixture riêng); chạy trong CI |
+| duyd92689-debug | `docs/postman/course.postman_collection.json` | [course.md](test-cases/course.md) | Xong #56, #64, #69, #79 — 879/879 |
 | phamquyet19042005-netizen | `docs/postman/enrollment.postman_collection.json` | [enrollment.md](test-cases/enrollment.md) | Xong #60, #73 — 363/363 |
-| hiepdeptrai0111 | `docs/postman/quiz.postman_collection.json` | [quiz.md](test-cases/quiz.md) | Xong #59, #67, #71 — 479/479 |
-| Hiếu | `gateway`, `notification`, `demo-flow` | [gateway.md](test-cases/gateway.md), [notification.md](test-cases/notification.md) | Xong #66 — gateway 31/31 ca, notification 55/55 ca, demo-flow 81/81 |
+| hiepdeptrai0111 | `docs/postman/quiz.postman_collection.json` | [quiz.md](test-cases/quiz.md) | Xong #59, #67, #71, #75 — 512/512 |
+| Hiếu | `gateway`, `notification`, `demo-flow` | [gateway.md](test-cases/gateway.md), [notification.md](test-cases/notification.md) | Xong #66, #76 — gateway 33/33 ca (G-RATE 37/37 assertion), notification 55/55 ca, demo-flow 81/81 |
 
 Chạy collection bằng dòng lệnh (chỉ dùng pnpm):
 
@@ -235,39 +241,33 @@ với nguyên dữ liệu cũ là khóa được đồng bộ. Hoặc dùng khó
 
 ---
 
-### quocluibotre — trang tổng quan quản trị
+### quocluibotre — email so khớp chính xác
 
-> `/admin` hiện chỉ chuyển thẳng sang `/admin/users`. Từ #70 admin đã tìm và khóa được tài khoản,
-> nhưng vào khu quản trị chưa thấy hệ thống đang có bao nhiêu người, bao nhiêu giảng viên, ai bị khóa.
-> Lúc demo, đây là trang đầu tiên người xem thấy khi đăng nhập bằng admin.
+> Phát hiện khi làm #76: cột `users.email` dùng collation mặc định `utf8mb4_0900_ai_ci`, so sánh **không
+> phân biệt dấu**. Đăng nhập bằng `hocviên@hunre.edu.vn` vẫn vào được tài khoản `hocvien@hunre.edu.vn` (vẫn
+> phải đúng mật khẩu). Code đã `trim()` và `toLowerCase()` email khi đăng ký và đăng nhập, nên chỉ còn sai
+> ở cách MySQL so sánh.
 
 **Cần làm.**
 
-- auth-service, chỉ ADMIN (người khác 403, không token 401):
-  - `GET /api/users/stats` trả `total`, `byRole` (`ROLE_STUDENT`, `ROLE_INSTRUCTOR`, `ROLE_ADMIN`),
-    `byStatus` (`ACTIVE`, `LOCKED`, `PENDING`), `newLast7Days`.
-  - Đếm bằng truy vấn `COUNT … GROUP BY`, không tải hết bảng `users` lên rồi đếm trong Java.
-  - Một người nhiều vai trò thì được đếm ở mỗi vai trò, README ghi rõ để không ai cộng `byRole` ra
-    `total`.
-- Web `/admin` (thay trang chuyển hướng hiện tại):
-  - `StatGrid` + `Stat`: tổng người dùng, giảng viên, admin, bị khóa, mới trong 7 ngày.
-  - Thẻ "bị khóa" là link tới `/admin/users?status=LOCKED`, thẻ giảng viên tới
-    `/admin/users?role=ROLE_INSTRUCTOR`.
-  - Bảng 5 tài khoản mới nhất, dùng lại `GET /api/users?sort=createdAt,desc&size=5`, có link "Xem tất cả".
-  - Sidebar thêm mục "Tổng quan" trên "Người dùng & quyền" (`components/layout/` là của Hiếu,
-    CODEOWNERS tự mời review).
-- Hoàn thiện #70, góp ý khi review:
-  - `user-management-table.tsx`: lúc hộp xác nhận đang mờ dần, tiêu đề chớp thành "Khóa tài khoản ?"
-    vì `setChanging(null)` xóa tên trước khi hộp đóng xong. Giữ user đang chọn tới khi hiệu ứng đóng
-    kết thúc, hoặc tách `open` khỏi dữ liệu hiển thị.
-  - `admin/users/page.tsx` và `user-management-table.tsx`: tách các dòng JSX dài cho giống các file
-    khác trong `components/`.
-  - Ở 375px phải cuộn ngang bảng mới thấy nút Khóa / Cấp quyền: đưa thao tác lên dòng tên, hoặc hiện
-    dạng thẻ trên điện thoại.
+- auth-service:
+  - Migration mới (V5):
+    - Hạ chữ thường và bỏ khoảng trắng email cũ. Nếu sau bước đó có hai dòng trùng nhau thì migration
+      phải dừng và báo lỗi, không tự gộp.
+    - Đổi cột `email` sang `utf8mb4_bin`.
+  - Đăng ký chỉ nhận email ASCII: email có dấu trả 400 `VALIDATION_FAILED`, lỗi ở trường `email`, để không
+    ai tạo được tài khoản trông giống hệt tài khoản người khác.
+  - Áp dụng cho mọi chỗ tra theo email: đăng nhập, đăng ký, tìm kiếm của admin.
+- Web: form đăng ký hiện lỗi dưới ô email.
 
-**Tự kiểm.** Đăng ký thêm 2 học viên → `total` và `newLast7Days` tăng 2. Cấp giảng viên cho một người →
-`byRole.ROLE_INSTRUCTOR` tăng 1, `total` không đổi. Khóa một người → `byStatus.LOCKED` = 1, bấm thẻ ra đúng
-người đó. Học viên gọi → 403. Thêm ca vào `auth.md` và collection, chạy lại collection auth trên Docker.
+**Tự kiểm.**
+
+- `hocviên@hunre.edu.vn` + mật khẩu đúng → 401.
+- `HOCVIEN@hunre.edu.vn` → 200: chữ hoa vẫn được hạ trước khi so.
+- Đăng ký `thử@example.com` → 400.
+- Gateway (#76) vẫn gộp các cách viết có dấu vào chung một xô giới hạn: như vậy chặt hơn, không sai.
+
+Thêm ca vào `auth.md` và collection. Collection auth giờ chạy trong CI (#78), nên ca mới phải ổn định.
 
 ---
 
@@ -310,75 +310,87 @@ trên Docker.
 
 ---
 
-### hiepdeptrai0111 — tải kết quả bài kiểm tra dạng CSV
+### hiepdeptrai0111 — nhập câu hỏi từ file CSV
 
-> Từ #71 giảng viên xem được kết quả trên web, nhưng muốn nhập điểm vào bảng điểm của lớp thì phải chép
-> tay từng dòng. Tên học viên do người dùng tự đặt, nên file xuất ra phải an toàn khi mở bằng Excel.
+> Từ #75 giảng viên xuất được kết quả ra CSV. Chiều ngược lại thì chưa có: soạn một đề 30 câu vẫn phải
+> bấm thêm từng câu, từng đáp án. Đa số giảng viên đã có sẵn câu hỏi trong Excel.
 
 **Cần làm.**
 
 - quiz-service:
-  - `GET /api/quizzes/{quizId}/results/export`: cùng quyền với `/results` (tác giả hoặc ADMIN; người
-    khác 403, không token 401, quiz không tồn tại 404).
-  - Trả `text/csv; charset=UTF-8` có BOM đầu file để Excel hiện đúng tiếng Việt, kèm
-    `Content-Disposition: attachment; filename="ket-qua-quiz-<id>.csv"`.
-  - Mỗi học viên một dòng, không phân trang, cùng cách tính với `/results`: học viên, số lượt nộp, điểm
-    cao nhất, đạt / chưa đạt, lần nộp gần nhất (giờ Việt Nam).
-  - Chống CSV injection: ô bắt đầu bằng `=`, `+`, `-`, `@`, tab hoặc CR thì thêm `'` ở đầu. Ô có dấu
-    phẩy, ngoặc kép hoặc xuống dòng thì đặt trong ngoặc kép.
-  - Không khai `produces` cứng: route `/api` của web luôn gửi `Accept: application/json`, đặt
-    `Content-Type` trong `ResponseEntity`.
-- Web:
-  - Nút "Tải CSV" trên `/instructor/quizzes/{id}/results`, là link thường tới
-    `/api/quizzes/{id}/results/export`.
-  - Thêm `content-disposition` vào `PASS_HEADERS` trong `app/api/[...path]/route.ts` để file tải về đúng
-    tên (file của Hiếu, CODEOWNERS tự mời review).
-- Hoàn thiện #71: `results/page.tsx` tách các dòng JSX dài (header bảng, `TableRow` viết trên một dòng)
-  cho giống các file khác trong `components/`.
+  - `POST /api/quizzes/{quizId}/questions/import`, body là file CSV (multipart), chỉ tác giả hoặc ADMIN.
+  - Mỗi dòng một câu: loại, nội dung, điểm, giải thích, rồi các đáp án. Đáp án đúng đánh dấu bằng `*` ở
+    đầu. Kèm file mẫu tải về được.
+  - Hoặc nhận hết, hoặc không nhận câu nào: một dòng sai thì trả 400, kèm danh sách lỗi theo số dòng
+    (`line`, `message`), không lưu gì.
+  - Kiểm như khi thêm từng câu:
+    - `SINGLE_CHOICE` và `TRUE_FALSE` đúng một đáp án đúng; `MULTIPLE_CHOICE` ít nhất một.
+    - Giới hạn độ dài từng ô.
+    - Tối đa 200 dòng, file tối đa 1 MB.
+  - Đọc được file có BOM, có ngoặc kép, có xuống dòng trong ô; file xuất từ Excel phải nhập được.
+- Web, trang soạn đề:
+  - Nút "Nhập từ CSV", hộp thoại chọn file và link tải file mẫu.
+  - Nhập lỗi thì hiện bảng lỗi theo dòng; nhập xong thì danh sách câu hỏi cập nhật.
+- Hoàn thiện #75: lần sau merge bằng **Squash and merge**. #75 là merge commit, nên các commit lẻ của
+  nhánh đã vào thẳng `main`.
 
-**Tự kiểm.** S đổi họ tên thành `=1+1` rồi nộp bài → trong file, ô tên là `'=1+1`, mở bằng Excel không thành
-công thức. Tên có dấu hiện đúng trong Excel. B (không phải tác giả) tải → 403. Bấm nút trên web → tải về
-file `ket-qua-quiz-<id>.csv`. Thêm ca vào `quiz.md` và collection.
+**Tự kiểm.**
+
+- File mẫu 3 câu → nhập đủ 3 câu, làm bài được ngay.
+- Dòng 2 không có đáp án đúng → 400, báo đúng dòng 2, đề không đổi.
+- B (không phải tác giả) → 403.
+- File 2 MB → 400.
+
+Thêm nhóm ca vào `quiz.md` và collection.
 
 ---
 
-### duyd92689-debug — admin gỡ đánh giá vi phạm
+### duyd92689-debug — giảng viên trả lời đánh giá
 
-> Từ #64 học viên viết được nhận xét công khai trên trang khóa học, nhưng chỉ chính người viết xóa được.
-> Một nhận xét chửi bới hay quảng cáo sẽ nằm đó mãi và vẫn kéo điểm trung bình của khóa.
+> Từ #64 và #79, học viên đánh giá được và admin gỡ được đánh giá vi phạm. Nhưng giảng viên vẫn chưa
+> nói lại được câu nào: nhận xét chê hay câu hỏi trong đánh giá cứ nằm đó, không ai phản hồi.
 
 **Cần làm.**
 
 - course-service:
-  - `DELETE /api/courses/{courseId}/reviews/{reviewId}` (B3), chỉ ADMIN; học viên và giảng viên của
-    khóa 403, không token 401.
-  - Đánh giá không thuộc khóa đó → 404, để không xóa nhầm qua `courseId` khác.
-  - Khóa hàng khóa học trước khi xóa (giống `requireLearnerAndLock`) rồi `recalculateRating`: điểm
-    trung bình và số lượt đánh giá cập nhật ngay.
-  - Gỡ xong, người viết vẫn viết lại được nếu còn đủ điều kiện, giống khi tự xóa.
-- Web, mục "Đánh giá từ học viên" ở trang khóa học:
-  - Admin thấy nút "Gỡ" trên từng nhận xét, có hộp thoại xác nhận; người khác không thấy nút.
-  - Gỡ xong thì danh sách, điểm và số sao cập nhật ngay.
-**Tự kiểm.** S đánh giá 5, B đánh giá 1 → trung bình 3. Admin gỡ đánh giá của B → trung bình 5, còn 1 lượt.
-Gỡ với `courseId` của khóa khác → 404. A (giảng viên của khóa) gọi → 403. B viết lại được. Thêm ca vào
-`course.md` và collection, chạy lại collection course trên Docker.
+  - Migration mới: thêm `reply`, `replied_at`, `replied_by` vào `course_reviews`.
+  - `PUT /api/courses/{courseId}/reviews/{reviewId}/reply`, body `{"content": "..."}` (1–1000 ký tự).
+    Chỉ giảng viên của khóa hoặc ADMIN; người khác 403. Đánh giá không thuộc khóa → 404.
+  - `DELETE` cùng đường dẫn để gỡ câu trả lời.
+  - Danh sách đánh giá trả thêm `reply`, `repliedAt`.
+  - Học viên sửa đánh giá thì câu trả lời vẫn còn. Học viên xóa đánh giá thì câu trả lời mất theo.
+- Web, mục đánh giá ở trang khóa học:
+  - Câu trả lời hiện ngay dưới nhận xét, có nhãn "Phản hồi của giảng viên".
+  - Giảng viên của khóa có nút Trả lời / Sửa / Xóa; xóa có hộp thoại xác nhận.
+
+**Tự kiểm.**
+
+- A trả lời đánh giá của S → khách thấy câu trả lời.
+- B (giảng viên khác) → 403; S → 403.
+- S sửa số sao → câu trả lời vẫn còn.
+- Nội dung có thẻ HTML hiện dạng văn bản.
+
+Thêm nhóm ca vào `course.md` và collection.
 
 ---
 
-### Hiếu — giới hạn đăng nhập theo IP thật
+### Hiếu — khách chưa đăng nhập dùng chung xô API
 
-> Phát hiện khi review: đăng nhập trên web đi qua Server Action của Next.js, nên gateway thấy **mọi
-> người dùng chung một IP là container frontend**. Sau 10 lần đăng nhập trong một phút, cả lớp nhận
-> 429 — buổi demo cho người xem thử đăng nhập là dính. Đã thử trên Docker: 11 lần đăng nhập của 11 email
-> khác nhau gửi từ container frontend thì lần thứ 11 nhận 429, trong khi `curl` từ máy ngoài cùng lúc
-> vẫn 401 bình thường.
+> Cùng gốc với lỗi đăng nhập đã sửa ở #76: trang web render trên server Next.js, nên mọi khách chưa đăng
+> nhập đều mang IP của container frontend và dùng chung **một** xô API (20 request/giây, dồn tối đa 40).
+> Đã thử trên Docker: 30 khách mở trang chủ cùng lúc thì **4/30 trang** hiện "Không tải được danh sách
+> khóa học — Bạn gửi quá nhiều yêu cầu", gateway chặn 20 lời gọi của `ip:172.27.0.12`. Người đã đăng nhập
+> không bị, vì xô API đếm theo id người dùng.
 
 **Cần làm.**
 
-- Gateway chỉ tin `X-Forwarded-For` khi kết nối đến từ proxy tin cậy, khai bằng biến môi trường;
-  trong Docker là container frontend. Từ IP khác thì vẫn bỏ qua header như bây giờ (G-RATE-4).
-- Frontend gửi IP thật của trình duyệt khi đăng nhập, đăng ký, refresh token.
-- Ca G-RATE mới trong collection gateway.
+- Gateway nhận ra request do server frontend gửi bằng một khóa bí mật dùng chung, đặt trong header và
+  `.env` (không commit). Request đó đếm ở một xô riêng, rộng hơn hẳn.
+  - Request từ ngoài không có khóa đúng thì vẫn đếm theo IP như cũ.
+  - Không đọc `X-Forwarded-For`, vì lý do đã ghi ở #76.
+- Frontend gửi khóa này trong mọi lời gọi gateway từ server.
+- Ca G-RATE mới. Chạy lại phép thử 30 khách → không trang nào lỗi.
+- Build lại image frontend trong Docker: image đang chạy vẫn là bản trước #69.
 
 **Sau demo:** kênh email cho thông báo (`emailEnabled` đã lưu nhưng chưa có kênh gửi; notification-service
 cũng chưa biết email người dùng).
@@ -389,6 +401,11 @@ cũng chưa biết email người dùng).
 
 | Ngày | PR | Việc | Người |
 |---|---|---|---|
+| 08/10 | #79 | Admin gỡ đánh giá vi phạm, điểm trung bình tính lại ngay | duyd92689-debug |
+| 08/10 | #78 | Trang tổng quan quản trị, thống kê người dùng; bảng người dùng dạng thẻ trên điện thoại; collection auth chạy trong CI | quocluibotre |
+| 08/10 | #77 | Ruleset bắt CI xanh và nhóm trưởng duyệt; sửa tên GitHub trong CODEOWNERS | Hiếu |
+| 08/10 | #76 | Giới hạn đăng nhập theo tài khoản và theo máy, thay cho chung một xô IP; tách xô đăng nhập khỏi xô API trong Redis | Hiếu |
+| 08/10 | #75 | Xuất kết quả bài kiểm tra ra CSV, chống chèn công thức Excel | hiepdeptrai0111 |
 | 08/10 | #73 | Giảng viên xem học viên của khóa: tiến độ, ngày hoàn thành, mã chứng chỉ; lọc và sắp xếp | phamquyet19042005-netizen |
 | 08/10 | #72 | Gom kiểm link về `lib/safe-url.ts`, chặn link có dấu `\`, `aria-label` sao đọc "4,5" | duyd92689-debug |
 | 08/10 | #71 | Giảng viên xem kết quả bài kiểm tra: điểm trung bình, tỉ lệ đạt, tỉ lệ đúng từng câu; không tính lượt làm thử | hiepdeptrai0111 |

@@ -139,6 +139,24 @@ chỉ thu hồi refresh token. Các phiên khác phải đăng nhập lại khi 
 
 ## Kiểm thử
 
+### Tổng quan quản trị
+
+`GET /api/users/stats` chỉ dành cho ADMIN (không token 401, học viên/giảng viên 403).
+Response `ApiResponse.data` có `total`, `byRole` (ROLE_STUDENT, ROLE_INSTRUCTOR, ROLE_ADMIN),
+`byStatus` (ACTIVE, LOCKED, PENDING) và `newLast7Days`. Các nhóm không có người vẫn trả 0.
+Một người nhiều vai trò được đếm ở **mỗi vai trò**; không cộng `byRole` để suy ra `total`.
+Tổng người dùng là tổng ba trạng thái, kể cả tài khoản chưa có vai trò.
+
+`newLast7Days` tính trong cửa sổ 7 × 24 giờ lùi từ thời điểm nhận yêu cầu, dùng `Instant` UTC,
+bao gồm hai đầu mốc và không đếm thời gian tạo trong tương lai. Thống kê dùng ba truy vấn đếm
+(vai trò/trạng thái dùng `COUNT ... GROUP BY`), không tải entity người dùng. Giao dịch đọc
+REPEATABLE_READ giữ các truy vấn trên cùng snapshot MySQL.
+
+Trang `/admin` hiển thị số liệu và 5 tài khoản mới nhất. Thẻ giảng viên/tài khoản bị khóa dẫn
+tới danh sách đã lọc; thống kê và bảng tải độc lập để một phần lỗi không che phần còn lại.
+
+### Chạy kiểm thử
+
 Từ thư mục gốc, trên Windows:
 
 ```powershell
