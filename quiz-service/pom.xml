@@ -15,6 +15,11 @@
     <description>Quản lý bài kiểm tra, câu hỏi, chấm điểm</description>
 
     <dependencies>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.14.1</version>
+        </dependency>
         <!-- Thư viện dùng chung của dự án -->
         <dependency>
             <groupId>com.hunre</groupId>

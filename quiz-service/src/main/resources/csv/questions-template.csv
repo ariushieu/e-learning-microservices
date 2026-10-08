@@ -1,0 +1,4 @@
+﻿type,content,score,explanation,option1,option2,option3,option4
+SINGLE_CHOICE,"Thủ đô của Việt Nam là đâu?",1,"Chọn một đáp án.",*Hà Nội,Huế,Đà Nẵng,TP. Hồ Chí Minh
+MULTIPLE_CHOICE,"Chọn các số chẵn",2,"Có hai đáp án đúng.",*2,3,*4,5
+TRUE_FALSE,"Nước đóng băng ở 0 độ C.",1,"Ở áp suất tiêu chuẩn.",*Đúng,Sai,,
