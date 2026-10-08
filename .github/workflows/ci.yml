@@ -178,17 +178,47 @@ jobs:
       - name: Smoke test through the gateway
         run: bash scripts/smoke-test.sh
 
-      - name: Set up Node for enrollment collection
+      - name: Set up Node for Docker acceptance tests
         uses: actions/setup-node@v7
         with:
           node-version: 24
 
-      # Smoke tests above retain the default rate limit. Disable it only for this
-      # disposable CI stack's collection, which logs in several fixture users.
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Auth collection through Docker gateway
+        run: |
+          set -e
+          trap 'RATE_LIMIT_ENABLED=true docker compose --profile app up -d --wait api-gateway' EXIT
+          RATE_LIMIT_ENABLED=false docker compose --profile app up -d --wait api-gateway
+          mkdir -p target
+          pnpm dlx newman@6.2.2 run docs/postman/auth.postman_collection.json \
+            --reporters cli,json --reporter-json-export target/auth-newman-report.json
+
+      - name: Sanitize auth acceptance results
+        if: always()
+        env:
+          SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if [ -f target/auth-newman-report.json ]; then
+            node scripts/report-auth-newman.cjs target/auth-newman-report.json target/auth-acceptance.json
+          fi
+
+      - name: Upload sanitized auth acceptance results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: auth-docker-acceptance
+          path: target/auth-acceptance.json
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Enrollment collection through Docker gateway
         run: |
+          set -e
+          trap 'RATE_LIMIT_ENABLED=true docker compose --profile app up -d --wait api-gateway' EXIT
           RATE_LIMIT_ENABLED=false docker compose --profile app up -d --wait --wait-timeout 120 api-gateway
-          npx --yes newman@6.2.2 run docs/postman/enrollment.postman_collection.json --delay-request 60 --timeout-request 15000 --timeout-script 30000 --export-collection "$RUNNER_TEMP/enrollment-run.json"
+          pnpm dlx newman@6.2.2 run docs/postman/enrollment.postman_collection.json --delay-request 60 --timeout-request 15000 --timeout-script 30000 --export-collection "$RUNNER_TEMP/enrollment-run.json"
 
       - name: Check enrollment summary in Chromium
         env:

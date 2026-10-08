@@ -74,6 +74,25 @@ public class CourseReviewService {
         requireLearnerAndLock(courseId, user);
         var review = reviews.findByCourseIdAndUserId(courseId, user.userId())
                 .orElseThrow(() -> new ResourceNotFoundException("đánh giá", "courseId", courseId));
+        deleteAndRecalculate(courseId, review);
+    }
+
+    @Transactional
+    public void removeByAdmin(Long courseId, Long reviewId, AuthenticatedUser user) {
+        if (user == null || user.userId() == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "Bạn cần đăng nhập");
+        }
+        if (!user.hasRole(Roles.ADMIN)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "Chỉ quản trị viên mới được gỡ đánh giá của người khác");
+        }
+        // Cùng thứ tự khóa với ghi/sửa/tự xóa để số liệu luôn khớp khi thao tác đồng thời.
+        courses.lockForLearnerUpdate(courseId).orElseThrow(() -> missing(courseId));
+        var review = reviews.findByIdAndCourseId(reviewId, courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("đánh giá", "id", reviewId));
+        deleteAndRecalculate(courseId, review);
+    }
+
+    private void deleteAndRecalculate(Long courseId, CourseReview review) {
         reviews.delete(review);
         reviews.flush();
         courses.recalculateRating(courseId);

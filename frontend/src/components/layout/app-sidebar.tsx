@@ -24,6 +24,7 @@ const TEACHING = [
 ];
 
 const ADMIN = [
+  { href: "/admin", label: "Tổng quan", icon: LayoutDashboardIcon, exact: true },
   { href: "/admin/users", label: "Người dùng & quyền", icon: UsersIcon, exact: false },
   { href: "/admin/categories", label: "Danh mục", icon: FolderTreeIcon, exact: false },
 ];

@@ -46,4 +46,11 @@ public class CourseReviewController {
         service.delete(courseId, user);
         return ApiResponse.message("Đã xóa đánh giá của bạn");
     }
+
+    @DeleteMapping("/{reviewId}")
+    public ApiResponse<Void> removeByAdmin(@PathVariable Long courseId, @PathVariable Long reviewId,
+                                          AuthenticatedUser user) {
+        service.removeByAdmin(courseId, reviewId, user);
+        return ApiResponse.message("Đã gỡ đánh giá");
+    }
 }
