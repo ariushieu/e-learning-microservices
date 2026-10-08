@@ -33,14 +33,26 @@ export function RegisterForm({ next }: { next: string }) {
   const [state, action, pending] = useActionState<FormState, FormData>(registerAction, {});
   const err = state.fieldErrors ?? {};
   return (
-    <form action={action} className="space-y-5">
+    // Use server validation so Unicode email errors appear inline in Vietnamese,
+    // instead of being intercepted by the browser's native email tooltip.
+    <form action={action} className="space-y-5" noValidate>
       <input type="hidden" name="next" value={next} />
       {state.error && <ErrorAlert message={state.error} />}
       <FormField id="fullName" label="Họ và tên" error={err.fullName}>
         <Input id="fullName" name="fullName" required maxLength={150} autoComplete="name" defaultValue={state.values?.fullName} />
       </FormField>
       <FormField id="email" label="Email" error={err.email}>
-        <Input id="email" name="email" type="email" required autoComplete="email" placeholder="ban@hunre.edu.vn" defaultValue={state.values?.email} />
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          required
+          autoComplete="email"
+          maxLength={255}
+          aria-invalid={Boolean(err.email)}
+          placeholder="ban@hunre.edu.vn"
+          defaultValue={state.values?.email}
+        />
       </FormField>
       <FormField
         id="phone"
