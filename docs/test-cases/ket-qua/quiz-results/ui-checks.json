@@ -1,0 +1,70 @@
+[
+  {
+    "check": "page 2 contains learner 21",
+    "pass": true
+  },
+  {
+    "check": "375px no page overflow",
+    "pass": true
+  },
+  {
+    "check": "768px no page overflow",
+    "pass": true
+  },
+  {
+    "check": "1366px no page overflow",
+    "pass": true
+  },
+  {
+    "check": "legacy exclusion notice visible",
+    "pass": true
+  },
+  {
+    "check": "low correct rate highlighted",
+    "pass": true
+  },
+  {
+    "check": "first page contains 20 learners",
+    "pass": true
+  },
+  {
+    "check": "empty state",
+    "pass": true
+  },
+  {
+    "check": "editor links to results",
+    "pass": true
+  },
+  {
+    "check": "editor results link navigates correctly",
+    "pass": true
+  },
+  {
+    "check": "anonymous redirected to login",
+    "pass": true
+  },
+  {
+    "check": "other instructor sees 403 error without learner table",
+    "pass": true
+  },
+  {
+    "check": "student sees no-access page without results",
+    "pass": true
+  },
+  {
+    "check": "admin sees real submitted learner results",
+    "pass": true
+  },
+  {
+    "check": "keyboard can focus a control",
+    "pass": true
+  },
+  {
+    "check": "service outage shows error and retry without stale results",
+    "pass": true
+  },
+  {
+    "check": "retry recovers after service restart",
+    "pass": true
+  }
+]

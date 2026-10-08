@@ -80,7 +80,7 @@ class QuizAttemptControllerTest {
                 .startedAt(Instant.now())
                 .build();
 
-        when(quizAttemptService.startAttempt(eq(1L), eq(4L), eq(false), eq("Bearer student-token"))).thenReturn(response);
+        when(quizAttemptService.startAttempt(eq(1L), eq(4L), eq(false), eq("Bearer student-token"), eq("Student B"))).thenReturn(response);
 
         mockMvc.perform(post("/api/quizzes/1/attempts").header("Authorization", "Bearer student-token")
                         .requestAttr(JwtAuthenticationFilter.USER_ATTRIBUTE, studentB)
@@ -90,7 +90,7 @@ class QuizAttemptControllerTest {
                 .andExpect(jsonPath("$.data.id").value(100L))
                 .andExpect(jsonPath("$.data.status").value("IN_PROGRESS"));
 
-        verify(quizAttemptService).startAttempt(1L, 4L, false, "Bearer student-token");
+        verify(quizAttemptService).startAttempt(1L, 4L, false, "Bearer student-token", "Student B");
     }
 
     @Test
