@@ -1,0 +1,146 @@
+{
+  "browser": "Microsoft Edge",
+  "mode": "production",
+  "results": [
+    {
+      "width": 1366,
+      "name": "Anonymous user redirected to login",
+      "status": "PASS"
+    },
+    {
+      "width": 1366,
+      "name": "Admin searches qa.student and sees exactly one account",
+      "status": "PASS"
+    },
+    {
+      "width": 1366,
+      "name": "Pagination preserves keyword, role and status",
+      "status": "PASS"
+    },
+    {
+      "width": 1366,
+      "name": "Combined filters reset page and do not duplicate multi-role users",
+      "status": "PASS"
+    },
+    {
+      "width": 1366,
+      "name": "No matches show empty state",
+      "status": "PASS"
+    },
+    {
+      "width": 1366,
+      "name": "Role form targets selected row, preselects roles; cancel/save/reload work",
+      "status": "PASS"
+    },
+    {
+      "width": 1366,
+      "name": "Cancel locking leaves account active",
+      "status": "PASS"
+    },
+    {
+      "width": 1366,
+      "name": "Lock removes row from ACTIVE filter, blocks login/refresh; existing JWT still works",
+      "status": "PASS"
+    },
+    {
+      "width": 1366,
+      "name": "Unlock updates filtered list; login succeeds without restoring old refresh",
+      "status": "PASS"
+    },
+    {
+      "width": 1366,
+      "name": "Self and other admin cannot be locked from UI",
+      "status": "PASS"
+    },
+    {
+      "width": 1366,
+      "name": "Account promoted after dialog opens: server rejects lock and error remains visible",
+      "status": "PASS"
+    },
+    {
+      "width": 1366,
+      "name": "API load error is visible and retry recovers",
+      "status": "PASS"
+    },
+    {
+      "width": 1366,
+      "name": "No page JavaScript errors or horizontal document overflow",
+      "status": "PASS"
+    },
+    {
+      "width": 1366,
+      "name": "Student and instructor cannot open admin page",
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "name": "Anonymous user redirected to login",
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "name": "Admin searches qa.student and sees exactly one account",
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "name": "Pagination preserves keyword, role and status",
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "name": "Combined filters reset page and do not duplicate multi-role users",
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "name": "No matches show empty state",
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "name": "Role form targets selected row, preselects roles; cancel/save/reload work",
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "name": "Cancel locking leaves account active",
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "name": "Lock removes row from ACTIVE filter, blocks login/refresh; existing JWT still works",
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "name": "Unlock updates filtered list; login succeeds without restoring old refresh",
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "name": "Self and other admin cannot be locked from UI",
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "name": "Account promoted after dialog opens: server rejects lock and error remains visible",
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "name": "API load error is visible and retry recovers",
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "name": "No page JavaScript errors or horizontal document overflow",
+      "status": "PASS"
+    },
+    {
+      "width": 375,
+      "name": "Student and instructor cannot open admin page",
+      "status": "PASS"
+    }
+  ]
+}
