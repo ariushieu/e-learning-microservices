@@ -1,5 +1,5 @@
 // Runs against the disposable Docker stack after the enrollment collection.
-// The input collection contains QA tokens; never upload it or log its variables.
+// Log in through the API: Newman exports the original collection, not runtime variables.
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -7,17 +7,14 @@ const { chromium } = require(process.env.ENROLLMENT_PLAYWRIGHT_MODULE || "playwr
 const web = process.env.ENROLLMENT_WEB_URL || "http://localhost:3000";
 const gateway = process.env.ENROLLMENT_GATEWAY_URL || "http://localhost:8080";
 const output = process.env.ENROLLMENT_UI_OUTPUT || path.join(require("node:os").tmpdir(), "enrollment-summary-ui");
-const collection = JSON.parse(fs.readFileSync(process.env.ENROLLMENT_COLLECTION_FILE, "utf8"));
-const variables = Object.fromEntries(collection.variable.map(({ key, value }) => [key, value]));
-const courseId = Number(variables.summaryCourseId);
-assert.ok(courseId > 0, "Run the complete enrollment collection first");
-const summaryPath = `/api/courses/${courseId}/learners/summary`;
+const variables = {};
+let courseId, summaryPath;
 const checks = [], errors = [];
 let browser;
 
 async function api(method, url, body) {
   const response = await fetch(gateway + url, {
-    method, headers: { Authorization: `Bearer ${variables.tokenA}`, "Content-Type": "application/json" },
+    method, headers: { ...(variables.tokenA ? { Authorization: `Bearer ${variables.tokenA}` } : {}), "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(15000),
   });
   assert.ok(response.ok, `${method} ${url}: HTTP ${response.status}`);
@@ -25,6 +22,22 @@ async function api(method, url, body) {
 }
 
 async function run() {
+  const auth = await api("POST", "/api/auth/login", { email: "qa.instructor.a@example.com", password: "Test@123456" });
+  variables.tokenA = auth.accessToken;
+  const courses = await api("GET", `/api/courses?instructorId=${auth.user.id}&keyword=${encodeURIComponent("Thống kê học tập")}&size=100`);
+  assert.equal(courses.totalElements, 1, "Expected exactly one summary fixture in this disposable stack");
+  courseId = courses.content[0].id;
+  summaryPath = `/api/courses/${courseId}/learners/summary`;
+  const curriculum = await api("GET", `/api/courses/${courseId}/curriculum`);
+  assert.equal(curriculum.length, 1);
+  assert.equal(curriculum[0].title, "Chương thống kê");
+  assert.equal(curriculum[0].lessons.length, 2);
+  variables.summarySectionId = curriculum[0].id;
+  variables.summaryLesson2Id = curriculum[0].lessons.find((lesson) => lesson.title === "Bài thống kê 2")?.id;
+  assert.ok(variables.summaryLesson2Id, "Expected the collection's second lesson");
+  const completed = await api("GET", `/api/courses/${courseId}/learners?status=COMPLETED`);
+  assert.equal(completed.totalElements, 1);
+  variables.studentName = completed.content[0].learnerName;
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1366, height: 1000 } });
   await context.addCookies([{ name: "el_access", value: variables.tokenA, url: web }]);

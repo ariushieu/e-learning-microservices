@@ -50,7 +50,11 @@ ghi trong PR; không coi việc thêm script là bằng chứng đã chạy thà
   cảnh báo giảm, bộ lọc không đổi thống kê, Skeleton, API lỗi không che bảng học viên và làm mới phục hồi.
   Bổ sung bài tên dài để kiểm 0%, kiểm 375/768/1366px và Tab; xóa bài fixture để kiểm ẩn dữ liệu lịch sử.
 - Artifact `enrollment-summary-ui` chỉ chứa `docker-http.json`, `results.json`, screenshot;
-  collection export chứa token và report Newman thô chỉ ở thư mục tạm của runner, không upload.
+  report Newman thô chỉ ở thư mục tạm của runner, không upload. Browser test đăng nhập QA qua API,
+  tìm đúng một khóa fixture theo tên/chủ khóa và kiểm đề cương trước khi thao tác.
+- Lượt CI đầu tại `c8bb57d`: collection Docker **222 lượt HTTP, 429/429 assertion đạt**;
+  browser test dừng ở khâu lấy fixture vì Newman export không lưu biến runtime. Đã đổi sang đăng nhập
+  và đọc fixture qua API; lỗi này chưa phải lỗi hiển thị, chưa ghi PASS cho trình duyệt.
 - Các ca outage/retry thủ công **ENROLL-09.1–09.5 không được chạy** trong collection hoặc browser test.
 
 PR được mở ở trạng thái **Ready for review**, theo yêu cầu của người phụ trách enrollment.

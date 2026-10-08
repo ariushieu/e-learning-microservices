@@ -218,7 +218,7 @@ jobs:
           set -e
           trap 'RATE_LIMIT_ENABLED=true docker compose --profile app up -d --wait api-gateway' EXIT
           RATE_LIMIT_ENABLED=false docker compose --profile app up -d --wait --wait-timeout 120 api-gateway
-          pnpm dlx newman@6.2.2 run docs/postman/enrollment.postman_collection.json --delay-request 60 --timeout-request 15000 --timeout-script 30000 --export-collection "$RUNNER_TEMP/enrollment-run.json" --reporters cli,json --reporter-json-export "$RUNNER_TEMP/enrollment-newman-report.json"
+          pnpm dlx newman@6.2.2 run docs/postman/enrollment.postman_collection.json --delay-request 60 --timeout-request 15000 --timeout-script 30000 --reporters cli,json --reporter-json-export "$RUNNER_TEMP/enrollment-newman-report.json"
 
       - name: Sanitize enrollment acceptance results
         if: always()
@@ -232,7 +232,6 @@ jobs:
 
       - name: Check enrollment summary in Chromium
         env:
-          ENROLLMENT_COLLECTION_FILE: ${{ runner.temp }}/enrollment-run.json
           ENROLLMENT_PLAYWRIGHT_MODULE: ${{ runner.temp }}/enrollment-ui/node_modules/playwright
           ENROLLMENT_UI_OUTPUT: ${{ runner.temp }}/enrollment-summary-evidence
         run: |
