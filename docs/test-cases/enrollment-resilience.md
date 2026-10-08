@@ -60,6 +60,8 @@ bash scripts/smoke-test.sh
 
 Không yêu cầu DLT đúng một bản: Kafka có thể gửi lại khi việc xác nhận/commit gặp lỗi. Điều bắt buộc
 là không mất payload gốc và không vượt offset trước khi recovery thành công.
+`notification-service` cũng nghe course events và dùng cùng DLT. Bằng chứng của enrollment phải có
+header `kafka_dlt-original-consumer-group=enrollment-service`; bản của notification không được tính thay.
 
 ## Biên bản và dọn môi trường
 

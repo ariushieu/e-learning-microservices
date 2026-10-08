@@ -201,6 +201,7 @@ class Probe:
 
     def dlt(self, source, timeout=60):
         deadline = time.monotonic() + timeout
+        other_groups = set()
         while time.monotonic() < deadline:
             message = self.dlt_reader.poll(1)
             if message is None:
@@ -209,12 +210,17 @@ class Probe:
             if message.key() != source["key"].encode() or message.value() != source["payload"].encode():
                 continue
             headers = dict(message.headers() or [])
+            # notification-service consumes the same topic and uses the same DLT.
+            # Its copy can arrive first, especially after restoring DLT access.
+            group = headers.get("kafka_dlt-original-consumer-group")
+            if group != GROUP.encode():
+                other_groups.add(group.decode(errors="replace") if group else "<missing>")
+                continue
             require(headers.get("kafka_dlt-original-topic") == TOPIC.encode(), "DLT original topic mismatch")
             for suffix, value in [("partition", source["partition"]), ("offset", source["offset"])]:
                 raw = headers.get("kafka_dlt-original-" + suffix)
                 require(raw is not None and int.from_bytes(raw, "big", signed=True) == value,
                         "DLT original " + suffix + " mismatch")
-            require(headers.get("kafka_dlt-original-consumer-group") == GROUP.encode(), "DLT group mismatch")
             require(bool(headers.get("kafka_dlt-exception-fqcn")), "DLT exception header missing")
             if source.get("qaHeader"):
                 require(headers.get("enrollment-qa-id") == self.run_id.encode(), "QA source header lost")
@@ -223,9 +229,10 @@ class Probe:
                     "payloadSha256": hashlib.sha256(message.value()).hexdigest(),
                     "originalTopic": TOPIC, "originalPartition": source["partition"],
                     "originalOffset": source["offset"], "originalConsumerGroup": GROUP,
+                    "otherConsumerGroupsObserved": sorted(other_groups),
                     "exceptionClass": headers["kafka_dlt-exception-fqcn"].decode(),
                     "sourceHeaderPreserved": bool(source.get("qaHeader"))}
-        raise AssertionError("Expected original payload/key/headers in DLT")
+        raise AssertionError(f"Expected enrollment payload/key/headers in DLT; other groups: {sorted(other_groups)}")
 
     def source_from_course(self, course_id):
         def find():
