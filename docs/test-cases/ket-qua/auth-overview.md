@@ -11,7 +11,13 @@
 
 ## Docker CI
 
-Kết quả Docker được bổ sung từ artifact `auth-docker-acceptance` sau khi job chạy xong. Kết quả native ở trên không được coi là Docker.
+[CI run 37725799164](https://github.com/ariushieu/e-learning-microservices/actions/runs/37725799164), source `202ff93383acb7318702972f078b4d2a94e806ff`, 2026-10-08T04:09:16.626Z → 2026-10-08T04:09:31.162Z.
+
+- Stack Docker build/start + smoke test thành công. Collection qua gateway: **288 request, 707/707 assertion PASS**, 111 mã ca PASS, 0 FAIL; 3 mã ca BLOCKED (AUTH-03.8: refresh hết hạn thật; AUTH-05.5: access hết hạn thật; AUTH-07.10: tài khoản đã xóa).
+- Các ca BLOCKED không có fixture ở CI; đã chạy PASS trong lượt native có fixture ở trên. Không gộp hai môi trường thành một lượt chạy.
+- Rate limit được bật lại bằng trap sau Newman; job kết thúc thành công.
+- [docker-results.json](auth-overview/docker-results.json) lưu từng HTTP/assertion, commit, checksum collection và lý do BLOCKED, không chứa token/body. Backend, frontend và collection không đổi sau commit chạy CI; commit cuối chỉ thêm bằng chứng và chỉnh phạm vi locator của script trình duyệt.
+- Checksum Docker `c7dd0b275b3416c3a7ca1a906110676bd6e495c8c2052b82b7d706b833d67c7a` khác bản native vì Git checkout Windows dùng CRLF; đã kiểm tra chuẩn hóa CRLF → LF cho ra đúng checksum Docker. Nội dung JSON giống nhau.
 
 ## HTTP theo mã ca
 
