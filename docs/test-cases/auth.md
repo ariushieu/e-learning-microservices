@@ -4,6 +4,7 @@
 Mọi request qua `{{baseUrl}}=http://localhost:8080`; đây là **kế hoạch kiểm thử**.
 Kết quả từng lượt chạy được ghi riêng trong [biên bản auth](ket-qua/auth.md).
 Đợt quản lý người dùng (AUTH-09/10 và hồi quy toàn collection): [biên bản MySQL và web](ket-qua/auth-user-management.md).
+Đợt tổng quan quản trị (AUTH-11 và hoàn thiện #70): [biên bản API, Docker và web](ket-qua/auth-overview.md).
 Các endpoint auth/user dưới đây không đổi đường dẫn trong đợt chuẩn hóa.
 Chỉ `GET /api/users` hỗ trợ phân trang/sort (AUTH-09); các endpoint còn lại không áp ca sort sai.
 Các endpoint login/register/refresh/logout là công khai, nên không token không mặc định là 401.
