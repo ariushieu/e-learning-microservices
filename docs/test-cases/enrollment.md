@@ -173,6 +173,10 @@ không truy cập được, API trả 502 và không ghi tiến độ. Vẫn c�
 
 Chạy trên môi trường thử riêng; khôi phục MySQL và cấu hình retry sau khi kiểm tra.
 
+Có [bộ kiểm thử Docker tự động](enrollment-resilience.md) cho cả năm ca, chạy trong workflow
+`Enrollment resilience`. Ca 1 dùng MySQL riêng của enrollment để course-service vẫn xuất bản
+được trong lúc database enrollment dừng. Kết quả của bộ này tách khỏi collection HTTP.
+
 | # | Tình huống | Thao tác | Mong đợi |
 |---|---|---|---|
 | 1 | Mất MySQL tạm thời | Tắt MySQL, xuất bản khóa, bật MySQL sau 40 giây | Snapshot cuối cùng cập nhật sau khi database hoạt động; không mất message |

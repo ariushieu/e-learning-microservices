@@ -1,0 +1,27 @@
+# Test-only overlay. Use a disposable host/project, never the demo database.
+# A separate MySQL lets course-service publish while enrollment's database is down.
+services:
+  enrollment-resilience-db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: enrollment_db
+      MYSQL_USER: elearning
+      MYSQL_PASSWORD: elearning
+      MYSQL_ROOT_PASSWORD: root
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_ROOT_PASSWORD mysqladmin ping -h 127.0.0.1 -uroot --silent"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+
+  enrollment-service:
+    environment:
+      DB_HOST: enrollment-resilience-db
+      DB_USERNAME: elearning
+      DB_PASSWORD: elearning
+      # Bound each failed connection attempt; the production retry handler is unchanged.
+      SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: "1000"
+      KAFKA_RETRY_MAX_ELAPSED_TIME: ${ENROLLMENT_TEST_RETRY_BUDGET:-5m}
+    depends_on:
+      enrollment-resilience-db:
+        condition: service_healthy
