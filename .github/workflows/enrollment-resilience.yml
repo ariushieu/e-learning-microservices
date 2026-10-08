@@ -1,0 +1,87 @@
+name: Enrollment resilience
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/enrollment-resilience.yml'
+      - 'infra/enrollment-resilience.compose.yml'
+      - 'scripts/check-enrollment-resilience.py'
+      - 'scripts/report-demo-newman.cjs'
+      - 'enrollment-service/**'
+      - 'shared-common/**'
+      - 'docker-compose.yml'
+      - 'docs/postman/demo-flow.postman_collection.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: enrollment-resilience-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  resilience:
+    name: Demo and enrollment recovery (MySQL/Kafka)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      COMPOSE_PROJECT_NAME: enrollment-resilience
+      COMPOSE_FILE: docker-compose.yml:infra/enrollment-resilience.compose.yml
+      ENROLLMENT_RESILIENCE_DISPOSABLE: '1'
+      SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install test runners
+        run: |
+          corepack enable
+          python -m pip install confluent-kafka==2.6.1
+      - name: Build disposable backend stack
+        run: |
+          docker compose --profile app config --quiet
+          docker compose --profile app build api-gateway auth-service course-service enrollment-service quiz-service notification-service
+          docker compose --profile app up -d --wait --wait-timeout 300 api-gateway
+      - name: Smoke test with rate limiting enabled
+        run: bash scripts/smoke-test.sh
+      - name: Demo flow through the gateway
+        run: |
+          set -e
+          trap 'RATE_LIMIT_ENABLED=true docker compose --profile app up -d --no-deps --wait api-gateway' EXIT
+          RATE_LIMIT_ENABLED=false docker compose --profile app up -d --no-deps --wait api-gateway
+          pnpm dlx newman@6.2.2 run docs/postman/demo-flow.postman_collection.json \
+            --timeout-request 15000 --timeout-script 30000 --reporters cli,json \
+            --reporter-json-export "$RUNNER_TEMP/demo-newman.json"
+      - name: Sanitize demo evidence
+        if: always()
+        run: |
+          mkdir -p target/enrollment-resilience
+          if [ -f "$RUNNER_TEMP/demo-newman.json" ]; then
+            node scripts/report-demo-newman.cjs "$RUNNER_TEMP/demo-newman.json" target/enrollment-resilience/demo-http.json
+          fi
+      - name: ENROLL-09 with real MySQL and Kafka failures
+        run: python scripts/check-enrollment-resilience.py
+      - name: Verify services after recovery
+        run: bash scripts/smoke-test.sh
+      - name: Upload sanitized evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: enrollment-resilience-evidence
+          path: target/enrollment-resilience/*.json
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Container state on failure
+        if: failure()
+        run: |
+          docker compose --profile app ps -a
+          docker compose --profile app logs --no-color --tail=100 enrollment-service
+      - name: Remove disposable stack
+        if: always()
+        run: docker compose --profile app down --volumes --remove-orphans
