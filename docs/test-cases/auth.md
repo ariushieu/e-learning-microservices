@@ -306,3 +306,33 @@ BFF refresh và retry 401. Biên bản: [quản lý phiên](ket-qua/auth-session
 - [AuthServiceImpl](../../auth-service/src/main/java/com/hunre/authservice/service/AuthServiceImpl.java).
 - [DTO và validation](../../auth-service/src/main/java/com/hunre/authservice/dto/UpdateUserRolesRequest.java),
   [hướng dẫn auth](../../auth-service/README.md).
+
+
+## AUTH-14 Hoạt động đăng nhập
+
+Chạy qua gateway, xác thực bật, dùng tài khoản QA riêng. Đếm số lần sai trong khoảng
+trước lần đăng nhập đúng mới nhất, không cộng chính lần đúng đó. Mỗi ca ở collection
+có thể gồm nhiều request chuẩn bị/kiểm chứng.
+
+| ID | Tình huống | Kết quả mong đợi |
+|---|---|---|
+| AUTH-14.1 | Sai mật khẩu 3 lần rồi đúng; gọi `/me` | 401 ×3, 200; cảnh báo 3 trong login và `/me` |
+| AUTH-14.2 | GET lịch sử mặc định | 200; 4 dòng mới nhất trước, đúng/sai/sai/sai; chỉ success/device/createdAt |
+| AUTH-14.3 | page 0/1 size 1, trang quá cuối, sort tùy ý | 200; metadata đúng, trang quá cuối rỗng; luôn mới nhất trước |
+| AUTH-14.4 | page âm, size 0/101, offset tràn, page không phải số | 400 |
+| AUTH-14.5 | Thiếu token hoặc token giả | 401 |
+| AUTH-14.6 | Refresh liên tiếp; GET sessions và lịch sử | 200; id đổi, startedAt không đổi; cảnh báo 3; không thêm login event |
+| AUTH-14.7 | Đăng nhập đúng thêm lần nữa | 200; cảnh báo về 0 trong login và `/me` |
+| AUTH-14.8 | Email không tồn tại | 401; không thêm dòng trong DB, lịch sử A không đổi |
+| AUTH-14.9 | B truyền userId=A | 200; chỉ lịch sử của B, không lộ raw UA/IP/token |
+| AUTH-14.10 | UA quá 255 ký tự, xóa tài khoản | UA cắt 255; lịch sử bị xóa theo user (test integration/MySQL) |
+| AUTH-14.11 | Dữ liệu quá 90 ngày, chạy job dọn | Không hiện ở API; job xóa cũ, giữ mới |
+| AUTH-14.12 | 6 lần nhập sai đồng thời rồi đăng nhập đúng | 401 ×6, không mất event; cảnh báo 6 |
+| AUTH-14.13 | Migration V6 trên DB có refresh token cũ | Flyway/validate qua; session_started_at backfill bằng created_at |
+| AUTH-14.14 | Web 1366/768/375, sai 3 rồi đúng | Cảnh báo và 3 nhãn đỏ; link đúng; không tràn, không lỗi JS |
+| AUTH-14.15 | Web lỗi tải lịch sử và thử lại | Hiện lỗi, giữ dữ liệu cũ, thử lại lấy dữ liệu thật |
+| AUTH-14.16 | Web đăng nhập đúng tiếp, hơn 10 hoạt động | Cảnh báo mất; bảng chỉ 10 dòng mới nhất |
+
+Collection chạy AUTH-14.1–9; integration kiểm thêm transaction, concurrency, retention,
+UA/cascade. Kịch bản trình duyệt: `scripts/check-auth-login-events-browser.cjs`.
+Kết quả thật: [auth-login-events.md](ket-qua/auth-login-events.md).

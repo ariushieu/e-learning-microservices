@@ -1,0 +1,122 @@
+[
+  {
+    "width": 1366,
+    "test": "Three failed logins persist and show warning and four real history rows",
+    "result": "PASS"
+  },
+  {
+    "width": 1366,
+    "test": "Warning links reach session management and password change",
+    "result": "PASS"
+  },
+  {
+    "width": 1366,
+    "test": "Reload preserves warning without adding another successful login",
+    "result": "PASS"
+  },
+  {
+    "width": 1366,
+    "test": "History and warning fit viewport without horizontal overflow",
+    "result": "PASS"
+  },
+  {
+    "width": 1366,
+    "test": "History reload failure preserves rows and retry recovers real data",
+    "result": "PASS"
+  },
+  {
+    "width": 1366,
+    "test": "Next successful browser login clears warning",
+    "result": "PASS"
+  },
+  {
+    "width": 1366,
+    "test": "History limits display to ten newest rows",
+    "result": "PASS"
+  },
+  {
+    "width": 1366,
+    "test": "No browser JavaScript errors",
+    "result": "PASS"
+  },
+  {
+    "width": 768,
+    "test": "Three failed logins persist and show warning and four real history rows",
+    "result": "PASS"
+  },
+  {
+    "width": 768,
+    "test": "Warning links reach session management and password change",
+    "result": "PASS"
+  },
+  {
+    "width": 768,
+    "test": "Reload preserves warning without adding another successful login",
+    "result": "PASS"
+  },
+  {
+    "width": 768,
+    "test": "History and warning fit viewport without horizontal overflow",
+    "result": "PASS"
+  },
+  {
+    "width": 768,
+    "test": "History reload failure preserves rows and retry recovers real data",
+    "result": "PASS"
+  },
+  {
+    "width": 768,
+    "test": "Next successful browser login clears warning",
+    "result": "PASS"
+  },
+  {
+    "width": 768,
+    "test": "History limits display to ten newest rows",
+    "result": "PASS"
+  },
+  {
+    "width": 768,
+    "test": "No browser JavaScript errors",
+    "result": "PASS"
+  },
+  {
+    "width": 375,
+    "test": "Three failed logins persist and show warning and four real history rows",
+    "result": "PASS"
+  },
+  {
+    "width": 375,
+    "test": "Warning links reach session management and password change",
+    "result": "PASS"
+  },
+  {
+    "width": 375,
+    "test": "Reload preserves warning without adding another successful login",
+    "result": "PASS"
+  },
+  {
+    "width": 375,
+    "test": "History and warning fit viewport without horizontal overflow",
+    "result": "PASS"
+  },
+  {
+    "width": 375,
+    "test": "History reload failure preserves rows and retry recovers real data",
+    "result": "PASS"
+  },
+  {
+    "width": 375,
+    "test": "Next successful browser login clears warning",
+    "result": "PASS"
+  },
+  {
+    "width": 375,
+    "test": "History limits display to ten newest rows",
+    "result": "PASS"
+  },
+  {
+    "width": 375,
+    "test": "No browser JavaScript errors",
+    "result": "PASS"
+  }
+]

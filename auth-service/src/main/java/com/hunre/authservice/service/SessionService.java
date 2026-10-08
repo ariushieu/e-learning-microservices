@@ -25,7 +25,7 @@ public class SessionService {
     @Transactional(readOnly = true)
     public List<SessionResponse> list(Long userId, Long sessionId) {
         return tokens.findByUserIdAndRevokedAtIsNullAndExpiresAtAfterOrderByCreatedAtDescIdDesc(userId, Instant.now())
-                .stream().map(token -> new SessionResponse(token.getId(), token.getCreatedAt(),
+                .stream().map(token -> new SessionResponse(token.getId(), token.getCreatedAt(), token.getSessionStartedAt(),
                         device(token.getUserAgent()), Objects.equals(token.getId(), sessionId))).toList();
     }
 

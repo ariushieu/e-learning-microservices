@@ -217,6 +217,10 @@
       "key": "sessionTwoRefresh",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "invalidActivityToken",
+      "value": "invalid.jwt.token"
     }
   ],
   "item": [
@@ -11927,7 +11931,7 @@
                   "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
                   "const j=pm.response.json();const d=j.data;",
                   "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
-                  "pm.test(\"Session result\",()=>{pm.expect(d.length).to.eql(2);d.forEach(s=>pm.expect(s).to.have.all.keys(\"id\",\"createdAt\",\"device\",\"current\"));pm.expect(d[0].device).to.eql(\"Thiết bị khác\");pm.expect(d[0].current).to.eql(false);pm.expect(d[1].device).to.eql(\"Edge trên Windows\");pm.expect(d[1].current).to.eql(true);pm.expect(Date.parse(d[0].createdAt)).to.be.at.least(Date.parse(d[1].createdAt));pm.collectionVariables.set(\"edgeId\",d[1].id);pm.collectionVariables.set(\"postmanId\",d[0].id);});"
+                  "pm.test(\"Session result\",()=>{pm.expect(d.length).to.eql(2);d.forEach(s=>pm.expect(s).to.have.all.keys(\"id\",\"createdAt\",\"startedAt\",\"device\",\"current\"));pm.expect(d[0].device).to.eql(\"Thiết bị khác\");pm.expect(d[0].current).to.eql(false);pm.expect(d[1].device).to.eql(\"Edge trên Windows\");pm.expect(d[1].current).to.eql(true);pm.expect(Date.parse(d[0].createdAt)).to.be.at.least(Date.parse(d[1].createdAt));pm.collectionVariables.set(\"edgeId\",d[1].id);pm.collectionVariables.set(\"postmanId\",d[0].id);});"
                 ]
               }
             }
@@ -13120,6 +13124,1113 @@
                   "const j=pm.response.json();const d=j.data;",
                   "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));",
                   "pm.test(\"Session result\",()=>{pm.expect(j.code).to.eql(\"VALIDATION_FAILED\");pm.expect(j.fieldErrors.some(e=>e.field===\"email\")).to.eql(true);});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "14. Hoạt động đăng nhập · AUTH-14",
+      "item": [
+        {
+          "name": "AUTH-14.1 Đăng ký tài khoản A",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.activity.{{runId}}@example.com\", \"password\": \"{{testPassword}}\", \"fullName\": \"QA Activity\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\",()=>pm.response.to.have.status(201));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.1 Sai mật khẩu lần 1",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.activity.{{runId}}@example.com\", \"password\": \"Incorrect@123456\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.1 Sai mật khẩu lần 2",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.activity.{{runId}}@example.com\", \"password\": \"Incorrect@123456\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.1 Sai mật khẩu lần 3",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.activity.{{runId}}@example.com\", \"password\": \"Incorrect@123456\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.1 Đăng nhập đúng sau 3 lần sai",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.activity.{{runId}}@example.com\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Login activity result\",()=>{pm.expect(d.user.failedLoginsSinceLastSuccess).to.eql(3);pm.collectionVariables.set(\"activityToken\",d.accessToken);pm.collectionVariables.set(\"activityRefresh\",d.refreshToken);pm.collectionVariables.set(\"activityUser\",d.user.id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.1 Me cảnh báo 3 lần",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{activityToken}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Login activity result\",()=>{pm.expect(d.failedLoginsSinceLastSuccess).to.eql(3);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.2 Lịch sử có 1 đúng và 3 sai, không lộ dữ liệu",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/login-events",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{activityToken}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Login activity result\",()=>{pm.expect(d.totalElements).to.eql(4);pm.expect(d.size).to.eql(10);pm.expect(d.content.map(e=>e.success)).to.eql([true,false,false,false]);d.content.forEach(e=>{pm.expect(e).to.have.all.keys(\"success\",\"device\",\"createdAt\");pm.expect(e.device).to.eql(\"Edge trên Windows\");pm.expect(Number.isNaN(Date.parse(e.createdAt))).to.eql(false);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.3 Trang đầu thứ tự mới nhất, bỏ sort tùy ý",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/login-events?page=0&size=1&sort=createdAt,asc",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{activityToken}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Login activity result\",()=>{pm.expect(d.content.length).to.eql(1);pm.expect(d.content[0].success).to.eql(true);pm.expect(d.totalPages).to.eql(4);pm.expect(d.first).to.eql(true);pm.expect(d.last).to.eql(false);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.3 Trang tiếp theo",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/login-events?page=1&size=1",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{activityToken}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Login activity result\",()=>{pm.expect(d.content[0].success).to.eql(false);pm.expect(d.page).to.eql(1);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.3 Trang vượt dữ liệu",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/login-events?page=100",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{activityToken}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Login activity result\",()=>{pm.expect(d.content).to.eql([]);pm.expect(d.totalElements).to.eql(4);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.4 Phân trang sai page=-1",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/login-events?page=-1",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{activityToken}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.4 Phân trang sai size=0",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/login-events?size=0",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{activityToken}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.4 Phân trang sai size=101",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/login-events?size=101",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{activityToken}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.4 Phân trang sai page=2147483647&size=100",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/login-events?page=2147483647&size=100",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{activityToken}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.4 Phân trang sai page=abc",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/login-events?page=abc",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{activityToken}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.5 Không token",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/login-events",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.5 Token giả",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/login-events",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{invalidActivityToken}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.6 Ghi thời điểm phiên gốc",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/sessions",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{activityToken}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Login activity result\",()=>{pm.expect(d.length).to.eql(1);pm.expect(Number.isNaN(Date.parse(d[0].startedAt))).to.eql(false);pm.collectionVariables.set(\"activityStart\",d[0].startedAt);pm.collectionVariables.set(\"activitySid\",d[0].id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.6 Xoay token giữ cảnh báo",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{activityRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Login activity result\",()=>{pm.expect(d.user.failedLoginsSinceLastSuccess).to.eql(3);pm.collectionVariables.set(\"activityToken\",d.accessToken);pm.collectionVariables.set(\"activityRefresh\",d.refreshToken);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.6 Phiên đổi id, giữ startedAt",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/sessions",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{activityToken}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Login activity result\",()=>{pm.expect(d.length).to.eql(1);pm.expect(d[0].current).to.eql(true);pm.expect(d[0].startedAt).to.eql(pm.collectionVariables.get(\"activityStart\"));pm.expect(d[0].id).not.to.eql(Number(pm.collectionVariables.get(\"activitySid\")));pm.collectionVariables.set(\"activitySid\",d[0].id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.6 Xoay token giữ cảnh báo",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"{{activityRefresh}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Login activity result\",()=>{pm.expect(d.user.failedLoginsSinceLastSuccess).to.eql(3);pm.collectionVariables.set(\"activityToken\",d.accessToken);pm.collectionVariables.set(\"activityRefresh\",d.refreshToken);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.6 Phiên đổi id, giữ startedAt",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/sessions",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{activityToken}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Login activity result\",()=>{pm.expect(d.length).to.eql(1);pm.expect(d[0].current).to.eql(true);pm.expect(d[0].startedAt).to.eql(pm.collectionVariables.get(\"activityStart\"));pm.expect(d[0].id).not.to.eql(Number(pm.collectionVariables.get(\"activitySid\")));pm.collectionVariables.set(\"activitySid\",d[0].id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.6 Refresh không thêm lịch sử",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/login-events",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{activityToken}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Login activity result\",()=>{pm.expect(d.totalElements).to.eql(4);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.7 Đăng nhập đúng lần nữa hết cảnh báo",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.activity.{{runId}}@example.com\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Login activity result\",()=>{pm.expect(d.user.failedLoginsSinceLastSuccess).to.eql(0);pm.collectionVariables.set(\"activityToken\",d.accessToken);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.7 Me hết cảnh báo",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{activityToken}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Login activity result\",()=>{pm.expect(d.failedLoginsSinceLastSuccess).to.eql(0);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.8 Email không tồn tại",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.missing.activity.{{runId}}@example.com\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\",()=>pm.response.to.have.status(401));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.8 Lịch sử A không đổi",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/login-events",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{activityToken}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Login activity result\",()=>{pm.expect(d.totalElements).to.eql(5);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.9 Đăng ký tài khoản B",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.activity.other.{{runId}}@example.com\", \"password\": \"{{testPassword}}\", \"fullName\": \"QA Activity Other\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\",()=>pm.response.to.have.status(201));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.9 Đăng nhập tài khoản B",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"qa.activity.other.{{runId}}@example.com\", \"password\": \"{{testPassword}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Login activity result\",()=>{pm.expect(d.user.failedLoginsSinceLastSuccess).to.eql(0);pm.collectionVariables.set(\"activityOtherToken\",d.accessToken);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH-14.9 B không xem được A qua userId",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/login-events?userId={{activityUser}}",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0 Safari/537.36 Edg/130.0"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{activityOtherToken}}"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();const d=j.data;",
+                  "pm.test(\"Envelope\",()=>pm.expect(j.success).to.eql(true));",
+                  "pm.test(\"Login activity result\",()=>{pm.expect(d.totalElements).to.eql(1);pm.expect(d.content[0].device).to.eql(\"Thiết bị khác\");pm.expect(d.content[0].success).to.eql(true);});"
                 ]
               }
             }

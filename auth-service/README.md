@@ -199,7 +199,7 @@ phải refresh hoặc đăng nhập lại trước khi gọi `revoke-others`.
 
 | API | Hành vi |
 |---|---|
-| `GET /api/auth/sessions` | Phiên còn hạn, chưa thu hồi của chính người gọi, createdAt/id giảm dần; chỉ trả id, createdAt, device, current |
+| `GET /api/auth/sessions` | Phiên còn hạn, chưa thu hồi của chính người gọi, createdAt/id giảm dần; chỉ trả id, createdAt, startedAt, device, current |
 | `DELETE /api/auth/sessions/{id}` | Thu hồi phiên đang hoạt động của mình, kể cả phiên hiện tại; 200. Id người khác/không có/đã thu hồi/hết hạn đều 404 |
 | `POST /api/auth/sessions/revoke-others` | Thu hồi mọi phiên còn hạn khác, giữ đúng sid đang dùng; 200. Thiếu sid, sid đã rotate/thu hồi/hết hạn hoặc không thuộc mình: 401, không đổi dữ liệu |
 
@@ -221,3 +221,36 @@ phạm vi giao việc này, cần Hiếu review theo CODEOWNERS.
 Email được trim trong DTO **trước** `@Email` ở cả đăng ký và đăng nhập (constructor và
 setter đều chuẩn hóa), sau đó service hạ chữ thường bằng Locale.ROOT. Email trắng vẫn
 400, Unicode đăng ký vẫn 400 ở trường email; không cắt hay sửa mật khẩu.
+
+
+## Lịch sử đăng nhập và cảnh báo
+
+`GET /api/auth/login-events?page=0&size=10` trả `ApiResponse<PageResponse<LoginEventResponse>>`.
+Chỉ đọc lịch sử của chính người gọi (không nhận `userId`); thứ tự `createdAt DESC, id DESC`
+cố định, không cho client đổi sort. `page >= 0`, `1 <= size <= 100`, offset tối đa 2147483647;
+phân trang sai trả 400. Mỗi dòng chỉ có `success`, `device`, `createdAt`; không lộ IP,
+raw User-Agent, email hay token. Chỉ trả dữ liệu trong 90 ngày gần nhất.
+
+- Email có thật, sai mật khẩu: ghi sự kiện thất bại và trả 401. Transaction chỉ được giữ
+  khi ném `IncorrectLoginPasswordException`; lỗi khác vẫn rollback bình thường.
+- Email không tồn tại: cùng thông báo 401, không ghi sự kiện. Đúng mật khẩu nhưng tài khoản
+  bị khóa: 403, không ghi thành công vì không phát phiên. Sai mật khẩu của tài khoản khóa
+  vẫn được ghi nhận như các lần thử mật khẩu khác.
+- Đăng nhập thành công: ghi đúng một sự kiện. Refresh, `/me`, đăng ký đơn thuần không ghi.
+- `/me`, login và refresh trả `failedLoginsSinceLastSuccess`. Đây là số lần sai **giữa hai
+  lần đăng nhập thành công gần nhất**, bỏ qua lần đúng vừa diễn ra; nếu chưa có lần đúng
+  trước đó, đếm từ đầu lịch sử còn lưu. Do đó sai 3 lần → đúng → cảnh báo 3; tải lại và
+  refresh giữ 3; đúng lần nữa → 0. Các lần sai sau lần đúng mới nhất được đưa vào cảnh báo
+  ở lần đăng nhập đúng tiếp theo. Mốc này chung cho tài khoản, không riêng từng thiết bị.
+- Job `@Scheduled` xóa dữ liệu quá 90 ngày lúc 03:00 UTC mỗi ngày; có thể cấu hình bằng
+  `auth.login-events.cleanup-cron`. API tự lọc mốc 90 ngày kể cả trước khi job chạy.
+- V6 thêm bảng sự kiện và `refresh_tokens.session_started_at`. Login đặt thời điểm gốc,
+  mỗi lần rotate sao chép nguyên giá trị; sessions trả `startedAt` và giữ `createdAt`
+  để tương thích collection/client cũ. Web dùng `startedAt` cho dòng “Bắt đầu”. Với phiên
+  tồn tại trước V6, backfill bằng `created_at`: không thể khôi phục thời điểm trước lần
+  rotate cũ vì trước đây không lưu quan hệ giữa các token.
+
+Trang hồ sơ hiển thị 10 hoạt động mới nhất, nhãn đỏ “Sai mật khẩu”, cảnh báo có link
+đến phiên đăng nhập và đổi mật khẩu; lỗi tải có nút thử lại. Kiểm thử và kết quả thật:
+[AUTH-14](../docs/test-cases/auth.md#auth-14-hoạt-động-đăng-nhập),
+[biên bản](../docs/test-cases/ket-qua/auth-login-events.md).

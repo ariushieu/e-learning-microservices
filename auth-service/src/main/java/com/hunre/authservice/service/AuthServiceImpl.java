@@ -3,6 +3,7 @@ package com.hunre.authservice.service;
 import com.hunre.authservice.domain.*;
 import com.hunre.authservice.dto.*;
 import com.hunre.authservice.exception.IncorrectCurrentPasswordException;
+import com.hunre.authservice.exception.IncorrectLoginPasswordException;
 import com.hunre.authservice.repository.RefreshTokenRepository;
 import com.hunre.authservice.repository.RoleRepository;
 import com.hunre.authservice.repository.UserRepository;
@@ -33,6 +34,7 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final LoginEventService loginEvents;
 
     @Override
     @Transactional
@@ -67,14 +69,15 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = IncorrectLoginPasswordException.class)
     public AuthResponse login(LoginRequest request, String userAgent, String ipAddress) {
         String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
         User user = userRepository.findByEmailForUpdate(email)
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED, "Email hoặc mật khẩu không chính xác"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED, "Email hoặc mật khẩu không chính xác");
+            loginEvents.record(user, false, userAgent);
+            throw new IncorrectLoginPasswordException();
         }
 
         if (user.getStatus() == UserStatus.LOCKED) {
@@ -83,6 +86,7 @@ public class AuthServiceImpl implements AuthService {
 
         user.setLastLoginAt(Instant.now());
         userRepository.save(user);
+        loginEvents.record(user, true, userAgent);
 
         String rawRefreshToken = jwtService.generateRefreshToken();
         String tokenHash = jwtService.hashToken(rawRefreshToken);
@@ -90,6 +94,7 @@ public class AuthServiceImpl implements AuthService {
         Instant expiresAt = Instant.now().plusMillis(jwtService.getRefreshTokenExpirationMs());
         RefreshToken refreshToken = RefreshToken.builder()
                 .user(user)
+                .sessionStartedAt(user.getLastLoginAt())
                 .tokenHash(tokenHash)
                 .expiresAt(expiresAt)
                 .userAgent(boundedUserAgent(userAgent))
@@ -105,7 +110,7 @@ public class AuthServiceImpl implements AuthService {
                 .refreshToken(rawRefreshToken)
                 .tokenType("Bearer")
                 .expiresIn(jwtService.getAccessTokenExpirationMs() / 1000)
-                .user(UserResponse.from(user))
+                .user(withLoginWarning(user))
                 .build();
     }
 
@@ -142,6 +147,7 @@ public class AuthServiceImpl implements AuthService {
         Instant expiresAt = Instant.now().plusMillis(jwtService.getRefreshTokenExpirationMs());
         RefreshToken newRefreshToken = RefreshToken.builder()
                 .user(user)
+                .sessionStartedAt(currentToken.getSessionStartedAt())
                 .tokenHash(newTokenHash)
                 .expiresAt(expiresAt)
                 .userAgent(boundedUserAgent(userAgent))
@@ -157,7 +163,7 @@ public class AuthServiceImpl implements AuthService {
                 .refreshToken(newRawRefreshToken)
                 .tokenType("Bearer")
                 .expiresIn(jwtService.getAccessTokenExpirationMs() / 1000)
-                .user(UserResponse.from(user))
+                .user(withLoginWarning(user))
                 .build();
     }
 
@@ -182,7 +188,13 @@ public class AuthServiceImpl implements AuthService {
     public UserResponse getUserById(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("người dùng", "id", userId));
-        return UserResponse.from(user);
+        return withLoginWarning(user);
+    }
+
+    private UserResponse withLoginWarning(User user) {
+        UserResponse response = UserResponse.from(user);
+        response.setFailedLoginsSinceLastSuccess(loginEvents.failedBeforeLatestSuccess(user.getId()));
+        return response;
     }
 
     @Override

@@ -41,6 +41,10 @@ public class RefreshToken {
     @Builder.Default
     private Instant createdAt = Instant.now();
 
+    @Column(name = "session_started_at", nullable = false, updatable = false)
+    @Builder.Default
+    private Instant sessionStartedAt = Instant.now();
+
     public boolean isExpired() {
         return Instant.now().isAfter(expiresAt);
     }

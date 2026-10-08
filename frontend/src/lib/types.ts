@@ -39,6 +39,7 @@ export interface User {
   status: "PENDING" | "ACTIVE" | "LOCKED";
   roles: Role[];
   createdAt: string;
+  failedLoginsSinceLastSuccess: number;
 }
 
 export interface AuthResponse {

@@ -24,6 +24,7 @@ public class UserResponse {
     private UserStatus status;
     private List<String> roles;
     private Instant createdAt;
+    private long failedLoginsSinceLastSuccess;
 
     public static UserResponse from(User user) {
         if (user == null) {

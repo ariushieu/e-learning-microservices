@@ -1,8 +1,10 @@
-import { AwardIcon, BookOpenIcon, type LucideIcon } from "lucide-react";
+import { AwardIcon, BookOpenIcon, ShieldAlertIcon, type LucideIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { RoleBadges } from "@/components/auth/role-badge";
 import { SessionList, type LoginSession } from "@/components/auth/session-list";
+import { LoginActivity, type LoginEvent } from "@/components/auth/login-activity";
+import { Callout } from "@/components/common/callout";
 import { Fact, FactList } from "@/components/common/fact-list";
 import { FormSection } from "@/components/common/form-field";
 import { IconTile } from "@/components/common/icon-tile";
@@ -25,10 +27,11 @@ const ACCOUNT_STATUS: Record<User["status"], string> = {
 };
 
 export default async function ProfilePage() {
-  const [me, enrollments, sessions] = await Promise.all([
+  const [me, enrollments, sessions, activity] = await Promise.all([
     gateway<User>("/api/auth/me"),
     gateway<Page<Enrollment>>("/api/enrollments?size=100").catch(() => null),
     gateway<LoginSession[]>("/api/auth/sessions").catch(() => null),
+    gateway<Page<LoginEvent>>("/api/auth/login-events?page=0&size=10").catch(() => null),
   ]);
   const completed = enrollments?.content.filter((e) => e.status === "COMPLETED").length ?? 0;
 
@@ -42,6 +45,23 @@ export default async function ProfilePage() {
         </Button>
       }
     >
+      {me.failedLoginsSinceLastSuccess > 0 && (
+        <Callout
+          icon={ShieldAlertIcon}
+          tone="warning"
+          title={`Có ${me.failedLoginsSinceLastSuccess} lần đăng nhập sai vào tài khoản của bạn`}
+        >
+          <p>Kể từ lần đăng nhập thành công trước đó. Nếu không phải bạn, hãy kiểm tra và bảo vệ tài khoản.</p>
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
+            <Link className="font-medium underline underline-offset-4" href="#login-sessions">
+              Xem phiên đăng nhập
+            </Link>
+            <Link className="font-medium underline underline-offset-4" href="#change-password">
+              Đổi mật khẩu
+            </Link>
+          </div>
+        </Callout>
+      )}
       <Card>
         <CardContent className="flex flex-col gap-6 md:flex-row md:items-center">
           <div className="flex min-w-0 flex-1 items-center gap-4 sm:gap-5">
@@ -66,14 +86,27 @@ export default async function ProfilePage() {
       </FormSection>
 
       <FormSection
-        title="Đổi mật khẩu"
+        title={<span id="change-password" className="scroll-mt-24">Đổi mật khẩu</span>}
         description="Dùng mật khẩu hiện tại để đặt mật khẩu mới. Các phiên đăng nhập trên thiết bị khác sẽ cần đăng nhập lại."
       >
         <ChangePasswordForm />
       </FormSection>
 
-      <FormSection title="Phiên đăng nhập" description="Xem thiết bị đã đăng nhập và đăng xuất những phiên bạn không còn sử dụng.">
-        <SessionList key={sessions?.map((session) => `${session.id}:${session.current}`).join(",") ?? "error"} initial={sessions} />
+      <FormSection
+        title={<span id="login-sessions" className="scroll-mt-24">Phiên đăng nhập</span>}
+        description="Xem thiết bị đã đăng nhập và đăng xuất những phiên bạn không còn sử dụng."
+      >
+        <SessionList
+          key={sessions?.map((session) => `${session.id}:${session.current}`).join(",") ?? "error"}
+          initial={sessions}
+        />
+      </FormSection>
+
+      <FormSection
+        title="Hoạt động đăng nhập"
+        description="10 lần gần nhất trong 90 ngày. Chỉ bạn xem được lịch sử của mình."
+      >
+        <LoginActivity initial={activity} />
       </FormSection>
 
       <FormSection
