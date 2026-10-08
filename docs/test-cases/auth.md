@@ -163,6 +163,61 @@ Tạo tài khoản riêng cho nhóm ca này để không làm hỏng tài khoả
 | 10 | Giả danh qua userId | Tài khoản test | Thêm userId của người khác vào body/query | 200; chỉ mật khẩu của người gọi đổi, tài khoản khác không bị ảnh hưởng |
 | 11 | Access token đã phát | Access token trước khi đổi | GET /api/auth/me sau đổi, trước khi access token hết hạn | 200; cơ chế hiện tại thu hồi refresh token, access token còn sống tới exp |
 
+## AUTH-09 — GET /api/users (quản trị)
+
+Chỉ ADMIN được gọi. Collection tạo ba tài khoản `qa.management.<runId>.*`: A là học viên,
+B có STUDENT + INSTRUCTOR, tài khoản thứ ba có STUDENT + ADMIN. Tìm theo tiền tố riêng để
+kết quả không phụ thuộc dữ liệu có sẵn. Mặc định page=0, size=12; size tối đa 100.
+
+| # | Tình huống | Mong đợi |
+|---|---|---|
+| 1 | Danh sách mặc định | 200; PageResponse, tối đa 12 dòng; đủ trường công khai, không passwordHash/token |
+| 2 | Tìm email với chữ hoa và khoảng trắng ngoài | 200; đúng tài khoản A |
+| 3 | Tìm theo họ tên | 200; đúng tài khoản A |
+| 4 | Kết hợp keyword, role, status | 200; đúng B cho INSTRUCTOR + ACTIVE; không nhân đôi user nhiều vai trò |
+| 5 | size=1, page=0 rồi page=1, sort=email,asc | 200; totalElements=3, totalPages=3, hai trang khác user |
+| 6 | createdAt/email/fullName, asc/desc | 200; sort hợp lệ, ID là khóa phụ khi trùng giá trị |
+| 7 | sort=abcxyz/passwordHash/roles.code/id hoặc direction sai | 400 |
+| 8 | page âm/sai kiểu, size=0/101/sai kiểu, role/status không tồn tại | 400 |
+| 9 | Thiếu token hoặc token hỏng | 401 |
+| 10 | Token học viên hoặc giảng viên | 403 |
+| 11 | Trang ngoài phạm vi | 200; content rỗng, tổng số phần tử vẫn đúng |
+| 12 | Keyword có `%` hoặc `_` | Tìm theo nghĩa đen, không hoạt động như wildcard |
+
+## AUTH-10 — PATCH /api/users/{id}/status (quản trị)
+
+Dùng A của AUTH-09 với hai phiên refresh riêng, B có phiên riêng để kiểm tra không bị tác động.
+Không khóa tài khoản S chung. Khôi phục A về ACTIVE và bỏ quyền ADMIN của fixture sau lượt chạy.
+
+| # | Tình huống | Mong đợi |
+|---|---|---|
+| 1 | Khóa A, lọc status=LOCKED | 200; trạng thái trả về và danh sách đều LOCKED |
+| 2 | A đăng nhập khi bị khóa | 403 |
+| 3 | Làm mới cả hai phiên cũ của A | 401 cho mỗi phiên |
+| 4 | A dùng access token còn hạn đã phát trước khi khóa | GET /me vẫn 200; status=LOCKED (hành vi JWT đã công bố) |
+| 5 | Mở khóa rồi đăng nhập, dùng lại refresh cũ | PATCH 200, login 200; refresh cũ vẫn 401 |
+| 6 | Gửi LOCKED/ACTIVE lặp lại | 200, trạng thái đúng, không lỗi 500 |
+| 7 | Admin tự khóa mình | 422 BUSINESS_RULE_VIOLATED |
+| 8 | Khóa admin khác có nhiều vai trò | 422 BUSINESS_RULE_VIOLATED |
+| 9 | ID không tồn tại | 404 |
+| 10 | ID sai kiểu | 400 |
+| 11 | status thiếu/null/rỗng/PENDING/locked/DELETED | 400 VALIDATION_FAILED; fieldErrors.status; dữ liệu không đổi |
+| 12 | Học viên/giảng viên đổi trạng thái | 403 |
+| 13 | Thiếu token hoặc token hỏng | 401 |
+| 14 | Refresh phiên của B sau các thao tác với A | 200; không thu hồi nhầm người |
+
+### Kiểm tra bổ sung trên controller và web
+
+- Controller: giao dịch phải rollback trạng thái nếu thu hồi token thất bại; login/refresh đồng thời
+  phải chờ khóa hàng rồi bị chặn, không phát phiên mới sau khi khóa.
+- `/admin/users`: admin tìm `qa.student` đúng một dòng, lọc/sort/phân trang giữ tham số; đổi bộ lọc
+  trở về trang đầu; không có kết quả hiển thị EmptyState; lỗi tải hiển thị thông báo có đường thử lại.
+- Nút Cấp quyền dùng đúng tài khoản của dòng, điền sẵn vai trò, không còn ô gõ ID; xác nhận/hủy hoạt động.
+- Khóa/mở khóa có xác nhận; hủy không thay đổi dữ liệu; thành công cập nhật bảng/toast; lỗi hiện trong
+  hộp thoại; lọc ACTIVE thì dòng vừa khóa biến mất. Không khóa được chính mình hoặc admin khác.
+- Học viên/giảng viên bị chặn khi mở trang; desktop và bề ngang 375px không tràn trang, bảng cuộn ngang
+  trong khung; không lỗi JavaScript. Đọc lại trang phải phản ánh trạng thái/vai trò đã lưu.
+
 ## Truy vết nguồn
 
 - [AuthController](../../auth-service/src/main/java/com/hunre/authservice/controller/AuthController.java),
