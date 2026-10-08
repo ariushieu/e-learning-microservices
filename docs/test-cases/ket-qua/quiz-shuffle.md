@@ -3,6 +3,11 @@
 Ngày 08/10/2026. Nhánh `quiz-service`, đồng bộ `main` tới `53bb8f6` (#85).
 Kiểm phần code trong cùng commit với biên bản này, trước khi commit/push.
 
+Trước khi mở PR, `main` có thêm #87 (`8050d85`): đã gộp vào `quiz-service` và chạy
+lại toàn bộ Maven `verify`: **984 test, 0 failure/error/skip**, BUILD SUCCESS, 4 phút
+07 giây. Frontend typegen, tsc, lint và production build trên bản gộp cũng PASS.
+Kết quả API/UI MySQL dưới đây được ghi trước lần gộp này; #87 không đổi code quiz.
+
 ## Môi trường
 
 - Java 17; MySQL Community 8.0.46 cài trực tiếp trên Windows, instance QA riêng cổng 13306.
