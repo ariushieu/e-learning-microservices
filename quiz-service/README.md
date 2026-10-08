@@ -160,6 +160,25 @@ Web `/instructor/quizzes/{id}/results` liên kết từ trang soạn đề, có 
 học viên/phân trang, tỉ lệ đúng từng câu (dưới 50% được đánh dấu), trạng thái trống/tải/lỗi.
 Kiểm thử mới nằm ở `QuizResultsIntegrationTest` và nhóm QUIZ-17 trong collection.
 
+### Tải kết quả CSV (QUIZ-18)
+
+`GET /api/quizzes/{quizId}/results/export` có cùng quyền và cách tính với `/results`,
+nhưng xuất **toàn bộ** học viên, không phân trang. Mỗi dòng gồm tên, số lượt nộp, điểm cao
+nhất, Đạt/Chưa đạt, lần nộp gần nhất theo `Asia/Ho_Chi_Minh` (`dd/MM/yyyy HH:mm:ss`).
+Lượt làm thử, chưa nộp, hết giờ và lượt cũ chưa phân loại đều không có trong file.
+Đề chưa có kết quả vẫn tải file chỉ có header.
+
+Response là `text/csv; charset=UTF-8`, có BOM và CRLF, tên tải về
+`ket-qua-quiz-<id>.csv`. Tên bắt đầu bằng `=`, `+`, `-`, `@`, tab, CR hoặc LF được thêm
+dấu nháy đơn; dấu kép được nhân đôi, ô chứa phẩy/kép/xuống dòng được bao bằng dấu kép.
+Chỉ xử lý khi xuất, không thay tên đã lưu. Không khai `produces`, nên vẫn hoạt động khi
+cầu nối web gửi `Accept: application/json`. Lỗi giữ response JSON 401/403/404 thông thường.
+
+Nút **Tải CSV** trên trang kết quả là link tải trực tiếp qua `/api` của web; cầu nối
+chuyển tiếp `Content-Disposition` để giữ tên file. Kiểm tra bằng nhóm QUIZ-18 trong
+collection sau QUIZ-17; nhóm này đổi tên tài khoản QA học viên, đăng nhập lại để có JWT
+mới, nộp bài rồi tải CSV; khôi phục tên sau kiểm thử.
+
 ### Kết quả kiểm chứng ngày 06/10/2026
 
 Phần kiểm ghi danh (sau thay đổi quyền sở hữu):
