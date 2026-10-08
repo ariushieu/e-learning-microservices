@@ -93,7 +93,7 @@ class EnrollmentServiceTest {
                 .build();
         when(enrollmentRepository.save(any(Enrollment.class))).thenReturn(saved);
 
-        EnrollmentResponse response = enrollmentService.enroll(userId, request);
+        EnrollmentResponse response = enrollmentService.enroll(userId, "Nguyễn Văn A", request);
 
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(50L);
@@ -118,7 +118,7 @@ class EnrollmentServiceTest {
                 .build()));
         when(enrollmentRepository.existsByUserIdAndCourseId(userId, courseId)).thenReturn(true);
 
-        assertThatThrownBy(() -> enrollmentService.enroll(userId, request))
+        assertThatThrownBy(() -> enrollmentService.enroll(userId, "Nguyễn Văn A", request))
                 .isInstanceOf(DuplicateResourceException.class);
     }
 
@@ -135,7 +135,7 @@ class EnrollmentServiceTest {
                 .status("DRAFT")
                 .build()));
 
-        assertThatThrownBy(() -> enrollmentService.enroll(userId, request))
+        assertThatThrownBy(() -> enrollmentService.enroll(userId, "Nguyễn Văn A", request))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("chưa được xuất bản");
     }
@@ -149,7 +149,7 @@ class EnrollmentServiceTest {
 
         when(courseClient.getCourseById(courseId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> enrollmentService.enroll(userId, request))
+        assertThatThrownBy(() -> enrollmentService.enroll(userId, "Nguyễn Văn A", request))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 

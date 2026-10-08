@@ -55,11 +55,17 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     @Transactional
-    public EnrollmentResponse enroll(Long currentUserId, EnrollCourseRequest request) {
+    public EnrollmentResponse enroll(Long currentUserId, String learnerName, EnrollCourseRequest request) {
         if (currentUserId == null) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED, "Người dùng chưa được xác thực");
         }
         Long courseId = request.getCourseId();
+
+        if (learnerName == null || learnerName.isBlank() || learnerName.length() > 150) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED,
+                    "Vui lòng đăng nhập lại để xác nhận tên học viên");
+        }
+        String verifiedName = learnerName.strip();
 
         // 1. Kiểm tra khóa học tồn tại trong snapshot và đã PUBLISHED
         CourseDto course = courseClient.getCourseById(courseId)
@@ -80,6 +86,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
             if (existing.getStatus() == EnrollmentStatus.CANCELLED) {
                 // Tái kích hoạt lại lượt ghi danh đã từng hủy
                 existing.setStatus(EnrollmentStatus.ACTIVE);
+                existing.setLearnerName(verifiedName);
                 existing.setLastAccessedAt(Instant.now());
                 Enrollment reactivated = enrollmentRepository.save(existing);
                 saveEnrollmentCreatedOutboxEvent(reactivated, course.getTitle());
@@ -96,6 +103,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         Instant now = Instant.now();
         Enrollment enrollment = Enrollment.builder()
                 .userId(currentUserId)
+                .learnerName(verifiedName)
                 .courseId(courseId)
                 .status(EnrollmentStatus.ACTIVE)
                 .progressPercent(BigDecimal.ZERO)

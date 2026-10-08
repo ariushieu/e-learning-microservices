@@ -1,7 +1,7 @@
 # Chạy collection enrollment qua gateway
 
 Import [enrollment.postman_collection.json](enrollment.postman_collection.json), chọn **No environment**,
-chạy toàn collection từ **0. Chuẩn bị**, một iteration, theo thứ tự đã lưu. Collection có 154 request
+chạy toàn collection từ **0. Chuẩn bị**, một iteration, theo thứ tự đã lưu. Collection có 182 request
 và hai PUT đồng thời trong script ENROLL-07.16. Không cần nhập ID hoặc token bằng tay.
 
 ## Môi trường
@@ -43,6 +43,10 @@ Không chạy các thư mục ghi/xóa rời rạc khi chưa có tiền điều 
   cả hai kết thúc trước GET kiểm kết quả. Cách này chạy được trong cả Postman và Newman 6.
 - ENROLL-10 kiểm API xác minh công khai, không có email/ID trong dữ liệu, quyền các đường dẫn
   lân cận, xóa chứng chỉ và tên khóa không đổi sau khi cấp.
+- ENROLL-11 kiểm danh sách học viên của A, quyền B/S/admin/khách, tên từ token, lọc trạng thái,
+  phân trang/sort, tiến độ 50% và chứng chỉ khi hoàn thành. Các ca nằm ở nhiều thư mục theo vòng đời
+  fixture; không chạy riêng thư mục 1b để kết luận đã kiểm đủ. Dữ liệu cũ NULL và JWT thiếu tên được
+  kiểm bằng test tích hợp; migration MySQL và giao diện cần kiểm riêng.
 
 **ENROLL-01.10:** HTTP 404 chưa đủ chứng minh snapshot ARCHIVED đã đến. Đối chiếu thêm log consumer
 hoặc đọc snapshot trong database; nếu chưa xác nhận đồng bộ, biên bản vẫn ghi BLOCKED cho tiền điều kiện này.

@@ -94,6 +94,25 @@ Cổng nội bộ enrollment là 8083; demo và kiểm tra tích hợp đi qua g
 | GET | `/api/certificates/verify/{code}` | Công khai: tên học viên, tên khóa, ngày cấp và mã chứng chỉ |
 | PUT | `/api/lessons/{lessonId}/progress` | `{"courseId":10,"status":"COMPLETED","watchedSeconds":300}` |
 | GET | `/api/progress?courseId=10` | Tiến độ tổng và từng bài học |
+| GET | `/api/courses/{courseId}/learners?status=ACTIVE&page=0&size=10&sort=progressPercent,desc` | Danh sách học viên, chỉ INSTRUCTOR sở hữu khóa hoặc ADMIN |
+
+Danh sách học viên kiểm quyền từ `course_snapshots.instructor_id`, không gọi course-service.
+Không token → 401, khác chủ khóa/không đúng vai trò → 403, thiếu snapshot → 404. Khóa ARCHIVED
+còn snapshot vẫn xem được. Gateway dùng route GET riêng `enrollment-course-learners`, order=-10;
+enrollment-service giữ đường dẫn này riêng tư dù wildcard GET courses ở gateway là công khai.
+Triển khai gateway và enrollment-service cùng nhau.
+
+API trả `PageResponse`, mặc định page=0/size=10/enrolledAt desc, size tối đa 100; chỉ sort
+`enrolledAt`, `progressPercent` (asc/desc), với id desc làm thứ tự phụ ổn định. Có thể lọc ACTIVE,
+CANCELLED, COMPLETED. Các trường mỗi dòng: enrollmentId, userId, learnerName, status,
+progressPercent, enrolledAt, lastAccessedAt, completedAt, certificateCode; không có email.
+Chứng chỉ được đọc theo lô cho trang hiện tại.
+
+Migration V3 thêm `enrollments.learner_name` nullable. Ghi danh/kích hoạt lại lưu fullName từ JWT
+đã kiểm chữ ký; không nhận tên từ body/query. Token thiếu tên hợp lệ trả 401 để đăng nhập lại.
+Lượt cũ giữ NULL, web hiện `Học viên #<userId>`; xem danh sách không backfill bằng tên giảng viên.
+Component `course-learners.tsx` nằm dưới phần quản lý khóa, có lọc/sort, phân trang, làm mới và
+trạng thái tải/rỗng/lỗi; xem ca ENROLL-11 trong docs/test-cases/enrollment.md.
 
 PATCH chỉ chấp nhận yêu cầu chuyển sang CANCELLED. Gửi enum ACTIVE hoặc COMPLETED
 nhận 422: tái kích hoạt qua POST ghi danh, hoàn thành do tiến độ tự tính. Thiếu trạng thái

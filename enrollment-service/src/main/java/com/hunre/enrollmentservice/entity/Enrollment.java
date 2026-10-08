@@ -39,6 +39,9 @@ public class Enrollment {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(name = "learner_name", length = 150)
+    private String learnerName;
+
     @Column(name = "course_id", nullable = false)
     private Long courseId;
 

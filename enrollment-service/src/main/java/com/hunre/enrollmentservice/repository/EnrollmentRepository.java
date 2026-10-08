@@ -1,6 +1,7 @@
 package com.hunre.enrollmentservice.repository;
 
 import com.hunre.enrollmentservice.entity.Enrollment;
+import com.hunre.enrollmentservice.entity.EnrollmentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -26,6 +27,10 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     boolean existsByUserIdAndCourseId(Long userId, Long courseId);
 
     Page<Enrollment> findAllByUserId(Long userId, Pageable pageable);
+
+    Page<Enrollment> findAllByCourseId(Long courseId, Pageable pageable);
+
+    Page<Enrollment> findAllByCourseIdAndStatus(Long courseId, EnrollmentStatus status, Pageable pageable);
 
     List<Enrollment> findAllByUserId(Long userId);
 
