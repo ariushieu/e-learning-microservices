@@ -16,7 +16,7 @@ import urllib.request
 import uuid
 from datetime import datetime, timezone
 
-from confluent_kafka import Consumer, ConsumerGroupTopicPartitions, KafkaError, Producer, TopicPartition
+from confluent_kafka import Consumer, ConsumerGroupTopicPartitions, KafkaError, KafkaException, Producer, TopicPartition
 from confluent_kafka.admin import (AdminClient, AclBinding, AclBindingFilter, AclOperation,
                                   AclPermissionType, NewTopic, ResourcePatternType, ResourceType)
 
@@ -165,7 +165,19 @@ class Probe:
         partitions = self.admin.list_topics(topic, timeout=15).topics[topic].partitions
         assignments = []
         for partition in partitions:
-            _, end = consumer.get_watermark_offsets(TopicPartition(topic, partition), timeout=10)
+            def watermark():
+                try:
+                    return consumer.get_watermark_offsets(TopicPartition(topic, partition), timeout=5)
+                except KafkaException as error:
+                    # CreateTopics can finish before every client's metadata sees
+                    # the new leader. Retry only these startup metadata errors.
+                    if error.args[0].code() in (KafkaError.NOT_LEADER_FOR_PARTITION,
+                                                KafkaError.LEADER_NOT_AVAILABLE,
+                                                KafkaError.UNKNOWN_TOPIC_OR_PART):
+                        consumer.list_topics(topic, timeout=5)
+                        return None
+                    raise
+            _, end = wait_for("new topic partition leader ready", watermark, timeout=30)
             assignments.append(TopicPartition(topic, partition, end))
         consumer.assign(assignments)
         self.readers.append(consumer)
