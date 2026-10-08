@@ -395,6 +395,28 @@ Không công khai email/userId. Quyền viết dựa trên lịch sử ghi danh,
 | 24 | Hai người ghi đồng thời | S,A | Hai PUT reviews/me rating 5 và 3 | 200; trung bình 4, đúng 2 lượt |
 | 25 | Cùng người gửi đồng thời nhiều lần | S | Sáu PUT reviews/me rating 2 | 200; vẫn 2 lượt, trung bình 2.5 |
 
+## COURSE-26 — URL tài liệu đính kèm
+
+POST /api/lessons/{lessonId}/resources, fixture bài xem thử riêng.
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | URL HTTPS hợp lệ | A | POST resources fileUrl=https://example.com/slides.pdf | 201; đọc lại đúng liên kết |
+| 2 | URL HTTP hợp lệ | A | POST resources fileUrl=http://example.com/a.pdf | 201; đọc lại đúng liên kết |
+| 3 | Chặn javascript | A | POST resources fileUrl=javascript:alert(1) | 400; VALIDATION_FAILED, fieldErrors.fileUrl; không lưu |
+| 4 | Chặn giao thức trộn hoa thường | A | POST resources fileUrl=JaVaScRiPt:alert(1) | 400; VALIDATION_FAILED, fieldErrors.fileUrl; không lưu |
+| 5 | Chặn data | A | POST resources fileUrl=data:text/html,test | 400; VALIDATION_FAILED, fieldErrors.fileUrl; không lưu |
+| 6 | Chặn file | A | POST resources fileUrl=file:///tmp/a | 400; VALIDATION_FAILED, fieldErrors.fileUrl; không lưu |
+| 7 | Chặn FTP | A | POST resources fileUrl=ftp://example.com/a | 400; VALIDATION_FAILED, fieldErrors.fileUrl; không lưu |
+| 8 | Chặn URL tương đối | A | POST resources fileUrl=/a.pdf | 400; VALIDATION_FAILED, fieldErrors.fileUrl; không lưu |
+| 9 | Chặn thiếu giao thức | A | POST resources fileUrl=//example.com/a | 400; VALIDATION_FAILED, fieldErrors.fileUrl; không lưu |
+| 10 | Chặn thiếu host | A | POST resources fileUrl=https:// | 400; VALIDATION_FAILED, fieldErrors.fileUrl; không lưu |
+| 11 | Chặn URL chứa khoảng trắng | A | POST resources fileUrl=https://example.com/a b | 400; VALIDATION_FAILED, fieldErrors.fileUrl; không lưu |
+| 12 | Chặn thông tin đăng nhập trong URL | A | POST resources fileUrl=https://u:p@example.com/a | 400; VALIDATION_FAILED, fieldErrors.fileUrl; không lưu |
+| 13 | Xóa tài liệu | A | DELETE resources/{resourceId} | 200; GET bài không còn tài liệu |
+
+Tự kiểm giao diện: thêm trong form sửa bài; trang học mở đúng liên kết; URL javascript báo lỗi dưới ô; xóa có xác nhận, hủy không xóa; lỗi mạng giữ dữ liệu; không tràn ở 375/768/1366px. Tổng điểm 4,5 hiển thị bốn sao và nửa sao.
+
 ## Truy vết nguồn
 
 - [Controllers](../../course-service/src/main/java/com/hunre/courseservice/controller).

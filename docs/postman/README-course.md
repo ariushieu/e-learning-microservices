@@ -3,7 +3,7 @@
 Import **`course.postman_collection.json`**, chọn **No environment** rồi chạy cả collection bằng
 Runner, một iteration, theo thứ tự đã lưu. Không cần import environment hay nhập ID/token.
 
-Collection thực hiện 220 ca `COURSE-01.1`–`COURSE-25.25` trong
+Collection thực hiện 233 ca `COURSE-01.1`–`COURSE-26.13` trong
 [course.md](../test-cases/course.md), cộng 16 ca hồi quy về sắp xếp, khóa lưu trữ và lọc danh mục cha/con.
 Các thư mục đọc chạy trước các thư mục ghi để giữ fixture nền ổn định. Không sắp xếp lại các
 request theo tên. Những thao tác có thể xóa/đổi dữ liệu dùng bản sao riêng.

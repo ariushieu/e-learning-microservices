@@ -322,6 +322,14 @@ add(reviewFolder,25,22,'PUT',reviewUrl+'/me','S',200,'{"rating":5,"userId":{{ins
 add(reviewFolder,25,23,'PUT',reviewUrl+'/me','S',200,{rating:4},"await status(id('reviewCourseId'),'ARCHIVED');",stats(1,4)+"await status(id('reviewCourseId'),'PUBLISHED');");
 add(reviewFolder,25,24,'GET',reviewUrl,'',200,null,"await Promise.all([call('PUT','/api/courses/'+id('reviewCourseId')+'/reviews/me',{rating:5},'studentToken'),call('PUT','/api/courses/'+id('reviewCourseId')+'/reviews/me',{rating:3},'tokenA')]);",stats(2,4)+"pm.test('Đúng hai người',()=>pm.expect(d.totalElements).eql(2));");
 add(reviewFolder,25,25,'GET',reviewUrl,'',200,null,"await Promise.all(Array.from({length:6},()=>call('PUT','/api/courses/'+id('reviewCourseId')+'/reviews/me',{rating:2},'studentToken')));",stats(2,2.5)+"pm.test('Không nhân đôi bản ghi',()=>pm.expect(d.totalElements).eql(2));");
+const urlFolder=folder('COURSE-26 — URL tài liệu đính kèm');
+const urlCases=[["URL HTTPS hợp lệ","https://example.com/slides.pdf",201],["URL HTTP hợp lệ","http://example.com/a.pdf",201],["Chặn javascript","javascript:alert(1)",400],["Chặn giao thức trộn hoa thường","JaVaScRiPt:alert(1)",400],["Chặn data","data:text/html,test",400],["Chặn file","file:///tmp/a",400],["Chặn FTP","ftp://example.com/a",400],["Chặn URL tương đối","/a.pdf",400],["Chặn thiếu giao thức","//example.com/a",400],["Chặn thiếu host","https://",400],["Chặn URL chứa khoảng trắng","https://example.com/a b",400],["Chặn thông tin đăng nhập trong URL","https://u:p@example.com/a",400]];
+for(const [index,[title,fileUrl,code]] of urlCases.entries()) {
+  add(urlFolder,26,index+1,'POST','/api/lessons/{{urlLessonId}}/resources','A',code,{name:title,fileUrl},
+    index===0 ? "const sec=await section(id('reviewCourseId')); const l=await lesson(sec.id);set('urlLessonId',l.id);" : '',
+    code===201 ? "set('urlResourceId',d.id); const l=await call('GET','/api/lessons/'+id('urlLessonId'));pm.test('Đọc đúng liên kết',()=>pm.expect(l.resources.some(r=>r.id===d.id&&r.fileUrl===d.fileUrl)).eql(true));" : "pm.test('Lỗi nằm ở ô URL',()=>{pm.expect(json.code).eql('VALIDATION_FAILED');pm.expect(json.fieldErrors.some(e=>e.field==='fileUrl')).eql(true);}); const l=await call('GET','/api/lessons/'+id('urlLessonId'));pm.test('Không lưu URL sai',()=>pm.expect(l.resources.length).eql(2));");
+}
+add(urlFolder,26,13,'DELETE','/api/lessons/{{urlLessonId}}/resources/{{urlResourceId}}','A',200,null,'',"const l=await call('GET','/api/lessons/'+id('urlLessonId'));pm.test('Đã xóa tài liệu',()=>pm.expect(l.resources.map(r=>r.id)).not.include(id('urlResourceId')));");
 for(const key of cases.keys())if(!seen.has(key))throw Error('Missing case '+key);
 // Giữ thứ tự đọc trước ghi để các tình huống đọc luôn có fixture nền nguyên vẹn.
 fs.writeFileSync(path.join(root,'docs/postman/course.postman_collection.json'),JSON.stringify(collection,null,2)+'\n');
