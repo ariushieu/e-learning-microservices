@@ -3,20 +3,8 @@ import type { ReactNode } from "react";
 import { IconTile } from "@/components/common/icon-tile";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { safeUrl } from "@/lib/safe-url";
 import type { Lesson } from "@/lib/types";
-
-/** Chỉ cho phép link http(s) hoặc đường dẫn nội bộ: URL do giảng viên nhập, có thể là `javascript:`. */
-export function safeUrl(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  const url = raw.trim();
-  if (url.startsWith("/") && !url.startsWith("//")) return url;
-  try {
-    const u = new URL(url);
-    return u.protocol === "http:" || u.protocol === "https:" ? u.toString() : null;
-  } catch {
-    return null;
-  }
-}
 
 export function youtubeId(raw: string): string | null {
   let u: URL;
@@ -92,7 +80,7 @@ function FileCard({ href, title }: { href: string; title: string }) {
 
 /** Nội dung một bài học. Dùng được ở server; không render HTML từ giảng viên, chỉ văn bản thuần. */
 export function LessonContent({ lesson }: { lesson: Lesson }) {
-  const url = safeUrl(lesson.contentUrl);
+  const url = safeUrl(lesson.contentUrl, { allowInternal: true });
   const hasContent = Boolean(lesson.content || url || lesson.resources.length);
 
   if (!hasContent) {
