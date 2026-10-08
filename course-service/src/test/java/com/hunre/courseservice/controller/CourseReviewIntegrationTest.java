@@ -67,6 +67,127 @@ class CourseReviewIntegrationTest {
         return reviews.findByCourseIdAndUserId(id, user).orElseThrow().getId();
     }
 
+    String replyUrl() { return url()+"/"+reviewId(60)+"/reply"; }
+
+    @Test void replyLifecyclePreservesRatingAndUsesAuthenticatedManager() throws Exception {
+        save(60, 5);
+        String path = replyUrl();
+        mvc.perform(put(path).header("Authorization", token(50, "ROLE_INSTRUCTOR"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"content\":\" Cảm ơn bạn \" ,\"repliedBy\":999}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.reply").value("Cảm ơn bạn"))
+                .andExpect(jsonPath("$.data.repliedAt").isNotEmpty())
+                .andExpect(jsonPath("$.data.repliedBy").doesNotExist());
+        assertThat(reviews.findById(reviewId(60)).orElseThrow().getRepliedBy()).isEqualTo(50L);
+        Instant time = reviews.findById(reviewId(60)).orElseThrow().getRepliedAt();
+        save(60, 2);
+        mvc.perform(get(url())).andExpect(jsonPath("$.data.content[0].reply").value("Cảm ơn bạn"));
+        assertThat(reviews.findById(reviewId(60)).orElseThrow().getRepliedAt()).isEqualTo(time);
+        stats(1, "2.00");
+        mvc.perform(put(path).header("Authorization", token(99, "ROLE_ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"<script>alert(1)</script>\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.reply").value("<script>alert(1)</script>"));
+        assertThat(reviews.findById(reviewId(60)).orElseThrow().getRepliedBy()).isEqualTo(99L);
+        mvc.perform(delete(path).header("Authorization", token(50, "ROLE_INSTRUCTOR"))).andExpect(status().isOk());
+        var row = reviews.findById(reviewId(60)).orElseThrow();
+        assertThat(row.getReply()).isNull(); assertThat(row.getRepliedAt()).isNull(); assertThat(row.getRepliedBy()).isNull();
+        stats(1, "2.00");
+        mvc.perform(delete(path).header("Authorization", token(99, "ROLE_ADMIN"))).andExpect(status().isNotFound());
+    }
+
+    @ParameterizedTest @ValueSource(strings={"ROLE_STUDENT", "ROLE_UNKNOWN", "ROLE_INSTRUCTOR"})
+    void replyRejectsOtherUsersAndCannotBeForgedThroughReviewBody(String role) throws Exception {
+        save(60, 5);
+        for (long userId : List.of(60L, 61L)) {
+            mvc.perform(put(replyUrl()).header("Authorization", token(userId, role))
+                    .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"forged\"}"))
+                    .andExpect(status().isForbidden());
+            mvc.perform(delete(replyUrl()).header("Authorization", token(userId, role))).andExpect(status().isForbidden());
+        }
+        mvc.perform(put(url()+"/me").header("Authorization", token(60, "ROLE_STUDENT"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"rating\":5,\"reply\":\"forged\",\"repliedBy\":50}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.reply").isEmpty());
+        stats(1, "5.00");
+    }
+
+    @Test void ownerWithoutInstructorRoleAndUnsignedRequestsCannotReply() throws Exception {
+        save(60, 5);
+        mvc.perform(put(replyUrl()).header("Authorization", token(50, "ROLE_STUDENT"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"bad\"}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(delete(replyUrl()).header("Authorization", token(50, "ROLE_STUDENT"))).andExpect(status().isForbidden());
+        for (String auth : List.of("", "Bearer invalid")) {
+            mvc.perform(put(replyUrl()).header("Authorization", auth).contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"content\":\"bad\"}")).andExpect(status().isUnauthorized());
+            mvc.perform(delete(replyUrl()).header("Authorization", auth)).andExpect(status().isUnauthorized());
+        }
+    }
+
+    @ParameterizedTest @ValueSource(strings={"{}", "{\"content\":null}", "{\"content\":\"\"}", "{\"content\":\"   \\t\\n\"}"})
+    void replyContentCannotBeMissingOrBlank(String body) throws Exception {
+        save(60, 5);
+        mvc.perform(put(replyUrl()).header("Authorization", token(50, "ROLE_INSTRUCTOR"))
+                .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.fieldErrors[0].field").value("content"));
+        assertThat(reviews.findById(reviewId(60)).orElseThrow().getReply()).isNull();
+    }
+
+    @Test void replyLengthBoundsAndInvalidEditPreserveExistingReply() throws Exception {
+        save(60, 5);
+        for (int length : List.of(1, 1000)) {
+            mvc.perform(put(replyUrl()).header("Authorization", token(50, "ROLE_INSTRUCTOR"))
+                    .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\""+"x".repeat(length)+"\"}"))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.data.reply").value("x".repeat(length)));
+        }
+        mvc.perform(put(replyUrl()).header("Authorization", token(50, "ROLE_INSTRUCTOR"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\""+"x".repeat(1001)+"\"}"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+        assertThat(reviews.findById(reviewId(60)).orElseThrow().getReply()).hasSize(1000);
+        stats(1, "5.00");
+    }
+
+    @Test void replyRequiresMatchingCourseAndReview() throws Exception {
+        save(60, 5);
+        var other = courses.save(Course.builder().instructorId(50L).title("Other")
+                .slug(UUID.randomUUID().toString()).status(CourseStatus.PUBLISHED).build());
+        try {
+            for (String path : List.of("/api/courses/"+other.getId()+"/reviews/"+reviewId(60)+"/reply",
+                    url()+"/9223372036854775807/reply", "/api/courses/9223372036854775807/reviews/"+reviewId(60)+"/reply")) {
+                mvc.perform(put(path).header("Authorization", token(50, "ROLE_INSTRUCTOR"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"bad\"}")).andExpect(status().isNotFound());
+                mvc.perform(delete(path).header("Authorization", token(99, "ROLE_ADMIN"))).andExpect(status().isNotFound());
+            }
+            assertThat(reviews.findById(reviewId(60)).orElseThrow().getReply()).isNull();
+        } finally { courses.deleteById(other.getId()); }
+    }
+
+    @ParameterizedTest @ValueSource(booleans={true, false})
+    void removingReviewAlsoRemovesReply(boolean adminDeletes) throws Exception {
+        save(60, 5);
+        Long oldId = reviewId(60);
+        mvc.perform(put(replyUrl()).header("Authorization", token(50, "ROLE_INSTRUCTOR"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"Cảm ơn\"}")).andExpect(status().isOk());
+        mvc.perform(delete(url()+"/"+(adminDeletes ? oldId : "me"))
+                .header("Authorization", token(adminDeletes ? 99 : 60, adminDeletes ? "ROLE_ADMIN" : "ROLE_STUDENT")))
+                .andExpect(status().isOk());
+        assertThat(reviews.findById(oldId)).isEmpty();
+        save(60, 4);
+        assertThat(reviews.findById(reviewId(60)).orElseThrow().getReply()).isNull();
+        stats(1, "4.00");
+    }
+
+    @ParameterizedTest @ValueSource(strings={"DRAFT", "PENDING_REVIEW", "ARCHIVED"})
+    void privateCourseRepliesRemainPrivate(String courseStatus) throws Exception {
+        save(60, 5);
+        jdbc.update("UPDATE courses SET status=? WHERE id=?", courseStatus, id);
+        mvc.perform(put(replyUrl()).header("Authorization", token(50, "ROLE_INSTRUCTOR"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"Cảm ơn\"}")).andExpect(status().isOk());
+        mvc.perform(get(url())).andExpect(status().isNotFound());
+        mvc.perform(get(url()).header("Authorization", token(50, "ROLE_INSTRUCTOR")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.content[0].reply").value("Cảm ơn"));
+    }
+
     @Test void adminRemovesReviewAndLearnerCanWriteAgain() throws Exception {
         save(60, 5);
         save(61, 1);

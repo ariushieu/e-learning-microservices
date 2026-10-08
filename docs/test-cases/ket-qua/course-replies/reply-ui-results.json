@@ -1,0 +1,27 @@
+{
+  "tag": "replies-ui-1791446901831",
+  "courseId": 492,
+  "checks": [
+    "khách không có nút quản lý phản hồi",
+    "học viên không có nút quản lý phản hồi",
+    "giảng viên khác không có nút quản lý phản hồi",
+    "Khoảng trắng bị chặn ở form, không lưu",
+    "Lỗi lưu 503 giữ bản nháp và hiện thông báo",
+    "Lỗi backend theo ô content được hiển thị dưới ô nhập",
+    "A lưu phản hồi, cập nhật ngay và giữ trang 2",
+    "Khách thấy nhãn và nội dung phản hồi",
+    "Sửa phản hồi có HTML: hiển thị nguyên văn, không thực thi",
+    "S sửa số sao: giữ nguyên phản hồi/thời gian, tổng điểm khớp",
+    "Admin chưa ghi danh sửa được phản hồi qua giao diện",
+    "Hủy xác nhận xóa giữ nguyên phản hồi",
+    "Lỗi xóa giữ hộp xác nhận để thử lại",
+    "Xóa chỉ phản hồi, giữ đánh giá và cho trả lời lại",
+    "Form phản hồi không tràn ngang ở 375px",
+    "Form phản hồi không tràn ngang ở 768px",
+    "Form phản hồi không tràn ngang ở 1366px",
+    "Phản hồi gần 1000 ký tự, từ dài không làm tràn điện thoại",
+    "S xóa đánh giá: phản hồi không còn trên trang công khai",
+    "Không có lỗi JavaScript"
+  ],
+  "errors": []
+}

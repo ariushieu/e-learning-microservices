@@ -444,6 +444,47 @@ Fixture riêng: S đánh giá 5, B đánh giá 1; admin không ghi danh. Điểm
 Tự kiểm web: chỉ admin thấy nút Gỡ, giữ lại không xóa; gỡ xong cập nhật danh sách và tổng điểm;
 lỗi API giữ hộp xác nhận; gỡ đánh giá cuối trang trở về trang đầu; người bị gỡ viết lại được.
 
+## COURSE-28 — Giảng viên trả lời đánh giá
+
+Fixture riêng: khóa của A đã xuất bản, S ghi danh và đánh giá 5 sao. A/ADM quản lý phản hồi;
+B là giảng viên khác. Mọi đường dẫn dưới đây bắt đầu bằng `/api/courses/{courseId}/reviews`.
+
+| # | Tình huống | Tài khoản | Request | Mong đợi |
+|---|---|---|---|---|
+| 1 | Thiếu token khi trả lời | — | PUT /{reviewId}/reply | 401 |
+| 2 | Học viên không được trả lời | S | PUT /{reviewId}/reply | 403 |
+| 3 | Giảng viên khác không được trả lời | B | PUT /{reviewId}/reply | 403 |
+| 4 | Chủ khóa trả lời | A | PUT /{reviewId}/reply | 200; reply/repliedAt; điểm giữ 5/1 |
+| 5 | Khách đọc phản hồi | — | GET danh sách | 200; đúng nội dung/thời gian; không lộ repliedBy |
+| 6 | Chủ khóa sửa phản hồi | A | PUT /{reviewId}/reply | 200; một phản hồi mới thay nội dung cũ |
+| 7 | Học viên sửa đánh giá | S | PUT /me rating 2 | 200; phản hồi giữ nguyên, điểm 2/1 |
+| 8 | Admin sửa phản hồi | ADM | PUT /{reviewId}/reply | 200; không cần ghi danh |
+| 9 | Giảng viên khác không được xóa | B | DELETE /{reviewId}/reply | 403 |
+| 10 | Học viên không được xóa | S | DELETE /{reviewId}/reply | 403 |
+| 11 | Thiếu token khi xóa | — | DELETE /{reviewId}/reply | 401 |
+| 12 | Sai khóa khi trả lời | A | PUT review của khóa khác | 404 |
+| 13 | Sai khóa khi xóa | ADM | DELETE review của khóa khác | 404 |
+| 14 | Đánh giá không tồn tại | A | PUT missingId/reply | 404 |
+| 15 | Chỉ có khoảng trắng | A | PUT content trống | 400 VALIDATION_FAILED, ô content |
+| 16 | Thiếu content | A | PUT {} | 400 VALIDATION_FAILED |
+| 17 | Content null | A | PUT content null | 400 VALIDATION_FAILED |
+| 18 | Content 1001 ký tự | A | PUT content quá dài | 400; phản hồi cũ còn nguyên |
+| 19 | Content 1000 ký tự | A | PUT content tối đa | 200; đủ 1000 ký tự |
+| 20 | Content 1 ký tự | A | PUT content tối thiểu | 200 |
+| 21 | Nội dung HTML | A | PUT content có thẻ script | 200; lưu nguyên văn, UI không thực thi |
+| 22 | Chủ khóa xóa phản hồi | A | DELETE /{reviewId}/reply | 200; reply/repliedAt null, điểm 2/1 |
+| 23 | Xóa lại phản hồi đã mất | ADM | DELETE /{reviewId}/reply | 404 |
+| 24 | Trả lời và sửa sao đồng thời | A,S | PUT reply đồng thời PUT /me | 200; giữ cả phản hồi và điểm mới 4/1 |
+| 25 | Học viên xóa đánh giá có phản hồi | S | DELETE /me | 200; cả đánh giá/phản hồi mất, điểm 0/0 |
+| 26 | Học viên viết lại | S | PUT /me | 200; review mới, không có phản hồi cũ |
+| 27 | Admin gỡ đánh giá có phản hồi | ADM | DELETE /{reviewId} | 200; cả đánh giá/phản hồi mất |
+| 28 | Phản hồi khóa nháp không công khai | A | PUT reply khi DRAFT | 200; khách GET 404 |
+| 29 | Phản hồi khóa lưu trữ | A | PUT reply khi ARCHIVED | 200; học viên cũ thấy, khách GET 404 |
+
+Tự kiểm web: Trả lời/Sửa/Xóa chỉ hiện cho chủ khóa có vai trò giảng viên hoặc admin; xóa có
+xác nhận. Lỗi hiển thị theo ô, giữ bản nháp để thử lại. Khách thấy nhãn Phản hồi của giảng viên;
+HTML hiển thị dạng văn bản. Kiểm tra ở 375/768/1366px và giữ trang phân trang sau khi trả lời.
+
 ## Truy vết nguồn
 
 - [Controllers](../../course-service/src/main/java/com/hunre/courseservice/controller).
