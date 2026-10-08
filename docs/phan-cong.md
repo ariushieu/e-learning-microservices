@@ -21,9 +21,9 @@
 |---|---|---|---|---|
 | Hiếu | api-gateway, web | [Giới hạn đăng nhập theo IP thật](#hiếu--giới-hạn-đăng-nhập-theo-ip-thật) — hiện cả lớp dùng chung một xô | **Cao — xong trước demo** | ~1h |
 | quocluibotre | auth | [Trang tổng quan quản trị, hoàn thiện #70](#quocluibotre--trang-tổng-quan-quản-trị) | Trung bình | ~2h |
-| phamquyet19042005-netizen | enrollment | [Giảng viên xem học viên của khóa và tiến độ](#phamquyet19042005-netizen--giảng-viên-xem-học-viên-của-khóa) | Trung bình | ~3h |
-| hiepdeptrai0111 | quiz | [Giảng viên xem kết quả bài kiểm tra](#hiepdeptrai0111--giảng-viên-xem-kết-quả-bài-kiểm-tra) | Trung bình | ~3h |
-| duyd92689-debug | course | [Admin gỡ đánh giá vi phạm, hoàn thiện #69](#duyd92689-debug--admin-gỡ-đánh-giá-vi-phạm) | Trung bình | ~2h |
+| phamquyet19042005-netizen | enrollment | [Giảng viên xem học viên của khóa và tiến độ](#phamquyet19042005-netizen--giảng-viên-xem-học-viên-của-khóa) — #73, chờ review | Trung bình | ~3h |
+| hiepdeptrai0111 | quiz | [Giảng viên xem kết quả bài kiểm tra](#hiepdeptrai0111--giảng-viên-xem-kết-quả-bài-kiểm-tra) — #71, chờ review | Trung bình | ~3h |
+| duyd92689-debug | course | [Admin gỡ đánh giá vi phạm](#duyd92689-debug--admin-gỡ-đánh-giá-vi-phạm) — góp ý của #69 đang ở #72, chờ review | Trung bình | ~2h |
 
 Bốn việc của nhóm đều là **tính năng cho giảng viên và admin** — phần học viên đã đủ cho demo. Đã xong
 ở lượt này: tài liệu đính kèm trên khu giảng dạy (#69), admin tìm và khóa tài khoản (#70).
@@ -347,11 +347,8 @@ vào `quiz.md` và collection.
 - Web, mục "Đánh giá từ học viên" ở trang khóa học:
   - Admin thấy nút "Gỡ" trên từng nhận xét, có hộp thoại xác nhận; người khác không thấy nút.
   - Gỡ xong thì danh sách, điểm và số sao cập nhật ngay.
-- Hoàn thiện #69, góp ý khi review:
-  - `RatingStars`: `aria-label` đang dùng số thô; backend làm tròn 2 chữ số nên điểm 4,33 được đọc là
-    "4.33" trong khi màn hiện "4,3". Dùng `formatNumber(value, 1)`.
-  - `safeLink` trong `lesson-resources.tsx` gần trùng `safeUrl` ở `components/enrollment/lesson-content.tsx`:
-    đưa vào `lib/` dùng chung, sửa cả hai chỗ gọi (`lib/` là của Hiếu, CODEOWNERS tự mời review).
+- Hai góp ý khi review #69 (`aria-label` của `RatingStars`, gom `safeUrl` vào `lib/`) đã có PR #72,
+  không làm lại ở đây.
 
 **Tự kiểm.** S đánh giá 5, B đánh giá 1 → trung bình 3. Admin gỡ đánh giá của B → trung bình 5, còn 1 lượt.
 Gỡ với `courseId` của khóa khác → 404. A (giảng viên của khóa) gọi → 403. B viết lại được. Thêm ca vào
