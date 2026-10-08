@@ -167,3 +167,8 @@ Dấu `→` thể hiện thứ tự các request cùng mã ca, kể cả chuẩn
 
 Xem [biên bản email ngày 08/10/2026](auth-email.md): kết quả API, migration MySQL thật,
 Edge 375/768/1366px và bằng chứng Docker CI. Kết quả cũ bên trên giữ nguyên theo commit đã chạy.
+
+## Quản lý phiên đăng nhập (AUTH-13)
+
+Xem [biên bản phiên đăng nhập ngày 08/10/2026](auth-sessions.md): HTTP thực tế từng ca,
+collection MySQL/Docker, 33 kiểm tra Edge và ảnh. Các biên bản cũ giữ nguyên theo commit đã chạy.

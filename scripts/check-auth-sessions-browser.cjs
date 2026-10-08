@@ -37,10 +37,21 @@ async function discardAccess(context) {
   try {
     for (const width of [1366, 768, 375]) {
       const context = await browser.newContext({ viewport: { width, height: 1000 } });
+      // This focused native stack has no notification service. Keep its background
+      // requests from racing the deliberately missing/invalid access-cookie fixtures.
+      // All auth requests still reach the real gateway and database.
+      await context.route("**/api/notifications**", (route) => route.fulfill({
+        status: 503, contentType: "application/json",
+        body: JSON.stringify({ success: false, message: "Notification service is outside this test stack" }),
+      }));
       const page = await context.newPage();
+      page.setDefaultNavigationTimeout(15000);
       const errors = [];
       page.on("pageerror", (error) => errors.push(error.message));
-      const pass = (test) => results.push({ width, test, result: "PASS" });
+      const pass = (test) => {
+        results.push({ width, test, result: "PASS" });
+        fs.writeFileSync(path.join(out, "browser-results.json"), JSON.stringify(results, null, 2));
+      };
       const email = `qa.sessions-ui.${Date.now()}.${width}@example.com`;
       await api("/api/auth/register", { email: ` ${email} `, password, fullName: "QA Session Browser" }, 201);
       const postman = await api("/api/auth/login", { email, password });
@@ -143,10 +154,12 @@ async function discardAccess(context) {
       await region.getByRole("button", { name: "Đăng xuất thiết bị này", exact: true }).click();
       await expect(dialog).toContainText("Bạn sẽ được đưa về trang đăng nhập");
       await dialog.getByRole("button", { name: "Xác nhận", exact: true }).click();
-      await page.waitForURL("**/login");
+      await page.waitForURL((url) => url.pathname === "/login", { waitUntil: "domcontentloaded" });
       assert.equal((await context.cookies()).some((c) => ["el_access", "el_refresh"].includes(c.name)), false);
-      await page.goto(web + "/profile");
-      await page.waitForURL((url) => url.pathname === "/login" && url.searchParams.get("next") === "/profile");
+      // Reopen in a fresh tab so the server-action redirect cannot race this navigation.
+      const reopened = await context.newPage();
+      await reopened.goto(web + "/profile");
+      await reopened.waitForURL((url) => url.pathname === "/login" && url.searchParams.get("next") === "/profile");
       assert.deepEqual(errors, []);
       pass("Self revoke clears cookies, redirects, protects profile; no JS errors");
       await context.close();
