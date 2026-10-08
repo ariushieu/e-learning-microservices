@@ -11,9 +11,20 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.List;
 
 @Repository
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
+    List<RefreshToken> findByUserIdAndRevokedAtIsNullAndExpiresAtAfterOrderByCreatedAtDescIdDesc(
+            Long userId, Instant now);
+
+    Optional<RefreshToken> findByIdAndUserId(Long id, Long userId);
+
+    @Modifying
+    @Query("UPDATE RefreshToken r SET r.revokedAt = :now WHERE r.user.id = :userId "
+            + "AND r.id <> :sessionId AND r.revokedAt IS NULL AND r.expiresAt > :now")
+    int revokeOtherSessions(@Param("userId") Long userId, @Param("sessionId") Long sessionId,
+                            @Param("now") Instant now);
     Optional<RefreshToken> findByTokenHash(String tokenHash);
 
     @Query("SELECT r.user.id FROM RefreshToken r WHERE r.tokenHash = :tokenHash")
