@@ -84,7 +84,6 @@ public class AuthServiceImpl implements AuthService {
         user.setLastLoginAt(Instant.now());
         userRepository.save(user);
 
-        String accessToken = jwtService.generateAccessToken(user);
         String rawRefreshToken = jwtService.generateRefreshToken();
         String tokenHash = jwtService.hashToken(rawRefreshToken);
 
@@ -93,10 +92,11 @@ public class AuthServiceImpl implements AuthService {
                 .user(user)
                 .tokenHash(tokenHash)
                 .expiresAt(expiresAt)
-                .userAgent(userAgent)
+                .userAgent(boundedUserAgent(userAgent))
                 .ipAddress(ipAddress)
                 .build();
         refreshTokenRepository.save(refreshToken);
+        String accessToken = jwtService.generateAccessToken(user, refreshToken.getId());
 
         log.info("User {} logged in successfully", user.getId());
 
@@ -136,7 +136,6 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository.save(currentToken);
 
         // Sinh cặp token mới
-        String newAccessToken = jwtService.generateAccessToken(user);
         String newRawRefreshToken = jwtService.generateRefreshToken();
         String newTokenHash = jwtService.hashToken(newRawRefreshToken);
 
@@ -145,10 +144,11 @@ public class AuthServiceImpl implements AuthService {
                 .user(user)
                 .tokenHash(newTokenHash)
                 .expiresAt(expiresAt)
-                .userAgent(userAgent)
+                .userAgent(boundedUserAgent(userAgent))
                 .ipAddress(ipAddress)
                 .build();
         refreshTokenRepository.save(newRefreshToken);
+        String newAccessToken = jwtService.generateAccessToken(user, newRefreshToken.getId());
 
         log.info("Refreshed token for user {}", user.getId());
 
@@ -197,6 +197,10 @@ public class AuthServiceImpl implements AuthService {
 
     private static String normalizePhone(String phone) {
         return phone == null || phone.isBlank() ? null : phone.trim();
+    }
+
+    private static String boundedUserAgent(String value) {
+        return value == null ? null : value.substring(0, Math.min(value.length(), 255));
     }
 
     @Override

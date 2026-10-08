@@ -1,6 +1,6 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { REFRESH_COOKIE, clearAuthCookies, gatewayUrl, refreshTokens, writeAuthCookies } from "../auth-shared";
 import { ApiError, errorMessage } from "../errors";
@@ -15,7 +15,7 @@ export interface FormState {
 async function post<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${gatewayUrl()}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "User-Agent": (await headers()).get("user-agent") ?? "" },
     body: JSON.stringify(body),
     cache: "no-store",
   });
@@ -80,7 +80,7 @@ export async function refreshSessionAction(): Promise<void> {
   const store = await cookies();
   const refreshToken = store.get(REFRESH_COOKIE)?.value;
   if (!refreshToken) return;
-  const auth = await refreshTokens(refreshToken);
+  const auth = await refreshTokens(refreshToken, (await headers()).get("user-agent"));
   if (auth) writeAuthCookies(store, auth);
 }
 

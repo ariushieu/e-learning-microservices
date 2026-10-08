@@ -28,6 +28,10 @@ public class JwtService {
     }
 
     public String generateAccessToken(User user) {
+        return generateAccessToken(user, null);
+    }
+
+    public String generateAccessToken(User user, Long sessionId) {
         Instant now = Instant.now();
         Instant expiry = now.plusMillis(jwtProperties.getAccessTokenExpirationMs());
 
@@ -40,6 +44,7 @@ public class JwtService {
                 .claim("email", user.getEmail())
                 .claim("fullName", user.getFullName())
                 .claim("roles", roles)
+                .claim("sid", sessionId)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))
                 .signWith(getSigningKey())
