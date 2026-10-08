@@ -155,7 +155,7 @@ async function noOverflow(page) {
         ["Mới trong 7 ngày", stats.newLast7Days],
       ]) {
         const card = page
-          .locator('[data-slot="card"]')
+          .locator('[data-slot="card"]:visible')
           .filter({ has: page.getByText(label, { exact: true }) });
         await expect(card.locator(".tabular-nums")).toHaveText(String(count));
       }
