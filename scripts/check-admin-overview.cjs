@@ -194,7 +194,7 @@ async function noOverflow(page) {
       pass("Admin searches qa.student and sees exactly one account");
       await search(page, prefix, "ROLE_STUDENT", "ACTIVE");
       await expect(rows(page)).toHaveCount(12);
-      await expect(page.getByText("14 người dùng · Trang 1/2", { exact: true })).toBeVisible();
+      await expect(page.getByRole("main").getByText("14 người dùng · Trang 1/2", { exact: true })).toBeVisible();
       await page.waitForLoadState("networkidle");
       await noOverflow(page);
       await page.screenshot({ path: path.join(out, `users-${width}.png`), fullPage: width >= 640 });
