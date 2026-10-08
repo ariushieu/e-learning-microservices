@@ -1,6 +1,6 @@
 # Bảng theo dõi công việc
 
-> **Cập nhật lần cuối:** 08/10/2026 — `main` ở `bb5023a`
+> **Cập nhật lần cuối:** 08/10/2026 — `main` ở `4454e87`
 >
 > File này là nơi duy nhất ghi ai đang làm gì. Xong một việc thì nhóm trưởng cập nhật ngay
 > tại đây, nên **cứ `git pull` là biết việc tiếp theo của mình**, không phải hỏi ai.
@@ -19,21 +19,22 @@
 
 | Người | Service | Việc đang mở | Ưu tiên | Cỡ |
 |---|---|---|---|---|
-| Hiếu | api-gateway, web | [Khách chưa đăng nhập dùng chung xô API](#hiếu--khách-chưa-đăng-nhập-dùng-chung-xô-api) — 30 khách mở trang chủ thì 4 trang lỗi | **Cao — xong trước demo** | ~2h |
-| quocluibotre | auth, web | [Quản lý phiên đăng nhập: xem máy đang đăng nhập, đăng xuất từ xa](#quocluibotre--quản-lý-phiên-đăng-nhập) | Trung bình | ~3h |
-| phamquyet19042005-netizen | enrollment | [Đạt bài kiểm tra thì bài học tự hoàn thành (nghe sự kiện Kafka)](#phamquyet19042005-netizen--đạt-bài-kiểm-tra-thì-bài-học-tự-hoàn-thành) | **Cao — chuỗi sự kiện cho demo** | ~3h |
-| hiepdeptrai0111 | quiz | [Xáo trộn giữ nguyên trong một lượt làm, thêm xáo đáp án](#hiepdeptrai0111--xáo-trộn-giữ-nguyên-trong-một-lượt-làm-thêm-xáo-đáp-án) — tải lại trang thì câu hỏi đổi chỗ | Trung bình | ~2h |
-| duyd92689-debug | course | [Đánh giá chờ phản hồi trong khu giảng dạy, hoàn thiện #84](#duyd92689-debug--đánh-giá-chờ-phản-hồi-hoàn-thiện-84) | Trung bình | ~2h |
+| Hiếu | api-gateway, web | [Khách chưa đăng nhập dùng chung xô API](#hiếu--khách-chưa-đăng-nhập-dùng-chung-xô-api) — 30 khách mở trang chủ thì 4 trang lỗi; số đánh giá ở sidebar chặn cả layout | **Cao — xong trước demo** | ~3h |
+| quocluibotre | auth, web | [Lịch sử đăng nhập, cảnh báo có người nhập sai mật khẩu; hoàn thiện #88](#quocluibotre--lịch-sử-đăng-nhập-hoàn-thiện-88) | Trung bình | ~3h |
+| phamquyet19042005-netizen | enrollment | [Đạt bài kiểm tra thì bài học tự hoàn thành (nghe sự kiện Kafka)](#phamquyet19042005-netizen--đạt-bài-kiểm-tra-thì-bài-học-tự-hoàn-thành) — **chưa bắt đầu**, làm trước mọi việc khác | **Cao — chuỗi sự kiện cho demo** | ~3h |
+| hiepdeptrai0111 | quiz | [Rút ngẫu nhiên N câu từ đề cho mỗi lượt làm](#hiepdeptrai0111--rút-ngẫu-nhiên-n-câu-từ-đề-cho-mỗi-lượt-làm) | Trung bình | ~3h |
+| duyd92689-debug | course | [Trang giảng viên công khai: khóa đang dạy, số học viên, điểm đánh giá](#duyd92689-debug--trang-giảng-viên-công-khai) | Trung bình | ~2h |
 
 Đã xong ở lượt này:
 
-- Số liệu học tập của khóa: tỉ lệ hoàn thành từng bài, bài học viên bỏ dở (#81).
-- Email phân biệt dấu: `hocviên@…` không còn vào được `hocvien@…` (#82).
-- Nhập câu hỏi từ CSV, một dòng sai thì không nhập câu nào (#83).
-- Giảng viên trả lời đánh giá (#84).
+- Hộp "đánh giá chờ phản hồi" cho giảng viên, số chờ trên sidebar (#87).
+- Quản lý phiên đăng nhập, đăng xuất từ xa; web lưu đúng trình duyệt thay vì `node` (#88).
+- Thứ tự xáo giữ nguyên khi tải lại trang giữa lượt làm, thêm xáo đáp án (#89).
+- Kiểm thử tự động 5 ca sự cố MySQL/Kafka của enrollment trên Docker thật, kèm biên bản (#86, #90).
 
-Cả 4 pull request đều chạy thử trên Docker trước khi merge. Các điểm nhỏ còn lại ghi trong review và đã
-đưa vào việc mới bên dưới.
+Cả 5 pull request đều chạy thử trên Docker trước khi merge: collection của service, kịch bản API riêng
+và giao diện trên Edge (web production, màn 1366 và 375). Các điểm nhỏ còn lại ghi trong review và đã đưa
+vào việc mới bên dưới.
 
 **Luật merge mới (#77): không tự merge pull request của mình.** Ruleset của `main` giờ bắt CI xanh và
 nhóm trưởng duyệt. Mở pull request, chờ CI, rồi để đó: nhóm trưởng chạy thử trên Docker rồi duyệt và merge
@@ -45,7 +46,7 @@ và trang `/design`. Chạy cả hệ thống: `docker compose --profile app up 
 http://localhost:3000.
 
 **Collection Postman: đủ cả 7 file**, đều đã chạy thật trên Docker — auth, course, enrollment, quiz
-(#56, #57, #59, #60, cập nhật ở #64, #65, #67, #69, #70, #71, #73, #75, #78, #79, #81–#84) và gateway, notification, demo-flow (#66). Collection auth (#78) và enrollment (#81, kèm kiểm giao diện bằng Chromium) chạy luôn trong CI ở mọi pull request. Trước buổi demo, chạy
+(#56, #57, #59, #60, cập nhật ở #64, #65, #67, #69, #70, #71, #73, #75, #78, #79, #81–#84, #87–#89) và gateway, notification, demo-flow (#66). Collection auth (#78) và enrollment (#81, kèm kiểm giao diện bằng Chromium) chạy luôn trong CI ở mọi pull request. Trước buổi demo, chạy
 `demo-flow` trên máy mình để xem cả chuỗi còn thông (81 assertion, khoảng 12 giây). Quy ước chung ở
 [mục dưới](#cả-nhóm--collection-postman-của-service-mình). Ca FAIL hay việc mới sinh ra khi chạy
 collection thì sửa ở PR riêng như các việc trong bảng trên.
@@ -191,10 +192,10 @@ service đó. Không gộp chung một file: năm người cùng sửa một JSO
 
 | Người | File | Chạy tình huống | Trạng thái (chạy thật trên Docker) |
 |---|---|---|---|
-| quocluibotre | `docs/postman/auth.postman_collection.json` | [auth.md](test-cases/auth.md) | Xong #57, #65, #70, #78, #82 — 739/739 assertion (3 ca BLOCKED vì cần fixture riêng); chạy trong CI |
-| duyd92689-debug | `docs/postman/course.postman_collection.json` | [course.md](test-cases/course.md) | Xong #56, #64, #69, #79, #84 — 973/973 |
-| phamquyet19042005-netizen | `docs/postman/enrollment.postman_collection.json` | [enrollment.md](test-cases/enrollment.md) | Xong #60, #73, #81 — 432/432; chạy trong CI |
-| hiepdeptrai0111 | `docs/postman/quiz.postman_collection.json` | [quiz.md](test-cases/quiz.md) | Xong #59, #67, #71, #75, #83 — 548/548 |
+| quocluibotre | `docs/postman/auth.postman_collection.json` | [auth.md](test-cases/auth.md) | Xong #57, #65, #70, #78, #82, #88 — 839/839 assertion (3 ca BLOCKED vì cần fixture riêng); chạy trong CI |
+| duyd92689-debug | `docs/postman/course.postman_collection.json` | [course.md](test-cases/course.md) | Xong #56, #64, #69, #79, #84, #87 — 1028/1028 |
+| phamquyet19042005-netizen | `docs/postman/enrollment.postman_collection.json` | [enrollment.md](test-cases/enrollment.md) | Xong #60, #73, #81 — 432/432; chạy trong CI. ENROLL-09 (sự cố MySQL/Kafka) 5/5 trong workflow riêng (#86, #90) |
+| hiepdeptrai0111 | `docs/postman/quiz.postman_collection.json` | [quiz.md](test-cases/quiz.md) | Xong #59, #67, #71, #75, #83, #89 — 605/605 |
 | Hiếu | `gateway`, `notification`, `demo-flow` | [gateway.md](test-cases/gateway.md), [notification.md](test-cases/notification.md) | Xong #66, #76 — gateway 33/33 ca (G-RATE 37/37 assertion), notification 55/55 ca, demo-flow 81/81 |
 
 Chạy collection bằng dòng lệnh (chỉ dùng pnpm):
@@ -245,46 +246,42 @@ với nguyên dữ liệu cũ là khóa được đồng bộ. Hoặc dùng khó
 
 ---
 
-### quocluibotre — quản lý phiên đăng nhập
+### quocluibotre — lịch sử đăng nhập, hoàn thiện #88
 
-> Mỗi lần đăng nhập, auth-service lưu một refresh token kèm `user_agent`. Nhưng người dùng không xem được
-> mình đang đăng nhập ở những máy nào, và không đăng xuất từ xa được: quên đăng xuất ở phòng máy trường
-> thì chỉ còn cách đổi mật khẩu. Thêm nữa, mọi lần đăng nhập qua web đang lưu `user_agent = "node"`, vì
-> server Next.js gọi gateway bằng user agent của chính nó (xem trong bảng `refresh_tokens` trên Docker).
+> Từ #88 người dùng thấy các máy đang đăng nhập và đăng xuất từ xa được. Nhưng họ chưa biết **có ai đang
+> thử mật khẩu của mình** hay không: lần đăng nhập sai không được ghi lại ở đâu cả. Thêm nữa, dòng "Bắt
+> đầu" của mỗi phiên lấy `createdAt` của refresh token. Mỗi lần xoay token (khoảng 15 phút một lần) dòng
+> này nhảy về giờ mới, nên không còn đúng là lúc đăng nhập.
 
 **Cần làm.**
 
 - auth-service:
-  - Access token mang thêm claim `sid`: id của refresh token sinh cùng lúc, cả khi đăng nhập lẫn khi đổi
-    token.
-  - `GET /api/auth/sessions`: các phiên còn hạn, chưa thu hồi của người gọi, mới nhất trước. Mỗi phiên
-    gồm:
-    - `id` và `createdAt`.
-    - `device`: trình duyệt + hệ điều hành rút từ user agent, ví dụ "Edge trên Windows". Không nhận ra thì
-      ghi "Thiết bị khác".
-    - `current`: `true` nếu `id` trùng `sid` trong token.
-  - `DELETE /api/auth/sessions/{id}`: thu hồi một phiên của chính mình. Phiên của người khác trả 404,
-    không trả 403, để không lộ id nào tồn tại.
-  - `POST /api/auth/sessions/revoke-others`: thu hồi mọi phiên trừ phiên hiện tại.
-  - Không trả IP: qua frontend thì IP luôn là IP container (lý do ghi ở #76).
-  - README ghi rõ: phiên bị thu hồi thì refresh token hết dùng ngay, còn access token vẫn chạy tới khi hết
-    hạn.
-- Web:
-  - Server Next.js chuyển `User-Agent` của trình duyệt khi gọi đăng nhập và đổi token. Phần này nằm trong
-    `lib/` của Hiếu: sửa luôn trong pull request này, CODEOWNERS sẽ mời Hiếu review.
-  - Trang hồ sơ thêm mục "Phiên đăng nhập":
-    - Danh sách phiên; phiên đang dùng có nhãn "Thiết bị này".
-    - Nút đăng xuất từng phiên, và nút "Đăng xuất mọi thiết bị khác" có hộp xác nhận.
-- Hoàn thiện #82: email có khoảng trắng ở đầu hoặc cuối đang bị `@Email` trả 400 trước khi tới `trim()`.
-  Cắt khoảng trắng trước khi kiểm, ở cả đăng ký và đăng nhập.
+  - Migration mới: bảng `login_events` (`user_id`, `success`, `user_agent` tối đa 255 ký tự,
+    `created_at`).
+    - Ghi một dòng cho mỗi lần đăng nhập, đúng hoặc sai mật khẩu.
+    - Email không tồn tại thì không ghi gì, để bảng không thành nơi dò tài khoản nào có thật.
+  - `GET /api/auth/login-events?page=&size=`: lịch sử của chính người gọi, mới nhất trước. Mỗi dòng gồm
+    `success`, `device` (dùng lại hàm của #88) và `createdAt`. Không trả IP.
+  - `GET /api/auth/me` trả thêm `failedLoginsSinceLastSuccess`: số lần sai mật khẩu kể từ lần đăng nhập
+    đúng gần nhất, không tính lần đúng đang diễn ra.
+  - Hoàn thiện #88, giữ thời điểm đăng nhập gốc khi xoay token:
+    - Thêm `session_started_at` vào `refresh_tokens`.
+    - Đăng nhập thì gán bằng giờ hiện tại; xoay token thì chép từ token cũ sang.
+    - `GET /api/auth/sessions` trả trường này làm `startedAt`.
+  - Dọn dữ liệu: giữ 90 ngày gần nhất, xóa định kỳ bằng `@Scheduled`.
+- Web, trang hồ sơ:
+  - Mục "Hoạt động đăng nhập": bảng 10 dòng gần nhất, lần sai hiện nhãn đỏ "Sai mật khẩu".
+  - Sau khi đăng nhập, nếu `failedLoginsSinceLastSuccess > 0` thì hiện cảnh báo "Có N lần đăng nhập sai
+    vào tài khoản của bạn", kèm link tới mục phiên đăng nhập và đổi mật khẩu.
+  - Dòng "Bắt đầu" của phiên dùng `startedAt`.
 
 **Tự kiểm.**
 
-- Đăng nhập bằng Edge và bằng Postman → có 2 phiên. Xem từ Edge thì phiên Edge mang nhãn "Thiết bị này".
-- Từ web đăng xuất phiên Postman → Postman gọi `refresh-token` nhận 401.
-- "Đăng xuất mọi thiết bị khác" → chỉ còn phiên hiện tại, web vẫn dùng tiếp được.
-- Xóa phiên của người khác → 404. Không token → 401.
-- Đăng nhập bằng `" hocvien@hunre.edu.vn "` (có khoảng trắng) → 200.
+- Sai mật khẩu 3 lần rồi đăng nhập đúng → cảnh báo "3 lần"; lịch sử có 3 dòng sai và 1 dòng đúng.
+- Đăng nhập đúng lần nữa → không còn cảnh báo.
+- Email không tồn tại → không thêm dòng nào vào bảng.
+- Xoay token → `startedAt` của phiên giữ nguyên, `id` đổi.
+- Người khác không xem được lịch sử của mình: không có tham số `userId` nào (A1).
 
 Thêm nhóm ca vào `auth.md` và collection. Collection auth chạy trong CI, nên ca mới phải ổn định.
 
@@ -333,73 +330,77 @@ bằng cách hỏi lại vài lần (tối đa vài giây), không `sleep` cố 
 
 ---
 
-### hiepdeptrai0111 — xáo trộn giữ nguyên trong một lượt làm, thêm xáo đáp án
+### hiepdeptrai0111 — rút ngẫu nhiên N câu từ đề cho mỗi lượt làm
 
-> Thấy khi review #83: bật "Xáo trộn câu hỏi" thì `GET /api/quizzes/{id}/take` gọi `Collections.shuffle`
-> **mỗi lần tải**. Học viên tải lại trang giữa chừng thì thứ tự câu đổi hết, câu đang làm dở nhảy chỗ.
-> Đáp án thì chưa xáo được: cả lớp thấy đáp án đúng ở cùng một vị trí, dễ nhắc nhau "câu 3 chọn B".
+> Từ #89 thứ tự xáo giữ nguyên trong một lượt làm. Bước tiếp theo tự nhiên là **ngân hàng câu hỏi**:
+> giảng viên soạn 30 câu, mỗi lượt học viên chỉ nhận 10 câu rút ngẫu nhiên. Mỗi người một bộ đề, khó chép
+> bài nhau, và làm lại cũng không gặp đúng các câu cũ. Seed theo lượt làm của #89 dùng lại được.
 
 **Cần làm.**
 
 - quiz-service:
-  - Thứ tự xáo cố định theo lượt làm:
-    - `/take` nhận người gọi và tìm lượt `IN_PROGRESS` của họ. Lấy id lượt đó làm seed
-      (`new Random(attemptId)`).
-    - Cùng một lượt thì tải bao nhiêu lần cũng ra một thứ tự; lượt mới thì thứ tự mới. Không cần lưu thêm
-      bảng nào.
-  - Thêm cài đặt `shuffleOptions` (migration mới, mặc định `false`): xáo đáp án trong từng câu theo cùng
-    seed. Câu `TRUE_FALSE` giữ thứ tự Đúng/Sai.
-  - Chấm điểm vẫn theo id đáp án, không theo vị trí.
-  - Những chỗ sau luôn hiện thứ tự gốc của đề: trang kết quả, thống kê (#71), CSV (#75), trang soạn đề của
-    tác giả.
-- Web, cài đặt đề: thêm ô "Xáo trộn đáp án" cạnh "Xáo trộn câu hỏi".
+  - Cài đặt `questionsPerAttempt` (migration mới, có thể null). Null hoặc lớn hơn số câu của đề thì lấy
+    hết như hiện nay.
+  - Khi **bắt đầu** lượt làm, rút N câu bằng seed của lượt đó và lưu id các câu đã rút (bảng
+    `attempt_questions`), không tính lại lúc tải đề. Sau đó tác giả sửa hay xóa câu thì lượt đang làm vẫn
+    giữ nguyên bộ câu của nó.
+  - `/take` chỉ trả các câu của lượt; vẫn áp dụng xáo câu và xáo đáp án của #89.
+  - Nộp bài:
+    - Chỉ chấm trên các câu đã rút; gửi đáp án cho câu ngoài bộ → 400.
+    - Điểm phần trăm tính trên tổng điểm của các câu đã rút.
+  - Trang kết quả chỉ hiện các câu của lượt đó. Thống kê #71: tỉ lệ đúng từng câu tính trên số lượt **có
+    gặp** câu đó, không phải trên mọi lượt.
+  - Kiểm khi lưu: `questionsPerAttempt` từ 1 tới 200.
+- Web, cài đặt đề: ô "Số câu mỗi lượt", để trống là lấy hết; dưới ô ghi "Đề có M câu". Trang làm bài và
+  trang kết quả hiện "Câu k/N" theo bộ câu của lượt.
 
-**Tự kiểm.** Đề 5 câu, bật cả hai cài đặt:
+**Tự kiểm.** Đề 12 câu, mỗi câu 1 điểm, `questionsPerAttempt` = 5:
 
-- Trong một lượt, S tải `/take` 5 lần → cùng thứ tự câu và đáp án.
-- S nộp rồi làm lượt mới → thứ tự khác.
-- Chọn đúng hết theo nội dung → 100 điểm dù vị trí đã đổi.
-- Câu `TRUE_FALSE` vẫn Đúng trước Sai.
-- Tắt cả hai cài đặt → thứ tự gốc.
+- Lượt của S có đúng 5 câu; tải lại trang thì vẫn 5 câu đó.
+- Đúng cả 5 câu → 100 điểm. Gửi đáp án cho câu ngoài bộ → 400.
+- Lượt thứ hai → bộ câu khác.
+- Tác giả xóa một câu giữa lúc S đang làm → S vẫn nộp được, chấm trên các câu còn lại.
+- Thống kê: câu chưa ai gặp hiện "Chưa có lượt nào".
+- Để trống → lấy đủ 12 câu như cũ.
 
 Thêm nhóm ca vào `quiz.md` và collection.
 
 ---
 
-### duyd92689-debug — đánh giá chờ phản hồi, hoàn thiện #84
+### duyd92689-debug — trang giảng viên công khai
 
-> Từ #84 giảng viên trả lời được đánh giá, nhưng phải mở từng trang khóa mới biết có đánh giá mới. Giảng
-> viên có 5 khóa thì không ai đi mở hết, và đánh giá chê cứ nằm đó không ai trả lời.
+> Thẻ khóa học và trang chi tiết đã hiện tên giảng viên, nhưng bấm vào thì không có gì. Học viên muốn biết
+> giảng viên này còn dạy khóa nào, được đánh giá ra sao trước khi ghi danh. `courses` đã có `instructorId`,
+> `instructorName`, số học viên và điểm đánh giá, nên course-service tự tính được.
 
 **Cần làm.**
 
 - course-service:
-  - `GET /api/instructor/reviews?replied=false&courseId=&page=&size=`:
-    - Trả đánh giá trên các khóa của người gọi (admin thấy mọi khóa), mới nhất trước.
-    - Mỗi dòng thêm `courseId` và `courseTitle`.
-    - Trả thêm `unrepliedCount`.
-    - Chỉ INSTRUCTOR và ADMIN; học viên 403. Lọc theo `courseId` của khóa người khác → 403.
+  - `GET /api/instructors/{id}`, công khai:
+    - `name`, `publishedCourses` (số khóa `PUBLISHED`), `totalStudents` (tổng `student_count` của các khóa
+      đó).
+    - `ratingAvg`: điểm trung bình **có trọng số theo số lượt đánh giá**, không lấy trung bình cộng các
+      khóa. `ratingCount`: tổng số lượt đánh giá.
+    - Giảng viên chưa có khóa `PUBLISHED` nào → 404, để không lộ tài khoản giảng viên chỉ có khóa nháp.
+  - Danh sách khóa của giảng viên dùng lại `GET /api/courses?instructorId=`. Kiểm lại rằng khách chỉ thấy
+    khóa `PUBLISHED`.
   - Khai route ở gateway (A4).
-- Web, khu giảng dạy:
-  - Trang `/instructor/reviews`:
-    - Danh sách thẻ đánh giá, lọc "Chưa trả lời / Đã trả lời / Tất cả" và theo khóa.
-    - Trả lời ngay tại chỗ bằng `ReviewReply` của #84.
-  - Sidebar thêm mục "Đánh giá" kèm số chưa trả lời; trang tổng quan khu giảng dạy thêm một thẻ.
-- Hoàn thiện #84 (đã ghi trong review):
-  1. Gõ lại nội dung hợp lệ thì xóa lỗi của ô ngay (`setFieldError(undefined)` trong `onChange`). Bộ đếm
-     `x/1000` hiện lại.
-  2. Phản hồi của admin mang nhãn "Phản hồi của quản trị viên": so `repliedBy` với `instructorId` của khóa
-     ở server.
-  3. Ghi vào README: `updatedAt` của đánh giá đổi cả khi có phản hồi, nên đừng dùng trường này để biết học
-     viên có sửa đánh giá hay không.
+- Web:
+  - Trang `/instructors/{id}`, công khai:
+    - Đầu trang: avatar chữ cái, tên và 3 thẻ số liệu (khóa học, học viên, đánh giá).
+    - Lưới thẻ khóa học dùng lại component của trang chủ, có phân trang.
+  - Tên giảng viên trên thẻ khóa và trang chi tiết khóa thành link tới trang này.
+  - Thêm `/instructors` vào danh sách trang công khai: kiểm `proxy.ts` không chặn. File này của Hiếu; nếu
+    phải sửa thì CODEOWNERS sẽ mời Hiếu review.
 
 **Tự kiểm.**
 
-- A có 2 khóa, mỗi khóa một đánh giá chưa trả lời → danh sách 2, đếm 2.
-- Trả lời một đánh giá → đếm 1; bộ lọc "Đã trả lời" thấy nó.
-- B không thấy đánh giá trên khóa của A; lọc theo `courseId` của A → 403.
-- S → 403. Admin thấy tất cả.
-- Admin trả lời → nhãn "Phản hồi của quản trị viên".
+- A có 2 khóa `PUBLISHED` (khóa 1: 2 lượt đánh giá 5 sao; khóa 2: 1 lượt 2 sao) và 1 khóa nháp:
+  - `publishedCourses` = 2.
+  - `ratingAvg` = 4.0, không phải 3.5.
+  - Khóa nháp không hiện ở đâu.
+- Giảng viên chỉ có khóa nháp → 404; id không tồn tại → 404.
+- Khách xem được, không cần đăng nhập. 375px không tràn ngang.
 
 Thêm nhóm ca vào `course.md` và collection.
 
@@ -422,6 +423,9 @@ Thêm nhóm ca vào `course.md` và collection.
 - Frontend gửi khóa này trong mọi lời gọi gateway từ server.
 - Ca G-RATE mới. Chạy lại phép thử 30 khách → không trang nào lỗi.
 - Build lại image frontend trong Docker: image đang chạy vẫn là bản trước #69.
+- Từ #87, layout khu giảng dạy/quản trị `await` số đánh giá chờ trước khi render. Tắt course-service thì
+  `/admin/users` (trang của auth) mất khoảng 3,8 s thay vì 1 s. Chuyển số này vào `Suspense` để layout
+  không phải chờ.
 
 **Sau demo:** kênh email cho thông báo (`emailEnabled` đã lưu nhưng chưa có kênh gửi; notification-service
 cũng chưa biết email người dùng).
@@ -432,6 +436,11 @@ cũng chưa biết email người dùng).
 
 | Ngày | PR | Việc | Người |
 |---|---|---|---|
+| 08/10 | #90 | Biên bản ENROLL-09 trên Docker: 5/5 ca, khớp artifact CI | phamquyet19042005-netizen |
+| 08/10 | #89 | Thứ tự xáo cố định theo lượt làm (seed = id lượt), thêm xáo đáp án; câu Đúng/Sai giữ nguyên | hiepdeptrai0111 |
+| 08/10 | #88 | Xem và đăng xuất phiên đăng nhập từ xa; access token có `sid`; web chuyển user agent thật; cắt khoảng trắng email | quocluibotre |
+| 08/10 | #87 | Hộp đánh giá chờ phản hồi của giảng viên, số chờ trên sidebar, nhãn phản hồi của quản trị viên | duyd92689-debug |
+| 08/10 | #86 | Workflow `Enrollment resilience`: demo-flow và 5 ca sự cố MySQL/Kafka trên Docker thật | phamquyet19042005-netizen |
 | 08/10 | #84 | Giảng viên của khóa và admin trả lời, sửa, xóa phản hồi dưới từng đánh giá | duyd92689-debug |
 | 08/10 | #83 | Nhập câu hỏi từ CSV: file mẫu, lỗi theo số dòng, đọc được file Excel; route `/api` chuyển nguyên byte file | hiepdeptrai0111 |
 | 08/10 | #82 | Email phân biệt dấu (V5 sang `utf8mb4_bin`, dừng nếu trùng), đăng ký chỉ nhận email ASCII | quocluibotre |
