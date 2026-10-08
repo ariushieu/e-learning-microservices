@@ -12,13 +12,14 @@ import { Pagination } from "@/components/common/pagination";
 import { ProgressMeter } from "@/components/common/progress-meter";
 import { Section } from "@/components/common/section";
 import { StatusBadge } from "@/components/common/status-badge";
+import { CourseLearningSummary } from "@/components/enrollment/course-learning-summary";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { api } from "@/lib/client";
 import { ApiError, errorMessage } from "@/lib/errors";
 import { formatDay, formatNumber } from "@/lib/format";
-import type { EnrollmentStatus, Page } from "@/lib/types";
+import type { EnrollmentStatus, Page, Section as CourseSection } from "@/lib/types";
 
 interface CourseLearner {
   enrollmentId: number;
@@ -44,7 +45,7 @@ type Result = { key: string } & (
   | { data?: never; error: string; unavailable: boolean }
 );
 
-export function CourseLearners({ courseId }: { courseId: number }) {
+export function CourseLearners({ courseId, sections }: { courseId: number; sections: CourseSection[] | null }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
@@ -89,6 +90,7 @@ export function CourseLearners({ courseId }: { courseId: number }) {
       count={current?.data?.totalElements}
       actions={<Button variant="outline" disabled={!current} onClick={() => setRevision((value) => value + 1)}><RefreshCwIcon /> Làm mới</Button>}
     >
+      <CourseLearningSummary courseId={courseId} sections={sections} revision={revision} />
       <div className="grid gap-3 sm:flex sm:flex-wrap">
         <label className="space-y-1 text-sm sm:min-w-44">
           <span>Trạng thái học</span>

@@ -13,9 +13,22 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.math.BigDecimal;
 
 @Repository
 public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
+
+    interface StatusSummary {
+        EnrollmentStatus getStatus();
+        long getEnrollmentCount();
+        BigDecimal getProgressTotal();
+    }
+
+    @Query("""
+            select e.status as status, count(e) as enrollmentCount, sum(e.progressPercent) as progressTotal
+            from Enrollment e where e.courseId = :courseId group by e.status
+            """)
+    List<StatusSummary> summarizeByCourseId(@Param("courseId") Long courseId);
 
     Optional<Enrollment> findByUserIdAndCourseId(Long userId, Long courseId);
 

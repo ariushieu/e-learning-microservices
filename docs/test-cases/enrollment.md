@@ -247,6 +247,47 @@ ENROLL-11 trong collection được đặt tại đúng thời điểm trước/
 Ca token đặc biệt, dữ liệu cũ và sort bằng nhau được kiểm trong `CourseLearnerApiIntegrationTest`.
 Ca migration MySQL và kiểm web phải ghi bằng chứng riêng; không tính PASS chỉ từ Newman/H2.
 
+## ENROLL-12 — GET /api/courses/{courseId}/learners/summary
+
+Cùng quyền theo snapshot và JWT với ENROLL-11, `Cache-Control: no-store`. Các số liệu là của
+toàn khóa, không phụ thuộc page/size/status của bảng học viên. `averageProgress` tính trung bình
+tiến độ của ACTIVE + COMPLETED; `completionRate` = COMPLETED / (ACTIVE + COMPLETED) × 100.
+Tỉ lệ từng bài = số lượt chưa hủy đã hoàn thành bài / (ACTIVE + COMPLETED) × 100.
+Mọi tỉ lệ và trung bình làm tròn HALF_UP đến hai chữ số thập phân; mẫu số 0 trả 0.
+`certificatesIssued` đếm chứng chỉ thực tế còn lưu, không suy ra từ số lượt COMPLETED.
+
+API `lessons` chỉ có bài đã có tiến độ thuộc lượt chưa hủy, kể cả IN_PROGRESS với completedCount=0.
+Snapshot không chứa danh sách ID bài; web ghép với đề cương hiện tại, bổ sung bài chưa ai học = 0,
+ẩn bài đã xóa và sắp xếp theo vị trí chương/bài. Không gọi course-service để tổng hợp số liệu.
+
+| # | Tình huống | Tài khoản | Mong đợi |
+|---|---|---|---|
+| 1 | Khóa đã đồng bộ nhưng chưa ai ghi danh | A | 200; toàn bộ số liệu 0, lessons=[] |
+| 2 | Chỉ D ghi danh, xong bài 1 rồi hủy | A | cancelled=1; các số liệu khác 0, lessons=[]; không NaN/chia cho 0 |
+| 3 | Khóa 2 bài: S xong cả hai; B xong bài 1; C chưa hoàn thành bài; D hủy | A | active=2, completed=1, cancelled=1, averageProgress=50, completionRate=33.33, certificatesIssued=1; bài 1 count=2/rate=66.67, bài 2 count=1/rate=33.33 |
+| 4 | Query status=CANCELLED&page=99&size=1 | A | Không thay đổi số liệu toàn khóa |
+| 5 | Admin không phải chủ khóa | ADMIN | 200, cùng số liệu với A |
+| 6 | Không token hoặc token sai | — | 401 do service kiểm JWT, dù đường dẫn GET ở gateway public |
+| 7 | B đã ghi danh, thêm instructorId=A | B | 403 |
+| 8 | S thêm userId=A; A mất vai trò giảng viên | S/A | 403; không dùng danh tính từ query |
+| 9 | Khóa không có snapshot | A | 404 |
+| 10 | courseId=0/-1/abc | A | 400 |
+| 11 | GET chi tiết khóa/đề cương; POST summary; GET summary/unknown | A/— | GET chi tiết/đề cương vẫn tới course-service; route enrollment chỉ nhận hai đường dẫn GET chính xác |
+| 12 | IN_PROGRESS, lượt khóa khác, tiến độ của D trước khi hủy | A | Không cộng nhầm vào số hoàn thành; loại lượt hủy khỏi cả trung bình và mẫu số |
+| 13 | 30 học viên, có tiến độ | A | Một query snapshot + ba query tổng hợp; không materialize Enrollment/LessonProgress/Certificate |
+| 14 | Khóa ARCHIVED; snapshot đổi chủ | A/B | ARCHIVED vẫn xem được; chủ cũ 403, chủ mới INSTRUCTOR 200 |
+| 15 | Web với đề cương đảo thứ tự, bài mới và bài đã xóa | A | Thứ tự theo đề cương, bài mới 0%, không hiện bài đã xóa; không sửa mảng props |
+| 16 | Tỉ lệ bài sau giảm ≥20 điểm phần trăm | A | Nền cảnh báo + icon + chữ nêu mức giảm; đúng tại ngưỡng 20, không đánh dấu 19.99, tăng hoặc tất cả 0 |
+| 17 | Web lọc/phân trang/làm mới; API summary lỗi hoặc chậm | A | Thống kê không đổi theo lọc/trang; làm mới tải cả hai; Skeleton/ErrorAlert riêng, bảng học viên không bị ẩn do summary lỗi |
+| 18 | Web không có bài hoặc lỗi tải đề cương | A | EmptyState khi đề cương rỗng; lỗi đề cương có hướng dẫn tải lại, vẫn hiện số liệu toàn khóa |
+| 19 | Web 375/768/1366px, tên bài dài, Tab | A | Không tràn ngang; hiển thị đúng 66,67%/33,33%; điều khiển dùng được bằng bàn phím |
+
+Collection có thư mục 7 tạo khóa riêng và kiểm ca 1–11 (thêm IN_PROGRESS cho C nhưng tiến độ vẫn 0).
+`CourseLearnerSummaryIntegrationTest` bổ sung các ca quyền/token đặc biệt, làm tròn và truy vấn tổng hợp.
+`node --test scripts/check-enrollment-summary.test.mjs` kiểm quy tắc ghép/đánh dấu đề cương.
+CI Full stack in Docker chạy collection sau smoke test, tạm tắt rate limit trên stack CI dùng một lần.
+Kiểm tra bằng trình duyệt và các ca outage ENROLL-09 cần bằng chứng riêng, không suy ra từ unit test.
+
 ## Truy vết nguồn
 
 - [EnrollmentController](../../enrollment-service/src/main/java/com/hunre/enrollmentservice/controller/EnrollmentController.java),

@@ -209,7 +209,8 @@ Snapshot mẫu phải khớp với khóa học PUBLISHED thật ở course-servi
 
 Import `docs/postman/enrollment.postman_collection.json`, chọn No environment và chạy toàn bộ
 từ **0. Chuẩn bị**. Setup tự đăng ký/login, cấp vai trò, tạo khóa/chương/bài, xuất bản và lưu ID.
-154 request qua gateway bao phủ các ca HTTP trong bảng tình huống, kể cả xác minh công khai.
+215 request qua gateway bao phủ các ca HTTP trong bảng tình huống, kể cả xác minh công khai,
+danh sách học viên và số liệu học tập toàn khóa.
 Các ca ENROLL-09 cần thao tác hạ tầng riêng. Hướng dẫn và giới hạn tại
 [docs/postman/enrollment.md](../docs/postman/enrollment.md); kết quả thực tế tại
 [biên bản enrollment](../docs/test-cases/ket-qua/enrollment.md).
@@ -243,6 +244,8 @@ Trên Windows dùng `mvnw.cmd` thay cho `./mvnw`.
   backend giả lập xác nhận đúng service, URL, query, body và token. PUT thiếu token trả 401;
   GET bài học công khai vẫn đến course-service.
 - Test cũ của nghiệp vụ, client kiểm bài học và outbox tiếp tục chạy.
+- `CourseLearnerSummaryIntegrationTest`: mẫu S/B/C/D, JWT/quyền sở hữu, tách dữ liệu giữa khóa,
+  bỏ lượt hủy, IN_PROGRESS, mẫu số 0, làm tròn hai chữ số và đúng bốn query không tải entity học viên.
 - `EnrollmentContentAccessIntegrationTest` ở course-service: client HTTP thật dùng
   đường dẫn `/api/enrollments`; ghi danh ACTIVE/COMPLETED đọc được nội dung bài học
   và đề cương, CANCELLED/chưa ghi danh không được lộ nội dung. Đối chiếu cả mặc định
@@ -310,6 +313,27 @@ Với chứng chỉ có trước V2, chính chủ mở trang chứng chỉ sau �
 không thể khôi phục tên lịch sử vốn chưa từng lưu. Mã cũ và ngày cấp giữ nguyên.
 Trước bước đó, API public trả 422 với hướng dẫn, không suy đoán tên hoặc dùng email thay thế.
 Xóa lượt ghi danh vẫn xóa chứng chỉ; mã đã xóa trả 404 khi xác minh.
+
+## Số liệu học tập của khóa
+
+`GET /api/courses/{courseId}/learners/summary` trả `active`, `completed`, `cancelled`,
+`averageProgress`, `completionRate`, `certificatesIssued` và `lessons` gồm `lessonId`,
+`completedCount`, `completionRate`. Chủ snapshot có vai trò INSTRUCTOR hoặc ADMIN được đọc;
+thiếu token 401, người khác 403, thiếu snapshot 404, ID không hợp lệ 400. Có `Cache-Control: no-store`.
+
+Ba query tổng hợp trong transaction chỉ đọc: trạng thái/sum tiến độ theo khóa, số hoàn thành
+GROUP BY bài, COUNT chứng chỉ qua enrollment. Không tải cả danh sách học viên hoặc gọi service khác.
+Trung bình và các tỉ lệ loại CANCELLED, làm tròn HALF_UP đến hai chữ số; mẫu số 0 trả 0.
+Chứng chỉ đếm bản ghi thực tế, kể cả chứng chỉ cũ thiếu tên. Bài chỉ IN_PROGRESS có số hoàn thành 0.
+
+Web truyền đề cương sẵn có vào `CourseLearners`; thống kê độc lập với lọc/sắp xếp/phân trang,
+nút Làm mới tải lại cả thống kê và danh sách. API không biết các ID bài chưa có tiến độ nên
+web ghép theo đề cương hiện tại: bài chưa ai học 0%, bài đã xóa ẩn. Bài giảm từ 20 điểm phần trăm
+so với bài liền trước có cảnh báo bằng chữ/icon/màu; đây là dấu hiệu cần xem thêm, không khẳng định
+học viên đã bỏ khóa. Lỗi summary không che danh sách học viên; lỗi đề cương không che StatGrid.
+
+Triển khai gateway, enrollment-service và frontend cùng phiên bản. Không đổi schema/migration.
+Các ca và cách tái hiện nằm ở ENROLL-12 trong `docs/test-cases/enrollment.md` và thư mục 7 của collection.
 
 Triển khai enrollment-service (Flyway V2), gateway và frontend cùng phiên bản. Kiểm tra schema
 MySQL bằng scripts/verify-schema.sh/CI; H2 không xác nhận được cú pháp migration MySQL.
