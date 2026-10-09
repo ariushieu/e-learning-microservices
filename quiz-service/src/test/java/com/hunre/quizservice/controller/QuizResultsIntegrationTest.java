@@ -146,6 +146,54 @@ class QuizResultsIntegrationTest {
         return attempts.saveAndFlush(a);
     }
 
+    /** Mỗi phần tử là chỉ số phương án chọn cho câu tương ứng; -1 là bỏ trống. */
+    void picked(long user, Boolean preview, int... choice) {
+        var a = QuizAttempt.builder().quiz(quiz).userId(user).attemptNo(1).status(AttemptStatus.SUBMITTED).preview(preview)
+                .learnerName("Học viên " + user).score(BigDecimal.ZERO).passed(false).submittedAt(Instant.now()).build();
+        for (int i = 0; i < choice.length; i++) {
+            var q = quiz.getQuestions().get(i);
+            var selected = new java.util.HashSet<AnswerOption>();
+            if (choice[i] >= 0) selected.add(q.getOptions().get(choice[i]));
+            boolean correct = choice[i] >= 0 && q.getOptions().get(choice[i]).isCorrect();
+            a.addAnswer(AttemptAnswer.builder().question(q).selectedOptions(selected).isCorrect(correct)
+                    .earnedScore(correct ? BigDecimal.ONE : BigDecimal.ZERO).build());
+        }
+        attempts.saveAndFlush(a);
+    }
+
+    @Test void optionPicksShowWhichWrongAnswerLearnersChoose() throws Exception {
+        picked(20, false, 0, 1);
+        picked(30, false, 1, -1);
+        picked(40, false, 1, 1);
+        picked(10, false, 0, 0);   // tác giả làm thử: không tính
+        picked(99, true, 0, 0);    // bản xem thử: không tính
+        mvc.perform(get(path()).header("Authorization", token(10, "ROLE_INSTRUCTOR")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.summary.questions[0].gradedAnswers").value(3))
+                .andExpect(jsonPath("$.data.summary.questions[0].correctRate").value(33.33))
+                .andExpect(jsonPath("$.data.summary.questions[0].skippedAnswers").value(0))
+                .andExpect(jsonPath("$.data.summary.questions[0].options.length()").value(2))
+                .andExpect(jsonPath("$.data.summary.questions[0].options[0].content").value("Đúng"))
+                .andExpect(jsonPath("$.data.summary.questions[0].options[0].correct").value(true))
+                .andExpect(jsonPath("$.data.summary.questions[0].options[0].picks").value(1))
+                .andExpect(jsonPath("$.data.summary.questions[0].options[0].pickRate").value(33.33))
+                .andExpect(jsonPath("$.data.summary.questions[0].options[1].content").value("Sai"))
+                .andExpect(jsonPath("$.data.summary.questions[0].options[1].picks").value(2))
+                .andExpect(jsonPath("$.data.summary.questions[0].options[1].pickRate").value(66.67))
+                .andExpect(jsonPath("$.data.summary.questions[1].skippedAnswers").value(1))
+                .andExpect(jsonPath("$.data.summary.questions[1].options[0].picks").value(0))
+                .andExpect(jsonPath("$.data.summary.questions[1].options[0].pickRate").value(0))
+                .andExpect(jsonPath("$.data.summary.questions[1].options[1].picks").value(2));
+    }
+
+    @Test void questionWithoutSubmissionsStillListsItsOptions() throws Exception {
+        mvc.perform(get(path()).header("Authorization", token(10, "ROLE_INSTRUCTOR")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.summary.questions[0].gradedAnswers").value(0))
+                .andExpect(jsonPath("$.data.summary.questions[0].options.length()").value(2))
+                .andExpect(jsonPath("$.data.summary.questions[0].options[1].pickRate").value(0));
+    }
+
     @Test void requiredExampleAndPaginationUseWholePopulation() throws Exception {
         attempt(20, 1, AttemptStatus.SUBMITTED, false, "Sinh viên S", 50, true, false);
         attempt(30, 1, AttemptStatus.SUBMITTED, false, "Sinh viên B", 100, true, true);

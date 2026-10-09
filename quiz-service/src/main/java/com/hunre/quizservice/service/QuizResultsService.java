@@ -13,6 +13,7 @@ import com.hunre.sharedcommon.security.Roles;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,7 +23,11 @@ import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 
 @Service
@@ -47,6 +52,11 @@ public class QuizResultsService {
                 rs.getLong("attempt_count"), rs.getBigDecimal("best_score"), rs.getInt("has_passed") > 0,
                 rs.getTimestamp("last_submitted_at", Calendar.getInstance(TimeZone.getTimeZone("UTC"))).toInstant());
     };
+    /** Câu trả lời trong các bài nộp thật của học viên (không tính bản xem thử, bài của tác giả, bài hết giờ). */
+    private static final String SUBMITTED_ANSWERS = """
+                    SELECT aa.* FROM attempt_answers aa JOIN quiz_attempts qa ON qa.id = aa.attempt_id
+                    WHERE qa.quiz_id = ? AND qa.is_preview = false AND qa.user_id <> ? AND qa.status = 'SUBMITTED'
+                """;
     private static final DateTimeFormatter VIETNAM_TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
             .withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
 
@@ -73,21 +83,45 @@ public class QuizResultsService {
         String order = direction != null && direction.isAscending() ? "ASC" : "DESC";
         var learners = jdbc.query(LEARNERS + order + ", g.user_id ASC LIMIT ? OFFSET ?",
                 LEARNER_MAPPER, quizId, owner, pageable.getPageSize(), pageable.getOffset());
+        var picks = optionPicks(quizId, owner);
         // Only answers actually graded for a question contribute (questions can be added later).
         var questions = jdbc.query("""
-                SELECT q.id, q.content, COUNT(a.id) AS graded,
-                       COALESCE(SUM(CASE WHEN a.is_correct = true THEN 1 ELSE 0 END),0) AS correct
-                FROM questions q LEFT JOIN (
-                    SELECT aa.* FROM attempt_answers aa JOIN quiz_attempts qa ON qa.id = aa.attempt_id
-                    WHERE qa.quiz_id = ? AND qa.is_preview = false AND qa.user_id <> ? AND qa.status = 'SUBMITTED'
+                SELECT q.id, q.content, q.type, COUNT(a.id) AS graded,
+                       COALESCE(SUM(CASE WHEN a.is_correct = true THEN 1 ELSE 0 END),0) AS correct,
+                       COALESCE(SUM(CASE WHEN a.id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM attempt_answer_options x
+                           WHERE x.attempt_answer_id = a.id) THEN 1 ELSE 0 END),0) AS skipped
+                FROM questions q LEFT JOIN (""" + SUBMITTED_ANSWERS + """
                 ) a ON a.question_id = q.id
-                WHERE q.quiz_id = ? AND q.deleted = false GROUP BY q.id, q.content, q.position ORDER BY q.position, q.id
-                """, (rs, row) -> new QuestionRate(rs.getLong("id"), rs.getString("content"),
-                rs.getLong("graded"), percent(rs.getLong("correct"), rs.getLong("graded"))), quizId, owner, quizId);
+                WHERE q.quiz_id = ? AND q.deleted = false GROUP BY q.id, q.content, q.type, q.position ORDER BY q.position, q.id
+                """, (rs, row) -> {
+                    long graded = rs.getLong("graded");
+                    long id = rs.getLong("id");
+                    var options = picks.getOrDefault(id, List.of()).stream()
+                            .map(p -> new OptionPick(p.optionId(), p.content(), p.correct(), p.picks(), percent(p.picks(), graded)))
+                            .toList();
+                    return new QuestionRate(id, rs.getString("content"), rs.getString("type"), graded,
+                            percent(rs.getLong("correct"), graded), rs.getLong("skipped"), options);
+                }, quizId, owner, quizId);
         return new QuizResultsResponse(quizId, quiz.getTitle(),
                 new Summary(learnerCount, submittedCount, expired, average, percent(passedCount, learnerCount),
                         unclassified, questions),
                 PageResponse.of(learners, pageable.getPageNumber(), pageable.getPageSize(), learnerCount));
+    }
+
+    /** Số lượt chọn từng phương án của mọi câu trong quiz, theo câu hỏi, giữ thứ tự hiển thị. */
+    private Map<Long, List<OptionPick>> optionPicks(Long quizId, Long owner) {
+        Map<Long, List<OptionPick>> byQuestion = new HashMap<>();
+        jdbc.query("""
+                SELECT o.question_id, o.id, o.content, o.is_correct, COUNT(s.attempt_answer_id) AS picks
+                FROM answer_options o JOIN questions q ON q.id = o.question_id
+                LEFT JOIN (SELECT x.* FROM attempt_answer_options x JOIN (""" + SUBMITTED_ANSWERS + """
+                ) a ON a.id = x.attempt_answer_id) s ON s.option_id = o.id
+                WHERE q.quiz_id = ? AND q.deleted = false
+                GROUP BY o.question_id, o.id, o.content, o.is_correct, o.position ORDER BY o.question_id, o.position, o.id
+                """, (RowCallbackHandler) rs -> byQuestion.computeIfAbsent(rs.getLong("question_id"), k -> new ArrayList<>())
+                .add(new OptionPick(rs.getLong("id"), rs.getString("content"), rs.getBoolean("is_correct"),
+                        rs.getLong("picks"), null)), quizId, owner, quizId);
+        return byQuestion;
     }
 
     @Transactional(readOnly = true)
