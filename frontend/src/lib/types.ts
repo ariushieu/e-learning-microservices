@@ -74,6 +74,33 @@ export interface LessonQuestion {
   answers: LessonAnswer[];
 }
 
+export interface InstructorAnalytics {
+  days: number;
+  since: string;
+  totals: {
+    courses: number;
+    learners: number;
+    enrollments: number;
+    completed: number;
+    completionRate: number;
+    averageProgress: number;
+    newEnrollments: number;
+    activeLearners: number;
+    lessonsCompleted: number;
+  };
+  daily: { date: string; enrollments: number; completions: number; lessonsCompleted: number }[];
+  courses: {
+    courseId: number;
+    title: string;
+    enrollments: number;
+    cancelled: number;
+    completed: number;
+    completionRate: number;
+    averageProgress: number;
+    newEnrollments: number;
+  }[];
+}
+
 export interface Page<T> {
   content: T[];
   page: number;
