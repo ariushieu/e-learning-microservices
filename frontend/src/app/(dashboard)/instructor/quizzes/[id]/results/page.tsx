@@ -10,6 +10,7 @@ import { Pagination } from "@/components/common/pagination";
 import { Section } from "@/components/common/section";
 import { Stat } from "@/components/common/stat";
 import { StatusBadge } from "@/components/common/status-badge";
+import { QuestionBreakdown } from "@/components/quiz/question-breakdown";
 import type { QuizResults } from "@/components/quiz/results-types";
 import { DashboardPage } from "@/components/templates/dashboard-page";
 import { Button } from "@/components/ui/button";
@@ -122,33 +123,20 @@ export default async function ResultsPage({ params, searchParams }: PageProps<"/
         </DataTableCard>
         <Pagination page={learners.page} totalPages={learners.totalPages} hrefFor={(p) => `/instructor/quizzes/${id}/results?page=${p}`} />
       </Section>
-      <Section title="Tỉ lệ đúng từng câu" description="Tính trên tất cả lượt đã chấm câu đó, kể cả các lần làm lại. Dưới 50% được đánh dấu để xem xét độ khó.">
-        <DataTableCard isEmpty={summary.questions.length === 0} empty={<EmptyState title="Chưa có câu hỏi" />}>
-          <Table className="table-fixed">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Câu hỏi</TableHead>
-                <TableHead className="w-24 sm:w-32">Lượt chấm</TableHead>
-                <TableHead className="w-28 sm:w-40">Tỉ lệ đúng</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {summary.questions.map((question, i) => {
-                const low = question.gradedAnswers > 0 && question.correctRate < 50;
-                return (
-                  <TableRow key={question.questionId} className={low ? "bg-warning-soft" : undefined}>
-                    <TableCell className="whitespace-normal break-words">{i + 1}. {question.content}</TableCell>
-                    <TableCell className="tabular-nums">{formatNumber(question.gradedAnswers)}</TableCell>
-                    <TableCell className="whitespace-normal tabular-nums">
-                      {question.gradedAnswers === 0 ? "Chưa có lượt nào" : `${formatNumber(question.correctRate, 2)}%`}
-                      {low && <span className="mt-1 block text-caption text-warning-strong">Cần xem xét</span>}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </DataTableCard>
+      <Section
+        title="Tỉ lệ đúng từng câu"
+        count={summary.questions.length}
+        description="Tính trên tất cả lượt đã chấm câu đó, kể cả các lần làm lại. Thanh dưới mỗi phương án là tỉ lệ lượt chọn; câu dưới 50% và phương án sai được chọn nhiều hơn đáp án đúng được đánh dấu để xem lại."
+      >
+        {summary.questions.length === 0 ? (
+          <EmptyState title="Chưa có câu hỏi" />
+        ) : (
+          <div className="grid gap-4 xl:grid-cols-2">
+            {summary.questions.map((question, i) => (
+              <QuestionBreakdown key={question.questionId} question={question} index={i} />
+            ))}
+          </div>
+        )}
       </Section>
     </DashboardPage>
   );
