@@ -20,12 +20,14 @@ import { questionTypeLabels } from "./labels";
 
 interface OptionDraft {
   key: number;
+  /** id phương án đã lưu; gửi lại để bài làm cũ vẫn trỏ đúng phương án học viên đã chọn. */
+  id?: number;
   content: string;
   isCorrect: boolean;
 }
 
 let seq = 0;
-const draft = (content = "", isCorrect = false): OptionDraft => ({ key: ++seq, content, isCorrect });
+const draft = (content = "", isCorrect = false, id?: number): OptionDraft => ({ key: ++seq, id, content, isCorrect });
 
 const trueFalseOptions = () => [draft("Đúng"), draft("Sai")];
 const letter = (i: number) => String.fromCharCode(65 + (i % 26));
@@ -49,7 +51,7 @@ function validate(content: string, type: QuestionType, score: string, options: O
 }
 
 /**
- * Form thêm hoặc sửa một câu hỏi. Có `initial` là sửa (PUT thay toàn bộ phương án),
+ * Form thêm hoặc sửa một câu hỏi. Có `initial` là sửa (PUT, phương án cũ giữ nguyên id),
  * không có là thêm mới (POST).
  */
 export function QuestionForm({
@@ -73,7 +75,7 @@ export function QuestionForm({
   const [explanation, setExplanation] = useState(initial?.explanation ?? "");
   const [options, setOptions] = useState<OptionDraft[]>(() =>
     initial
-      ? initial.options.map((o) => draft(o.content, Boolean(o.isCorrect)))
+      ? initial.options.map((o) => draft(o.content, Boolean(o.isCorrect), o.id))
       : [draft(), draft(), draft(), draft()],
   );
   const [errors, setErrors] = useState<string[]>([]);
@@ -120,7 +122,7 @@ export function QuestionForm({
       type,
       score: Number(score),
       explanation: explanation.trim() || undefined,
-      options: options.map((o, i) => ({ content: o.content.trim(), isCorrect: o.isCorrect, position: i + 1 })),
+      options: options.map((o, i) => ({ id: o.id, content: o.content.trim(), isCorrect: o.isCorrect, position: i + 1 })),
     };
     setSaving(true);
     try {

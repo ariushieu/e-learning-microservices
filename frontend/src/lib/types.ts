@@ -361,7 +361,8 @@ export interface QuestionInput {
   score?: number;
   position?: number;
   explanation?: string;
-  options: { content: string; isCorrect: boolean; position?: number }[];
+  /** id: phương án đang có (khi sửa); bỏ trống là phương án mới. */
+  options: { id?: number; content: string; isCorrect: boolean; position?: number }[];
 }
 
 export interface QuizDetail extends Quiz {
