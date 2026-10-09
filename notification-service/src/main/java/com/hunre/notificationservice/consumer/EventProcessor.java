@@ -7,6 +7,8 @@ import com.hunre.sharedcommon.event.CourseAnnouncementPostedEvent;
 import com.hunre.sharedcommon.event.EnrollmentCompletedEvent;
 import com.hunre.sharedcommon.event.EnrollmentCreatedEvent;
 import com.hunre.sharedcommon.event.EventTypes;
+import com.hunre.sharedcommon.event.LessonQuestionAnsweredEvent;
+import com.hunre.sharedcommon.event.LessonQuestionPostedEvent;
 import com.hunre.sharedcommon.event.QuizGradedEvent;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -59,6 +61,8 @@ public class EventProcessor {
             case EventTypes.QUIZ_GRADED -> handleQuizGraded(payload);
             case EventTypes.CERTIFICATE_ISSUED -> handleCertificateIssued(payload);
             case EventTypes.COURSE_ANNOUNCEMENT_POSTED -> handleAnnouncementPosted(payload);
+            case EventTypes.LESSON_QUESTION_POSTED -> handleQuestionPosted(payload);
+            case EventTypes.LESSON_QUESTION_ANSWERED -> handleQuestionAnswered(payload);
             // Service khác thêm loại sự kiện mới mà service này chưa biết là chuyện bình
             // thường, không phải lỗi. Vẫn ghi sổ để lần gửi lại không phải đọc lại nữa.
             default -> log.debug("Bỏ qua sự kiện loại {} vì chưa có xử lý tương ứng", eventType);
@@ -130,6 +134,35 @@ public class EventProcessor {
         for (Long userId : new LinkedHashSet<>(event.recipientIds())) {
             notificationService.createInApp("COURSE_ANNOUNCEMENT", userId, variables, link);
         }
+    }
+
+    private void handleQuestionPosted(String payload) {
+        LessonQuestionPostedEvent event = objectMapper.readValue(payload, LessonQuestionPostedEvent.class);
+        if (event.instructorId() == null) return;
+
+        Map<String, String> variables = new LinkedHashMap<>();
+        variables.put("askerName", event.askerName() == null ? "Một học viên" : event.askerName());
+        variables.put("lessonTitle", event.lessonTitle());
+        variables.put("courseTitle", event.courseTitle());
+        variables.put("preview", event.preview());
+        notificationService.createInApp("LESSON_QUESTION_POSTED", event.instructorId(), variables,
+                "/instructor/questions");
+    }
+
+    private void handleQuestionAnswered(String payload) {
+        LessonQuestionAnsweredEvent event = objectMapper.readValue(payload, LessonQuestionAnsweredEvent.class);
+
+        Map<String, String> variables = new LinkedHashMap<>();
+        variables.put("answererName", event.answererName() == null ? "Một người dùng" : event.answererName());
+        variables.put("answererRole", switch (String.valueOf(event.answererRole())) {
+            case "INSTRUCTOR" -> " (giảng viên)";
+            case "ADMIN" -> " (quản trị viên)";
+            default -> "";
+        });
+        variables.put("lessonTitle", event.lessonTitle());
+        variables.put("preview", event.preview());
+        notificationService.createInApp("LESSON_QUESTION_ANSWERED", event.askerId(), variables,
+                "/learn/" + event.courseId() + "?lesson=" + event.lessonId() + "#hoi-dap");
     }
 
     /**

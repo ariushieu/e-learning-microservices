@@ -10,6 +10,8 @@ import com.hunre.notificationservice.repository.NotificationTemplateRepository;
 import com.hunre.notificationservice.repository.ProcessedEventRepository;
 import com.hunre.sharedcommon.event.CourseAnnouncementPostedEvent;
 import com.hunre.sharedcommon.event.EnrollmentCreatedEvent;
+import com.hunre.sharedcommon.event.LessonQuestionAnsweredEvent;
+import com.hunre.sharedcommon.event.LessonQuestionPostedEvent;
 import com.hunre.sharedcommon.event.EventTypes;
 import com.hunre.sharedcommon.event.KafkaTopics;
 import com.hunre.sharedcommon.event.QuizGradedEvent;
@@ -249,6 +251,35 @@ class EventProcessorTest {
             assertThat(n.getTitle()).isEqualTo("Thông báo mới: Lịch thi cuối kỳ");
             assertThat(n.getContent()).isEqualTo("Giảng viên khóa <b>Kiến trúc Microservices</b>: Thi vào thứ Hai tuần sau.");
             assertThat(n.getLinkUrl()).isEqualTo("/courses/3#thong-bao");
+        });
+    }
+
+    @Test
+    @DisplayName("hỏi đáp: câu hỏi tới giảng viên, câu trả lời tới người hỏi kèm vai trò người trả lời")
+    void hoiDapToiDungNguoi() {
+        templateRepository.save(NotificationTemplate.builder().code("LESSON_QUESTION_POSTED").channel(NotificationChannel.IN_APP)
+                .titleTemplate("Học viên vừa đặt câu hỏi")
+                .bodyTemplate("<b>{askerName}</b> hỏi trong bài <b>{lessonTitle}</b> ({courseTitle}): {preview}")
+                .active(true).build());
+        templateRepository.save(NotificationTemplate.builder().code("LESSON_QUESTION_ANSWERED").channel(NotificationChannel.IN_APP)
+                .titleTemplate("Câu hỏi của bạn có câu trả lời mới")
+                .bodyTemplate("<b>{answererName}</b>{answererRole} trả lời trong bài <b>{lessonTitle}</b>: {preview}")
+                .active(true).build());
+
+        var asked = LessonQuestionPostedEvent.of(1L, 2L, 3L, "Java", "Vòng lặp", 40L, "An", 50L, "Khi nào dùng for-each?");
+        eventProcessor.process(asked.eventId(), asked.eventType(), KafkaTopics.COURSE_EVENTS, json(asked));
+        var answered = LessonQuestionAnsweredEvent.of(1L, 9L, 2L, 3L, "Vòng lặp", 40L, 50L, "Cô Hà", "INSTRUCTOR", "Khi chỉ cần đọc phần tử.");
+        eventProcessor.process(answered.eventId(), answered.eventType(), KafkaTopics.COURSE_EVENTS, json(answered));
+
+        var forInstructor = notificationRepository.findAll().stream().filter(n -> n.getUserId() == 50L).toList();
+        assertThat(forInstructor).singleElement().satisfies(n -> {
+            assertThat(n.getContent()).isEqualTo("<b>An</b> hỏi trong bài <b>Vòng lặp</b> (Java): Khi nào dùng for-each?");
+            assertThat(n.getLinkUrl()).isEqualTo("/instructor/questions");
+        });
+        var forAsker = notificationRepository.findAll().stream().filter(n -> n.getUserId() == 40L).toList();
+        assertThat(forAsker).singleElement().satisfies(n -> {
+            assertThat(n.getContent()).isEqualTo("<b>Cô Hà</b> (giảng viên) trả lời trong bài <b>Vòng lặp</b>: Khi chỉ cần đọc phần tử.");
+            assertThat(n.getLinkUrl()).isEqualTo("/learn/3?lesson=2#hoi-dap");
         });
     }
 }
