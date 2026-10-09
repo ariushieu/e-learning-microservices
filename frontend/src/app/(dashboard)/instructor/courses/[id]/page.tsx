@@ -28,7 +28,8 @@ import { DashboardPage } from "@/components/templates/dashboard-page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UrlTabs } from "@/components/common/url-tabs";
+import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { hasRole } from "@/lib/auth-shared";
 import { ApiError, errorMessage } from "@/lib/errors";
 import { formatDay, formatDuration, formatNumber, formatPrice, label } from "@/lib/format";
@@ -101,7 +102,7 @@ export default async function ManageCoursePage({ params }: PageProps<"/instructo
             <span className="text-sm">{course.categoryName}</span>
           </span>
           <span className="block text-sm">
-            Mã khóa #{course.id} · {formatPrice(course.price)} · Tạo {formatDay(course.createdAt)} · Cập nhật {formatDay(course.updatedAt)}
+            {formatPrice(course.price)} · Tạo {formatDay(course.createdAt)} · Cập nhật {formatDay(course.updatedAt)}
             {course.publishedAt && ` · Xuất bản ${formatDay(course.publishedAt)}`}
           </span>
         </>
@@ -122,17 +123,21 @@ export default async function ManageCoursePage({ params }: PageProps<"/instructo
         </Callout>
       )}
 
-      <Tabs defaultValue="noi-dung" className="gap-6">
+      <UrlTabs values={["noi-dung", "hoc-vien", "bai-kiem-tra", "thong-tin"]} defaultValue="noi-dung" className="gap-6">
         <TabsList>
           <TabsTrigger value="noi-dung" className="px-3">
             Nội dung
           </TabsTrigger>
-          <TabsTrigger value="thong-tin" className="px-3">
-            Thông tin
+          <TabsTrigger value="hoc-vien" className="px-3">
+            Học viên
+            <span className="text-muted-foreground tabular-nums">({formatNumber(course.studentCount)})</span>
           </TabsTrigger>
           <TabsTrigger value="bai-kiem-tra" className="px-3">
             Bài kiểm tra
             {quizzes && quizzes.length > 0 && <span className="text-muted-foreground tabular-nums">({quizzes.length})</span>}
+          </TabsTrigger>
+          <TabsTrigger value="thong-tin" className="px-3">
+            Thông tin
           </TabsTrigger>
         </TabsList>
 
@@ -145,6 +150,10 @@ export default async function ManageCoursePage({ params }: PageProps<"/instructo
               message={curriculumRes.status === "rejected" ? errorMessage(curriculumRes.reason) : ""}
             />
           )}
+        </TabsContent>
+
+        <TabsContent value="hoc-vien">
+          <CourseLearners courseId={course.id} sections={sections} />
         </TabsContent>
 
         <TabsContent value="thong-tin" className="space-y-6">
@@ -224,8 +233,7 @@ export default async function ManageCoursePage({ params }: PageProps<"/instructo
             )}
           </Section>
         </TabsContent>
-      </Tabs>
-      <CourseLearners courseId={course.id} sections={sections} />
+      </UrlTabs>
     </DashboardPage>
   );
 }

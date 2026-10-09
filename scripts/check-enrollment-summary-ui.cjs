@@ -47,7 +47,8 @@ async function run() {
   page.on("request", (request) => { if (new URL(request.url()).pathname === summaryPath) summaryRequests++; });
   await page.goto(web + "/design");
   await page.getByRole("main").waitFor();
-  await page.goto(`${web}/instructor/courses/${courseId}`);
+  // Students live in their own tab; ?tab= keeps it open across reloads.
+  await page.goto(`${web}/instructor/courses/${courseId}?tab=hoc-vien`);
   const section = page.locator("#hoc-vien");
   const summary = section.locator('[aria-label="Số liệu học tập toàn khóa"]');
   const lesson1 = () => summary.getByRole("row").filter({ hasText: "Bài thống kê 1" });

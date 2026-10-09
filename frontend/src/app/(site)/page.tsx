@@ -8,12 +8,13 @@ import { Pagination } from "@/components/common/pagination";
 import { Toolbar } from "@/components/common/toolbar";
 import { CatalogFilters, CatalogSearch, CategoryChips, catalogSorts, levels } from "@/components/course/catalog-filters";
 import { CourseCard } from "@/components/course/course-card";
-import { attempt } from "@/components/course/queries";
+import { attempt, getMyEnrollments } from "@/components/course/queries";
+import { ContinueLearning } from "@/components/enrollment/continue-learning";
 import { CardGrid } from "@/components/templates/list-page";
 import { HeroMeta } from "@/components/templates/detail-page";
 import { Button } from "@/components/ui/button";
 import { formatNumber } from "@/lib/format";
-import { gateway } from "@/lib/server/gateway";
+import { gateway, getSession } from "@/lib/server/gateway";
 import type { Category, CourseSummary, Page } from "@/lib/types";
 
 export const metadata: Metadata = { title: { absolute: "HUNRE E-Learning · Khóa học trực tuyến" } };
@@ -41,9 +42,12 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   // Khóa cùng giá/số học viên vẫn có thứ tự ổn định khi chuyển trang.
   query.append("sort", "id,desc");
 
-  const [categories, courses] = await Promise.all([
+  const session = await getSession();
+  const [categories, courses, mine] = await Promise.all([
     attempt(gateway<Category[]>("/api/categories/tree")),
     attempt(gateway<Page<CourseSummary>>(`/api/courses?${query}`)),
+    // Phần "học tiếp" chỉ là lối tắt: lỗi enrollment-service thì ẩn đi, không che danh mục khóa học.
+    session && !filtered ? attempt(getMyEnrollments()) : Promise.resolve(null),
   ]);
 
   const hrefFor = (p: number) => {
@@ -84,6 +88,8 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
         </div>
       </FullBleed>
 
+      {session && mine?.data && <ContinueLearning enrollments={mine.data} fullName={session.fullName} />}
+
       <section aria-label="Danh sách khóa học" className="min-w-0">
         {categories.error !== null ? (
           <ErrorAlert title="Không tải được danh mục" message={categories.error} />
@@ -91,7 +97,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           <CategoryChips categories={categories.data} {...filters} />
         )}
         <Toolbar
-          start={<CatalogFilters categories={categories.data ?? []} {...filters} />}
+          start={<CatalogFilters {...filters} />}
           end={
             courses.data &&
             courses.data.totalElements > 0 && (

@@ -40,7 +40,8 @@ export function CancelEnrollmentButton({ enrollmentId, courseTitle }: { enrollme
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="destructive" disabled={loading}>
+        {/* Thao tác phụ, hiếm dùng: không đặt ngang hàng với nút học chính. Hộp xác nhận vẫn màu đỏ. */}
+        <Button variant="ghost" size="sm" className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive" disabled={loading}>
           {loading && <Loader2Icon className="animate-spin" />}
           Hủy ghi danh
         </Button>
