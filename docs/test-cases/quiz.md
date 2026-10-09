@@ -312,6 +312,12 @@ một lượt đạt. Tỉ lệ đúng từng câu dùng **tất cả lượt SU
 cao nhất; câu chưa được chấm có `gradedAnswers=0`, web hiện "Chưa có dữ liệu". EXPIRED chỉ
 tăng bộ đếm hết giờ. Lượt thử và lượt cũ chưa phân loại không tham gia bất cứ thống kê nào.
 
+Phân bố lựa chọn: mỗi câu có thêm `type`, `skippedAnswers` (lượt chấm không chọn phương án nào)
+và `options[]` theo thứ tự hiển thị, mỗi phương án gồm `correct`, `picks` và `pickRate` = picks /
+gradedAnswers. Cùng tập lượt với tỉ lệ đúng; câu nhiều đáp án có thể cộng quá 100%. Web đánh dấu
+"Gây nhầm lẫn" cho phương án sai được chọn nhiều nhất khi được chọn nhiều hơn
+mọi đáp án đúng (hòa thì không đánh dấu).
+
 ## QUIZ-18 — tải kết quả CSV
 
 Chạy sau QUIZ-17. Quyền, tập học viên và cách tính điểm giống `/results`.
