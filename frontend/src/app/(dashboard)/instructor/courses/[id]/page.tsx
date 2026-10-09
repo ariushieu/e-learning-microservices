@@ -124,6 +124,8 @@ export default async function ManageCoursePage({ params }: PageProps<"/instructo
       )}
 
       <UrlTabs values={["noi-dung", "hoc-vien", "bai-kiem-tra", "thong-tin"]} defaultValue="noi-dung" className="gap-6">
+        {/* Bốn tab không vừa màn 375px: cuộn ngang trong khung thay vì làm tràn cả trang. */}
+        <div className="max-w-full overflow-x-auto">
         <TabsList>
           <TabsTrigger value="noi-dung" className="px-3">
             Nội dung
@@ -140,6 +142,7 @@ export default async function ManageCoursePage({ params }: PageProps<"/instructo
             Thông tin
           </TabsTrigger>
         </TabsList>
+        </div>
 
         <TabsContent value="noi-dung">
           {sections ? (
