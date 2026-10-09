@@ -32,7 +32,8 @@ import java.time.temporal.ChronoUnit;
         name = "notifications",
         indexes = {
                 @Index(name = "idx_notifications_user_inbox", columnList = "user_id, status, created_at"),
-                @Index(name = "idx_notifications_pending", columnList = "status, created_at")
+                @Index(name = "idx_notifications_pending", columnList = "status, created_at"),
+                @Index(name = "idx_notifications_channel_status", columnList = "channel, status, id")
         }
 )
 @Getter

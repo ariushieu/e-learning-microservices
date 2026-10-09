@@ -42,7 +42,8 @@ public class KafkaEventConsumer {
             topics = {
                     KafkaTopics.ENROLLMENT_EVENTS,
                     KafkaTopics.QUIZ_EVENTS,
-                    KafkaTopics.COURSE_EVENTS
+                    KafkaTopics.COURSE_EVENTS,
+                    KafkaTopics.AUTH_EVENTS
             },
             groupId = "${spring.kafka.consumer.group-id}",
             // Cùng một công tắc với quiz-service: máy không chạy Kafka thì đặt

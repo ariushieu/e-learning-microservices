@@ -9,7 +9,9 @@ import com.hunre.sharedcommon.event.EnrollmentCreatedEvent;
 import com.hunre.sharedcommon.event.EventTypes;
 import com.hunre.sharedcommon.event.LessonQuestionAnsweredEvent;
 import com.hunre.sharedcommon.event.LessonQuestionPostedEvent;
-import com.hunre.sharedcommon.event.QuizGradedEvent;
+import com.hunre.sharedcommon.event.QuizGradedEvent;
+import com.hunre.sharedcommon.event.UserProfileUpdatedEvent;
+import com.hunre.sharedcommon.event.UserRegisteredEvent;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,15 +65,29 @@ public class EventProcessor {
             case EventTypes.COURSE_ANNOUNCEMENT_POSTED -> handleAnnouncementPosted(payload);
             case EventTypes.LESSON_QUESTION_POSTED -> handleQuestionPosted(payload);
             case EventTypes.LESSON_QUESTION_ANSWERED -> handleQuestionAnswered(payload);
+            case EventTypes.USER_REGISTERED -> handleUserRegistered(payload);
+            case EventTypes.USER_PROFILE_UPDATED -> handleUserProfileUpdated(payload);
             // Service khác thêm loại sự kiện mới mà service này chưa biết là chuyện bình
             // thường, không phải lỗi. Vẫn ghi sổ để lần gửi lại không phải đọc lại nữa.
             default -> log.debug("Bỏ qua sự kiện loại {} vì chưa có xử lý tương ứng", eventType);
         }
     }
 
+    /** Lưu email và tên trước, rồi mới xếp email chào mừng để thư có tên người nhận. */
+    private void handleUserRegistered(String payload) {
+        UserRegisteredEvent event = objectMapper.readValue(payload, UserRegisteredEvent.class);
+        notificationService.saveContact(event.userId(), event.email(), event.fullName());
+        notificationService.queueEmail("WELCOME", event.userId(), Map.of(), "/courses");
+    }
+
+    private void handleUserProfileUpdated(String payload) {
+        UserProfileUpdatedEvent event = objectMapper.readValue(payload, UserProfileUpdatedEvent.class);
+        notificationService.saveContact(event.userId(), event.email(), event.fullName());
+    }
+
     private void handleEnrollmentCreated(String payload) {
         EnrollmentCreatedEvent event = objectMapper.readValue(payload, EnrollmentCreatedEvent.class);
-        notificationService.createInApp(
+        notificationService.deliver(
                 "ENROLLMENT_SUCCESS",
                 event.userId(),
                 variables("courseTitle", event.courseTitle()),
@@ -80,7 +96,7 @@ public class EventProcessor {
 
     private void handleEnrollmentCompleted(String payload) {
         EnrollmentCompletedEvent event = objectMapper.readValue(payload, EnrollmentCompletedEvent.class);
-        notificationService.createInApp(
+        notificationService.deliver(
                 "COURSE_COMPLETED",
                 event.userId(),
                 variables("courseTitle", event.courseTitle()),
@@ -97,7 +113,7 @@ public class EventProcessor {
         // toPlainString giữ nguyên 85.50 thay vì đổi thành 85.5 hay ký hiệu mũ.
         variables.put("score", event.score() == null ? "0" : event.score().toPlainString());
 
-        notificationService.createInApp(
+        notificationService.deliver(
                 "QUIZ_GRADED", event.userId(), variables, "/attempts/" + event.attemptId());
     }
 
@@ -111,7 +127,7 @@ public class EventProcessor {
 
         // Không dùng event.certificateUrl(): đó là đường dẫn file PDF chưa ai phục vụ, bấm vào
         // là trang lỗi. Trang chứng chỉ của web đi theo mã ghi danh.
-        notificationService.createInApp(
+        notificationService.deliver(
                 "CERTIFICATE_ISSUED", event.userId(), variables, certificatePage(event.enrollmentId()));
     }
 
@@ -132,7 +148,7 @@ public class EventProcessor {
 
         String link = "/courses/" + event.courseId() + "#thong-bao";
         for (Long userId : new LinkedHashSet<>(event.recipientIds())) {
-            notificationService.createInApp("COURSE_ANNOUNCEMENT", userId, variables, link);
+            notificationService.deliver("COURSE_ANNOUNCEMENT", userId, variables, link);
         }
     }
 
@@ -145,7 +161,7 @@ public class EventProcessor {
         variables.put("lessonTitle", event.lessonTitle());
         variables.put("courseTitle", event.courseTitle());
         variables.put("preview", event.preview());
-        notificationService.createInApp("LESSON_QUESTION_POSTED", event.instructorId(), variables,
+        notificationService.deliver("LESSON_QUESTION_POSTED", event.instructorId(), variables,
                 "/instructor/questions");
     }
 
@@ -161,7 +177,7 @@ public class EventProcessor {
         });
         variables.put("lessonTitle", event.lessonTitle());
         variables.put("preview", event.preview());
-        notificationService.createInApp("LESSON_QUESTION_ANSWERED", event.askerId(), variables,
+        notificationService.deliver("LESSON_QUESTION_ANSWERED", event.askerId(), variables,
                 "/learn/" + event.courseId() + "?lesson=" + event.lessonId() + "#hoi-dap");
     }
 

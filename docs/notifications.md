@@ -1,7 +1,8 @@
 # Thông báo
 
 notification-service nhận sự kiện Kafka từ các service khác và dựng thông báo cho người
-dùng. Nó không gọi service nào và không service nào gọi nó — chỉ nghe sự kiện.
+dùng, trong ứng dụng và qua email. Nó không gọi service nào và không service nào gọi nó —
+chỉ nghe sự kiện.
 
 - [Luồng đi của một thông báo](#luồng-đi-của-một-thông-báo)
 - [Một sự kiện chỉ tạo đúng một thông báo](#một-sự-kiện-chỉ-tạo-đúng-một-thông-báo)
@@ -10,6 +11,7 @@ dùng. Nó không gọi service nào và không service nào gọi nó — chỉ
 - [API](#api)
 - [Thông báo tức thời](#thông-báo-tức-thời)
 - [Vì sao đọc chuỗi thô thay vì để Spring chuyển đổi sẵn](#vì-sao-đọc-chuỗi-thô-thay-vì-để-spring-chuyển-đổi-sẵn)
+- [Email](#email)
 - [Chạy thử ở máy mình](#chạy-thử-ở-máy-mình)
 - [Những chỗ còn thiếu](#những-chỗ-còn-thiếu)
 
@@ -213,6 +215,44 @@ Vì vậy cả hai đầu đều dùng `StringSerializer` / `StringDeserializer`
 Jackson 3 — cùng một thư viện ở cả bên gửi lẫn bên nhận, và cũng là thư viện mà bộ test hợp
 đồng đang dùng.
 
+## Email
+
+Sự kiện nghiệp vụ cố ý không mang email (xem [shared-contracts.md](shared-contracts.md)).
+Email và tên lấy từ chính auth-service, nơi sở hữu chúng, qua topic riêng:
+
+```
+auth-service ── outbox ──► elearning.auth.events ──► notification-service
+  đăng ký        user.registered                       ghi user_contacts, xếp email WELCOME
+  sửa tên        user.profile.updated                  ghi đè user_contacts
+```
+
+Migration V7 của auth-service phát `user.profile.updated` cho mọi tài khoản có sẵn để nạp
+`user_contacts` lần đầu (không dùng `user.registered` để không ai nhận lại email chào mừng).
+
+Gửi email chia hai bước:
+
+1. **Xếp hàng** khi xử lý sự kiện: mã nào có mẫu kênh EMAIL thì `NotificationService.deliver`
+   lưu thêm một dòng `notifications` kênh `EMAIL`, trạng thái `PENDING`, nội dung đã điền sẵn
+   `{fullName}` và `{url}` (link tuyệt đối dựng từ `WEB_BASE_URL`). Người dùng tắt email trong
+   cài đặt thì bỏ qua. Dòng EMAIL không hiện trong hộp thư: mọi truy vấn hộp thư lọc `IN_APP`.
+2. **Gửi** bằng `EmailDispatcher`, chạy 5 giây một lần: tra `user_contacts` lấy địa chỉ, gửi
+   qua SMTP rồi chuyển `SENT`. Hỏng (máy chủ mail lỗi, chưa có địa chỉ) thì tăng `retry_count`,
+   ghi `last_error` và thử lại lượt sau; hỏng 5 lần thì chuyển `FAILED`.
+
+Tách hai bước để máy chủ mail chậm hay chết không làm hỏng việc xử lý sự kiện Kafka.
+
+| Mã mẫu EMAIL | Khi nào |
+|---|---|
+| `WELCOME` | Đăng ký tài khoản |
+| `ENROLLMENT_SUCCESS` | Ghi danh khóa học |
+| `CERTIFICATE_ISSUED` | Hoàn thành khóa, được cấp chứng chỉ |
+| `COURSE_ANNOUNCEMENT` | Giảng viên gửi thông báo cho lớp |
+| `LESSON_QUESTION_ANSWERED` | Câu hỏi trong bài học có người trả lời |
+
+Chạy bằng Docker thì máy chủ mail là **Mailpit**: mọi thư hiện ở http://localhost:8025, không
+gửi ra Internet. Dùng máy chủ thật thì đặt `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`,
+`MAIL_PASSWORD`, `MAIL_FROM`.
+
 ## Chạy thử ở máy mình
 
 ```bash
@@ -233,8 +273,6 @@ curl -H "Authorization: Bearer <token>" localhost:8085/api/notifications
 
 ## Những chỗ còn thiếu
 
-- **Kênh EMAIL chưa gửi gì.** Chưa có máy chủ mail, và các mẫu EMAIL cần `{fullName}` mà sự
-  kiện cố ý không mang theo thông tin cá nhân (xem [shared-contracts.md](shared-contracts.md)).
-  Muốn gửi email thì phải hỏi auth-service để lấy tên và địa chỉ.
+- **Email chỉ có bản văn bản thuần**, chưa có bản HTML có giao diện.
 - **Chưa dọn `processed_events`.** Bảng này chỉ lớn thêm. Cần một job xóa bản ghi cũ hơn
   vài tháng; cột `processed_at` đã có index sẵn cho việc đó.
