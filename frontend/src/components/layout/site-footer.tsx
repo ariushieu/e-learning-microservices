@@ -5,16 +5,18 @@ const COLUMNS = [
   {
     title: "Học tập",
     links: [
-      { href: "/", label: "Khám phá khóa học" },
-      { href: "/my-courses", label: "Khóa học của tôi" },
-      { href: "/notifications", label: "Thông báo" },
+      { href: "/courses", label: "Tất cả khóa học" },
+      { href: "/instructors", label: "Giảng viên" },
+      { href: "/my-courses", label: "Học tập của tôi" },
+      { href: "/certificates", label: "Chứng chỉ của tôi" },
     ],
   },
   {
     title: "Dự án",
     links: [
-      { href: "/design", label: "Hệ thống giao diện" },
+      { href: "/#xac-minh", label: "Xác minh chứng chỉ" },
       { href: "/instructor", label: "Dành cho giảng viên" },
+      { href: "/design", label: "Hệ thống giao diện" },
     ],
   },
 ];

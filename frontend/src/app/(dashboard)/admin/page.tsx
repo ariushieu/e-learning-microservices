@@ -83,7 +83,7 @@ export default async function AdminIndex() {
       )}
       <Section title="Nội dung học tập" description="Khóa học đang mở cho học viên, danh mục và đánh giá cần phản hồi.">
         <StatGrid>
-          <Link href="/" className={linkStyle}>
+          <Link href="/courses" className={linkStyle}>
             <Stat label="Khóa đã xuất bản" value={value(courses, (p) => p.totalElements)} icon={BookOpenIcon} hint="Xem trang khóa học" />
           </Link>
           <Link href="/admin/categories" className={linkStyle}>

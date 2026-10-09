@@ -10,8 +10,10 @@ import { UserMenu } from "./user-menu";
 export async function SiteHeader() {
   const session = await getSession();
   const links = [
-    { href: "/", label: "Khám phá" },
-    ...(session ? [{ href: "/my-courses", label: "Khóa học của tôi" }] : []),
+    { href: "/", label: "Trang chủ" },
+    { href: "/courses", label: "Khóa học" },
+    { href: "/instructors", label: "Giảng viên" },
+    ...(session ? [{ href: "/my-courses", label: "Học tập của tôi" }] : []),
     ...(hasRole(session, "ROLE_INSTRUCTOR", "ROLE_ADMIN") ? [{ href: "/instructor", label: "Giảng dạy" }] : []),
   ];
 

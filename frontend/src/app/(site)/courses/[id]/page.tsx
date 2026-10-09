@@ -78,8 +78,8 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
       hero={
         <DetailHero
           crumbs={[
-            { href: "/", label: "Khám phá" },
-            { href: `/?categoryId=${course.categoryId}`, label: course.categoryName },
+            { href: "/courses", label: "Khóa học" },
+            { href: `/courses?categoryId=${course.categoryId}`, label: course.categoryName },
             { label: course.title },
           ]}
           eyebrow={course.categoryName}
