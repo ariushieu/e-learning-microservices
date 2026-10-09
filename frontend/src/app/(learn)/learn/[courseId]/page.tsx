@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { Callout } from "@/components/common/callout";
 import { EmptyState } from "@/components/common/empty-state";
 import { LessonTypeIcon } from "@/components/course/icons";
+import { LessonQuestions } from "@/components/course/lesson-qa";
 import { attempt, getCourse, isId } from "@/components/course/queries";
 import { CurriculumSheet } from "@/components/enrollment/curriculum-sheet";
 import { LearnSidebar } from "@/components/enrollment/learn-sidebar";
@@ -17,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { formatDuration, label } from "@/lib/format";
 import { gateway, gatewayOrNull } from "@/lib/server/gateway";
-import type { CourseProgress, Lesson, LessonProgressStatus, Quiz, Section } from "@/lib/types";
+import type { CourseProgress, Lesson, LessonProgressStatus, LessonQuestion, Page, Quiz, Section } from "@/lib/types";
 
 export async function generateMetadata({ params }: PageProps<"/learn/[courseId]">): Promise<Metadata> {
   const { courseId } = await params;
@@ -53,6 +54,9 @@ export default async function LearnPage({ params, searchParams }: PageProps<"/le
     lessons[0] ??
     null;
   const index = current ? lessons.indexOf(current) : -1;
+  const questions = current
+    ? await attempt(gateway<Page<LessonQuestion>>(`/api/lessons/${current.id}/questions?size=20`))
+    : null;
   const percent = Math.round(progress.progressPercent);
   const finished = progress.status === "COMPLETED" || percent >= 100;
   const summary = `${progress.completedLessonsCount}/${progress.totalLessonsCount} bài · ${percent}%`;
@@ -105,6 +109,18 @@ export default async function LearnPage({ params, searchParams }: PageProps<"/le
         />
       ) : (
         <EmptyState icon={BookOpenIcon} title="Khóa học chưa có bài học nào" description="Giảng viên chưa thêm nội dung cho khóa học này." />
+      )}
+
+      {current && questions && (
+        <>
+          <Separator />
+          <LessonQuestions
+            lessonId={current.id}
+            questions={questions.data?.content ?? []}
+            total={questions.data?.totalElements ?? 0}
+            error={questions.error}
+          />
+        </>
       )}
 
       <Separator />

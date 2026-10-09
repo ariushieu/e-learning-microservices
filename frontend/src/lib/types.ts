@@ -48,6 +48,32 @@ export interface Leaderboard {
   me: LeaderboardEntry | null;
 }
 
+export interface LessonAnswer {
+  id: number;
+  authorName: string;
+  authorRole: "INSTRUCTOR" | "ADMIN" | "STUDENT";
+  content: string;
+  mine: boolean;
+  deletable: boolean;
+  createdAt: string;
+}
+
+/** lessonTitle/courseTitle chỉ có trong hộp câu hỏi của giảng viên. */
+export interface LessonQuestion {
+  id: number;
+  lessonId: number;
+  courseId: number;
+  lessonTitle: string | null;
+  courseTitle: string | null;
+  authorName: string;
+  content: string;
+  mine: boolean;
+  deletable: boolean;
+  instructorAnswered: boolean;
+  createdAt: string;
+  answers: LessonAnswer[];
+}
+
 export interface Page<T> {
   content: T[];
   page: number;

@@ -1,6 +1,16 @@
 "use client";
 
-import { AwardIcon, BellIcon, BookOpenIcon, ClipboardCheckIcon, MegaphoneIcon, TrophyIcon, type LucideIcon } from "lucide-react";
+import {
+  AwardIcon,
+  BellIcon,
+  BookOpenIcon,
+  ClipboardCheckIcon,
+  MegaphoneIcon,
+  MessageCircleQuestionIcon,
+  MessageSquareReplyIcon,
+  TrophyIcon,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -18,6 +28,8 @@ const KINDS: Record<string, { icon: LucideIcon; tone: Tone }> = {
   QUIZ_GRADED: { icon: ClipboardCheckIcon, tone: "primary" },
   CERTIFICATE_ISSUED: { icon: AwardIcon, tone: "achievement" },
   COURSE_ANNOUNCEMENT: { icon: MegaphoneIcon, tone: "info" },
+  LESSON_QUESTION_POSTED: { icon: MessageCircleQuestionIcon, tone: "warning" },
+  LESSON_QUESTION_ANSWERED: { icon: MessageSquareReplyIcon, tone: "primary" },
 };
 
 /** Icon và tông màu theo loại thông báo; loại mới chưa biết hiện chuông xám. Dùng chung với chuông trên header. */
