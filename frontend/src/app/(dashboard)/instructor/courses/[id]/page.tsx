@@ -19,6 +19,7 @@ import { Section } from "@/components/common/section";
 import { Stat } from "@/components/common/stat";
 import { StatusBadge } from "@/components/common/status-badge";
 import { StatusPage } from "@/components/common/status-page";
+import { AnnouncementComposer, AnnouncementList } from "@/components/course/course-announcements";
 import { CourseForm } from "@/components/course/course-form";
 import { CourseStatusActions } from "@/components/course/course-status-actions";
 import { CurriculumBuilder } from "@/components/course/curriculum-builder";
@@ -34,7 +35,7 @@ import { hasRole } from "@/lib/auth-shared";
 import { ApiError, errorMessage } from "@/lib/errors";
 import { formatDay, formatDuration, formatNumber, formatPrice, label } from "@/lib/format";
 import { gateway, getSession } from "@/lib/server/gateway";
-import type { Category, Course, Quiz, Section as CourseSection } from "@/lib/types";
+import type { Category, Course, CourseAnnouncement, Page, Quiz, Section as CourseSection } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Quản lý khóa học" };
 
@@ -46,11 +47,12 @@ export default async function ManageCoursePage({ params }: PageProps<"/instructo
   const session = await getSession();
   if (!session) redirect(`/login?next=/instructor/courses/${courseId}`);
 
-  const [courseRes, curriculumRes, quizzesRes, categoriesRes] = await Promise.allSettled([
+  const [courseRes, curriculumRes, quizzesRes, categoriesRes, announcementsRes] = await Promise.allSettled([
     gateway<Course>(`/api/courses/${courseId}`),
     gateway<CourseSection[]>(`/api/courses/${courseId}/curriculum`),
     gateway<Quiz[]>(`/api/quizzes?courseId=${courseId}`),
     gateway<Category[]>("/api/categories/tree"),
+    gateway<Page<CourseAnnouncement>>(`/api/courses/${courseId}/announcements?size=20`),
   ]);
 
   if (courseRes.status === "rejected") {
@@ -87,6 +89,7 @@ export default async function ManageCoursePage({ params }: PageProps<"/instructo
   const sections = curriculumRes.status === "fulfilled" ? curriculumRes.value : null;
   const quizzes = quizzesRes.status === "fulfilled" ? quizzesRes.value : null;
   const categories = categoriesRes.status === "fulfilled" ? categoriesRes.value : null;
+  const announcements = announcementsRes.status === "fulfilled" ? announcementsRes.value : null;
   const archived = course.status === "ARCHIVED";
   const isDraft = course.status === "DRAFT" || course.status === "PENDING_REVIEW";
 
@@ -123,8 +126,8 @@ export default async function ManageCoursePage({ params }: PageProps<"/instructo
         </Callout>
       )}
 
-      <UrlTabs values={["noi-dung", "hoc-vien", "bai-kiem-tra", "thong-tin"]} defaultValue="noi-dung" className="gap-6">
-        {/* Bốn tab không vừa màn 375px: cuộn ngang trong khung thay vì làm tràn cả trang. */}
+      <UrlTabs values={["noi-dung", "hoc-vien", "thong-bao", "bai-kiem-tra", "thong-tin"]} defaultValue="noi-dung" className="gap-6">
+        {/* Các tab không vừa màn 375px: cuộn ngang trong khung thay vì làm tràn cả trang. */}
         <div className="max-w-full overflow-x-auto">
         <TabsList>
           <TabsTrigger value="noi-dung" className="px-3">
@@ -133,6 +136,12 @@ export default async function ManageCoursePage({ params }: PageProps<"/instructo
           <TabsTrigger value="hoc-vien" className="px-3">
             Học viên
             <span className="text-muted-foreground tabular-nums">({formatNumber(course.studentCount)})</span>
+          </TabsTrigger>
+          <TabsTrigger value="thong-bao" className="px-3">
+            Thông báo
+            {announcements && announcements.totalElements > 0 && (
+              <span className="text-muted-foreground tabular-nums">({formatNumber(announcements.totalElements)})</span>
+            )}
           </TabsTrigger>
           <TabsTrigger value="bai-kiem-tra" className="px-3">
             Bài kiểm tra
@@ -157,6 +166,26 @@ export default async function ManageCoursePage({ params }: PageProps<"/instructo
 
         <TabsContent value="hoc-vien">
           <CourseLearners courseId={course.id} sections={sections} />
+        </TabsContent>
+
+        <TabsContent value="thong-bao" className="space-y-6">
+          {isDraft ? (
+            <Callout icon={InfoIcon} tone="info" title="Xuất bản khóa học để gửi thông báo">
+              Khóa nháp chưa có học viên. Sau khi xuất bản, bạn gửi thông báo cho mọi người đã ghi danh tại đây.
+            </Callout>
+          ) : (
+            <AnnouncementComposer courseId={course.id} learnerCount={course.studentCount} />
+          )}
+          <Section title="Đã gửi" count={announcements?.totalElements}>
+            {announcements ? (
+              <AnnouncementList courseId={course.id} announcements={announcements.content} canManage />
+            ) : (
+              <ErrorAlert
+                title="Không tải được thông báo"
+                message={announcementsRes.status === "rejected" ? errorMessage(announcementsRes.reason) : ""}
+              />
+            )}
+          </Section>
         </TabsContent>
 
         <TabsContent value="thong-tin" className="space-y-6">

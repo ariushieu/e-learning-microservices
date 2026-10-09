@@ -8,6 +8,7 @@ import com.hunre.notificationservice.repository.NotificationPreferenceRepository
 import com.hunre.notificationservice.repository.NotificationRepository;
 import com.hunre.notificationservice.repository.NotificationTemplateRepository;
 import com.hunre.notificationservice.repository.ProcessedEventRepository;
+import com.hunre.sharedcommon.event.CourseAnnouncementPostedEvent;
 import com.hunre.sharedcommon.event.EnrollmentCreatedEvent;
 import com.hunre.sharedcommon.event.EventTypes;
 import com.hunre.sharedcommon.event.KafkaTopics;
@@ -220,5 +221,34 @@ class EventProcessorTest {
                 KafkaTopics.QUIZ_EVENTS, json(event));
 
         assertThat(notificationRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("thông báo của giảng viên tới mỗi học viên một lần, bỏ qua người đã tắt thông báo")
+    void thongBaoGiangVienToiTungHocVien() {
+        templateRepository.save(NotificationTemplate.builder()
+                .code("COURSE_ANNOUNCEMENT")
+                .channel(NotificationChannel.IN_APP)
+                .titleTemplate("Thông báo mới: {announcementTitle}")
+                .bodyTemplate("Giảng viên khóa <b>{courseTitle}</b>: {preview}")
+                .active(true)
+                .build());
+        preferenceRepository.save(NotificationPreference.builder()
+                .userId(9L).inAppEnabled(false).emailEnabled(false).build());
+
+        CourseAnnouncementPostedEvent event = CourseAnnouncementPostedEvent.of(
+                5L, 3L, "Kiến trúc Microservices", "Lịch thi cuối kỳ", "Thi vào thứ Hai tuần sau.",
+                List.of(7L, 8L, 7L, 9L));
+
+        eventProcessor.process(event.eventId(), event.eventType(), KafkaTopics.COURSE_EVENTS, json(event));
+
+        List<Notification> all = notificationRepository.findAll();
+        assertThat(all).extracting(Notification::getUserId).containsExactlyInAnyOrder(7L, 8L);
+        assertThat(all).allSatisfy(n -> {
+            assertThat(n.getType()).isEqualTo("COURSE_ANNOUNCEMENT");
+            assertThat(n.getTitle()).isEqualTo("Thông báo mới: Lịch thi cuối kỳ");
+            assertThat(n.getContent()).isEqualTo("Giảng viên khóa <b>Kiến trúc Microservices</b>: Thi vào thứ Hai tuần sau.");
+            assertThat(n.getLinkUrl()).isEqualTo("/courses/3#thong-bao");
+        });
     }
 }

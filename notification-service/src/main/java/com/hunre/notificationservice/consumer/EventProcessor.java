@@ -3,6 +3,7 @@ package com.hunre.notificationservice.consumer;
 import com.hunre.notificationservice.repository.ProcessedEventRepository;
 import com.hunre.notificationservice.service.NotificationService;
 import com.hunre.sharedcommon.event.CertificateIssuedEvent;
+import com.hunre.sharedcommon.event.CourseAnnouncementPostedEvent;
 import com.hunre.sharedcommon.event.EnrollmentCompletedEvent;
 import com.hunre.sharedcommon.event.EnrollmentCreatedEvent;
 import com.hunre.sharedcommon.event.EventTypes;
@@ -16,6 +17,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 
 /**
@@ -56,6 +58,7 @@ public class EventProcessor {
             case EventTypes.ENROLLMENT_COMPLETED -> handleEnrollmentCompleted(payload);
             case EventTypes.QUIZ_GRADED -> handleQuizGraded(payload);
             case EventTypes.CERTIFICATE_ISSUED -> handleCertificateIssued(payload);
+            case EventTypes.COURSE_ANNOUNCEMENT_POSTED -> handleAnnouncementPosted(payload);
             // Service khác thêm loại sự kiện mới mà service này chưa biết là chuyện bình
             // thường, không phải lỗi. Vẫn ghi sổ để lần gửi lại không phải đọc lại nữa.
             default -> log.debug("Bỏ qua sự kiện loại {} vì chưa có xử lý tương ứng", eventType);
@@ -106,6 +109,27 @@ public class EventProcessor {
         // là trang lỗi. Trang chứng chỉ của web đi theo mã ghi danh.
         notificationService.createInApp(
                 "CERTIFICATE_ISSUED", event.userId(), variables, certificatePage(event.enrollmentId()));
+    }
+
+    /**
+     * Một sự kiện, nhiều người nhận. Tất cả nằm trong một transaction với dòng ghi sổ: lỗi giữa
+     * chừng thì rollback hết rồi Kafka gửi lại, không có cảnh nửa lớp nhận hai lần.
+     */
+    private void handleAnnouncementPosted(String payload) {
+        CourseAnnouncementPostedEvent event = objectMapper.readValue(payload, CourseAnnouncementPostedEvent.class);
+        if (event.recipientIds() == null || event.recipientIds().isEmpty()) {
+            return;
+        }
+
+        Map<String, String> variables = new LinkedHashMap<>();
+        variables.put("courseTitle", event.courseTitle());
+        variables.put("announcementTitle", event.title());
+        variables.put("preview", event.preview());
+
+        String link = "/courses/" + event.courseId() + "#thong-bao";
+        for (Long userId : new LinkedHashSet<>(event.recipientIds())) {
+            notificationService.createInApp("COURSE_ANNOUNCEMENT", userId, variables, link);
+        }
     }
 
     /**

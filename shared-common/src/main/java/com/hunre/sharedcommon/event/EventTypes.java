@@ -28,6 +28,9 @@ public final class EventTypes {
      */
     public static final String COURSE_UPDATED = "course.updated";
 
+    /** Giảng viên đăng thông báo cho học viên của khóa học. Phát bởi course-service. */
+    public static final String COURSE_ANNOUNCEMENT_POSTED = "course.announcement.posted";
+
     private EventTypes() {
         throw new AssertionError("Lớp hằng số, không tạo thể hiện");
     }

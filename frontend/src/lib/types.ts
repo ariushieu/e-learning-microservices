@@ -18,6 +18,17 @@ export interface ErrorBody {
   fieldErrors?: { field: string; message: string }[];
 }
 
+/** Thông báo giảng viên gửi cho học viên của khóa. recipientCount chỉ có khi người xem quản lý khóa. */
+export interface CourseAnnouncement {
+  id: number;
+  courseId: number;
+  title: string;
+  content: string;
+  authorName: string;
+  recipientCount: number | null;
+  createdAt: string;
+}
+
 export interface Page<T> {
   content: T[];
   page: number;
