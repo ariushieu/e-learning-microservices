@@ -1,4 +1,4 @@
-import { ArrowRightIcon, AwardIcon, BookOpenIcon, ClipboardCheckIcon, CompassIcon, PlayIcon, RotateCcwIcon, TrophyIcon, XCircleIcon, type LucideIcon } from "lucide-react";
+import { ArrowRightIcon, AwardIcon, BookOpenIcon, ClipboardCheckIcon, CompassIcon, HeartIcon, PlayIcon, RotateCcwIcon, TrophyIcon, XCircleIcon, type LucideIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CourseCover } from "@/components/common/course-cover";
@@ -10,6 +10,7 @@ import { Section } from "@/components/common/section";
 import { Stat, StatGrid } from "@/components/common/stat";
 import { StatusBadge } from "@/components/common/status-badge";
 import { attempt, getMyEnrollments } from "@/components/course/queries";
+import { CourseCard } from "@/components/course/course-card";
 import { CancelEnrollmentButton } from "@/components/enrollment/cancel-enrollment-button";
 import { CertificateTile } from "@/components/enrollment/certificate-tile";
 import { getMyCertificates, getMyQuizResults, type QuizResult } from "@/components/enrollment/learning-data";
@@ -19,7 +20,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDay, formatNumber } from "@/lib/format";
-import type { Enrollment, EnrollmentStatus } from "@/lib/types";
+import { gateway } from "@/lib/server/gateway";
+import type { CourseSummary, Enrollment, EnrollmentStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Học tập của tôi" };
@@ -43,10 +45,11 @@ export default async function MyCoursesPage() {
   const result = await attempt(getMyEnrollments());
   const enrollments = [...(result.data ?? [])].sort((a, b) => order[a.status] - order[b.status]);
   // Số liệu phụ: service nào lỗi thì chỉ phần đó trống, danh sách khóa vẫn hiện.
-  const [certificates, quizResults, catalog] = await Promise.all([
+  const [certificates, quizResults, catalog, wishlist] = await Promise.all([
     result.data ? getMyCertificates(result.data).catch(() => null) : null,
     result.data ? getMyQuizResults(result.data).catch(() => null) : null,
     getPublishedCourses().catch(() => []),
+    attempt(gateway<CourseSummary[]>("/api/wishlist")),
   ]);
   const covers = new Map(catalog.map((c) => [c.id, c.thumbnailUrl]));
   const active = enrollments
@@ -144,6 +147,34 @@ export default async function MyCoursesPage() {
               </CardGrid>
             </Section>
           )}
+
+          <Section
+            id="yeu-thich"
+            title="Khóa học yêu thích"
+            count={wishlist.data?.length}
+            description="Khóa bạn lưu lại để học sau. Bấm trái tim trên thẻ khóa để bỏ lưu."
+          >
+            {wishlist.error !== null ? (
+              <ErrorAlert title="Không tải được danh sách yêu thích" message={wishlist.error} />
+            ) : wishlist.data.length === 0 ? (
+              <EmptyState
+                icon={HeartIcon}
+                title="Chưa lưu khóa học nào"
+                description="Bấm biểu tượng trái tim trên thẻ khóa học để lưu lại học sau."
+                action={
+                  <Button asChild variant="outline">
+                    <Link href="/courses">Khám phá khóa học</Link>
+                  </Button>
+                }
+              />
+            ) : (
+              <CardGrid>
+                {wishlist.data.map((c) => (
+                  <CourseCard key={c.id} course={c} saved />
+                ))}
+              </CardGrid>
+            )}
+          </Section>
 
           <Section title="Tất cả khóa học đã ghi danh">
         <Tabs defaultValue="all" className="gap-6">

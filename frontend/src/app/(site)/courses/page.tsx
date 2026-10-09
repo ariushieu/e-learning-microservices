@@ -13,7 +13,7 @@ import { CardGrid } from "@/components/templates/list-page";
 import { HeroMeta } from "@/components/templates/detail-page";
 import { Button } from "@/components/ui/button";
 import { formatNumber } from "@/lib/format";
-import { gateway } from "@/lib/server/gateway";
+import { gateway, getSession } from "@/lib/server/gateway";
 import type { Category, CourseSummary, Page } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Khóa học" };
@@ -41,10 +41,14 @@ export default async function CoursesPage({ searchParams }: PageProps<"/courses"
   // Khóa cùng giá/số học viên vẫn có thứ tự ổn định khi chuyển trang.
   query.append("sort", "id,desc");
 
-  const [categories, courses] = await Promise.all([
+  const session = await getSession();
+  const [categories, courses, wishlist] = await Promise.all([
     attempt(gateway<Category[]>("/api/categories/tree")),
     attempt(gateway<Page<CourseSummary>>(`/api/courses?${query}`)),
+    // Lỗi danh sách yêu thích thì chỉ ẩn trái tim, danh mục khóa học vẫn hiện.
+    session ? attempt(gateway<number[]>("/api/wishlist/ids")) : Promise.resolve(null),
   ]);
+  const saved = wishlist?.data ? new Set(wishlist.data) : null;
 
   const hrefFor = (p: number) => {
     const q = new URLSearchParams();
@@ -122,7 +126,7 @@ export default async function CoursesPage({ searchParams }: PageProps<"/courses"
           <>
             <CardGrid>
               {courses.data.content.map((c) => (
-                <CourseCard key={c.id} course={c} />
+                <CourseCard key={c.id} course={c} saved={saved ? saved.has(c.id) : undefined} />
               ))}
             </CardGrid>
             <Pagination page={courses.data.page} totalPages={courses.data.totalPages} hrefFor={hrefFor} />

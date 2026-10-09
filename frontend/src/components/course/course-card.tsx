@@ -4,6 +4,7 @@ import { CourseCover } from "@/components/common/course-cover";
 import { Badge } from "@/components/ui/badge";
 import { formatDuration, formatPrice, label } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { WishlistButton } from "./wishlist-button";
 import type { CourseSummary } from "@/lib/types";
 
 /** Học phí: miễn phí tô màu chính cho nổi, có phí để màu chữ thường. */
@@ -16,10 +17,12 @@ export function PriceTag({ price, className }: { price: number; className?: stri
   );
 }
 
-export function CourseCard({ course }: { course: CourseSummary }) {
+/** saved: trạng thái yêu thích của người đang xem; bỏ trống (khách) thì không hiện nút trái tim. */
+export function CourseCard({ course, saved }: { course: CourseSummary; saved?: boolean }) {
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-xl bg-card shadow-card ring-1 ring-border transition-[box-shadow,translate] duration-200 hover:-translate-y-0.5 hover:shadow-raised focus-within:ring-3 focus-within:ring-ring/50 motion-reduce:transition-none motion-reduce:hover:translate-y-0">
       <CourseCover title={course.title} thumbnailUrl={course.thumbnailUrl} />
+      {saved !== undefined && <WishlistButton courseId={course.id} title={course.title} initialSaved={saved} />}
       <div className="flex flex-1 flex-col gap-1.5 p-4">
         <p className="truncate text-caption font-medium text-primary">{course.categoryName}</p>
         <h3 className="line-clamp-2 text-subheading transition-colors group-hover:text-primary">

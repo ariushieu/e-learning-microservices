@@ -32,6 +32,7 @@ import { CourseReviews } from "@/components/course/course-reviews";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { attempt, getCourse, getMyEnrollments, isId } from "@/components/course/queries";
+import { WishlistButton } from "@/components/course/wishlist-button";
 import { EnrollButton } from "@/components/enrollment/enroll-button";
 import { QuizList } from "@/components/quiz/course-quizzes";
 import { DetailHero, DetailPage, HeroMeta } from "@/components/templates/detail-page";
@@ -61,10 +62,11 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
   const [course, session] = await Promise.all([getCourse(id), getSession()]);
   if (!course) notFound();
 
-  const [curriculum, enrollments, quizzes] = await Promise.all([
+  const [curriculum, enrollments, quizzes, wishlist] = await Promise.all([
     attempt(gateway<CourseSection[]>(`/api/courses/${id}/curriculum`)),
     session ? attempt(getMyEnrollments()) : Promise.resolve(null),
     session ? attempt(gateway<Quiz[]>(`/api/quizzes?courseId=${id}`)) : Promise.resolve(null),
+    session && course.status === "PUBLISHED" ? attempt(gateway<number[]>("/api/wishlist/ids")) : Promise.resolve(null),
   ]);
   const enrollment = enrollments?.data?.find((e) => e.courseId === course.id) ?? null;
   const activeEnrollment = enrollment && enrollment.status !== "CANCELLED" ? enrollment : null;
@@ -130,6 +132,7 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
               enrollment={enrollment}
               enrollmentError={enrollments?.error ?? null}
               isManager={isManager}
+              saved={wishlist?.data ? wishlist.data.includes(course.id) : null}
             />
           </div>
           <div className="space-y-3 border-t p-5">
@@ -236,13 +239,16 @@ function EnrollAction({
   enrollment,
   enrollmentError,
   isManager,
+  saved,
 }: {
   course: Course;
   session: Session | null;
   enrollment: Enrollment | null;
   enrollmentError: string | null;
   isManager: boolean;
+  saved: boolean | null;
 }) {
+  const wish = saved !== null && <WishlistButton courseId={course.id} title={course.title} initialSaved={saved} variant="button" />;
   const manage = isManager && (
     <Button asChild variant="outline" size="lg" className="w-full">
       <Link href={`/instructor/courses/${course.id}`}>
@@ -283,6 +289,7 @@ function EnrollAction({
               </Link>
             </Button>
           )}
+          {wish}
           {manage}
         </div>
       </div>
@@ -301,6 +308,7 @@ function EnrollAction({
             : "Khóa học chưa xuất bản nên chưa thể ghi danh."}
         </p>
       )}
+      {wish}
       {manage}
     </div>
   );
