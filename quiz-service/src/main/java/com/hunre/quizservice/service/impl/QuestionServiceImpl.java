@@ -9,6 +9,7 @@ import com.hunre.quizservice.entity.AnswerOption;
 import com.hunre.quizservice.entity.Question;
 import com.hunre.quizservice.entity.QuestionType;
 import com.hunre.quizservice.entity.Quiz;
+import com.hunre.quizservice.repository.AnswerOptionRepository;
 import com.hunre.quizservice.repository.QuestionRepository;
 import com.hunre.quizservice.repository.QuizRepository;
 import com.hunre.quizservice.service.QuestionService;
@@ -21,7 +22,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +37,7 @@ public class QuestionServiceImpl implements QuestionService {
 
     private final QuizRepository quizRepository;
     private final QuestionRepository questionRepository;
+    private final AnswerOptionRepository answerOptionRepository;
 
     @Override
     @Transactional
@@ -94,20 +102,50 @@ public class QuestionServiceImpl implements QuestionService {
         }
         question.setExplanation(request.getExplanation());
 
-        // Cập nhật lại danh sách options
-        question.getOptions().clear();
-        for (int i = 0; i < request.getOptions().size(); i++) {
-            AnswerOptionRequest optReq = request.getOptions().get(i);
-            AnswerOption option = AnswerOption.builder()
-                    .content(optReq.getContent())
-                    .isCorrect(Boolean.TRUE.equals(optReq.getIsCorrect()))
-                    .position(optReq.getPosition() != null ? optReq.getPosition() : (i + 1))
-                    .build();
-            question.addOption(option);
-        }
+        syncOptions(question, request.getOptions());
 
         Question updated = questionRepository.save(question);
         return QuestionResponse.from(updated, true);
+    }
+
+    /**
+     * Sửa phương án tại chỗ theo id để bài làm cũ vẫn trỏ đúng phương án học viên đã chọn
+     * (attempt_answer_options có khóa ngoại tới answer_options). Phương án không có id là phương án mới;
+     * phương án cũ không còn trong yêu cầu thì bị gỡ, trừ khi đã có người chọn.
+     */
+    private void syncOptions(Question question, List<AnswerOptionRequest> requested) {
+        Map<Long, AnswerOption> existing = new HashMap<>();
+        question.getOptions().forEach(o -> existing.put(o.getId(), o));
+        Set<Long> kept = new HashSet<>();
+        List<AnswerOption> added = new ArrayList<>();
+        for (int i = 0; i < requested.size(); i++) {
+            AnswerOptionRequest optReq = requested.get(i);
+            int position = optReq.getPosition() != null ? optReq.getPosition() : (i + 1);
+            boolean correct = Boolean.TRUE.equals(optReq.getIsCorrect());
+            if (optReq.getId() == null) {
+                added.add(AnswerOption.builder().content(optReq.getContent()).isCorrect(correct).position(position).build());
+                continue;
+            }
+            AnswerOption option = existing.get(optReq.getId());
+            if (option == null || !kept.add(optReq.getId())) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "Phương án id " + optReq.getId() + " không thuộc câu hỏi này");
+            }
+            option.setContent(optReq.getContent());
+            option.setCorrect(correct);
+            option.setPosition(position);
+        }
+
+        List<AnswerOption> removed = question.getOptions().stream().filter(o -> !kept.contains(o.getId())).toList();
+        if (!removed.isEmpty()) {
+            Set<Long> picked = answerOptionRepository.findPickedIds(removed.stream().map(AnswerOption::getId).toList());
+            removed.stream().filter(o -> picked.contains(o.getId())).findFirst().ifPresent(o -> {
+                throw new BusinessException(ErrorCode.BUSINESS_RULE_VIOLATED, "Không thể bỏ phương án \"" + o.getContent()
+                        + "\" vì đã có học viên chọn. Hãy giữ phương án đó (có thể sửa nội dung), hoặc xóa câu hỏi rồi tạo câu mới.");
+            });
+            removed.forEach(question::removeOption);
+        }
+        added.forEach(question::addOption);
+        question.getOptions().sort(Comparator.comparing(AnswerOption::getPosition));
     }
 
     @Override
