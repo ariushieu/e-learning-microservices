@@ -80,6 +80,17 @@ class DomainEventSerializationTest {
                 "thumbnailUrl", "instructorId", "instructorName", "totalLessons", "status", "lessonIds");
     }
 
+    @Test
+    @DisplayName("CourseAnnouncementPostedEvent giữ nguyên bộ tên trường đã thống nhất")
+    void hopDongCourseAnnouncementPosted() {
+        CourseAnnouncementPostedEvent event = CourseAnnouncementPostedEvent.of(
+                5L, 1L, "Kiến trúc Microservices", "Lịch thi", "Thi vào thứ Hai", List.of(7L, 8L));
+
+        assertThat(fieldNamesOf(event)).containsExactlyInAnyOrder(
+                "eventId", "eventType", "occurredAt", "announcementId", "courseId", "courseTitle",
+                "title", "preview", "recipientIds");
+    }
+
     /**
      * Mỗi trường của sự kiện đổ vào đúng một cột của {@code course_snapshots}. Test này bắt
      * trường hợp ai đó thêm cột vào bảng mà quên thêm trường vào sự kiện, hoặc ngược lại —
@@ -190,6 +201,8 @@ class DomainEventSerializationTest {
                 .isEqualTo(EventTypes.QUIZ_GRADED);
         assertThat(CourseUpdatedEvent.of(1L, "x", "x", null, 1L, null, 0, "PUBLISHED").eventType())
                 .isEqualTo(EventTypes.COURSE_UPDATED);
+        assertThat(CourseAnnouncementPostedEvent.of(1L, 1L, "x", "t", "p", List.of()).eventType())
+                .isEqualTo(EventTypes.COURSE_ANNOUNCEMENT_POSTED);
     }
 
     private List<String> fieldNamesOf(DomainEvent event) {
