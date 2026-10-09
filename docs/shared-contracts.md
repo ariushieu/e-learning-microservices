@@ -182,6 +182,7 @@ GlobalExceptionHandler authExceptionHandler() {
 | `elearning.enrollment.events` | enrollment-service | `enrollment.created`, `enrollment.completed`, `certificate.issued` |
 | `elearning.course.events` | course-service | `course.updated` |
 | `elearning.quiz.events` | quiz-service | `quiz.graded` |
+| `elearning.auth.events` | auth-service | `user.registered`, `user.profile.updated` |
 
 Gom theo service phát chứ không tách mỗi loại sự kiện một topic, vì Kafka chỉ bảo đảm thứ
 tự trong phạm vi một partition của một topic. Ghi danh phải đến trước hoàn thành khóa học,
@@ -281,6 +282,10 @@ có email hay họ tên người dùng — những thứ đó thuộc auth-servi
 Nhét email vào sự kiện đồng nghĩa enrollment-service phải gọi sang auth-service ngay lúc
 ghi danh, biến một luồng bất đồng bộ thành phụ thuộc đồng bộ: auth-service sập là không ai
 ghi danh được nữa. Consumer nào cần thông tin người dùng thì tự lấy.
+
+Email và họ tên chỉ đi trên `elearning.auth.events`, do chính auth-service phát. Ai cần gửi
+thư thì giữ bản sao từ topic này, như bảng `user_contacts` của notification-service (xem
+[notifications.md](notifications.md#email)).
 
 ### Ví dụ JSON
 

@@ -218,6 +218,16 @@ class DomainEventSerializationTest {
                 .isEqualTo(EventTypes.LESSON_QUESTION_POSTED);
         assertThat(LessonQuestionAnsweredEvent.of(1L, 1L, 1L, 1L, "l", 1L, 2L, "a", "STUDENT", "p").eventType())
                 .isEqualTo(EventTypes.LESSON_QUESTION_ANSWERED);
+        assertThat(UserRegisteredEvent.of(1L, "a@b.vn", "A").eventType()).isEqualTo(EventTypes.USER_REGISTERED);
+        assertThat(UserProfileUpdatedEvent.of(1L, "a@b.vn", "A").eventType()).isEqualTo(EventTypes.USER_PROFILE_UPDATED);
+    }
+
+    @Test
+    @DisplayName("Sự kiện tài khoản giữ nguyên bộ tên trường mà migration V7 của auth-service dựng bằng SQL")
+    void hopDongUserEvents() {
+        List<String> expected = List.of("eventId", "eventType", "occurredAt", "userId", "email", "fullName");
+        assertThat(fieldNamesOf(UserRegisteredEvent.of(1L, "a@b.vn", "A"))).containsExactlyInAnyOrderElementsOf(expected);
+        assertThat(fieldNamesOf(UserProfileUpdatedEvent.of(1L, "a@b.vn", "A"))).containsExactlyInAnyOrderElementsOf(expected);
     }
 
     private List<String> fieldNamesOf(DomainEvent event) {
