@@ -1,7 +1,7 @@
 package com.hunre.notificationservice.repository;
 
 import com.hunre.notificationservice.entity.Notification;
-import com.hunre.notificationservice.entity.NotificationChannel;
+import com.hunre.notificationservice.entity.NotificationChannel;
 import com.hunre.notificationservice.entity.NotificationStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,7 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
-import java.util.List;
+import java.util.List;
 import java.util.Optional;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
