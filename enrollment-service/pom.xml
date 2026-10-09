@@ -82,6 +82,15 @@
             <artifactId>spring-kafka</artifactId>
         </dependency>
 
+        <!--
+            Redis giữ bảng xếp hạng dạng sorted set. MySQL vẫn là nguồn sự thật: Redis mất thì
+            tính lại từ MySQL, chỉ chậm hơn. Xem leaderboard/LeaderboardService.
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
         <!-- H2 in-memory DB for tests -->
         <dependency>
             <groupId>com.h2database</groupId>

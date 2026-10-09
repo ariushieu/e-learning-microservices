@@ -13,7 +13,12 @@ export async function SiteHeader() {
     { href: "/", label: "Trang chủ" },
     { href: "/courses", label: "Khóa học" },
     { href: "/instructors", label: "Giảng viên" },
-    ...(session ? [{ href: "/my-courses", label: "Học tập của tôi" }] : []),
+    ...(session
+      ? [
+          { href: "/my-courses", label: "Học tập của tôi" },
+          { href: "/leaderboard", label: "Xếp hạng" },
+        ]
+      : []),
     ...(hasRole(session, "ROLE_INSTRUCTOR", "ROLE_ADMIN") ? [{ href: "/instructor", label: "Giảng dạy" }] : []),
   ];
 

@@ -6,6 +6,7 @@ import com.hunre.enrollmentservice.dto.request.EnrollCourseRequest;
 import com.hunre.enrollmentservice.dto.response.CertificateResponse;
 import com.hunre.enrollmentservice.dto.response.EnrollmentResponse;
 import com.hunre.enrollmentservice.entity.Certificate;
+import com.hunre.enrollmentservice.leaderboard.LeaderboardCache;
 import com.hunre.enrollmentservice.entity.CourseSnapshot;
 import com.hunre.enrollmentservice.entity.Enrollment;
 import com.hunre.enrollmentservice.entity.EnrollmentStatus;
@@ -50,6 +51,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     private final CourseClient courseClient;
     private final com.hunre.enrollmentservice.client.CourseLessonClient courseLessonClient;
     private final CertificateDetailsService certificateDetails;
+    private final LeaderboardCache leaderboardCache;
 
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
@@ -89,6 +91,8 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 existing.setLearnerName(verifiedName);
                 existing.setLastAccessedAt(Instant.now());
                 Enrollment reactivated = enrollmentRepository.save(existing);
+                // Học lại thì điểm của các bài đã học trước khi hủy được tính trở lại.
+                leaderboardCache.evictAfterCommit();
                 saveEnrollmentCreatedOutboxEvent(reactivated, course.getTitle());
                 log.info("Học viên id={} kích hoạt lại lượt ghi danh khóa học id={}", currentUserId, courseId);
                 return EnrollmentResponse.from(reactivated, course.getTitle());
@@ -182,6 +186,8 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         enrollment.setStatus(EnrollmentStatus.CANCELLED);
         enrollment.setLastAccessedAt(Instant.now());
         Enrollment saved = enrollmentRepository.save(enrollment);
+        // Lượt đã hủy không được tính điểm nữa.
+        leaderboardCache.evictAfterCommit();
 
         String courseTitle = courseSnapshotRepository.findById(enrollment.getCourseId())
                 .map(com.hunre.enrollmentservice.entity.CourseSnapshot::getTitle)
