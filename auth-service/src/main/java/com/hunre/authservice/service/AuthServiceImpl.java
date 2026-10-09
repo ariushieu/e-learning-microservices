@@ -4,6 +4,7 @@ import com.hunre.authservice.domain.*;
 import com.hunre.authservice.dto.*;
 import com.hunre.authservice.exception.IncorrectCurrentPasswordException;
 import com.hunre.authservice.exception.IncorrectLoginPasswordException;
+import com.hunre.authservice.outbox.AccountEventPublisher;
 import com.hunre.authservice.repository.RefreshTokenRepository;
 import com.hunre.authservice.repository.RoleRepository;
 import com.hunre.authservice.repository.UserRepository;
@@ -35,6 +36,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final LoginEventService loginEvents;
+    private final AccountEventPublisher accountEvents;
 
     @Override
     @Transactional
@@ -64,6 +66,7 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         User savedUser = userRepository.save(user);
+        accountEvents.registered(savedUser);
         log.info("Registered new user with id: {} and email: {}", savedUser.getId(), savedUser.getEmail());
         return UserResponse.from(savedUser);
     }
@@ -202,9 +205,15 @@ public class AuthServiceImpl implements AuthService {
     public UserResponse updateProfile(Long userId, UpdateProfileRequest request) {
         User user = userRepository.findByIdForUpdate(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("người dùng", "id", userId));
+        String previousName = user.getFullName();
         user.setFullName(request.getFullName().trim());
         user.setPhone(normalizePhone(request.getPhone()));
-        return UserResponse.from(userRepository.save(user));
+        User saved = userRepository.save(user);
+        // Chỉ tên và email đi vào user_contacts; đổi số điện thoại thì không cần báo.
+        if (!saved.getFullName().equals(previousName)) {
+            accountEvents.profileUpdated(saved);
+        }
+        return UserResponse.from(saved);
     }
 
     private static String normalizePhone(String phone) {
