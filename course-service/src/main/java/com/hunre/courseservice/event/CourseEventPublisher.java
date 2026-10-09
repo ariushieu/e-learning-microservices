@@ -5,6 +5,7 @@ import com.hunre.courseservice.entity.OutboxEvent;
 import com.hunre.courseservice.repository.OutboxEventRepository;
 import com.hunre.sharedcommon.event.CourseAnnouncementPostedEvent;
 import com.hunre.sharedcommon.event.CourseUpdatedEvent;
+import com.hunre.sharedcommon.event.DomainEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -39,8 +40,18 @@ public class CourseEventPublisher {
     /** Ghi sự kiện cùng giao dịch lưu thông báo: lưu được thông báo thì chắc chắn có người nhận. */
     @Transactional(propagation = Propagation.MANDATORY)
     public void publishAnnouncementPosted(CourseAnnouncementPostedEvent event) {
+        save(event, event.courseId());
+    }
+
+    /** Ghi cùng giao dịch lưu câu hỏi/câu trả lời: rollback thì không ai nhận thông báo về nội dung không tồn tại. */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void publishLessonEvent(DomainEvent event, Long courseId) {
+        save(event, courseId);
+    }
+
+    private void save(DomainEvent event, Long courseId) {
         repository.save(OutboxEvent.builder().eventId(event.eventId()).aggregateType("COURSE")
-                .aggregateId(String.valueOf(event.courseId())).eventType(event.eventType())
+                .aggregateId(String.valueOf(courseId)).eventType(event.eventType())
                 .payload(objectMapper.writeValueAsString(event)).build());
     }
 }

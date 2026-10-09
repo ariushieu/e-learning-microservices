@@ -9,6 +9,7 @@ import com.hunre.courseservice.event.CourseEventPublisher;
 import com.hunre.courseservice.repository.CourseAnnouncementRepository;
 import com.hunre.courseservice.repository.CourseLearnerRepository;
 import com.hunre.courseservice.repository.CourseRepository;
+import com.hunre.courseservice.util.TextPreview;
 import com.hunre.sharedcommon.dto.PageResponse;
 import com.hunre.sharedcommon.event.CourseAnnouncementPostedEvent;
 import com.hunre.sharedcommon.exception.BusinessException;
@@ -32,8 +33,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class CourseAnnouncementService {
-    static final int PREVIEW_LENGTH = 140;
-
     private final CourseAnnouncementRepository announcements;
     private final CourseRepository courses;
     private final CourseLearnerRepository learners;
@@ -73,7 +72,7 @@ public class CourseAnnouncementService {
 
         if (!recipients.isEmpty()) {
             publisher.publishAnnouncementPosted(CourseAnnouncementPostedEvent.of(announcement.getId(), courseId,
-                    course.getTitle(), announcement.getTitle(), preview(announcement.getContent()), recipients));
+                    course.getTitle(), announcement.getTitle(), TextPreview.of(announcement.getContent()), recipients));
         }
         return CourseAnnouncementResponse.from(announcement, true);
     }
@@ -85,16 +84,6 @@ public class CourseAnnouncementService {
         var announcement = announcements.findByIdAndCourseId(announcementId, courseId)
                 .orElseThrow(() -> new ResourceNotFoundException("thông báo", "id", announcementId));
         announcements.delete(announcement);
-    }
-
-    /** Một dòng ngắn cho hộp thư: gộp khoảng trắng và xuống dòng, cắt ở {@value #PREVIEW_LENGTH} ký tự. */
-    static String preview(String content) {
-        String flat = content.strip().replaceAll("\\s+", " ");
-        if (flat.length() <= PREVIEW_LENGTH) return flat;
-        int end = PREVIEW_LENGTH;
-        // Không cắt đôi một cặp surrogate (emoji).
-        if (Character.isHighSurrogate(flat.charAt(end - 1))) end--;
-        return flat.substring(0, end).stripTrailing() + "…";
     }
 
     private Course requireManager(Long courseId, AuthenticatedUser user) {
