@@ -1,6 +1,7 @@
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { getReviewInboxSummary } from "@/components/course/instructor-review-query";
-import { getSession } from "@/lib/server/gateway";
+import { attempt } from "@/components/course/queries";
+import { gateway, getSession } from "@/lib/server/gateway";
 import { hasRole } from "@/lib/auth-shared";
 import { DashboardCrumbs } from "@/components/layout/dashboard-crumbs";
 import { UserMenu } from "@/components/layout/user-menu";
@@ -11,10 +12,16 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 /** Khu giảng viên và quản trị: sidebar xanh đậm bên trái, nội dung rộng bên phải. */
 export default async function DashboardLayout({ children }: LayoutProps<"/">) {
   const session = await getSession();
-  const summary = hasRole(session, "ROLE_INSTRUCTOR", "ROLE_ADMIN") ? await getReviewInboxSummary() : null;
+  const staff = hasRole(session, "ROLE_INSTRUCTOR", "ROLE_ADMIN");
+  const [summary, questions] = staff
+    ? await Promise.all([
+        getReviewInboxSummary(),
+        attempt(gateway<{ count: number }>("/api/instructor/questions/unanswered-count")),
+      ])
+    : [null, null];
   return (
     <SidebarProvider>
-      <AppSidebar unrepliedCount={summary?.data?.unrepliedCount ?? null} />
+      <AppSidebar unrepliedCount={summary?.data?.unrepliedCount ?? null} unansweredCount={questions?.data?.count ?? null} />
       <SidebarInset className="min-w-0 bg-background">
         <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b bg-card/85 px-4 backdrop-blur-md">
           <SidebarTrigger className="-ml-1" />

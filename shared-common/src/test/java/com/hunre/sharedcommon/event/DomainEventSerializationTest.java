@@ -81,6 +81,17 @@ class DomainEventSerializationTest {
     }
 
     @Test
+    @DisplayName("Hai sự kiện hỏi đáp giữ nguyên bộ tên trường đã thống nhất")
+    void hopDongHoiDap() {
+        assertThat(fieldNamesOf(LessonQuestionPostedEvent.of(1L, 2L, 3L, "Khóa", "Bài", 4L, "An", 5L, "Hỏi"))).containsExactlyInAnyOrder(
+                "eventId", "eventType", "occurredAt", "questionId", "lessonId", "courseId", "courseTitle",
+                "lessonTitle", "askerId", "askerName", "instructorId", "preview");
+        assertThat(fieldNamesOf(LessonQuestionAnsweredEvent.of(1L, 2L, 3L, 4L, "Bài", 5L, 6L, "Cô Hà", "INSTRUCTOR", "Đáp")))
+                .containsExactlyInAnyOrder("eventId", "eventType", "occurredAt", "questionId", "answerId", "lessonId",
+                        "courseId", "lessonTitle", "askerId", "answererId", "answererName", "answererRole", "preview");
+    }
+
+    @Test
     @DisplayName("CourseAnnouncementPostedEvent giữ nguyên bộ tên trường đã thống nhất")
     void hopDongCourseAnnouncementPosted() {
         CourseAnnouncementPostedEvent event = CourseAnnouncementPostedEvent.of(
@@ -203,6 +214,10 @@ class DomainEventSerializationTest {
                 .isEqualTo(EventTypes.COURSE_UPDATED);
         assertThat(CourseAnnouncementPostedEvent.of(1L, 1L, "x", "t", "p", List.of()).eventType())
                 .isEqualTo(EventTypes.COURSE_ANNOUNCEMENT_POSTED);
+        assertThat(LessonQuestionPostedEvent.of(1L, 1L, 1L, "c", "l", 1L, "a", 1L, "p").eventType())
+                .isEqualTo(EventTypes.LESSON_QUESTION_POSTED);
+        assertThat(LessonQuestionAnsweredEvent.of(1L, 1L, 1L, 1L, "l", 1L, 2L, "a", "STUDENT", "p").eventType())
+                .isEqualTo(EventTypes.LESSON_QUESTION_ANSWERED);
     }
 
     private List<String> fieldNamesOf(DomainEvent event) {

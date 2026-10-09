@@ -4,6 +4,7 @@ import {
   ArrowLeftIcon,
   FolderTreeIcon,
   LayoutDashboardIcon,
+  MessageCircleQuestionIcon,
   MessageSquareIcon,
   PlusCircleIcon,
   UsersIcon,
@@ -27,6 +28,7 @@ import { Brand } from "./brand";
 
 const TEACHING = [
   { href: "/instructor", label: "Khóa học tôi dạy", icon: LayoutDashboardIcon, exact: true },
+  { href: "/instructor/questions", label: "Hỏi đáp", icon: MessageCircleQuestionIcon, exact: true },
   { href: "/instructor/reviews", label: "Đánh giá", icon: MessageSquareIcon, exact: true },
   { href: "/instructor/courses/new", label: "Tạo khóa học", icon: PlusCircleIcon, exact: true },
 ];
@@ -37,7 +39,13 @@ const ADMIN = [
   { href: "/admin/categories", label: "Danh mục", icon: FolderTreeIcon, exact: false },
 ];
 
-export function AppSidebar({ unrepliedCount }: { unrepliedCount: number | null }) {
+export function AppSidebar({
+  unrepliedCount,
+  unansweredCount,
+}: {
+  unrepliedCount: number | null;
+  unansweredCount: number | null;
+}) {
   const pathname = usePathname();
   const { hasRole } = useSession();
   const isActive = (href: string, exact: boolean) =>
@@ -54,6 +62,18 @@ export function AppSidebar({ unrepliedCount }: { unrepliedCount: number | null }
                 <Link href={item.href}>
                   <item.icon />
                   <span>{item.label}</span>
+                  {item.href === "/instructor/questions" && (
+                    <span
+                      className="ml-auto rounded-md bg-sidebar-accent px-2 text-xs tabular-nums"
+                      aria-label={
+                        unansweredCount === null
+                          ? "Không tải được số câu hỏi chờ trả lời"
+                          : `${unansweredCount} câu hỏi chờ trả lời`
+                      }
+                    >
+                      {unansweredCount === null ? "—" : unansweredCount}
+                    </span>
+                  )}
                   {item.href === "/instructor/reviews" && (
                     <span
                       className="ml-auto rounded-md bg-sidebar-accent px-2 text-xs tabular-nums"

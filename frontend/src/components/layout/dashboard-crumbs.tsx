@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 // Tên khu vực trên thanh trên của khu giảng dạy/quản trị, theo đường dẫn.
 const AREAS: { test: RegExp; area: string; page: string }[] = [
   { test: /^\/instructor\/reviews/, area: "Giảng dạy", page: "Đánh giá" },
+  { test: /^\/instructor\/questions/, area: "Giảng dạy", page: "Hỏi đáp" },
   { test: /^\/instructor\/courses\/new$/, area: "Giảng dạy", page: "Tạo khóa học" },
   { test: /^\/instructor\/courses\/\d+/, area: "Giảng dạy", page: "Soạn khóa học" },
   { test: /^\/instructor\/quizzes\/\d+/, area: "Giảng dạy", page: "Soạn bài kiểm tra" },

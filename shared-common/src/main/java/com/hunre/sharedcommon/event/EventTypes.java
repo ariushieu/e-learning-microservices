@@ -31,6 +31,12 @@ public final class EventTypes {
     /** Giảng viên đăng thông báo cho học viên của khóa học. Phát bởi course-service. */
     public static final String COURSE_ANNOUNCEMENT_POSTED = "course.announcement.posted";
 
+    /** Học viên đặt câu hỏi trong bài học. Phát bởi course-service. */
+    public static final String LESSON_QUESTION_POSTED = "lesson.question.posted";
+
+    /** Có người trả lời câu hỏi trong bài học. Phát bởi course-service. */
+    public static final String LESSON_QUESTION_ANSWERED = "lesson.question.answered";
+
     private EventTypes() {
         throw new AssertionError("Lớp hằng số, không tạo thể hiện");
     }
