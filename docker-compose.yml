@@ -214,7 +214,11 @@ services:
     environment:
       <<: *backend-env
       COURSE_SERVICE_URL: http://course-service:8082
-    depends_on: *backend-depends
+      REDIS_HOST: redis
+    depends_on:
+      <<: *backend-depends
+      # Bảng xếp hạng đọc Redis trước; Redis chết thì tính từ MySQL, nên chỉ cần Redis đã chạy.
+      redis: { condition: service_started }
     healthcheck:
       <<: *healthcheck-timing
       test: ["CMD", "curl", "-fsS", "http://localhost:8083/actuator/health"]

@@ -6,6 +6,7 @@ import com.hunre.enrollmentservice.client.CourseDto;
 import com.hunre.enrollmentservice.dto.request.UpdateLessonProgressRequest;
 import com.hunre.enrollmentservice.dto.response.CourseProgressResponse;
 import com.hunre.enrollmentservice.dto.response.LessonProgressResponse;
+import com.hunre.enrollmentservice.leaderboard.LeaderboardCache;
 import com.hunre.enrollmentservice.entity.Certificate;
 import com.hunre.enrollmentservice.entity.CourseSnapshot;
 import com.hunre.enrollmentservice.entity.Enrollment;
@@ -51,6 +52,7 @@ public class ProgressServiceImpl implements ProgressService {
     private final CourseClient courseClient;
     private final CourseLessonClient courseLessonClient;
     private final CertificateDetailsService certificateDetails;
+    private final LeaderboardCache leaderboardCache;
 
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
@@ -118,6 +120,10 @@ public class ProgressServiceImpl implements ProgressService {
 
         // Cập nhật trạng thái
         if (request.getStatus() == LessonProgressStatus.COMPLETED) {
+            if (lessonProgress.getStatus() != LessonProgressStatus.COMPLETED) {
+                // Thêm một bài hoàn thành là đổi điểm trên bảng xếp hạng.
+                leaderboardCache.evictAfterCommit();
+            }
             lessonProgress.setStatus(LessonProgressStatus.COMPLETED);
             if (lessonProgress.getCompletedAt() == null) {
                 lessonProgress.setCompletedAt(Instant.now());
@@ -145,6 +151,7 @@ public class ProgressServiceImpl implements ProgressService {
         if (progressPercent.compareTo(BigDecimal.valueOf(100)) >= 0) {
             progressPercent = BigDecimal.valueOf(100).setScale(2, RoundingMode.HALF_UP);
             if (enrollment.getStatus() != EnrollmentStatus.COMPLETED) {
+                leaderboardCache.evictAfterCommit();
                 enrollment.setStatus(EnrollmentStatus.COMPLETED);
                 enrollment.setCompletedAt(Instant.now());
                 saveEnrollmentCompletedOutboxEvent(enrollment);
@@ -199,6 +206,7 @@ public class ProgressServiceImpl implements ProgressService {
         if (enrollment.getProgressPercent() == null || enrollment.getProgressPercent().compareTo(accuratePercent) != 0) {
             enrollment.setProgressPercent(accuratePercent);
             if (accuratePercent.compareTo(BigDecimal.valueOf(100)) >= 0 && enrollment.getStatus() != EnrollmentStatus.COMPLETED) {
+                leaderboardCache.evictAfterCommit();
                 enrollment.setStatus(EnrollmentStatus.COMPLETED);
                 enrollment.setCompletedAt(Instant.now());
                 saveEnrollmentCompletedOutboxEvent(enrollment);

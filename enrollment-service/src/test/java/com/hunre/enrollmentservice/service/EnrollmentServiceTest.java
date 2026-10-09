@@ -63,6 +63,9 @@ class EnrollmentServiceTest {
     @Mock
     private com.hunre.enrollmentservice.service.CertificateDetailsService certificateDetails;
 
+    @Mock
+    private com.hunre.enrollmentservice.leaderboard.LeaderboardCache leaderboardCache;
+
     @InjectMocks
     private EnrollmentServiceImpl enrollmentService;
 
