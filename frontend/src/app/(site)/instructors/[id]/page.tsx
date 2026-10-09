@@ -61,7 +61,7 @@ export default async function InstructorProfilePage({ params, searchParams }: Pa
     <DetailPage
       hero={
         <DetailHero
-          crumbs={[{ href: "/", label: "Khám phá" }, { label: "Giảng viên" }]}
+          crumbs={[{ href: "/instructors", label: "Giảng viên" }, { label: profile.name }]}
           eyebrow="Đồng hành cùng người học"
           title={
             <span className="flex min-w-0 flex-wrap items-center gap-5">

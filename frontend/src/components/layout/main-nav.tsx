@@ -12,7 +12,7 @@ import { Brand } from "./brand";
 type NavLink = { href: string; label: string };
 
 function isActive(pathname: string, href: string) {
-  return href === "/" ? pathname === "/" || pathname.startsWith("/courses") : pathname.startsWith(href);
+  return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 }
 
 /** Menu chính: thanh ngang từ md trở lên, ngăn kéo bên trái trên điện thoại. */

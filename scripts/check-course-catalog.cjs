@@ -35,7 +35,7 @@ async function run() {
   const cards = () => page.locator('section[aria-label="Danh sách khóa học"] a[href^="/courses/"]');
   const ids = async () => cards().evaluateAll(links => links.map(l => Number(l.getAttribute('href').split('/').pop())));
   const chips = () => page.getByRole('navigation', { name: 'Lọc nhanh theo danh mục' });
-  const initial = `${web}/?keyword=${tag}&level=BEGINNER&sort=price,asc`;
+  const initial = `${web}/courses?keyword=${tag}&level=BEGINNER&sort=price,asc`;
   await page.goto(web + '/design');
   await page.goto(initial);
   await chips().getByRole('link', { name: `${tag} danh mục 0`, exact: true }).click();
@@ -93,9 +93,9 @@ async function run() {
   await chips().getByRole('link', { name: 'Tất cả', exact: true }).focus(); await page.keyboard.press('Tab');
   assert.ok(await page.evaluate(() => !!document.activeElement.closest('nav[aria-label="Lọc nhanh theo danh mục"]')));
   checks.push('Tab chuyển tới chip tiếp theo');
-  await page.goto(`${web}/?keyword=missing-${tag}`); await page.getByText('Không tìm thấy khóa học nào phù hợp', { exact: true }).waitFor();
+  await page.goto(`${web}/courses?keyword=missing-${tag}`); await page.getByText('Không tìm thấy khóa học nào phù hợp', { exact: true }).waitFor();
   checks.push('Trạng thái không có kết quả');
-  await page.goto(`${web}/?keyword=${tag}&sort=invalid`); await page.getByRole('combobox', { name: 'Sắp xếp', exact: true }).waitFor();
+  await page.goto(`${web}/courses?keyword=${tag}&sort=invalid`); await page.getByRole('combobox', { name: 'Sắp xếp', exact: true }).waitFor();
   assert.equal(await page.getByRole('combobox', { name: 'Sắp xếp', exact: true }).inputValue(), 'createdAt,desc');
   checks.push('URL sort lạ trở về Mới nhất');
   assert.deepEqual(errors, []); checks.push('Không có lỗi JavaScript');

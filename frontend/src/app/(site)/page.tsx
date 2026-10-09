@@ -1,140 +1,130 @@
-import { AwardIcon, BookOpenIcon, LayersIcon, SearchXIcon } from "lucide-react";
+import { ArrowRightIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ContourPattern, FullBleed } from "@/components/common/decor";
-import { EmptyState } from "@/components/common/empty-state";
+import { redirect } from "next/navigation";
 import { ErrorAlert } from "@/components/common/error-alert";
-import { Pagination } from "@/components/common/pagination";
-import { Toolbar } from "@/components/common/toolbar";
-import { CatalogFilters, CatalogSearch, CategoryChips, catalogSorts, levels } from "@/components/course/catalog-filters";
+import { Section } from "@/components/common/section";
 import { CourseCard } from "@/components/course/course-card";
 import { attempt, getMyEnrollments } from "@/components/course/queries";
+import type { CourseReview } from "@/components/course/review-types";
 import { ContinueLearning } from "@/components/enrollment/continue-learning";
+import {
+  featuredCourses,
+  getCategoryTree,
+  getPublishedCourses,
+  platformStats,
+  summarizeInstructors,
+} from "@/components/home/catalog-data";
+import { FieldTiles, HomeHero, InstructorCard, StatsBand, Testimonials, VerifyAndTeach, type Testimonial } from "@/components/home/sections";
 import { CardGrid } from "@/components/templates/list-page";
-import { HeroMeta } from "@/components/templates/detail-page";
 import { Button } from "@/components/ui/button";
-import { formatNumber } from "@/lib/format";
 import { gateway, getSession } from "@/lib/server/gateway";
-import type { Category, CourseSummary, Page } from "@/lib/types";
+import type { CourseSummary, Page } from "@/lib/types";
 
 export const metadata: Metadata = { title: { absolute: "HUNRE E-Learning · Khóa học trực tuyến" } };
 
-const PAGE_SIZE = 12;
-
-function one(value: string | string[] | undefined): string {
-  return (Array.isArray(value) ? value[0] : value)?.trim() ?? "";
-}
+const CATALOG_PARAMS = ["keyword", "categoryId", "level", "sort", "page"];
 
 export default async function HomePage({ searchParams }: PageProps<"/">) {
+  // Danh sách có bộ lọc đã chuyển sang /courses; link cũ dạng /?keyword=… vẫn dùng được.
   const sp = await searchParams;
-  const keyword = one(sp.keyword);
-  const categoryId = /^\d+$/.test(one(sp.categoryId)) ? one(sp.categoryId) : "";
-  const level = levels.some((l) => l.value === one(sp.level)) ? one(sp.level) : "";
-  const sort = catalogSorts.find((s) => s.value === one(sp.sort))?.value ?? "createdAt,desc";
-  // Trên URL trang đếm từ 1 cho dễ đọc, backend đếm từ 0.
-  const pageParam = Number(one(sp.page));
-  const page = Number.isInteger(pageParam) && pageParam > 1 ? pageParam - 1 : 0;
-
-  const filters = { keyword, categoryId, level, sort };
-  const filtered = Boolean(keyword || categoryId || level);
-  const query = new URLSearchParams({ page: String(page), size: String(PAGE_SIZE) });
-  for (const [k, v] of Object.entries(filters)) if (v) query.set(k, v);
-  // Khóa cùng giá/số học viên vẫn có thứ tự ổn định khi chuyển trang.
-  query.append("sort", "id,desc");
+  if (CATALOG_PARAMS.some((k) => sp[k] !== undefined)) {
+    const query = new URLSearchParams();
+    for (const k of CATALOG_PARAMS) {
+      const v = sp[k];
+      if (typeof v === "string" && v) query.set(k, v);
+    }
+    redirect(`/courses?${query}`);
+  }
 
   const session = await getSession();
-  const [categories, courses, mine] = await Promise.all([
-    attempt(gateway<Category[]>("/api/categories/tree")),
-    attempt(gateway<Page<CourseSummary>>(`/api/courses?${query}`)),
-    // Phần "học tiếp" chỉ là lối tắt: lỗi enrollment-service thì ẩn đi, không che danh mục khóa học.
-    session && !filtered ? attempt(getMyEnrollments()) : Promise.resolve(null),
+  const [courses, categories, mine] = await Promise.all([
+    attempt(getPublishedCourses()),
+    attempt(getCategoryTree()),
+    session ? attempt(getMyEnrollments()) : Promise.resolve(null),
   ]);
 
-  const hrefFor = (p: number) => {
-    const q = new URLSearchParams();
-    for (const [k, v] of Object.entries(filters)) if (v) q.set(k, v);
-    if (p > 0) q.set("page", String(p + 1));
-    const s = q.toString();
-    return s ? `/?${s}` : "/";
-  };
+  if (courses.error !== null) {
+    return <ErrorAlert title="Không tải được danh sách khóa học" message={courses.error} />;
+  }
 
-  const categoryCount = (categories.data ?? []).reduce((n, c) => n + 1 + (c.subCategories?.length ?? 0), 0);
+  const all = courses.data;
+  const stats = platformStats(all);
+  const featured = featuredCourses(all);
+  const covers = featured.filter((c) => c.thumbnailUrl).slice(0, 3);
+  const instructors = summarizeInstructors(all).slice(0, 3);
+  const testimonials = await loadTestimonials(featured);
 
   return (
     <>
-      <FullBleed className="relative isolate -mt-10 mb-10 overflow-hidden bg-sidebar text-white" inner="relative py-12 lg:py-16">
-        <ContourPattern className="-z-10 text-white/[0.07]" />
-        <div className="max-w-2xl space-y-5">
-          <p className="text-eyebrow text-sidebar-primary">Khóa học trực tuyến</p>
-          <h1 className="text-display text-white">Học mọi lúc, mọi nơi</h1>
-          <p className="text-lg leading-relaxed text-white/80">
-            Khóa học từ giảng viên Trường Đại học Tài nguyên và Môi trường Hà Nội, học theo lộ trình và nhận chứng chỉ.
-          </p>
-          <CatalogSearch keyword={keyword} />
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1 text-sm text-white/80 [&_svg]:size-4 [&_svg]:text-white/60">
-            {/* Tổng số khóa chỉ đúng khi chưa lọc; đang lọc thì số kết quả đã có ở thanh công cụ. */}
-            {!filtered && courses.data && (
-              <HeroMeta icon={<BookOpenIcon />}>
-                <span className="tabular-nums">{formatNumber(courses.data.totalElements)}</span> khóa học
-              </HeroMeta>
-            )}
-            {categoryCount > 0 && (
-              <HeroMeta icon={<LayersIcon />}>
-                <span className="tabular-nums">{formatNumber(categoryCount)}</span> danh mục
-              </HeroMeta>
-            )}
-            <HeroMeta icon={<AwardIcon />}>Chứng chỉ khi hoàn thành</HeroMeta>
-          </div>
-        </div>
-      </FullBleed>
+      <HomeHero covers={covers.length > 0 ? covers : featured.slice(0, 3)} stats={stats} />
+      <StatsBand stats={stats} />
 
-      {session && mine?.data && <ContinueLearning enrollments={mine.data} fullName={session.fullName} />}
+      {session && mine?.data && <ContinueLearning enrollments={mine.data} fullName={session.fullName} covers={new Map(all.map((c) => [c.id, c.thumbnailUrl]))} />}
 
-      <section aria-label="Danh sách khóa học" className="min-w-0">
-        {categories.error !== null ? (
-          <ErrorAlert title="Không tải được danh mục" message={categories.error} />
-        ) : (
-          <CategoryChips categories={categories.data} {...filters} />
-        )}
-        <Toolbar
-          start={<CatalogFilters {...filters} />}
-          end={
-            courses.data &&
-            courses.data.totalElements > 0 && (
-              <p>
-                <span className="font-medium text-foreground tabular-nums">{formatNumber(courses.data.totalElements)}</span>{" "}
-                khóa học
-              </p>
-            )
+      {categories.data && <FieldTiles categories={categories.data} courses={all} />}
+
+      <Section
+        className="mb-16"
+        title="Khóa học nổi bật"
+        description="Được học viên đánh giá cao và ghi danh nhiều nhất."
+        actions={
+          <Button asChild variant="outline">
+            <Link href="/courses">
+              Tất cả khóa học <ArrowRightIcon />
+            </Link>
+          </Button>
+        }
+      >
+        <CardGrid>
+          {featured.map((c) => (
+            <CourseCard key={c.id} course={c} />
+          ))}
+        </CardGrid>
+      </Section>
+
+      {instructors.length > 0 && (
+        <Section
+          className="mb-16"
+          title="Đội ngũ giảng viên"
+          description="Giảng viên và nghiên cứu viên của trường trực tiếp soạn bài và trả lời học viên."
+          actions={
+            <Button asChild variant="outline">
+              <Link href="/instructors">
+                Tất cả giảng viên <ArrowRightIcon />
+              </Link>
+            </Button>
           }
-        />
+        >
+          <div className="grid gap-5 md:grid-cols-3">
+            {instructors.map((i) => (
+              <InstructorCard key={i.id} instructor={i} />
+            ))}
+          </div>
+        </Section>
+      )}
 
-        {courses.error !== null ? (
-          <ErrorAlert title="Không tải được danh sách khóa học" message={courses.error} />
-        ) : courses.data.content.length === 0 ? (
-          <EmptyState
-            icon={SearchXIcon}
-            title="Không tìm thấy khóa học nào phù hợp"
-            description={filtered ? "Thử từ khóa khác hoặc bỏ bớt bộ lọc." : "Chưa có khóa học nào được xuất bản."}
-            action={
-              filtered && (
-                <Button asChild variant="outline">
-                  <Link href="/">Xem tất cả khóa học</Link>
-                </Button>
-              )
-            }
-          />
-        ) : (
-          <>
-            <CardGrid>
-              {courses.data.content.map((c) => (
-                <CourseCard key={c.id} course={c} />
-              ))}
-            </CardGrid>
-            <Pagination page={courses.data.page} totalPages={courses.data.totalPages} hrefFor={hrefFor} />
-          </>
-        )}
-      </section>
+      <Testimonials items={testimonials} />
+      <VerifyAndTeach />
     </>
   );
+}
+
+/** Đánh giá 4–5 sao có nhận xét từ các khóa nổi bật; lỗi course-service chỉ ẩn phần này. */
+async function loadTestimonials(featured: CourseSummary[]): Promise<Testimonial[]> {
+  const rated = featured.filter((c) => c.ratingCount > 0).slice(0, 4);
+  const pages = await Promise.all(
+    rated.map((c) => gateway<Page<CourseReview>>(`/api/courses/${c.id}/reviews?size=5`, { anonymous: true }).catch(() => null)),
+  );
+  const items: Testimonial[] = [];
+  pages.forEach((page, i) => {
+    // Đánh giá cao nhất, nhận xét đầy đủ nhất của mỗi khóa.
+    const review = page?.content
+      .filter((r) => r.rating >= 4 && (r.comment?.length ?? 0) >= 30)
+      .sort((a, b) => b.rating - a.rating || (b.comment?.length ?? 0) - (a.comment?.length ?? 0))[0];
+    if (review) {
+      items.push({ id: review.id, rating: review.rating, comment: review.comment!, authorName: review.authorName, courseId: rated[i].id, courseTitle: rated[i].title });
+    }
+  });
+  return items.slice(0, 3);
 }

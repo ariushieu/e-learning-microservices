@@ -34,7 +34,7 @@ export function CategoryChips({ categories, categoryId, keyword, level, sort }: 
       if (value) query.set(key, value);
     }
     const s = query.toString();
-    return s ? `/?${s}` : "/";
+    return s ? `/courses?${s}` : "/courses";
   };
   const chip = (selected: boolean, small = false) =>
     cn("shrink-0 rounded-full border font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
@@ -77,7 +77,7 @@ const FORM_ID = "catalog-search";
  */
 export function CatalogSearch({ keyword }: { keyword: string }) {
   return (
-    <form id={FORM_ID} method="get" action="/" role="search" className="flex max-w-2xl flex-col gap-2 sm:flex-row">
+    <form id={FORM_ID} method="get" action="/courses" role="search" className="flex max-w-2xl flex-col gap-2 sm:flex-row">
       <div className="relative flex-1">
         <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
         <Input
@@ -138,7 +138,7 @@ export function CatalogFilters({
       </noscript>
       {filtered && (
         <Button asChild variant="ghost">
-          <Link href="/">
+          <Link href="/courses">
             <XIcon /> Xóa lọc
           </Link>
         </Button>

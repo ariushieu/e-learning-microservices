@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpenIcon, LayoutDashboardIcon, LogOutIcon, ShieldIcon, UserIcon } from "lucide-react";
+import { AwardIcon, BellIcon, BookOpenIcon, LayoutDashboardIcon, LogOutIcon, ShieldIcon, UserIcon } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -38,7 +38,17 @@ export function UserMenu() {
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
             <Link href="/my-courses">
-              <BookOpenIcon /> Khóa học của tôi
+              <BookOpenIcon /> Học tập của tôi
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/certificates">
+              <AwardIcon /> Chứng chỉ của tôi
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/notifications">
+              <BellIcon /> Thông báo
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>

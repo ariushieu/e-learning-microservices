@@ -11,7 +11,7 @@ import type { Enrollment } from "@/lib/types";
  * Đầu trang chủ của người đã đăng nhập: các khóa đang học gần nhất để vào học tiếp ngay,
  * và số chứng chỉ đã có. Chưa ghi danh khóa nào thì không hiện gì.
  */
-export function ContinueLearning({ enrollments, fullName }: { enrollments: Enrollment[]; fullName: string }) {
+export function ContinueLearning({ enrollments, fullName, covers }: { enrollments: Enrollment[]; fullName: string; covers?: Map<number, string | null> }) {
   const active = enrollments
     .filter((e) => e.status === "ACTIVE")
     .sort((a, b) => (b.lastAccessedAt ?? b.enrolledAt).localeCompare(a.lastAccessedAt ?? a.enrolledAt))
@@ -46,7 +46,7 @@ export function ContinueLearning({ enrollments, fullName }: { enrollments: Enrol
           {active.map((e) => (
             <Card key={e.id} className="flex-row items-center gap-4 p-3 transition-shadow hover:shadow-raised">
               <Link href={`/learn/${e.courseId}`} tabIndex={-1} aria-hidden className="w-24 shrink-0 overflow-hidden rounded-lg">
-                <CourseCover title={e.courseTitle} showLabel={false} size="sm" />
+                <CourseCover title={e.courseTitle} thumbnailUrl={covers?.get(e.courseId)} showLabel={false} size="sm" />
               </Link>
               <div className="min-w-0 flex-1 space-y-2">
                 <Link href={`/learn/${e.courseId}`} className="line-clamp-2 text-sm font-semibold underline-offset-4 hover:text-primary hover:underline">
