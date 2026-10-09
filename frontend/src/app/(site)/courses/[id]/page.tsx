@@ -27,6 +27,7 @@ import { Section } from "@/components/common/section";
 import { StatusBadge } from "@/components/common/status-badge";
 import { PriceTag } from "@/components/course/course-card";
 import { CurriculumList } from "@/components/course/curriculum-list";
+import { AnnouncementList } from "@/components/course/course-announcements";
 import { CourseReviews } from "@/components/course/course-reviews";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -39,7 +40,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { hasRole, type Session } from "@/lib/auth-shared";
 import { formatDay, formatDuration, formatNumber, label } from "@/lib/format";
 import { gateway, getSession } from "@/lib/server/gateway";
-import type { Course, Enrollment, Quiz, Section as CourseSection } from "@/lib/types";
+import type { Course, CourseAnnouncement, Enrollment, Page, Quiz, Section as CourseSection } from "@/lib/types";
 
 export async function generateMetadata({ params }: PageProps<"/courses/[id]">): Promise<Metadata> {
   const { id } = await params;
@@ -71,6 +72,11 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
   // Học viên chỉ thấy bài kiểm tra đã xuất bản, và chỉ khi đã ghi danh (hoặc là người quản lý khóa).
   const publishedQuizzes = quizzes?.data?.filter((q) => q.status === "PUBLISHED") ?? [];
   const showQuizzes = (activeEnrollment !== null || isManager) && publishedQuizzes.length > 0;
+  // Học viên (kể cả đã hủy, vì từng ghi danh) và người quản lý khóa mới đọc được thông báo.
+  const announcements =
+    enrollment || isManager
+      ? await attempt(gateway<Page<CourseAnnouncement>>(`/api/courses/${id}/announcements?size=5`))
+      : null;
   const cover = <CourseCover title={course.title} category={course.categoryName} thumbnailUrl={course.thumbnailUrl} />;
 
   return (
@@ -149,6 +155,23 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
         <Callout icon={InfoIcon} tone="warning" title="Khóa học chưa xuất bản">
           Chỉ giảng viên của khóa và quản trị viên thấy trang này.
         </Callout>
+      )}
+
+      {announcements?.data && (announcements.data.totalElements > 0 || isManager) && (
+        <Section
+          id="thong-bao"
+          title="Thông báo từ giảng viên"
+          count={announcements.data.totalElements}
+          actions={
+            isManager && (
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/instructor/courses/${course.id}?tab=thong-bao`}>Gửi thông báo</Link>
+              </Button>
+            )
+          }
+        >
+          <AnnouncementList courseId={course.id} announcements={announcements.data.content} canManage={false} />
+        </Section>
       )}
 
       <Section
