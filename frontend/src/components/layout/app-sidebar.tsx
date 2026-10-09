@@ -2,6 +2,7 @@
 
 import {
   ArrowLeftIcon,
+  ChartColumnIcon,
   FolderTreeIcon,
   LayoutDashboardIcon,
   MessageCircleQuestionIcon,
@@ -29,6 +30,7 @@ import { Brand } from "./brand";
 const TEACHING = [
   { href: "/instructor", label: "Khóa học tôi dạy", icon: LayoutDashboardIcon, exact: true },
   { href: "/instructor/questions", label: "Hỏi đáp", icon: MessageCircleQuestionIcon, exact: true },
+  { href: "/instructor/analytics", label: "Thống kê", icon: ChartColumnIcon, exact: true },
   { href: "/instructor/reviews", label: "Đánh giá", icon: MessageSquareIcon, exact: true },
   { href: "/instructor/courses/new", label: "Tạo khóa học", icon: PlusCircleIcon, exact: true },
 ];

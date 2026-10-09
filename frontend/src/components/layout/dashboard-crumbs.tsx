@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const AREAS: { test: RegExp; area: string; page: string }[] = [
   { test: /^\/instructor\/reviews/, area: "Giảng dạy", page: "Đánh giá" },
   { test: /^\/instructor\/questions/, area: "Giảng dạy", page: "Hỏi đáp" },
+  { test: /^\/instructor\/analytics/, area: "Giảng dạy", page: "Thống kê" },
   { test: /^\/instructor\/courses\/new$/, area: "Giảng dạy", page: "Tạo khóa học" },
   { test: /^\/instructor\/courses\/\d+/, area: "Giảng dạy", page: "Soạn khóa học" },
   { test: /^\/instructor\/quizzes\/\d+/, area: "Giảng dạy", page: "Soạn bài kiểm tra" },
