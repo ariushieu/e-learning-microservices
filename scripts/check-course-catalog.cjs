@@ -42,7 +42,7 @@ async function run() {
   await page.waitForURL(u => u.searchParams.get('categoryId') === String(categories[0]));
   const query = new URL(page.url()).searchParams;
   assert.equal(query.get('keyword'), tag); assert.equal(query.get('level'), 'BEGINNER'); assert.equal(query.get('sort'), 'price,asc'); assert.equal(query.has('page'), false);
-  assert.equal(await page.getByRole('combobox', { name: 'Danh mục', exact: true }).inputValue(), String(categories[0]));
+  assert.equal(await page.locator('input[type=hidden][name=categoryId]').inputValue(), String(categories[0]));
   checks.push('Chip giữ keyword/level/sort, đồng bộ ô chọn và về trang đầu');
   await cards().first().waitFor(); assert.deepEqual(await ids(), courses.slice(2,14).reverse());
   checks.push('Giá tăng lọc đúng danh mục/trình độ, tối đa 12 khóa');
@@ -53,8 +53,8 @@ async function run() {
   assert.equal(new URL(page.url()).searchParams.get('sort'), 'price,asc');
   checks.push('Trang 2 giữ bộ lọc và thứ tự');
   for (const sort of ['price,desc','createdAt,desc','studentCount,desc']) {
+    // Selects submit on change; there is no separate "Lọc" button any more.
     await page.getByRole('combobox', { name: 'Sắp xếp', exact: true }).selectOption(sort);
-    await page.getByRole('button', { name: 'Lọc', exact: true }).click();
     await page.waitForURL(u => u.searchParams.get('sort') === sort && !u.searchParams.has('page'));
     await cards().first().waitFor();
     assert.deepEqual(await ids(), sort === 'price,desc' ? courses.slice(0,12) : courses.slice(2,14).reverse());
@@ -67,8 +67,7 @@ async function run() {
   assert.equal(new URL(page.url()).searchParams.get('sort'), 'studentCount,desc');
   checks.push('Tìm kiếm giữ danh mục/trình độ/sort');
   await page.goto(initial + `&categoryId=${categories[0]}`);
-  await page.getByRole('combobox', { name: 'Danh mục', exact: true }).selectOption(String(child.id));
-  await page.getByRole('button', { name: 'Lọc', exact: true }).click();
+  await page.getByRole('navigation', { name: `Danh mục con của ${tag} danh mục 0` }).getByRole('link', { name: `${tag} danh mục con`, exact: true }).click();
   await page.waitForURL(u => u.searchParams.get('categoryId') === String(child.id));
   await cards().first().waitFor();
   assert.deepEqual(await ids(), [courses[3], courses[1]]);
@@ -89,8 +88,8 @@ async function run() {
     await page.screenshot({ path: path.join(output, `catalog-${width}.png`) });
   }
   await chips().getByRole('link', { name: 'Tất cả', exact: true }).click(); await page.waitForURL(u => !u.searchParams.has('categoryId'));
-  assert.equal(await page.getByRole('combobox', { name: 'Danh mục', exact: true }).inputValue(), '');
-  checks.push('Chip Tất cả đồng bộ select sau điều hướng client');
+  assert.equal(await page.locator('input[type=hidden][name=categoryId]').count(), 0);
+  checks.push('Chip Tất cả bỏ danh mục khỏi bộ lọc sau điều hướng client');
   await chips().getByRole('link', { name: 'Tất cả', exact: true }).focus(); await page.keyboard.press('Tab');
   assert.ok(await page.evaluate(() => !!document.activeElement.closest('nav[aria-label="Lọc nhanh theo danh mục"]')));
   checks.push('Tab chuyển tới chip tiếp theo');

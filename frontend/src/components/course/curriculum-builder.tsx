@@ -202,7 +202,7 @@ function SectionCard({ section, index }: { section: Section; index: number }) {
               <span className="block text-subheading">{section.title}</span>
             </CardTitle>
             <CardDescription className="tabular-nums">
-              {section.lessons.length} bài học · {formatDuration(seconds)} · Thứ tự {section.position}
+              {section.lessons.length} bài học · {formatDuration(seconds)}
             </CardDescription>
             <CardAction>
               <DropdownMenu modal={false}>
