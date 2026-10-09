@@ -68,7 +68,7 @@ function requiredAccess(pathname: string): "auth" | Role[] | null {
   if (pathname.startsWith("/admin")) return ["ROLE_ADMIN"];
   // /instructors/{id} là hồ sơ công khai; chỉ /instructor và các trang con cần quyền.
   if (pathname === "/instructor" || pathname.startsWith("/instructor/")) return ["ROLE_INSTRUCTOR", "ROLE_ADMIN"];
-  const privatePrefixes = ["/learn", "/my-courses", "/quizzes", "/attempts", "/notifications", "/certificates", "/profile"];
+  const privatePrefixes = ["/learn", "/my-courses", "/quizzes", "/attempts", "/notifications", "/certificates", "/profile", "/leaderboard"];
   return privatePrefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`)) ? "auth" : null;
 }
 

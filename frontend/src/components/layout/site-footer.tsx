@@ -9,6 +9,7 @@ const COLUMNS = [
       { href: "/instructors", label: "Giảng viên" },
       { href: "/my-courses", label: "Học tập của tôi" },
       { href: "/certificates", label: "Chứng chỉ của tôi" },
+      { href: "/leaderboard", label: "Bảng xếp hạng" },
     ],
   },
   {

@@ -29,6 +29,25 @@ export interface CourseAnnouncement {
   createdAt: string;
 }
 
+export interface LeaderboardEntry {
+  rank: number;
+  userId: number;
+  name: string;
+  points: number;
+  completedLessons: number;
+  completedCourses: number;
+}
+
+/** source cho biết bảng đọc từ Redis hay vừa tính lại từ MySQL. */
+export interface Leaderboard {
+  period: "ALL" | "WEEK";
+  since: string;
+  source: "REDIS" | "DATABASE" | "DATABASE_ONLY";
+  totalLearners: number;
+  entries: LeaderboardEntry[];
+  me: LeaderboardEntry | null;
+}
+
 export interface Page<T> {
   content: T[];
   page: number;
