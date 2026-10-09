@@ -3,7 +3,7 @@
 # 1. Lập trình hằng ngày — chỉ bật hạ tầng, các service chạy trong IntelliJ và nối qua
 #    localhost:
 #
-#      docker compose up -d                 # MySQL + Kafka + Kafka UI + Redis
+#      docker compose up -d                 # MySQL + Kafka + Kafka UI + Redis + Mailpit
 #      docker compose up -d mysql           # hoặc chỉ những gì cần
 #
 # 2. Chạy toàn bộ hệ thống — cả 6 service và frontend cũng chạy trong Docker. Web ở
@@ -176,6 +176,23 @@ services:
       retries: 10
       start_period: 5s
 
+  # Hộp thư giả cho môi trường dev: nhận mọi email qua SMTP (cổng 1025) và cho xem trên web
+  # http://localhost:8025. Không gửi ra ngoài Internet, nên dùng email demo thoải mái.
+  mailpit:
+    image: axllent/mailpit:v1.31.4
+    container_name: elearning-mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      # Cho notification-service chạy trong IntelliJ gửi thư: localhost:1025
+      - "1025:1025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
   # ================================================================ Ứng dụng
   # Chỉ bật khi thêm --profile app. Không service nào mở cổng ra máy host trừ gateway:
   # mọi request đi qua một cửa duy nhất, đúng như kiến trúc vẽ trong README. Gọi thẳng
@@ -250,10 +267,16 @@ services:
     environment:
       <<: *backend-env
       REDIS_HOST: redis
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      # Link trong email trỏ về web; deploy thật thì đổi thành tên miền.
+      WEB_BASE_URL: ${WEB_BASE_URL:-http://localhost:3000}
     depends_on:
       <<: *backend-depends
       # Chỉ cần Redis đã chạy; Redis chết giữa chừng thì service vẫn phục vụ hộp thư.
       redis: { condition: service_started }
+      # Mail hỏng thì email nằm chờ gửi lại, nên cũng chỉ cần đã chạy.
+      mailpit: { condition: service_started }
     healthcheck:
       <<: *healthcheck-timing
       test: ["CMD", "curl", "-fsS", "http://localhost:8085/actuator/health"]

@@ -80,6 +80,7 @@ Hạ tầng dev chạy bằng Docker Compose (file `docker-compose.yml` ở gố
 | Kafka      | `apache/kafka:4.3.1`      | 9092          | Chế độ KRaft, một node, không cần ZooKeeper                  |
 | Kafka UI   | `ghcr.io/kafbat/kafka-ui` | 8090          | Xem topic, message, consumer group tại http://localhost:8090 |
 | Redis      | `redis:7.4-alpine`        | 6379          | Bộ đếm giới hạn request của gateway, không lưu xuống đĩa      |
+| Mailpit    | `axllent/mailpit`         | 8025, 1025    | Hộp thư giả: mọi email hệ thống gửi hiện ở http://localhost:8025 |
 
 Tài khoản MySQL mặc định: user `elearning` / mật khẩu `elearning`, root `root`. Đổi bằng cách sao chép `.env.example` thành `.env`.
 
