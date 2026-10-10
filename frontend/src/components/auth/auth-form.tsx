@@ -1,13 +1,20 @@
 "use client";
 
-import { Loader2Icon } from "lucide-react";
+import { Loader2Icon, MailCheckIcon } from "lucide-react";
 import Link from "next/link";
 import { useActionState, type ReactNode } from "react";
+import { Callout } from "@/components/common/callout";
 import { ErrorAlert } from "@/components/common/error-alert";
 import { FieldHint, FormField } from "@/components/common/form-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { loginAction, registerAction, type FormState } from "@/lib/server/auth-actions";
+import {
+  forgotPasswordAction,
+  loginAction,
+  registerAction,
+  resetPasswordAction,
+  type FormState,
+} from "@/lib/server/auth-actions";
 
 export function LoginForm({ next }: { next: string }) {
   const [state, action, pending] = useActionState<FormState, FormData>(loginAction, {});
@@ -18,9 +25,16 @@ export function LoginForm({ next }: { next: string }) {
       <FormField id="email" label="Email" error={state.fieldErrors?.email}>
         <Input id="email" name="email" type="email" required autoComplete="email" placeholder="ban@hunre.edu.vn" defaultValue={state.values?.email} />
       </FormField>
-      <FormField id="password" label="Mật khẩu">
-        <Input id="password" name="password" type="password" required autoComplete="current-password" />
-      </FormField>
+      <div className="space-y-2">
+        <FormField id="password" label="Mật khẩu">
+          <Input id="password" name="password" type="password" required autoComplete="current-password" />
+        </FormField>
+        <p className="text-right text-sm">
+          <Link href="/forgot-password" className="font-medium text-primary underline-offset-4 hover:underline">
+            Quên mật khẩu?
+          </Link>
+        </p>
+      </div>
       <SubmitButton pending={pending}>Đăng nhập</SubmitButton>
       <SwitchLink question="Chưa có tài khoản?" href={`/register?next=${encodeURIComponent(next)}`}>
         Đăng ký
@@ -82,6 +96,69 @@ export function RegisterForm({ next }: { next: string }) {
       <SwitchLink question="Đã có tài khoản?" href={`/login?next=${encodeURIComponent(next)}`}>
         Đăng nhập
       </SwitchLink>
+    </form>
+  );
+}
+
+export function ForgotPasswordForm() {
+  const [state, action, pending] = useActionState<FormState, FormData>(forgotPasswordAction, {});
+  return (
+    <form action={action} className="space-y-5" noValidate>
+      {state.error && <ErrorAlert message={state.error} />}
+      {state.done && (
+        <Callout icon={MailCheckIcon} tone="success" title="Đã gửi yêu cầu">
+          {state.done}
+        </Callout>
+      )}
+      <FormField id="email" label="Email đã đăng ký" error={state.fieldErrors?.email}>
+        <Input
+          id="email"
+          name="email"
+          type="text"
+          inputMode="email"
+          autoCapitalize="none"
+          required
+          autoComplete="email"
+          maxLength={255}
+          aria-invalid={Boolean(state.fieldErrors?.email)}
+          placeholder="ban@hunre.edu.vn"
+          defaultValue={state.values?.email}
+        />
+      </FormField>
+      <SubmitButton pending={pending}>{state.done ? "Gửi lại liên kết" : "Gửi liên kết đặt lại"}</SubmitButton>
+      <SwitchLink question="Nhớ ra mật khẩu rồi?" href="/login">
+        Đăng nhập
+      </SwitchLink>
+    </form>
+  );
+}
+
+export function ResetPasswordForm({ token }: { token: string }) {
+  const [state, action, pending] = useActionState<FormState, FormData>(resetPasswordAction, {});
+  const err = state.fieldErrors ?? {};
+  return (
+    <form action={action} className="space-y-5">
+      <input type="hidden" name="token" value={token} />
+      {state.error && (
+        <div className="space-y-2">
+          <ErrorAlert message={state.error} />
+          <p className="text-sm">
+            <Link href="/forgot-password" className="font-medium text-primary underline-offset-4 hover:underline">
+              Gửi liên kết mới
+            </Link>
+          </p>
+        </div>
+      )}
+      <div className="space-y-2">
+        <FormField id="password" label="Mật khẩu mới" error={err.password}>
+          <Input id="password" name="password" type="password" required minLength={6} maxLength={50} autoComplete="new-password" aria-invalid={Boolean(err.password)} />
+        </FormField>
+        <FormField id="confirmPassword" label="Nhập lại mật khẩu mới" error={err.confirmPassword}>
+          <Input id="confirmPassword" name="confirmPassword" type="password" required autoComplete="new-password" aria-invalid={Boolean(err.confirmPassword)} />
+        </FormField>
+        <FieldHint>Mật khẩu từ 6 đến 50 ký tự. Đặt xong, mọi thiết bị đang đăng nhập sẽ phải đăng nhập lại.</FieldHint>
+      </div>
+      <SubmitButton pending={pending}>Đặt mật khẩu mới</SubmitButton>
     </form>
   );
 }
