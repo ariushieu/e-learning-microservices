@@ -1,5 +1,6 @@
 package com.hunre.authservice.outbox;
 
+import com.hunre.sharedcommon.event.EventTypes;
 import com.hunre.sharedcommon.event.KafkaTopics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +45,10 @@ public class OutboxPublisherWorker {
             // Khóa là userId: mọi sự kiện của một người vào cùng partition, giữ đúng thứ tự.
             kafkaTemplate.send(KafkaTopics.AUTH_EVENTS, event.getAggregateId(), event.getPayload()).get(5, TimeUnit.SECONDS);
             event.setPublishedAt(Instant.now());
+            if (EventTypes.PASSWORD_RESET_REQUESTED.equals(event.getEventType())) {
+                // Mã đặt lại mật khẩu đã sang Kafka; không để bản thô nằm lại trong auth_db.
+                event.setPayload("{\"redacted\":true}");
+            }
             outboxEventRepository.save(event);
             log.info("Published auth outbox event id={} type={}", event.getId(), event.getEventType());
             return true;
