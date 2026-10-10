@@ -182,7 +182,7 @@ GlobalExceptionHandler authExceptionHandler() {
 | `elearning.enrollment.events` | enrollment-service | `enrollment.created`, `enrollment.completed`, `certificate.issued` |
 | `elearning.course.events` | course-service | `course.updated` |
 | `elearning.quiz.events` | quiz-service | `quiz.graded` |
-| `elearning.auth.events` | auth-service | `user.registered`, `user.profile.updated` |
+| `elearning.auth.events` | auth-service | `user.registered`, `user.profile.updated`, `user.password.reset.requested` |
 
 Gom theo service phát chứ không tách mỗi loại sự kiện một topic, vì Kafka chỉ bảo đảm thứ
 tự trong phạm vi một partition của một topic. Ghi danh phải đến trước hoàn thành khóa học,

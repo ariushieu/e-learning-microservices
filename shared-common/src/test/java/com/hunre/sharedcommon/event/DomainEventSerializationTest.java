@@ -230,6 +230,15 @@ class DomainEventSerializationTest {
         assertThat(fieldNamesOf(UserProfileUpdatedEvent.of(1L, "a@b.vn", "A"))).containsExactlyInAnyOrderElementsOf(expected);
     }
 
+    @Test
+    @DisplayName("PasswordResetRequestedEvent giữ nguyên bộ tên trường đã thống nhất")
+    void hopDongPasswordReset() {
+        PasswordResetRequestedEvent event = PasswordResetRequestedEvent.of(1L, "a@b.vn", "A", "raw", java.time.Instant.now());
+        assertThat(event.eventType()).isEqualTo(EventTypes.PASSWORD_RESET_REQUESTED);
+        assertThat(fieldNamesOf(event)).containsExactlyInAnyOrder(
+                "eventId", "eventType", "occurredAt", "userId", "email", "fullName", "token", "expiresAt");
+    }
+
     private List<String> fieldNamesOf(DomainEvent event) {
         JsonNode node = mapper.readTree(mapper.writeValueAsString(event));
         List<String> names = new ArrayList<>();

@@ -15,6 +15,7 @@ import com.hunre.notificationservice.service.NotificationService;
 import com.hunre.sharedcommon.event.DomainEvent;
 import com.hunre.sharedcommon.event.EnrollmentCreatedEvent;
 import com.hunre.sharedcommon.event.KafkaTopics;
+import com.hunre.sharedcommon.event.PasswordResetRequestedEvent;
 import com.hunre.sharedcommon.event.UserProfileUpdatedEvent;
 import com.hunre.sharedcommon.event.UserRegisteredEvent;
 import jakarta.mail.Session;
@@ -147,6 +148,32 @@ class EmailNotificationTest {
         assertThat(emails(7L)).singleElement().satisfies(email -> {
             assertThat(email.getStatus()).isEqualTo(NotificationStatus.SENT);
             assertThat(email.getSentAt()).isNotNull();
+        });
+    }
+
+    @Test
+    void passwordResetMailIgnoresTheEmailSwitchAndForgetsTheLinkOnceSent() throws Exception {
+        template("PASSWORD_RESET", NotificationChannel.EMAIL, "Đặt lại mật khẩu",
+                "Chào {fullName}, tài khoản {email}: {url} hết hạn lúc {expiresAt}");
+        preferences.save(NotificationPreference.builder().userId(7L).inAppEnabled(true).emailEnabled(false).build());
+        process(PasswordResetRequestedEvent.of(7L, "an@example.com", "Nguyễn An", "abc_DEF-123",
+                java.time.Instant.parse("2026-10-09T17:30:00Z")), KafkaTopics.AUTH_EVENTS);
+
+        assertThat(contacts.findById(7L)).isPresent();
+        assertThat(service.countUnread(7L)).as("không tạo thông báo trong ứng dụng").isZero();
+        assertThat(emails(7L)).singleElement().satisfies(email -> assertThat(email.getContent()).isEqualTo(
+                "Chào Nguyễn An, tài khoản an@example.com: http://localhost:3000/reset-password?token=abc_DEF-123"
+                        + " hết hạn lúc 00:30 10/10/2026"));
+
+        JavaMailSender sender = sender();
+        dispatcher(sender).dispatchPending();
+        var captor = ArgumentCaptor.forClass(MimeMessage.class);
+        verify(sender).send(captor.capture());
+        assertThat(captor.getValue().getContent().toString()).contains("reset-password?token=abc_DEF-123");
+        assertThat(emails(7L)).singleElement().satisfies(email -> {
+            assertThat(email.getStatus()).isEqualTo(NotificationStatus.SENT);
+            assertThat(email.getContent()).isEqualTo(EmailDispatcher.REDACTED);
+            assertThat(email.getLinkUrl()).isNull();
         });
     }
 

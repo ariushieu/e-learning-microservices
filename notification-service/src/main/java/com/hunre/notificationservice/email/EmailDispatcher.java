@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Gửi các email đang chờ (dòng notifications kênh EMAIL, trạng thái PENDING).
@@ -34,6 +35,9 @@ import java.util.Optional;
 public class EmailDispatcher {
 
     static final int MAX_ATTEMPTS = 5;
+    /** Thư có link mang mã bí mật; nội dung lưu lại bị xóa link sau khi gửi. */
+    static final Set<String> SECRET_LINK_TYPES = Set.of("PASSWORD_RESET");
+    static final String REDACTED = "Nội dung có liên kết bảo mật, đã ẩn sau khi gửi.";
     private static final Logger log = LoggerFactory.getLogger(EmailDispatcher.class);
 
     private final NotificationRepository notifications;
@@ -77,6 +81,11 @@ public class EmailDispatcher {
                 email.setStatus(NotificationStatus.FAILED);
             }
             log.warn("Gửi email id={} lần {} hỏng: {}", email.getId(), attempts, ex.getMessage());
+        }
+        if (SECRET_LINK_TYPES.contains(email.getType()) && email.getStatus() != NotificationStatus.PENDING) {
+            // Gửi xong (hoặc thôi thử) thì không giữ link chứa mã trong database.
+            email.setContent(REDACTED);
+            email.setLinkUrl(null);
         }
         notifications.save(email);
     }
