@@ -145,6 +145,30 @@ class RateLimitGatewayFilterTest {
     }
 
     @Test
+    @DisplayName("quên mật khẩu đếm theo email: không ai dội thư vào một hộp mail")
+    void quenMatKhauDemTheoEmail() {
+        String body = "{\"email\":\"sv@hunre.edu.vn\"}";
+
+        filter(policy -> true).filter(exchange(MockServerHttpRequest.post("/api/auth/forgot-password"), body), chain).block();
+
+        assertThat(calls).containsExactly(
+                RateLimitGatewayFilter.LOGIN_IP_POLICY + ":ip:10.0.0.5",
+                RateLimitGatewayFilter.LOGIN_POLICY + ":" + accountOf("sv@hunre.edu.vn"));
+        assertThat(forwardedBody).hasValue(body);
+    }
+
+    @Test
+    @DisplayName("đặt lại mật khẩu chỉ trừ xô IP: mã ngẫu nhiên, không dò theo tài khoản được")
+    void datLaiMatKhauChiTruXoIp() {
+        String body = "{\"token\":\"abc\",\"newPassword\":\"x\"}";
+
+        filter(policy -> true).filter(exchange(MockServerHttpRequest.post("/api/auth/reset-password"), body), chain).block();
+
+        assertThat(calls).containsExactly(RateLimitGatewayFilter.LOGIN_IP_POLICY + ":ip:10.0.0.5");
+        assertThat(forwardedBody).hasValue(body);
+    }
+
+    @Test
     @DisplayName("body không có email hoặc không phải JSON: chỉ trừ xô IP, vẫn chuyển cho auth-service báo lỗi")
     void khongCoEmailChiTruXoIp() {
         for (String body : List.of("", "{}", "{\"email\":42}", "{\"email\":\"  \"}", "không phải json")) {

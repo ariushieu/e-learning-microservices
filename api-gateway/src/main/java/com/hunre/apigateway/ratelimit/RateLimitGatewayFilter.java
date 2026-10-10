@@ -77,8 +77,10 @@ public class RateLimitGatewayFilter implements GlobalFilter, Ordered {
     /** Body đăng nhập, đăng ký chỉ vài trăm byte; giới hạn để không ai đẩy cả MB vào bộ nhớ gateway. */
     static final int MAX_CREDENTIALS_BYTES = 16 * 1024;
 
-    private static final Set<String> CREDENTIAL_PATHS = Set.of("/api/auth/login", "/api/auth/register");
-    private static final String REFRESH_PATH = "/api/auth/refresh-token";
+    /** Body có email: trừ token theo cả IP lẫn tài khoản. Quên mật khẩu nằm đây để không ai dội thư vào một hộp mail. */
+    private static final Set<String> CREDENTIAL_PATHS = Set.of("/api/auth/login", "/api/auth/register", "/api/auth/forgot-password");
+    /** Mã ngẫu nhiên, không dò được theo tài khoản: chỉ chặn một máy gửi dồn. */
+    private static final Set<String> IP_ONLY_PATHS = Set.of("/api/auth/refresh-token", "/api/auth/reset-password");
     private static final ObjectMapper JSON = JsonMapper.builder().build();
 
     private final RateLimiter<?> rateLimiter;
@@ -113,8 +115,8 @@ public class RateLimitGatewayFilter implements GlobalFilter, Ordered {
         if (post && CREDENTIAL_PATHS.contains(path)) {
             return limitCredentials(exchange, chain);
         }
-        if (post && REFRESH_PATH.equals(path)) {
-            // Refresh token là chuỗi ngẫu nhiên, không dò được; chỉ cần chặn một máy gửi dồn.
+        if (post && IP_ONLY_PATHS.contains(path)) {
+            // Refresh token, mã đặt lại mật khẩu là chuỗi ngẫu nhiên, không dò được; chỉ cần chặn một máy gửi dồn.
             return limit(LOGIN_IP_POLICY, clientIp(request), properties.loginIp(), exchange,
                     () -> chain.filter(exchange));
         }
