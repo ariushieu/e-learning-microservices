@@ -43,6 +43,9 @@ public final class EventTypes {
     /** Thông tin liên lạc hiện tại sau khi sửa hồ sơ (và khi nạp lần đầu). Phát bởi auth-service. */
     public static final String USER_PROFILE_UPDATED = "user.profile.updated";
 
+    /** Người dùng yêu cầu đặt lại mật khẩu, kèm mã một lần. Phát bởi auth-service. */
+    public static final String PASSWORD_RESET_REQUESTED = "user.password.reset.requested";
+
     private EventTypes() {
         throw new AssertionError("Lớp hằng số, không tạo thể hiện");
     }
