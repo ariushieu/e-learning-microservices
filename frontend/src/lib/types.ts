@@ -433,7 +433,7 @@ export interface Notification {
   readAt: string | null;
 }
 
-/** GET/PUT /api/notifications/preferences. emailEnabled lưu sẵn, chưa có kênh email. */
+/** GET/PUT /api/notifications/preferences. PUT ghi đè cả hai kênh. */
 export interface NotificationPreference {
   inAppEnabled: boolean;
   emailEnabled: boolean;

@@ -7,15 +7,18 @@ import com.hunre.notificationservice.entity.Notification;
 import com.hunre.notificationservice.entity.NotificationChannel;
 import com.hunre.notificationservice.entity.NotificationPreference;
 import com.hunre.notificationservice.entity.NotificationStatus;
+import com.hunre.notificationservice.entity.UserContact;
 import com.hunre.notificationservice.realtime.InboxChanged;
 import com.hunre.notificationservice.repository.NotificationPreferenceRepository;
 import com.hunre.notificationservice.repository.NotificationRepository;
 import com.hunre.notificationservice.repository.NotificationTemplateRepository;
+import com.hunre.notificationservice.repository.UserContactRepository;
 import com.hunre.sharedcommon.dto.PageResponse;
 import com.hunre.sharedcommon.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -41,6 +45,66 @@ public class NotificationService {
     private final NotificationPreferenceRepository preferenceRepository;
     private final TemplateRenderer templateRenderer;
     private final ApplicationEventPublisher events;
+    private final UserContactRepository contactRepository;
+
+    /** Địa chỉ web, để đổi đường dẫn tương đối của thông báo thành link bấm được trong email. */
+    @Value("${elearning.web.base-url:http://localhost:3000}")
+    private String webBaseUrl;
+
+    /**
+     * Gửi một thông báo qua mọi kênh có mẫu: tạo thông báo trong ứng dụng, và nếu mã này có mẫu
+     * EMAIL thì xếp thêm một email vào hàng đợi. Mỗi kênh tự kiểm tra tùy chọn của người dùng.
+     */
+    @Transactional
+    public Optional<Notification> deliver(String code, Long userId, Map<String, String> variables, String linkUrl) {
+        Optional<Notification> inApp = createInApp(code, userId, variables, linkUrl);
+        queueEmail(code, userId, variables, linkUrl);
+        return inApp;
+    }
+
+    /**
+     * Xếp một email vào hàng đợi (dòng notifications kênh EMAIL, trạng thái PENDING).
+     * {@code EmailDispatcher} gửi sau khi commit, nên máy chủ mail chậm hay hỏng cũng không làm
+     * việc xử lý sự kiện Kafka thất bại.
+     *
+     * <p>Trả về {@code empty} khi mã này không có mẫu EMAIL hoặc người dùng đã tắt email.
+     */
+    @Transactional
+    public Optional<Notification> queueEmail(String code, Long userId, Map<String, String> variables, String linkUrl) {
+        if (!emailEnabledFor(userId)) {
+            return Optional.empty();
+        }
+        var template = templateRepository.findByCodeAndChannelAndActiveTrue(code, NotificationChannel.EMAIL);
+        if (template.isEmpty()) {
+            return Optional.empty();
+        }
+        // Chép ra map mới: handler có thể dùng chung một map cho nhiều người nhận.
+        Map<String, String> values = new HashMap<>(variables == null ? Map.of() : variables);
+        values.put("fullName", contactRepository.findById(userId).map(UserContact::getFullName).orElse("bạn"));
+        values.put("url", linkUrl == null ? webBaseUrl : webBaseUrl + linkUrl);
+
+        Notification email = notificationRepository.save(Notification.builder()
+                .userId(userId)
+                .type(code)
+                .channel(NotificationChannel.EMAIL)
+                .title(templateRenderer.render(template.get().getTitleTemplate(), values))
+                .content(templateRenderer.render(template.get().getBodyTemplate(), values))
+                .linkUrl(linkUrl)
+                .status(NotificationStatus.PENDING)
+                .build());
+        log.info("Đã xếp email {} id={} cho người dùng {}", code, email.getId(), userId);
+        return Optional.of(email);
+    }
+
+    /** Ghi đè email và tên đã sao từ auth-service. */
+    @Transactional
+    public void saveContact(Long userId, String email, String fullName) {
+        UserContact contact = contactRepository.findById(userId)
+                .orElseGet(() -> UserContact.builder().userId(userId).build());
+        contact.setEmail(email);
+        contact.setFullName(fullName);
+        contactRepository.save(contact);
+    }
 
     /**
      * Tạo một thông báo trong ứng dụng từ mẫu tương ứng.
@@ -91,7 +155,7 @@ public class NotificationService {
     }
 
     public PageResponse<NotificationResponse> getMyNotifications(Long userId, Pageable pageable) {
-        Page<Notification> page = notificationRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+        Page<Notification> page = notificationRepository.findByUserIdAndChannelOrderByCreatedAtDesc(userId, NotificationChannel.IN_APP, pageable);
         return PageResponse.of(
                 page.getContent().stream().map(NotificationResponse::from).toList(),
                 page.getNumber(),
@@ -100,7 +164,7 @@ public class NotificationService {
     }
 
     public long countUnread(Long userId) {
-        return notificationRepository.countByUserIdAndStatusNot(userId, NotificationStatus.READ);
+        return notificationRepository.countByUserIdAndChannelAndStatusNot(userId, NotificationChannel.IN_APP, NotificationStatus.READ);
     }
 
     @Transactional
@@ -108,7 +172,7 @@ public class NotificationService {
         // Tìm theo cả id lẫn userId, nếu không thì chỉ cần đoán id là đọc được thông báo
         // của người khác. Không tìm thấy thì trả 404 chứ không phải 403: người gọi không
         // cần biết thông báo đó có tồn tại hay không.
-        Notification notification = notificationRepository.findByIdAndUserId(id, userId)
+        Notification notification = notificationRepository.findByIdAndUserIdAndChannel(id, userId, NotificationChannel.IN_APP)
                 .orElseThrow(() -> new ResourceNotFoundException("thông báo", "id", id));
 
         boolean wasUnread = notification.getStatus() != NotificationStatus.READ;
@@ -151,6 +215,12 @@ public class NotificationService {
         preference.setInAppEnabled(request.inAppEnabled());
         preference.setEmailEnabled(request.emailEnabled());
         return NotificationPreferenceResponse.from(preferenceRepository.save(preference));
+    }
+
+    private boolean emailEnabledFor(Long userId) {
+        return preferenceRepository.findById(userId)
+                .map(pref -> Boolean.TRUE.equals(pref.getEmailEnabled()))
+                .orElse(true);
     }
 
     private boolean inAppEnabledFor(Long userId) {

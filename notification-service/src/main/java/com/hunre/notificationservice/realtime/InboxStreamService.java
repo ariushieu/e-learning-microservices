@@ -1,5 +1,6 @@
 package com.hunre.notificationservice.realtime;
 
+import com.hunre.notificationservice.entity.NotificationChannel;
 import com.hunre.notificationservice.entity.NotificationStatus;
 import com.hunre.notificationservice.repository.NotificationRepository;
 import org.slf4j.Logger;
@@ -71,7 +72,7 @@ public class InboxStreamService {
     }
 
     private String unreadCountJson(Long userId) {
-        long count = notificationRepository.countByUserIdAndStatusNot(userId, NotificationStatus.READ);
+        long count = notificationRepository.countByUserIdAndChannelAndStatusNot(userId, NotificationChannel.IN_APP, NotificationStatus.READ);
         return objectMapper.writeValueAsString(Map.of("unreadCount", count));
     }
 }

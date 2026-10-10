@@ -21,6 +21,8 @@ public final class KafkaTopics {
 
     /** Sự kiện do quiz-service phát: chấm bài kiểm tra. */
     public static final String QUIZ_EVENTS = "elearning.quiz.events";
+    /** Sự kiện do auth-service phát: đăng ký, sửa hồ sơ. Chỉ topic này mang email người dùng. */
+    public static final String AUTH_EVENTS = "elearning.auth.events";
 
     private KafkaTopics() {
         throw new AssertionError("Lớp hằng số, không tạo thể hiện");

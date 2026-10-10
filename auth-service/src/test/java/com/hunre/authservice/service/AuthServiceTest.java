@@ -86,6 +86,9 @@ class AuthServiceTest {
     @Mock
     private LoginEventService loginEvents;
 
+    @Mock
+    private com.hunre.authservice.outbox.AccountEventPublisher accountEvents;
+
     @InjectMocks
     private AuthServiceImpl authService;
 

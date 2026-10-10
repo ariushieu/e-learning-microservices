@@ -49,25 +49,28 @@ export function NotificationActions({ unread, preferences }: { unread: number; p
 
 function NotificationSettings({ preferences }: { preferences: NotificationPreference }) {
   const router = useRouter();
-  const [inApp, setInApp] = useState(preferences.inAppEnabled);
+  const [values, setValues] = useState(preferences);
   const [saving, setSaving] = useState(false);
   // Bật lại từ Callout thì server trả giá trị mới: công tắc theo luôn, không cần dựng lại cả
   // popover (dựng lại thì popover đang mở bị đóng).
-  const [synced, setSynced] = useState(preferences.inAppEnabled);
-  if (preferences.inAppEnabled !== synced) {
-    setSynced(preferences.inAppEnabled);
-    setInApp(preferences.inAppEnabled);
+  const [synced, setSynced] = useState(preferences);
+  if (preferences.inAppEnabled !== synced.inAppEnabled || preferences.emailEnabled !== synced.emailEnabled) {
+    setSynced(preferences);
+    setValues(preferences);
   }
 
-  async function toggle(next: boolean) {
-    setInApp(next);
+  // PUT ghi đè cả bộ, nên gửi giá trị đang hiện của công tắc kia chứ không phải bản cũ từ server.
+  async function toggle(key: keyof NotificationPreference, next: boolean) {
+    const previous = values;
+    const updated = { ...values, [key]: next };
+    setValues(updated);
     setSaving(true);
     try {
-      await savePreferences({ ...preferences, inAppEnabled: next });
+      await savePreferences(updated);
       toast.success("Đã lưu cài đặt thông báo");
       router.refresh();
     } catch (e) {
-      setInApp(!next);
+      setValues(previous);
       toast.error(errorMessage(e));
     } finally {
       setSaving(false);
@@ -81,7 +84,7 @@ function NotificationSettings({ preferences }: { preferences: NotificationPrefer
           <Settings2Icon />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[min(20rem,calc(100vw-1rem))]">
+      <PopoverContent align="end" className="w-[min(20rem,calc(100vw-1rem))] space-y-4">
         <p className="text-subheading">Cài đặt thông báo</p>
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
@@ -90,7 +93,16 @@ function NotificationSettings({ preferences }: { preferences: NotificationPrefer
               Ghi danh, hoàn thành khóa, kết quả bài kiểm tra và chứng chỉ. Tắt thì các sự kiện mới không tạo thông báo; thông báo cũ vẫn còn.
             </p>
           </div>
-          <Switch id="notify-in-app" checked={inApp} onCheckedChange={toggle} disabled={saving} />
+          <Switch id="notify-in-app" checked={values.inAppEnabled} onCheckedChange={(v) => toggle("inAppEnabled", v)} disabled={saving} />
+        </div>
+        <div className="flex items-start gap-3">
+          <div className="min-w-0 flex-1">
+            <Label htmlFor="notify-email">Email</Label>
+            <p className="mt-1 text-caption text-muted-foreground">
+              Gửi thư khi ghi danh, nhận chứng chỉ, có thông báo của giảng viên hoặc câu hỏi được trả lời.
+            </p>
+          </div>
+          <Switch id="notify-email" checked={values.emailEnabled} onCheckedChange={(v) => toggle("emailEnabled", v)} disabled={saving} />
         </div>
       </PopoverContent>
     </Popover>

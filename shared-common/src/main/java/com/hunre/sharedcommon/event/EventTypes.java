@@ -37,6 +37,12 @@ public final class EventTypes {
     /** Có người trả lời câu hỏi trong bài học. Phát bởi course-service. */
     public static final String LESSON_QUESTION_ANSWERED = "lesson.question.answered";
 
+    /** Tài khoản mới đăng ký, kèm email và tên. Phát bởi auth-service. */
+    public static final String USER_REGISTERED = "user.registered";
+
+    /** Thông tin liên lạc hiện tại sau khi sửa hồ sơ (và khi nạp lần đầu). Phát bởi auth-service. */
+    public static final String USER_PROFILE_UPDATED = "user.profile.updated";
+
     private EventTypes() {
         throw new AssertionError("Lớp hằng số, không tạo thể hiện");
     }
