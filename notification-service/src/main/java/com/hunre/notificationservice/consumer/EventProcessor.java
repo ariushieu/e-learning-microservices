@@ -9,6 +9,7 @@ import com.hunre.sharedcommon.event.EnrollmentCreatedEvent;
 import com.hunre.sharedcommon.event.EventTypes;
 import com.hunre.sharedcommon.event.LessonQuestionAnsweredEvent;
 import com.hunre.sharedcommon.event.LessonQuestionPostedEvent;
+import com.hunre.sharedcommon.event.PasswordResetRequestedEvent;
 import com.hunre.sharedcommon.event.QuizGradedEvent;
 import com.hunre.sharedcommon.event.UserProfileUpdatedEvent;
 import com.hunre.sharedcommon.event.UserRegisteredEvent;
@@ -20,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -41,6 +44,8 @@ import java.util.Map;
 public class EventProcessor {
 
     private static final Logger log = LoggerFactory.getLogger(EventProcessor.class);
+    private static final DateTimeFormatter VIETNAM_TIME = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")
+            .withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
 
     private final ProcessedEventRepository processedEventRepository;
     private final NotificationService notificationService;
@@ -67,6 +72,7 @@ public class EventProcessor {
             case EventTypes.LESSON_QUESTION_ANSWERED -> handleQuestionAnswered(payload);
             case EventTypes.USER_REGISTERED -> handleUserRegistered(payload);
             case EventTypes.USER_PROFILE_UPDATED -> handleUserProfileUpdated(payload);
+            case EventTypes.PASSWORD_RESET_REQUESTED -> handlePasswordResetRequested(payload);
             // Service khác thêm loại sự kiện mới mà service này chưa biết là chuyện bình
             // thường, không phải lỗi. Vẫn ghi sổ để lần gửi lại không phải đọc lại nữa.
             default -> log.debug("Bỏ qua sự kiện loại {} vì chưa có xử lý tương ứng", eventType);
@@ -83,6 +89,18 @@ public class EventProcessor {
     private void handleUserProfileUpdated(String payload) {
         UserProfileUpdatedEvent event = objectMapper.readValue(payload, UserProfileUpdatedEvent.class);
         notificationService.saveContact(event.userId(), event.email(), event.fullName());
+    }
+
+    private void handlePasswordResetRequested(String payload) {
+        PasswordResetRequestedEvent event = objectMapper.readValue(payload, PasswordResetRequestedEvent.class);
+        // Sự kiện mang sẵn email: cập nhật luôn, phòng khi bản sao chưa kịp có.
+        notificationService.saveContact(event.userId(), event.email(), event.fullName());
+        Map<String, String> variables = new LinkedHashMap<>();
+        variables.put("email", event.email());
+        variables.put("expiresAt", event.expiresAt() == null ? "" : VIETNAM_TIME.format(event.expiresAt()));
+        // Mã base64url chỉ gồm chữ, số, '-' và '_', đặt thẳng vào query được.
+        notificationService.queueSecurityEmail("PASSWORD_RESET", event.userId(), variables,
+                "/reset-password?token=" + event.token());
     }
 
     private void handleEnrollmentCreated(String payload) {

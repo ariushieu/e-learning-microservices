@@ -248,6 +248,10 @@ Tách hai bước để máy chủ mail chậm hay chết không làm hỏng vi�
 | `CERTIFICATE_ISSUED` | Hoàn thành khóa, được cấp chứng chỉ |
 | `COURSE_ANNOUNCEMENT` | Giảng viên gửi thông báo cho lớp |
 | `LESSON_QUESTION_ANSWERED` | Câu hỏi trong bài học có người trả lời |
+| `PASSWORD_RESET` | Người dùng bấm "Quên mật khẩu" (sự kiện `user.password.reset.requested`) |
+
+`PASSWORD_RESET` là thư bảo mật: luôn gửi kể cả khi người dùng tắt email, không tạo thông báo
+trong ứng dụng, và gửi xong thì `EmailDispatcher` xóa nội dung chứa link khỏi database.
 
 Chạy bằng Docker thì máy chủ mail là **Mailpit**: mọi thư hiện ở http://localhost:8025, không
 gửi ra Internet. Dùng máy chủ thật thì đặt `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`,

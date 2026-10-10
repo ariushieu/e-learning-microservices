@@ -74,6 +74,19 @@ public class NotificationService {
         if (!emailEnabledFor(userId)) {
             return Optional.empty();
         }
+        return enqueueEmail(code, userId, variables, linkUrl);
+    }
+
+    /**
+     * Thư bảo mật do chính người dùng yêu cầu (đặt lại mật khẩu): gửi kể cả khi họ đã tắt email
+     * thông báo, vì tắt email là để khỏi nhận tin tức chứ không phải để khóa luôn đường lấy lại tài khoản.
+     */
+    @Transactional
+    public Optional<Notification> queueSecurityEmail(String code, Long userId, Map<String, String> variables, String linkUrl) {
+        return enqueueEmail(code, userId, variables, linkUrl);
+    }
+
+    private Optional<Notification> enqueueEmail(String code, Long userId, Map<String, String> variables, String linkUrl) {
         var template = templateRepository.findByCodeAndChannelAndActiveTrue(code, NotificationChannel.EMAIL);
         if (template.isEmpty()) {
             return Optional.empty();
