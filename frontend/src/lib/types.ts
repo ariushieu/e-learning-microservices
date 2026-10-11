@@ -29,6 +29,40 @@ export interface CourseAnnouncement {
   createdAt: string;
 }
 
+export type LiveSessionStatus = "SCHEDULED" | "LIVE" | "ENDED" | "CANCELLED";
+
+export interface LiveSession {
+  id: number;
+  courseId: number;
+  courseTitle: string;
+  title: string;
+  description: string | null;
+  hostId: number;
+  hostName: string;
+  scheduledAt: string;
+  durationMinutes: number;
+  status: LiveSessionStatus;
+  startedAt: string | null;
+  endedAt: string | null;
+  createdAt: string;
+  /** Người xem là giảng viên của khóa hoặc quản trị viên. */
+  canHost: boolean;
+  /** Số học viên đã vào lớp, chỉ có khi canHost. */
+  attendeeCount: number | null;
+  /** Số người đang ở trong phòng lúc này. */
+  participantCount: number;
+}
+
+export interface LiveAttendance {
+  userId: number;
+  fullName: string | null;
+  host: boolean;
+  firstJoinedAt: string;
+  lastLeftAt: string | null;
+  joinCount: number;
+  attendedSeconds: number;
+}
+
 export interface LeaderboardEntry {
   rank: number;
   userId: number;

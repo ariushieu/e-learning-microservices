@@ -33,6 +33,9 @@ export const STATUS_TONES: Record<string, Tone> = {
   PENDING_REVIEW: "warning",
   EXPIRED: "warning",
   CANCELLED: "danger",
+  SCHEDULED: "info",
+  LIVE: "danger",
+  ENDED: "neutral",
   FAILED: "danger",
 };
 

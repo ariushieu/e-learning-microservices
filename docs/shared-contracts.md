@@ -180,7 +180,7 @@ GlobalExceptionHandler authExceptionHandler() {
 | Topic | Service phát | Sự kiện |
 |-------|--------------|---------|
 | `elearning.enrollment.events` | enrollment-service | `enrollment.created`, `enrollment.completed`, `certificate.issued` |
-| `elearning.course.events` | course-service | `course.updated` |
+| `elearning.course.events` | course-service | `course.updated`, `course.announcement.posted`, `lesson.question.posted`, `lesson.question.answered`, `live.session.scheduled`, `live.session.started`, `live.session.cancelled` |
 | `elearning.quiz.events` | quiz-service | `quiz.graded` |
 | `elearning.auth.events` | auth-service | `user.registered`, `user.profile.updated`, `user.password.reset.requested` |
 

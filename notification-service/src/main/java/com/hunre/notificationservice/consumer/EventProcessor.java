@@ -9,6 +9,7 @@ import com.hunre.sharedcommon.event.EnrollmentCreatedEvent;
 import com.hunre.sharedcommon.event.EventTypes;
 import com.hunre.sharedcommon.event.LessonQuestionAnsweredEvent;
 import com.hunre.sharedcommon.event.LessonQuestionPostedEvent;
+import com.hunre.sharedcommon.event.LiveSessionEvent;
 import com.hunre.sharedcommon.event.PasswordResetRequestedEvent;
 import com.hunre.sharedcommon.event.QuizGradedEvent;
 import com.hunre.sharedcommon.event.UserProfileUpdatedEvent;
@@ -73,6 +74,8 @@ public class EventProcessor {
             case EventTypes.USER_REGISTERED -> handleUserRegistered(payload);
             case EventTypes.USER_PROFILE_UPDATED -> handleUserProfileUpdated(payload);
             case EventTypes.PASSWORD_RESET_REQUESTED -> handlePasswordResetRequested(payload);
+            case EventTypes.LIVE_SESSION_SCHEDULED, EventTypes.LIVE_SESSION_STARTED,
+                 EventTypes.LIVE_SESSION_CANCELLED -> handleLiveSession(eventType, payload);
             // Service khác thêm loại sự kiện mới mà service này chưa biết là chuyện bình
             // thường, không phải lỗi. Vẫn ghi sổ để lần gửi lại không phải đọc lại nữa.
             default -> log.debug("Bỏ qua sự kiện loại {} vì chưa có xử lý tương ứng", eventType);
@@ -167,6 +170,32 @@ public class EventProcessor {
         String link = "/courses/" + event.courseId() + "#thong-bao";
         for (Long userId : new LinkedHashSet<>(event.recipientIds())) {
             notificationService.deliver("COURSE_ANNOUNCEMENT", userId, variables, link);
+        }
+    }
+
+    /** Lên lịch, bắt đầu, hủy buổi học trực tuyến: báo từng học viên, kèm email nếu họ bật. */
+    private void handleLiveSession(String eventType, String payload) {
+        LiveSessionEvent event = objectMapper.readValue(payload, LiveSessionEvent.class);
+        if (event.recipientIds() == null || event.recipientIds().isEmpty()) {
+            return;
+        }
+        String template = switch (eventType) {
+            case EventTypes.LIVE_SESSION_SCHEDULED -> "LIVE_SESSION_SCHEDULED";
+            case EventTypes.LIVE_SESSION_STARTED -> "LIVE_SESSION_STARTED";
+            default -> "LIVE_SESSION_CANCELLED";
+        };
+        Map<String, String> variables = new LinkedHashMap<>();
+        variables.put("courseTitle", event.courseTitle());
+        variables.put("sessionTitle", event.title());
+        variables.put("hostName", event.hostName() == null ? "Giảng viên" : event.hostName());
+        variables.put("startsAt", event.scheduledAt() == null ? "" : VIETNAM_TIME.format(event.scheduledAt()));
+        variables.put("durationMinutes", String.valueOf(event.durationMinutes()));
+
+        String link = EventTypes.LIVE_SESSION_CANCELLED.equals(eventType)
+                ? "/courses/" + event.courseId() + "#truc-tuyen"
+                : "/live/" + event.sessionId();
+        for (Long userId : new LinkedHashSet<>(event.recipientIds())) {
+            notificationService.deliver(template, userId, variables, link);
         }
     }
 
