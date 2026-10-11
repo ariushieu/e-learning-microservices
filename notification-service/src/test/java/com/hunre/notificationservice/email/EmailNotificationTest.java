@@ -14,7 +14,9 @@ import com.hunre.notificationservice.repository.UserContactRepository;
 import com.hunre.notificationservice.service.NotificationService;
 import com.hunre.sharedcommon.event.DomainEvent;
 import com.hunre.sharedcommon.event.EnrollmentCreatedEvent;
+import com.hunre.sharedcommon.event.EventTypes;
 import com.hunre.sharedcommon.event.KafkaTopics;
+import com.hunre.sharedcommon.event.LiveSessionEvent;
 import com.hunre.sharedcommon.event.PasswordResetRequestedEvent;
 import com.hunre.sharedcommon.event.UserProfileUpdatedEvent;
 import com.hunre.sharedcommon.event.UserRegisteredEvent;
@@ -116,6 +118,32 @@ class EmailNotificationTest {
         process(EnrollmentCreatedEvent.of(2L, 8L, 10L, "Java"), KafkaTopics.ENROLLMENT_EVENTS);
         assertThat(service.countUnread(8L)).isEqualTo(1);
         assertThat(emails(8L)).isEmpty();
+    }
+
+    @Test
+    void liveSessionEventsReachEveryLearnerWithTheRoomOrCourseLink() {
+        template("LIVE_SESSION_STARTED", NotificationChannel.IN_APP, "Lớp đang diễn ra", "{sessionTitle} của {courseTitle}");
+        template("LIVE_SESSION_STARTED", NotificationChannel.EMAIL, "Vào lớp {sessionTitle}", "Chào {fullName}: {url}");
+        template("LIVE_SESSION_CANCELLED", NotificationChannel.IN_APP, "Đã hủy {sessionTitle}", "Lúc {startsAt}");
+        process(UserProfileUpdatedEvent.of(7L, "an@example.com", "An"), KafkaTopics.AUTH_EVENTS);
+        var startsAt = java.time.Instant.parse("2026-10-12T02:30:00Z");
+
+        process(LiveSessionEvent.of(EventTypes.LIVE_SESSION_STARTED, 3L, 10L, "Java", "Ôn tập", "Cô Lan",
+                startsAt, 60, List.of(7L, 8L, 7L)), KafkaTopics.COURSE_EVENTS);
+        assertThat(service.countUnread(7L)).isEqualTo(1);
+        assertThat(service.countUnread(8L)).isEqualTo(1);
+        assertThat(service.getMyNotifications(8L, PageRequest.of(0, 20)).content()).singleElement()
+                .satisfies(n -> assertThat(n.linkUrl()).isEqualTo("/live/3"));
+        assertThat(emails(7L)).singleElement()
+                .satisfies(email -> assertThat(email.getContent()).isEqualTo("Chào An: http://localhost:3000/live/3"));
+
+        process(LiveSessionEvent.of(EventTypes.LIVE_SESSION_CANCELLED, 4L, 10L, "Java", "Buổi 2", null,
+                startsAt, 45, List.of(8L)), KafkaTopics.COURSE_EVENTS);
+        assertThat(service.getMyNotifications(8L, PageRequest.of(0, 20)).content()).first().satisfies(n -> {
+            assertThat(n.title()).isEqualTo("Đã hủy Buổi 2");
+            assertThat(n.content()).isEqualTo("Lúc 09:30 12/10/2026");
+            assertThat(n.linkUrl()).isEqualTo("/courses/10#truc-tuyen");
+        });
     }
 
     @Test
