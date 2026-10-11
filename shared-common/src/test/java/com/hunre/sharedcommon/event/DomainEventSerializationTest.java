@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Khóa chặt hình dạng JSON của các sự kiện Kafka.
@@ -228,6 +229,19 @@ class DomainEventSerializationTest {
         List<String> expected = List.of("eventId", "eventType", "occurredAt", "userId", "email", "fullName");
         assertThat(fieldNamesOf(UserRegisteredEvent.of(1L, "a@b.vn", "A"))).containsExactlyInAnyOrderElementsOf(expected);
         assertThat(fieldNamesOf(UserProfileUpdatedEvent.of(1L, "a@b.vn", "A"))).containsExactlyInAnyOrderElementsOf(expected);
+    }
+
+    @Test
+    @DisplayName("LiveSessionEvent giữ nguyên bộ tên trường và chỉ nhận ba loại sự kiện buổi học")
+    void hopDongLiveSession() {
+        LiveSessionEvent event = LiveSessionEvent.of(EventTypes.LIVE_SESSION_STARTED, 3L, 1L, "Kiến trúc",
+                "Ôn tập", "Cô Lan", Instant.now(), 60, List.of(7L, 8L));
+        assertThat(event.eventType()).isEqualTo(EventTypes.LIVE_SESSION_STARTED);
+        assertThat(fieldNamesOf(event)).containsExactlyInAnyOrder(
+                "eventId", "eventType", "occurredAt", "sessionId", "courseId", "courseTitle", "title",
+                "hostName", "scheduledAt", "durationMinutes", "recipientIds");
+        assertThatThrownBy(() -> LiveSessionEvent.of(EventTypes.COURSE_UPDATED, 3L, 1L, "x", "t", null,
+                Instant.now(), 60, List.of())).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

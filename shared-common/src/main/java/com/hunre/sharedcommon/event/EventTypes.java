@@ -46,6 +46,15 @@ public final class EventTypes {
     /** Người dùng yêu cầu đặt lại mật khẩu, kèm mã một lần. Phát bởi auth-service. */
     public static final String PASSWORD_RESET_REQUESTED = "user.password.reset.requested";
 
+    /** Giảng viên lên lịch một buổi học trực tuyến. Phát bởi course-service, xem {@link LiveSessionEvent}. */
+    public static final String LIVE_SESSION_SCHEDULED = "live.session.scheduled";
+
+    /** Buổi học trực tuyến bắt đầu, học viên vào lớp được. Phát bởi course-service. */
+    public static final String LIVE_SESSION_STARTED = "live.session.started";
+
+    /** Buổi học trực tuyến bị hủy trước giờ học. Phát bởi course-service. */
+    public static final String LIVE_SESSION_CANCELLED = "live.session.cancelled";
+
     private EventTypes() {
         throw new AssertionError("Lớp hằng số, không tạo thể hiện");
     }
