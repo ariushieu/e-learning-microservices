@@ -249,6 +249,7 @@ Tách hai bước để máy chủ mail chậm hay chết không làm hỏng vi�
 | `COURSE_ANNOUNCEMENT` | Giảng viên gửi thông báo cho lớp |
 | `LESSON_QUESTION_ANSWERED` | Câu hỏi trong bài học có người trả lời |
 | `PASSWORD_RESET` | Người dùng bấm "Quên mật khẩu" (sự kiện `user.password.reset.requested`) |
+| `LIVE_SESSION_SCHEDULED`, `LIVE_SESSION_STARTED`, `LIVE_SESSION_CANCELLED` | Giảng viên lên lịch, mở, hủy buổi học trực tuyến (xem [live-classes.md](live-classes.md)) |
 
 `PASSWORD_RESET` là thư bảo mật: luôn gửi kể cả khi người dùng tắt email, không tạo thông báo
 trong ứng dụng, và gửi xong thì `EmailDispatcher` xóa nội dung chứa link khỏi database.
