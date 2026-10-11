@@ -29,6 +29,7 @@ import { PriceTag } from "@/components/course/course-card";
 import { CurriculumList } from "@/components/course/curriculum-list";
 import { AnnouncementList } from "@/components/course/course-announcements";
 import { CourseReviews } from "@/components/course/course-reviews";
+import { LiveSessionList } from "@/components/live/live-sessions";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { attempt, getCourse, getMyEnrollments, isId } from "@/components/course/queries";
@@ -41,12 +42,25 @@ import { Card, CardContent } from "@/components/ui/card";
 import { hasRole, type Session } from "@/lib/auth-shared";
 import { formatDay, formatDuration, formatNumber, label } from "@/lib/format";
 import { gateway, getSession } from "@/lib/server/gateway";
-import type { Course, CourseAnnouncement, Enrollment, Page, Quiz, Section as CourseSection } from "@/lib/types";
+import type { Course, CourseAnnouncement, Enrollment, LiveSession, Page, Quiz, Section as CourseSection } from "@/lib/types";
 
 export async function generateMetadata({ params }: PageProps<"/courses/[id]">): Promise<Metadata> {
   const { id } = await params;
   const course = isId(id) ? await getCourse(id).catch(() => null) : null;
   return course ? { title: course.title, description: course.summary ?? undefined } : { title: "Khóa học" };
+}
+
+/** Học viên thấy buổi đang diễn ra, sắp tới, buổi bị hủy chưa tới giờ, và ba buổi gần nhất đã qua. */
+function visibleLiveSessions(sessions: LiveSession[]) {
+  const now = Date.now();
+  const ended = sessions.filter((s) => s.status === "ENDED").slice(0, 3);
+  return sessions.filter(
+    (s) =>
+      s.status === "LIVE" ||
+      s.status === "SCHEDULED" ||
+      (s.status === "CANCELLED" && new Date(s.scheduledAt).getTime() > now) ||
+      ended.includes(s),
+  );
 }
 
 function languageName(code: string) {
@@ -75,10 +89,14 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
   const publishedQuizzes = quizzes?.data?.filter((q) => q.status === "PUBLISHED") ?? [];
   const showQuizzes = (activeEnrollment !== null || isManager) && publishedQuizzes.length > 0;
   // Học viên (kể cả đã hủy, vì từng ghi danh) và người quản lý khóa mới đọc được thông báo.
-  const announcements =
+  const [announcements, liveSessions] =
     enrollment || isManager
-      ? await attempt(gateway<Page<CourseAnnouncement>>(`/api/courses/${id}/announcements?size=5`))
-      : null;
+      ? await Promise.all([
+          attempt(gateway<Page<CourseAnnouncement>>(`/api/courses/${id}/announcements?size=5`)),
+          attempt(gateway<LiveSession[]>(`/api/courses/${id}/live-sessions`)),
+        ])
+      : [null, null];
+  const visibleLive = liveSessions?.data ? visibleLiveSessions(liveSessions.data) : [];
   const cover = <CourseCover title={course.title} category={course.categoryName} thumbnailUrl={course.thumbnailUrl} />;
 
   return (
@@ -174,6 +192,23 @@ export default async function CourseDetailPage({ params, searchParams }: PagePro
           }
         >
           <AnnouncementList courseId={course.id} announcements={announcements.data.content} canManage={false} />
+        </Section>
+      )}
+
+      {liveSessions?.data && (visibleLive.length > 0 || isManager) && (
+        <Section
+          id="truc-tuyen"
+          title="Lớp học trực tuyến"
+          count={visibleLive.filter((s) => s.status === "LIVE" || s.status === "SCHEDULED").length}
+          actions={
+            isManager && (
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/instructor/courses/${course.id}?tab=truc-tuyen`}>Lên lịch buổi học</Link>
+              </Button>
+            )
+          }
+        >
+          <LiveSessionList sessions={visibleLive} canManage={false} />
         </Section>
       )}
 

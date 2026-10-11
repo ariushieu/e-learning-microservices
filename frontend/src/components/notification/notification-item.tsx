@@ -4,11 +4,14 @@ import {
   AwardIcon,
   BellIcon,
   BookOpenIcon,
+  CalendarClockIcon,
+  CalendarXIcon,
   ClipboardCheckIcon,
   MegaphoneIcon,
   MessageCircleQuestionIcon,
   MessageSquareReplyIcon,
   TrophyIcon,
+  VideoIcon,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -30,6 +33,9 @@ const KINDS: Record<string, { icon: LucideIcon; tone: Tone }> = {
   COURSE_ANNOUNCEMENT: { icon: MegaphoneIcon, tone: "info" },
   LESSON_QUESTION_POSTED: { icon: MessageCircleQuestionIcon, tone: "warning" },
   LESSON_QUESTION_ANSWERED: { icon: MessageSquareReplyIcon, tone: "primary" },
+  LIVE_SESSION_SCHEDULED: { icon: CalendarClockIcon, tone: "info" },
+  LIVE_SESSION_STARTED: { icon: VideoIcon, tone: "danger" },
+  LIVE_SESSION_CANCELLED: { icon: CalendarXIcon, tone: "neutral" },
 };
 
 /** Icon và tông màu theo loại thông báo; loại mới chưa biết hiện chuông xám. Dùng chung với chuông trên header. */
