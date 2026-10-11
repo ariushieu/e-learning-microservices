@@ -6,6 +6,7 @@ import com.hunre.courseservice.repository.OutboxEventRepository;
 import com.hunre.sharedcommon.event.CourseAnnouncementPostedEvent;
 import com.hunre.sharedcommon.event.CourseUpdatedEvent;
 import com.hunre.sharedcommon.event.DomainEvent;
+import com.hunre.sharedcommon.event.LiveSessionEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -47,6 +48,12 @@ public class CourseEventPublisher {
     @Transactional(propagation = Propagation.MANDATORY)
     public void publishLessonEvent(DomainEvent event, Long courseId) {
         save(event, courseId);
+    }
+
+    /** Ghi cùng giao dịch đổi trạng thái buổi học trực tuyến. */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void publishLiveSessionEvent(LiveSessionEvent event) {
+        save(event, event.courseId());
     }
 
     private void save(DomainEvent event, Long courseId) {
